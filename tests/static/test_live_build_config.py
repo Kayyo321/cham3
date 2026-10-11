@@ -108,7 +108,12 @@ class live_build_config_t(unittest.TestCase):
         self.assertEqual(values, ["none"])
 
     def test_binary_image_is_iso_hybrid(self):
-        values = option_values(config_tokens(), "--binary-images")
+        # live-build 20250505 accepts both spellings for the same option: its
+        # usage text documents --binary-image and lb config also accepts
+        # --binary-images as an alias (/usr/lib/live/build/config). The
+        # requirement is an iso-hybrid binary image, not one spelling.
+        tokens = config_tokens()
+        values = option_values(tokens, "--binary-image") + option_values(tokens, "--binary-images")
         self.assertEqual(values, ["iso-hybrid"])
 
     def test_non_free_firmware_is_off(self):
