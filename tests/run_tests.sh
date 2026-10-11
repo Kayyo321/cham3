@@ -11,8 +11,8 @@
 # artifacts are missing. Exit status is non-zero if any selected suite fails.
 set -eu
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-CHAM3_REPO_ROOT=${CHAM3_REPO_ROOT:-$(CDPATH= cd -- "$script_dir/.." && pwd)}
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+CHAM3_REPO_ROOT=${CHAM3_REPO_ROOT:-$(CDPATH='' cd -- "$script_dir/.." && pwd)}
 CHAM3_OUT_DIR=${CHAM3_OUT_DIR:-$CHAM3_REPO_ROOT/out}
 export CHAM3_REPO_ROOT CHAM3_OUT_DIR
 
