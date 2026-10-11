@@ -93,13 +93,22 @@ log_file="${image_dir}/build.log"
     echo "build_image: live-build $(dpkg-query -W -f='${Version}' live-build)"
 } | tee "${log_file}"
 
-build_status=0
-(
-    cd "${work_dir}"
-    lb config
-    lb build
-) 2>&1 | tee -a "${log_file}" || build_status=$?
-[ "${build_status}" -eq 0 ] || die "lb build failed (exit ${build_status}); see ${log_file}"
+# Run one live-build step in the work dir, appending its output to the log, and
+# stop on failure. Each step's status is checked explicitly: errexit does not apply
+# inside a subshell whose status is tested, so a failed cd or "lb config" must
+# never be followed by the next step. On failure nothing is published; only the
+# diagnostic build.log is left in the image dir.
+run_lb_step() { # lb subcommand
+    local step_status=0
+    (
+        cd -- "${work_dir}" || { echo "build_image: cannot enter work dir ${work_dir}"; exit 1; }
+        lb "$1"
+    ) 2>&1 | tee -a "${log_file}" || step_status=$?
+    [ "${step_status}" -eq 0 ] || die "lb $1 failed (exit ${step_status}); see ${log_file}"
+}
+
+run_lb_step config
+run_lb_step build
 
 finished_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 echo "build_image: finished ${finished_utc}" >> "${log_file}"

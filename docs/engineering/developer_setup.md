@@ -100,7 +100,7 @@ With no arguments, the scanner checks all git-tracked files. With path arguments
 
 - Exit codes: `0` clean, `1` finding, `2` usage or scan error.
 - Symlinks are followed. A dangling symlink is skipped and is not an error.
-- An unreadable file is a scan error (exit 2). The scanner never reports clean for input it could not read. If a finding was also made, it exits 1.
+- An unreadable file is a scan error (exit 2), and so is any `grep` run that does not exit 0 (match) or 1 (no match): for example `grep` missing from `PATH`, not executable, killed by a signal, or exiting with an error. The scanner never reports clean for input it could not read. If a finding was also made, it exits 1.
 - Findings print `FINDING <rule>: <path>:<line>`. The matched value is never printed.
 - Rules: PEM/OpenSSH/PGP private key blocks, GitHub tokens (`ghp_`, `gho_`, `ghs_`, `ghu_`, `ghr_`, and `github_pat_`), AWS access key IDs, and Slack tokens.
 - `-h` or `--help` prints usage.
@@ -141,6 +141,7 @@ The script:
 - refuses to run if `$CHAM3_OUT_DIR/packages/*.deb` is missing (run step 5 first);
 - refuses to reuse an existing work directory that does not contain the marker file `.cham3_live_build_work`;
 - copies `build/live` into the work directory, copies the built `.deb` files into `config/packages.chroot/` there, and runs `lb clean --purge`, `lb config`, and `lb build` in the work directory only;
+- checks each step's exit status: if the work directory cannot be entered or `lb config` fails, it stops without running `lb build`, and if either live-build step fails it exits non-zero, leaving only `build.log` in `$CHAM3_OUT_DIR/image/` (no ISO, manifest, provenance, or `SHA256SUMS`);
 - sets `SOURCE_DATE_EPOCH` from the commit time of `HEAD` if it is not already set.
 
 The build reads from `build/live` and writes only to the work directory and the output directory. Because it runs as root, `out/image/` is root-owned after a build.

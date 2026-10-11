@@ -7,9 +7,11 @@
 #   regular file is scanned using its target's content; a dangling symlink is
 #   skipped and is not an error.
 # Exit: 0 clean, 1 finding(s), 2 usage or scan error. Fail closed: if any file
-# cannot be read (permission denied, I/O error) the script prints
-# "scan_secrets: ERROR cannot scan <path>" to stderr and exits 2, unless a finding
-# was also made, in which case it exits 1. It never exits 0 if a file went unscanned.
+# cannot be scanned (permission denied, I/O error, or grep missing, not
+# executable, crashed or exiting with any status other than 0 or 1) the script
+# prints "scan_secrets: ERROR cannot scan <path>" to stderr and exits 2, unless a
+# finding was also made, in which case it exits 1. It never exits 0 if a file went
+# unscanned.
 # Limits: pattern matching only. It is NOT a complete secret scanner and does not
 # prove the absence of secrets. Binary files are skipped. Matched values are never
 # printed; a finding prints "FINDING <rule>: <path>:<line>".
@@ -20,7 +22,7 @@ script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH='' cd -- "${script_dir}/../.." && pwd)
 
 if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
-    sed -n '2,16p' "$0"
+    sed -n '2,18p' "$0"
     exit 0
 fi
 
@@ -66,11 +68,13 @@ while IFS= read -r -d '' file_path; do
     for rule in "${rules[@]}"; do
         rule_name=${rule%%|*}
         rule_regex=${rule#*|}
-        # -I skips binary files; -n prefixes the line number. grep exit status:
-        # 0 match, 1 no match, 2 error (for example permission denied).
+        # -I skips binary files; -n prefixes the line number. Only grep exit
+        # statuses 0 (match) and 1 (no match) mean the file was searched. Anything
+        # else is a scan error: 2 (for example permission denied), 126/127 (grep
+        # not executable or not found) and 128+N (grep killed by a signal).
         grep_status=0
         matches=$(grep -I -n -E -e "${rule_regex}" -- "${file_path}" 2> /dev/null) || grep_status=$?
-        if [ "${grep_status}" -eq 2 ]; then
+        if [ "${grep_status}" -ne 0 ] && [ "${grep_status}" -ne 1 ]; then
             file_failed=1
         fi
         if [ -n "${matches}" ]; then
