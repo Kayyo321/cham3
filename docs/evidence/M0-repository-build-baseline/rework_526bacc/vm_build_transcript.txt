@@ -1,0 +1,36 @@
+[2026-10-11T19:53:00Z] target_commit=526bacccdc3c38e8d61a15cb8e50af85d4cc7557
+[2026-10-11T19:53:00Z] base_image=f46f0671a6e5bdec5291ab8972bae2f10e5408c2f64a74078f11efc2f06a436a9d0313ed50e0472542eeabf780e9f7c792ac0a314c6c20507fcd9fd81b468c3d  debian-13-genericcloud-amd64.qcow2
+[2026-10-11T19:53:01Z] qemu: QEMU emulator version 10.2.1
+[2026-10-11T19:53:01Z] qemu command: qemu-system-x86_64 -name cham3-m0-evidence -machine q35 -accel tcg,thread=multi,tb-size=1024 -cpu max -smp 6 -m 4096 -drive file=<coordinator-scratch>/vm/evidence_526bacc.qcow2,if=virtio,format=qcow2 -drive file=<coordinator-scratch>/vm/seed.iso,media=cdrom,readonly=on -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:2223-:22 -display none -serial file:<coordinator-scratch>/vm/evidence_rework_526bacc/build_vm_console.log -pidfile <coordinator-scratch>/vm/evidence_526bacc.pid -daemonize
+[2026-10-11T19:53:45Z] ssh up after 44s
+[2026-10-11T19:53:45Z] STEP 00_vm_environment: cat /etc/os-release; uname -a; dpkg --print-architecture; nproc; free -m; df -h /; systemd-detect-virt; cloud-init status; id
+[2026-10-11T19:53:49Z] STEP 00_vm_environment: exit=0 seconds=4 log=00_vm_environment.log
+[2026-10-11T19:53:49Z] bundle sha256=bc7858aa6b4e30e49de5056f5282287d7d2da102e5d74872f6fd94d2fbfd1cab
+[2026-10-11T19:53:50Z] STEP 01_install_git: sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git ca-certificates
+[2026-10-11T19:54:36Z] STEP 01_install_git: exit=0 seconds=46 log=01_install_git.log
+[2026-10-11T19:54:36Z] STEP 02_clone: git clone /home/builder/target.bundle cham3 && git -C cham3 checkout --detach 526bacccdc3c38e8d61a15cb8e50af85d4cc7557 && git -C cham3 log -1 --format='%H %ct %s' && git -C cham3 status --porcelain
+[2026-10-11T19:54:37Z] STEP 02_clone: exit=0 seconds=1 log=02_clone.log
+[2026-10-11T19:54:37Z] STEP 03_install_host_packages: cd cham3 && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $(grep -v "^#" build/host_packages.txt) && dpkg-query -W live-build debootstrap dpkg-dev debhelper lintian xorriso squashfs-tools qemu-system-x86 shellcheck yamllint python3 git
+[2026-10-11T19:57:20Z] STEP 03_install_host_packages: exit=0 seconds=163 log=03_install_host_packages.log
+[2026-10-11T19:57:20Z] STEP 04_static_checks: cd cham3 && build/scripts/run_static_checks.sh
+[2026-10-11T19:57:35Z] STEP 04_static_checks: exit=0 seconds=15 log=04_static_checks.log
+[2026-10-11T19:57:35Z] STEP 05_tests_static: cd cham3 && tests/run_tests.sh static
+[2026-10-11T19:58:56Z] STEP 05_tests_static: exit=0 seconds=81 log=05_tests_static.log
+[2026-10-11T19:58:56Z] STEP 06_build_packages: cd cham3 && build/scripts/build_packages.sh
+[2026-10-11T19:59:43Z] STEP 06_build_packages: exit=0 seconds=47 log=06_build_packages.log
+[2026-10-11T19:59:43Z] STEP 07_tests_packages: cd cham3 && tests/run_tests.sh packages
+[2026-10-11T19:59:45Z] STEP 07_tests_packages: exit=0 seconds=2 log=07_tests_packages.log
+[2026-10-11T19:59:45Z] STEP 08_build_image: cd cham3 && sudo build/scripts/build_image.sh
+[2026-10-11T20:21:46Z] STEP 08_build_image: exit=0 seconds=1321 log=08_build_image.log
+[2026-10-11T20:21:46Z] STEP 09_tests_image: cd cham3 && tests/run_tests.sh image
+[2026-10-11T20:21:55Z] STEP 09_tests_image: exit=0 seconds=9 log=09_tests_image.log
+[2026-10-11T20:21:55Z] STEP 10_artifact_secret_scan: cd cham3 && build/scripts/scan_secrets.sh out/packages out/image
+[2026-10-11T20:21:56Z] STEP 10_artifact_secret_scan: exit=0 seconds=1 log=10_artifact_secret_scan.log
+[2026-10-11T20:21:56Z] STEP 11_source_tree_unchanged: cd cham3 && git status --porcelain --ignored && git status --porcelain | wc -l
+[2026-10-11T20:21:57Z] STEP 11_source_tree_unchanged: exit=0 seconds=1 log=11_source_tree_unchanged.log
+[2026-10-11T20:21:57Z] copying artifacts
+[2026-10-11T20:22:06Z] artifacts copied
+[2026-10-11T20:22:06Z] phase1 done
+[2026-10-11T20:22:06Z] STEP 12_boot_test_in_vm: SKIPPED by coordinator (nested TCG too slow; host boot test is the evidence)
+[2026-10-11T20:22:06Z] STEP 13_tests_boot_in_vm: SKIPPED
+[2026-10-11T20:22:07Z] phase2 done

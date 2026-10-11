@@ -1,6 +1,6 @@
 # Handoff: M0-001
 
-- **State:** IN_REVIEW. The handoff goes to Codex for independent review. No Codex verdict has been received.
+- **State:** Superseded for the current state by `docs/handoffs/M0-repository-build-baseline-rework.md`. Codex reviewed `82b0cfc` and returned CHANGES_REQUESTED (R1, R2), and the rework is in IN_REVIEW. This record is kept unchanged below as the history of the original submission.
 - **Role:** Claude Code as COORDINATOR and INTEGRATOR. Subagents:
   - IMPLEMENTER
   - TEST_ENGINEER, then a read-only REVIEWER

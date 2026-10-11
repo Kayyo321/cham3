@@ -1,6 +1,6 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** IN_PROGRESS (rework of Codex findings R1/R2 after CHANGES_REQUESTED; branch `task/M0-repository-build-baseline-rework`, worktree `../cham3-worktrees/M0-001-rework`, rework base `86600a3d2be7318e55a777b98a79e17621af6a81`)
+- **State:** IN_REVIEW (R1/R2 rework submitted for renewed Codex review; branch `task/M0-repository-build-baseline-rework`, worktree `../cham3-worktrees/M0-001-rework`, rework base `86600a3d2be7318e55a777b98a79e17621af6a81`, tested implementation `526bacccdc3c38e8d61a15cb8e50af85d4cc7557`; handoff `docs/handoffs/M0-repository-build-baseline-rework.md`)
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -57,6 +57,26 @@ Status as of the handoff. Evidence is in `docs/handoffs/M0-repository-build-base
 - **Independent normal-path verification:** PASS for static checks, 70 static tests (zero skips), unsigned package build/lintian and 8 package tests as non-root in a disposable `debian:trixie` linux/amd64 container under emulation. PASS for 14 host classifier unit tests and committed evidence consistency. Independent real image build/boot: NOT_RUN. Full commands, evidence and limits are in the review.
 - **CI gate:** workflow-specific `gh run list` query is BLOCKED by HTTP 404 (workflow absent on default branch); branch-wide run query succeeded with `[]`. GitHub Actions execution remains NOT_RUN and does not satisfy acceptance. Simulations are not CI approval.
 - **Next owner / action:** IMPLEMENTER repairs R1/R2 in its assigned worktree, adds sensitive regressions and supplies an exact revised target with affected checks and handoff. Coordinator routes renewed independent review. Owner runs and records GitHub Actions on an exact reviewed commit. Integrator follows owner-approved merge and post-merge checks only after all required gates pass. No push or merge was performed by the reviewer; M0 is not complete.
+
+### R1/R2 rework (2026-10-11)
+
+- **Branch / base / commits:** `task/M0-repository-build-baseline-rework` from `86600a3`. Regression tests are in `ac36295`; its `build/` equals the reviewed `82b0cfc`. Fixes are in `526bacc`. The evidence and handoff commit at the branch tip is the revised review target.
+- **R1:** `scan_secrets.sh` accepts only grep statuses 0 and 1 as a successful search. Any other status (missing, non-executable, crashed or failing grep) is a per-file scan error, exit 2. A finding still takes precedence, with exit 1.
+- **R2:** `build_image.sh` runs the work-dir entry, `lb config` and `lb build` as separately checked steps. A failed entry or `lb config` stops the wrapper before `lb build`. A failed attempt leaves only `build.log`.
+- **Regression sensitivity:** the 12 new tests at `ac36295` gave 8 failures, all fault controls; the positive controls passed. At `526bacc` all of them pass. Fault injection is non-root and synthetic, so it is not image-build evidence.
+- **Affected checks at `526bacc`:** PASS, as non-root in a disposable Debian 13 amd64 container and again in a clean Debian 13.7 amd64 VM (TCG):
+  - static checks
+  - 82 static tests, 0 skipped
+  - package build, lintian exit 0
+  - 8 package tests
+- **Image and boot at `526bacc`:**
+  - Real image build in the VM: PASS, 1321 s. ISO sha256 `ed1165d57926f2521d629d0b10430f4bf4e2938410ea2bdfb433849c9e3da71d`.
+  - 17 image tests: PASS.
+  - Host-QEMU BIOS boot to `debian login:`: PASS, 44.6 s.
+  - 18 boot tests: PASS.
+  - UEFI, native hardware and GitHub Actions: NOT_RUN.
+- **Evidence:** `docs/evidence/M0-repository-build-baseline/rework_526bacc/`.
+- **Next owner:** Codex, for renewed independent review. The owner holds the GitHub Actions gate. Acceptance checkboxes above are unchanged: CI is still open and Codex approval is still open.
 
 ## Security considerations
 

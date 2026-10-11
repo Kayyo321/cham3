@@ -9,7 +9,7 @@
 - **Inspected base commit:** `26eada8258eca60935319520c05917a8a547cdbf`.
 - **Task preparation commit:** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (parent `26eada8`). It adds the M0-001 task record and this status update. The working tree was clean when implementation started.
 - **Implementation evidence (branch `task/M0-repository-build-baseline`, implementation commit `5ae0dc5`):** a Debian live-build configuration for a minimal Debian 13 amd64 live development image; build, static-check and secret-scan scripts; a documentation-only `cham3-base` M0 skeleton package; a QEMU boot-test harness; `unittest` suites; a GitHub Actions workflow; and `docs/engineering/developer_setup.md`. There is no cham3 product functionality: no services, enforcement, contracts, sandboxing, networking modes, desktop or installer.
-- **Current milestone/task:** M0-001 is IN_PROGRESS for rework of R1/R2 (after CHANGES_REQUESTED) on branch `task/M0-repository-build-baseline-rework`, based on `86600a3`. Codex reviewed exact target `82b0cfcf255672ce58c15ad32a5aad201bbde7bd`; two confirmed defects require implementation fixes and renewed independent review. GitHub Actions execution remains open. M0 is not complete.
+- **Current milestone/task:** M0-001 is IN_REVIEW for the R1/R2 rework. Codex previously returned CHANGES_REQUESTED at `82b0cfc`. The fixes are in `526bacc` on the unmerged branch `task/M0-repository-build-baseline-rework`. The revised target awaits renewed independent Codex review. GitHub Actions execution remains open. M0 is not complete.
 
 ## Verified state
 
@@ -26,6 +26,12 @@
   - Independent Codex checks at `82b0cfc`: PASS for static checks, 70 static tests with zero skips, package build/lintian and 8 package tests as non-root in an unprivileged disposable Debian trixie linux/amd64 container under emulation; 14 boot-classifier unit tests PASS on the host.
   - Independent failure-path probes: FAIL for R1 (scanner reports PASS with grep missing) and R2 (build wrapper continues after configuration failure and reports PASS). Probes used only synthetic fixtures/fault injection; they are not real image or enforcement tests.
   - Independent GitHub query: workflow-specific query BLOCKED by HTTP 404; branch-wide query PASS with no runs (`[]`). No exact-target passing GitHub Actions evidence is available.
+- **Rework status (M0-001, `526bacc`):**
+  - PASS, as non-root in a disposable Debian 13.3 amd64 container and in a clean Debian 13.7 amd64 VM (TCG): static checks, 82 static tests (0 skipped), package build (lintian exit 0) and 8 package tests.
+  - PASS in the VM: real image build (ISO sha256 `ed1165d57926f2521d629d0b10430f4bf4e2938410ea2bdfb433849c9e3da71d`) and 17 image tests.
+  - PASS: host-QEMU BIOS boot to a login prompt, and 18 boot tests.
+  - R1/R2 regression controls: 8 failures before the fix (`ac36295`), all pass after it. They are synthetic fault injection, not image or enforcement tests.
+  - GitHub Actions, UEFI and native hardware: NOT_RUN.
 - **Boot/image status (M0-001):**
   - PASS: the image booted to a serial login prompt in a disposable QEMU TCG VM (SeaBIOS, no disk, no network) on the macOS arm64 host.
   - UEFI and hardware boot: NOT_RUN.
@@ -35,8 +41,8 @@
 
 - **Implemented functionality:** M0 build and repository foundations only, on an unmerged branch under review. No cham3 product functionality from `PROJECT.md` is implemented.
 - **Partial functionality:** Unknown.
-- **Known defects:** Two independent Codex findings are open at `82b0cfc`: R1 (Medium), scanner accepts search-tool execution failures other than grep status 2 (`build/scripts/scan_secrets.sh:71-75`); R2 (Medium), root image wrapper loses configuration failure inside its guarded pipeline (`build/scripts/build_image.sh:97-102`). Both have independent reproductions in `docs/reviews/M0-repository-build-baseline-codex.md`. Earlier internal-review fixes do not resolve these findings.
-- **Active tasks / pending reviews:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is IN_PROGRESS (R1/R2 rework after CHANGES_REQUESTED). Current owner is IMPLEMENTER for R1/R2 fixes and sensitive regression tests, then coordinator for a revised handoff and renewed independent review. Owner retains the open GitHub Actions gate; approval, integration and post-merge checks remain required.
+- **Known defects:** Codex findings R1 (Medium, scanner accepted grep execution failures) and R2 (Medium, image wrapper lost `lb config`/work-dir failures) were found at `82b0cfc`. Proposed fixes are in `526bacc`, with regression tests that fail on the reviewed scripts (`ac36295`) and pass after the fix. They remain open until Codex verifies them. Evidence: `docs/handoffs/M0-repository-build-baseline-rework.md`.
+- **Active tasks / pending reviews:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is IN_REVIEW: the R1/R2 rework is pending renewed independent Codex review. The owner retains the open GitHub Actions gate. Approval, integration and post-merge checks remain required.
 - **Architectural blockers:** Details left open by `PROJECT.md` require ADRs before dependent implementation, including concrete app identity/attribution mechanism, resource-specific mediation boundaries, network backend interfaces, and operational key recovery details.
 
 ## Recommended next work
