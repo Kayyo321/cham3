@@ -1,0 +1,8 @@
+#!/bin/sh
+# Purpose: clean live-build state in the current work directory only (M1 desktop).
+# Removes generated config files in addition to what "lb clean" removes; the
+# committed inputs (auto/, config/package-lists, ...) are kept.
+set -eu
+
+lb clean noauto "${@}"
+rm -f config/binary config/bootstrap config/chroot config/common config/source
