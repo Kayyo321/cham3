@@ -4,6 +4,11 @@ The live root filesystem is read from the ISO with xorriso and listed or read
 with unsquashfs. Both are read-only; nothing is mounted or installed on the
 host. Missing ISO or tools FAIL (M0 convention). Runtime behavior (session type,
 panel geometry, rendering) is NOT covered here; that is a VM boot-stage check.
+
+The real-ISO test (image_contents_t) is a Codex Remote heavy gate and needs the
+built ISO. The fixture controls (image_contents_fixture_t) run without an ISO and
+check the gate's logic, including that the superseded session and wallpaper names
+do not satisfy it.
 """
 
 import atexit
@@ -22,10 +27,18 @@ import m1_support  # noqa: E402
 
 SquashfsMember = "/live/filesystem.squashfs"
 StatusMember = "var/lib/dpkg/status"
-PlasmaSessionFile = "usr/share/wayland-sessions/plasmawayland.desktop"
+# Names the candidate packages actually install (F4). The session is the Debian
+# Plasma 6 Wayland session that the 0086-cham3-sddm-wayland component selects
+# (Session=plasma.desktop). The wallpaper image is installed by
+# packaging/cham3-desktop/debian/rules as contents/images/3840x2160.png under the
+# Cham3 wallpaper package, and its metadata.json by debian/install. The cross-check
+# in test_m1_static_packaged_paths.py ties these literals to those sources.
+PlasmaSessionFile = m1_support.PackagedPlasmaSession
 ColorSchemeFile = "usr/share/color-schemes/Cham3Dark.colors"
 LookAndFeelMetadata = "usr/share/plasma/look-and-feel/org.cham3.desktop/metadata.json"
-WallpaperImage = "usr/share/wallpapers/Cham3/contents/images/cham3_minimal_charcoal.png"
+WallpaperImage = m1_support.PackagedWallpaperImage
+WallpaperMetadata = m1_support.PackagedWallpaperMetadata
+RequiredFiles = (PlasmaSessionFile, ColorSchemeFile, LookAndFeelMetadata, WallpaperImage, WallpaperMetadata)
 BackendBinaryPattern = re.compile(r"^(usr/)?(s?bin|lib(exec)?)/cham3[-_]")
 SystemdUnitPattern = re.compile(r"^(usr/)?lib/systemd/system/cham3[-_]")
 KaliSourcePattern = re.compile(r"(?i)kali")
@@ -91,7 +104,7 @@ def contents_problems(paths, installed, apt_source_texts):
         meta = "usr/share/plasma/plasmoids/%s/metadata.json" % plugin_id
         if meta not in paths:
             problems.append("plasmoid not installed: " + meta)
-    for required in (PlasmaSessionFile, ColorSchemeFile, LookAndFeelMetadata, WallpaperImage):
+    for required in RequiredFiles:
         if required not in paths:
             problems.append("required file missing from image: " + required)
     for path in sorted(paths):
@@ -125,8 +138,13 @@ class image_contents_t(unittest.TestCase):
 class image_contents_fixture_t(unittest.TestCase):
     """Positive and negative controls for contents_problems()."""
 
+    # The names an earlier fixture used. The candidate never shipped them, so a
+    # gate that accepts them would pass a real image that lacks the actual files.
+    SupersededSessionFile = "usr/share/wayland-sessions/plasmawayland.desktop"
+    SupersededWallpaper = "usr/share/wallpapers/Cham3/contents/images/cham3_minimal_charcoal.png"
+
     def clean_paths(self):
-        paths = {PlasmaSessionFile, ColorSchemeFile, LookAndFeelMetadata, WallpaperImage}
+        paths = set(RequiredFiles)
         for component in m1_support.Cham3PlasmoidComponents:
             paths.add("usr/share/plasma/plasmoids/%s%s/metadata.json" % (m1_support.Cham3Namespace, component))
         return paths
@@ -160,6 +178,31 @@ class image_contents_fixture_t(unittest.TestCase):
     def test_missing_metapackage_is_caught(self):
         problems = contents_problems(self.clean_paths(), {m1_support.PackageDesktop}, {})
         self.assertTrue(any("cham3-full" in p for p in problems), problems)
+
+    def test_missing_real_session_file_is_caught(self):
+        paths = self.clean_paths() - {PlasmaSessionFile}
+        problems = contents_problems(paths, self.clean_installed(), {})
+        self.assertTrue(any(PlasmaSessionFile in p for p in problems), problems)
+
+    def test_missing_real_wallpaper_is_caught(self):
+        paths = self.clean_paths() - {WallpaperImage}
+        problems = contents_problems(paths, self.clean_installed(), {})
+        self.assertTrue(any(WallpaperImage in p for p in problems), problems)
+
+    def test_missing_wallpaper_metadata_is_caught(self):
+        paths = self.clean_paths() - {WallpaperMetadata}
+        problems = contents_problems(paths, self.clean_installed(), {})
+        self.assertTrue(any(WallpaperMetadata in p for p in problems), problems)
+
+    def test_superseded_names_do_not_satisfy_the_gate(self):
+        # Only the wrong session and wallpaper names present: both real files are missing.
+        paths = (self.clean_paths() - {PlasmaSessionFile, WallpaperImage}) | {
+            self.SupersededSessionFile,
+            self.SupersededWallpaper,
+        }
+        problems = contents_problems(paths, self.clean_installed(), {})
+        self.assertTrue(any(PlasmaSessionFile in p for p in problems), problems)
+        self.assertTrue(any(WallpaperImage in p for p in problems), problems)
 
 
 if __name__ == "__main__":
