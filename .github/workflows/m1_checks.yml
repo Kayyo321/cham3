@@ -1,0 +1,89 @@
+# M1 desktop checks: static + desktop (panel/plasmoid/package/naming/inert-state)
+# and the cham3-desktop/cham3-full package build. Uses no secrets and no
+# production credentials. The heavy M1 gates (real desktop ISO build, graphical
+# Plasma 6 Wayland boot, disk install and installed-system boot) are NOT run
+# here; they are performed on Codex Remote per the M1 handoff, because a serial
+# CI runner cannot show a graphical session. Results from these jobs are
+# development evidence only and prove no M2-M4 security enforcement.
+name: m1_checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CHAM3_OUT_DIR: ${{ github.workspace }}/out
+  CHAM3_REPO_ROOT: ${{ github.workspace }}
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  static_and_desktop:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Mark workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install build host packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends $(grep -v '^#' build/host_packages.txt) desktop-file-utils
+      # Non-root user so root-sensitive M0 static tests run rather than skip.
+      - name: Create unprivileged user
+        run: |
+          useradd --create-home --uid 1000 builder
+          chown -R builder: "$GITHUB_WORKSPACE"
+          runuser -u builder -- env HOME=/home/builder git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Static checks
+        env:
+          HOME: /home/builder
+        run: runuser -u builder -- build/scripts/run_static_checks.sh
+      - name: Static check tests
+        env:
+          HOME: /home/builder
+        run: runuser -u builder -- tests/run_tests.sh static
+      - name: Desktop (M1) static tests
+        env:
+          HOME: /home/builder
+        run: runuser -u builder -- tests/run_tests.sh desktop
+
+  package_build:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Mark workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install build host packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends $(grep -v '^#' build/host_packages.txt) desktop-file-utils
+      - name: Build packages (cham3-base, cham3-desktop, cham3-full) and run lintian
+        run: build/scripts/build_packages.sh
+      - name: Package tests
+        run: tests/run_tests.sh packages
+      - name: Upload package results
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        with:
+          name: m1_packages
+          path: out/packages
+          retention-days: 7
