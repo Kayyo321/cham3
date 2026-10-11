@@ -1,7 +1,7 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** MERGED (owner-authorized merge `2bb14924aef910d762811a32de0b1bbbf864b2af` into local `origin`; exact-target review/CI passed; remote push and post-merge verification follow)
-- **Next owner / action:** Codex INTEGRATOR publishes `origin` and records post-merge GitHub Actions. DONE/M0 completion remains pending until post-merge checks pass.
+- **State:** DONE (owner-authorized merge `2bb14924aef910d762811a32de0b1bbbf864b2af` published to remote `origin`; all acceptance criteria and post-merge GitHub Actions PASS)
+- **Next owner / action:** Owner/coordinator plans the next milestone. M0-001 is complete within its narrow scope; package metadata/license decisions remain required before release publication.
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -87,9 +87,7 @@ Status after independent rereview. Evidence is in `docs/handoffs/M0-repository-b
 - **Evidence and limits:** committed provenance source, ISO digest binding, committed-byte checksums, config hashes, epoch and manifest consistency PASS. Serial-log classification and 14 classifier unit tests PASS. Independent full image/real boot rerun NOT_RUN; author VM records remain qualified evidence. Full commands and limits: `docs/reviews/M0-repository-build-baseline-codex-rereview.md`.
 - **Remaining gate / next owner:** Owner supplies passing GitHub Actions for the exact reviewed commit. Independent `gh run list --branch task/M0-repository-build-baseline-rework --json databaseId,headSha,conclusion,status,url,workflowName` returned `[]` (query PASS, CI NOT_RUN). Task is IN_VERIFICATION; no READY_TO_MERGE, merge, push or M0 completion claim.
 
-## Security considerations
-
-### Owner-authorized integration (2026-10-11)
+## Owner-authorized integration (2026-10-11)
 
 - Scope: approved M0 rework and review/status records, plus the requested `.DS_Store` ignore rule. Unrelated artwork/ADR branches and dirty primary files are excluded. Primary and author/reviewer worktrees are preserved.
 - Integration base: `d988253caf8e1ba55b4dc45764f6ec3e51fd2803`, local `origin` tracking remote `origin/origin`. Candidate branch `codex/m0-origin-ready` in `../cham3-worktrees/M0-001-final-integration`, from reviewed-record tip `f5439cc604dae3dc6b9c4901890c4b676abd3d34`.
@@ -98,7 +96,12 @@ Status after independent rereview. Evidence is in `docs/handoffs/M0-repository-b
 - GitHub-hosted ephemeral `ubuntu-latest` runners, `debian:trixie` amd64 containers: PASS for `build/scripts/run_static_checks.sh`, 82 static tests as non-root builder, unsigned package build/lintian exit 0, 8 package tests, real live-build image, 17 image tests, disposable QEMU boot and 18 boot tests. Image job is privileged only inside that ephemeral runner; no privileged host changes or production secrets were used.
 - `.DS_Store` rule ported in `827d872de9fd57ccd42feb244e0afd42f2300c4f` while preserving existing M0 ignore rules. `git check-ignore` PASS for root/nested paths; `git ls-files '*DS_Store*'` returns no tracked files in the candidate. The original cleanup commit `1230d2a` also untracks three files on the separate artwork-based branch, preserving disk files; its unrelated ancestors are not merged.
 - All acceptance gates were recorded in READY_TO_MERGE commit `833c39b88ebbbb50c0eeb54776158b9d610afe9a`. `git merge --no-ff codex/m0-origin-ready` then produced merge `2bb14924aef910d762811a32de0b1bbbf864b2af`, with first parent `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` and candidate parent `833c39b88ebbbb50c0eeb54776158b9d610afe9a`. No conflicts or implementation edits.
-- Post-merge GitHub Actions will run on the published branch. Required post-merge checks remain pending; MERGED does not mean DONE or product security enforcement.
+- Published default branch with `git push origin refs/heads/origin:refs/heads/origin`, advancing remote `origin` to `3484304e5f6b744de66375f78494df65393e7949`. `git ls-remote --heads origin origin` independently confirmed the exact remote tip. No force push.
+- Post-merge verification: **PASS**, [GitHub Actions run 38173598602](https://github.com/Kayyo321/cham3/actions/runs/38173598602) at `3484304e5f6b744de66375f78494df65393e7949`. All three jobs succeeded in disposable GitHub-hosted runners: static checks/82 tests, unsigned package build/lintian/8 tests, real image build/17 image tests/QEMU boot/18 boot tests. Commands, job/step metadata, log summaries and artifact metadata: `docs/evidence/M0-repository-build-baseline/postmerge_ci_3484304.json`.
+- Source integrity: `git diff --exit-code 8029ccd HEAD -- build/ tests/ packaging/ .github/` PASS, confirming reviewed implementation unchanged. Ignore-path checks and absence of tracked `.DS_Store` files PASS; final integration worktree is clean. The primary checkout retains its pre-existing dirty artwork and folder metadata.
+- After post-merge success, this documentation-only completion record sets DONE. Full-image results apply to the exact tested commit above; historical reviews, author VM evidence and limitations remain unchanged. M0 completion establishes development build/repository foundations, not product enforcement, desktop/installer delivery, hardware compatibility or reproducibility.
+
+## Security considerations
 
 - Build definitions, package metadata, and CI affect the distribution supply chain and require independent review.
 - Do not put production signing keys, user signing keys, tokens, or other secrets in the repository, ordinary CI, logs, or build artifacts.

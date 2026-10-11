@@ -5,11 +5,11 @@
 ## Repository
 
 - **Project specification:** `PROJECT.md` exists and is the canonical product specification.
-- **Branch:** the default branch `origin` (tracking `origin/origin`) now contains M0-001 locally, merge `2bb14924aef910d762811a32de0b1bbbf864b2af`. Publication and post-merge verification follow.
+- **Branch:** the default branch `origin` (tracking `origin/origin`) contains M0-001, owner-authorized merge `2bb14924aef910d762811a32de0b1bbbf864b2af`, published and verified at `3484304e5f6b744de66375f78494df65393e7949`. This later completion record changes documentation only.
 - **Inspected base commit:** `26eada8258eca60935319520c05917a8a547cdbf`.
 - **Task preparation commit:** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (parent `26eada8`). It adds the M0-001 task record and this status update. The working tree was clean when implementation started.
 - **Implementation evidence (branch `task/M0-repository-build-baseline`, implementation commit `5ae0dc5`):** a Debian live-build configuration for a minimal Debian 13 amd64 live development image; build, static-check and secret-scan scripts; a documentation-only `cham3-base` M0 skeleton package; a QEMU boot-test harness; `unittest` suites; a GitHub Actions workflow; and `docs/engineering/developer_setup.md`. There is no cham3 product functionality: no services, enforcement, contracts, sandboxing, networking modes, desktop or installer.
-- **Current milestone/task:** M0-001 is MERGED locally into `origin` under the owner's 2026-10-11 authorization, merge `2bb14924aef910d762811a32de0b1bbbf864b2af`. Codex approval and exact-target GitHub Actions passed at `8029ccd`. R1/R2 are resolved and all acceptance criteria have evidence. Codex INTEGRATOR handles publication and post-merge CI; M0 completion remains pending.
+- **Current milestone/task:** M0-001 is DONE. Codex approval and exact-target GitHub Actions passed at `8029ccd`; owner-authorized merge and remote push completed; post-merge GitHub Actions passed at `3484304e5f6b744de66375f78494df65393e7949`. R1/R2 are resolved, all acceptance criteria have evidence, and M0 build/repository foundations are complete. Later product milestones remain unimplemented.
 
 ## Verified state
 
@@ -47,16 +47,17 @@
 ## Implementation, defects, reviews
 
 - **Exact-target GitHub Actions gate:** PASS, [run 38173172929](https://github.com/Kayyo321/cham3/actions/runs/38173172929) at `8029ccdde09b205c9a477d5e6745716b9242cdfb`. All three jobs succeeded: static checks/82 tests, unsigned package build/lintian/8 tests, real image build/17 image tests/QEMU boot/18 boot tests. Evidence: `docs/evidence/M0-repository-build-baseline/ci_8029ccd.json`. Earlier NOT_RUN observations above are historical. Privileged image work ran only on a disposable GitHub-hosted runner. No runtime enforcement or bit-for-bit reproducibility claim.
+- **Post-merge GitHub Actions:** PASS, [run 38173598602](https://github.com/Kayyo321/cham3/actions/runs/38173598602) at default-branch commit `3484304e5f6b744de66375f78494df65393e7949`. All three jobs succeeded with static checks/82 tests, package build/lintian/8 tests, real image build/17 tests, QEMU boot/18 tests. Evidence: `docs/evidence/M0-repository-build-baseline/postmerge_ci_3484304.json`. Build scripts/tests/packaging/workflow remain identical to the reviewed target. `.DS_Store` is ignored at every depth and none are tracked on this branch.
 
-- **Implemented functionality:** M0 build and repository foundations only, merged locally into `origin`. No cham3 product functionality from `PROJECT.md` is implemented.
+- **Implemented functionality:** M0 build and repository foundations only, merged and published on `origin` with post-merge CI PASS. No cham3 product functionality from `PROJECT.md` is implemented.
 - **Partial functionality:** Unknown.
 - **Known defects:** R1/R2 from `82b0cfc` are closed by independent rereview at `8029ccd`; no new confirmed scoped defects. Existing concerns and verification limits remain in `docs/reviews/M0-repository-build-baseline-codex-rereview.md`.
-- **Active tasks / pending gates:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is MERGED with Codex approval and exact-target CI recorded. Next owner: Codex INTEGRATOR for remote push and post-merge checks. DONE has not been set.
+- **Active tasks / pending gates:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is DONE; no remaining M0 acceptance gates. Owner/coordinator selects the next milestone. Publication metadata decisions, architectural ADRs and existing review follow-ups remain outside this completed task.
 - **Architectural blockers:** Details left open by `PROJECT.md` require ADRs before dependent implementation, including concrete app identity/attribution mechanism, resource-specific mediation boundaries, network backend interfaces, and operational key recovery details.
 
 ## Recommended next work
 
-1. Complete the owner-authorized merge/push and record post-merge checks. Material implementation changes require renewed review. Resolve package metadata and license placeholders before publication. M0 remains incomplete until post-merge verification succeeds. Historical reviews remain unchanged.
+1. Owner/coordinator plans the next milestone from the completed M0 baseline. Resolve package metadata and license placeholders before release publication. Material implementation changes require renewed review. Historical reviews remain unchanged.
 2. Before cryptographic or privileged implementation, split specification details into owner-approved ADRs and define testable interfaces.
 
 Do not update this status based on plans, generated code claims, or chat summaries alone. Link commits, files, and test artifacts for any new implementation claim.
