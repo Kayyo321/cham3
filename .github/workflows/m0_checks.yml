@@ -36,10 +36,20 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends $(grep -v '^#' build/host_packages.txt)
+      # Non-root user: tests needing an unprivileged user (F1 unreadable file, I6 path guards) skip as root.
+      - name: Create unprivileged user
+        run: |
+          useradd --create-home --uid 1000 builder
+          chown -R builder: "$GITHUB_WORKSPACE"
+          runuser -u builder -- env HOME=/home/builder git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Static checks
-        run: build/scripts/run_static_checks.sh
+        env:
+          HOME: /home/builder
+        run: runuser -u builder -- build/scripts/run_static_checks.sh
       - name: Static check tests
-        run: tests/run_tests.sh static
+        env:
+          HOME: /home/builder
+        run: runuser -u builder -- tests/run_tests.sh static
 
   package_build:
     runs-on: ubuntu-latest
