@@ -1,6 +1,6 @@
 # Developer Setup: M0 Build Baseline
 
-> **Note:** Commands in this document reflect the M0-001 implementation at commit `62a8c6e` of the integration branch. Verification evidence for M0-001 is recorded in the task handoff, `docs/handoffs/M0-repository-build-baseline.md`. No command in this document is claimed as verified here; check the handoff for results.
+> **Note:** Commands in this document reflect the M0-001 implementation on branch `task/M0-repository-build-baseline`. Verification evidence for M0-001 is recorded in the task handoff, `docs/handoffs/M0-repository-build-baseline.md`. No command in this document is claimed as verified here; check the handoff for results.
 
 ## Scope
 
@@ -61,7 +61,7 @@ sudo apt-get install --no-install-recommends $(grep -v '^#' build/host_packages.
 
 The list covers `git`, `ca-certificates`, `python3`, `file`, `rsync`, `shellcheck`, `yamllint`, `build-essential`, `debhelper`, `dpkg-dev`, `fakeroot`, `lintian`, `live-build`, `debootstrap`, `squashfs-tools`, `xorriso`, `cpio`, and `qemu-system-x86`.
 
-`build-essential` is listed, but the `cham3-base` package declares only `debhelper-compat (= 13)` in `Build-Depends`. The implementation does not record why `build-essential` is listed. It is not required by that declared build dependency.
+`build-essential` is listed although `cham3-base` declares only `debhelper-compat (= 13)` in `Build-Depends`. It is listed because it is an implicit build dependency. Debian Policy section 4.2 ("Package relationships") says it is not necessary to declare relationships on a minimal set of packages, and that the required packages are called build-essential ([Debian Policy 4.2](https://www.debian.org/doc/debian-policy/ch-source.html#package-relationships)). The dpkg tools add it themselves: on Debian, `Dpkg::Vendor::Debian` returns `build-essential:native` from the `builtin-build-depends` hook, and `dpkg-checkbuilddeps` and `dpkg-genbuildinfo` prepend that hook to the declared Build-Depends. Without build-essential installed, `dpkg-checkbuilddeps` on the `cham3-base` control file fails with `unmet build dependencies: build-essential:native` (reproduced on dpkg-dev 1.22.22, trixie, 2026-10-11). Keep it in the host package list.
 
 Debian 13 trixie package versions shown on packages.debian.org on 2026-10-11:
 
@@ -192,7 +192,7 @@ tests/run_tests.sh boot
 
 The image keeps Debian live-config defaults. The live-config package at trixie (`11.0.5`) uses the username `user` and sets the password to `live` when no override is given (`/usr/lib/live/config/0030-user-setup`, comment "Default password is: live"). Anyone who knows these defaults can log in. The image is a development artifact. **Do not run it on or expose it to untrusted networks.**
 
-The image is not hardened and is not a cham3 system. Whether the default live user has `sudo` access is **not confirmed** by the sources reviewed for this document; check the built image before relying on it either way.
+The image is not hardened and is not a cham3 system. The `sudo` package is not installed in the M0 image: the live-build package manifest `cham3-m0-dev-amd64.packages` from the implementer's build at `157f092` lists 159 packages and has no `sudo` entry. Each build's `.packages` manifest is the authority for what that build contains.
 
 ## Output directory and cleanup
 
@@ -249,11 +249,9 @@ Jobs:
 
 1. `static_checks`: `build/scripts/run_static_checks.sh`, then `tests/run_tests.sh static`.
 2. `package_build`: `build/scripts/build_packages.sh`, then `tests/run_tests.sh packages`. Uploads `out/packages` as artifact `m0_packages` with 7-day retention.
-3. `image_build`: runs in a **`--privileged`** container, with a 120-minute timeout. It runs `build/scripts/build_packages.sh`, then `build/scripts/build_image.sh`, then `tests/run_tests.sh image`, then `build/vm/run_boot_test.py --iso out/image/cham3-m0-dev-amd64.iso --out-dir out/boot_test --accel auto --timeout-seconds 1800`. Uploads `out/image` and `out/boot_test` as artifact `m0_image` with 3-day retention.
+3. `image_build`: runs in a **`--privileged`** container, with a 120-minute timeout. It runs, in order: `build/scripts/build_packages.sh`; `build/scripts/build_image.sh`; `tests/run_tests.sh image`; `build/vm/run_boot_test.py --iso out/image/cham3-m0-dev-amd64.iso --out-dir out/boot_test --accel auto --timeout-seconds 1800`; then `tests/run_tests.sh boot` as the "Boot result tests" step. Uploads `out/image` and `out/boot_test` as artifact `m0_image` with 3-day retention.
 
 The `--privileged` option is needed because live-build mounts filesystems in its chroot. The job runs with a read-only token and no secrets, but it is still a privileged job.
-
-**The image job does not yet run `tests/run_tests.sh boot` at commit `62a8c6e`.** That step is being added and will be documented once it is in the workflow.
 
 **This workflow has not yet been executed on GitHub as part of M0-001.** Any CI result is recorded in the task handoff after it runs.
 
@@ -287,4 +285,8 @@ Retrieved 2026-10-11.
 - GitHub Docs, Using secrets in GitHub Actions (secrets are not passed to workflows triggered from a forked repository): https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions
 - Action tag commits, via `git ls-remote`, 2026-10-11: `actions/checkout` `refs/tags/v5.0.0` = `08c6903cd8c0fde910a37f88322edcfb5dd907a8`; `actions/upload-artifact` `refs/tags/v5.0.0` = `330a01c490aca151604b8cf639adc76d48f6c5d4` (lightweight tags, so the tag SHA is the commit).
 
-Not established by a primary source (unverified): host disk and RAM requirements; whether the default live user has `sudo`; the Debian Live Manual pages at live-team.pages.debian.net, which returned HTTP 404 for the URLs tried.
+- Debian Policy, section 4.2 "Package relationships" (build-essential is an implicit build dependency): https://www.debian.org/doc/debian-policy/ch-source.html#package-relationships (retrieved 2026-10-11). The section number is 4.2, not 7.7 as cited in the coordinator's brief.
+- dpkg-dev `1.22.22` behavior, in `docker run --rm --platform linux/amd64 debian:trixie`, 2026-10-11: `/usr/share/perl5/Dpkg/Vendor/Debian.pm` (`builtin-build-depends` returns `build-essential:native`); `/usr/bin/dpkg-checkbuilddeps` line 104 (prepends the hook to Build-Depends); reproduced failure `dpkg-checkbuilddeps: error: unmet build dependencies: build-essential:native` with the `cham3-base` control file and build-essential not installed. Note: `dpkg-dev` only Recommends build-essential; the reproduction used `--no-install-recommends`.
+- M0-001 image manifest `cham3-m0-dev-amd64.packages` (159 packages, implementer build at `157f092`): contains no `sudo` entry (`grep -i sudo` returned no match), 2026-10-11.
+
+Not established by a primary source (unverified): host disk and RAM requirements; the Debian Live Manual pages at live-team.pages.debian.net, which returned HTTP 404 for the URLs tried.
