@@ -1,6 +1,7 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** IN_REVIEW (R1/R2 rework submitted for renewed Codex review; branch `task/M0-repository-build-baseline-rework`, worktree `../cham3-worktrees/M0-001-rework`, rework base `86600a3d2be7318e55a777b98a79e17621af6a81`, tested implementation `526bacccdc3c38e8d61a15cb8e50af85d4cc7557`; handoff `docs/handoffs/M0-repository-build-baseline-rework.md`)
+- **State:** IN_VERIFICATION (Codex APPROVE at exact target `8029ccdde09b205c9a477d5e6745716b9242cdfb`; R1/R2 resolved; GitHub Actions is the remaining acceptance gate)
+- **Next owner / action:** Owner records a passing GitHub Actions run for the exact reviewed commit. No push or merge performed. READY_TO_MERGE requires all acceptance gates; DONE/M0 completion requires owner-approved merge and post-merge checks.
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -32,22 +33,22 @@ Establish repeatable M0 development entry points and evidence by adding the init
 
 ## Acceptance criteria
 
-Status as of the handoff. Evidence is in `docs/handoffs/M0-repository-build-baseline.md` and `docs/evidence/M0-repository-build-baseline/`.
+Status after independent rereview. Evidence is in `docs/handoffs/M0-repository-build-baseline-rework.md`, `docs/evidence/M0-repository-build-baseline/rework_526bacc/` and `docs/reviews/M0-repository-build-baseline-codex-rereview.md`.
 
 - [x] The task implementation is on a task-specific branch based on the recorded baseline, and the exact branch, worktree and target commit are recorded.
 - [x] A clean checkout can follow the documented developer instructions to build the initial M0 image and package artifacts, without undocumented host state or production credentials.
-  - Evidence: PASS in a disposable Debian 13.7 amd64 VM at `5ae0dc5`.
+  - Author-recorded evidence: PASS in a disposable Debian 13.7 amd64 VM at `526bacccdc3c38e8d61a15cb8e50af85d4cc7557`; independently inspected for consistency. Independent package build PASS at the exact review target; independent full image rerun NOT_RUN.
   - Limitation: the VM's CPU is emulated (QEMU TCG); no native-hardware build was run.
 - [x] The build definition uses Debian live-build, records material inputs, tool versions and provenance, and makes no unsupported bit-for-bit reproducibility claim.
 - [x] The minimal package skeleton builds, and its metadata and dependencies are documented accurately. It does not advertise absent cham3 functionality.
 - [ ] CI runs the applicable static checks and package/build validation without production secrets, and exact CI and local check results are recorded.
-  - Local and CI-equivalent results: PASS.
-  - GitHub Actions execution: NOT_RUN, because the branch was not published. **Open.**
+  - Independent local checks at `8029ccd`: PASS; they do not satisfy GitHub Actions execution.
+  - GitHub Actions execution: NOT_RUN. Independent branch-wide query returned `[]`; no passing exact-target run is evidenced. **Open.**
 - [x] A boot attempt of the initial image is performed in a disposable VM, recording the artifact identity, VM environment, result and limitations.
-  - PASS on QEMU TCG (BIOS) to a serial login prompt. ISO sha256 `060382a0…0bf1478`.
+  - Author-recorded PASS on QEMU TCG (BIOS) to a serial login prompt at `526bacc`. ISO sha256 `ed1165d57926f2521d629d0b10430f4bf4e2938410ea2bdfb433849c9e3da71d`; independently confirmed consistency across committed records and classified the serial log. Independent real boot rerun NOT_RUN.
 - [x] `docs/STATUS.md` reflects only evidence from the task and distinguishes M0 work from later milestones.
 - [x] A durable handoff under `docs/handoffs/` uses `docs/templates/HANDOFF.md` and identifies the exact base and target commits, verification outcomes, risks, review state and next action.
-- [ ] Codex independently reviews and approves the exact target commit. Codex reviewed `82b0cfcf255672ce58c15ad32a5aad201bbde7bd` and returned **CHANGES_REQUESTED**. Review: `docs/reviews/M0-repository-build-baseline-codex.md`, commit `fc2c342e6fdf35476016c9f676167fdbbc354eb7`. The approval gate remains open; R1/R2 require repair, verification and renewed independent review.
+- [x] Codex independently reviews and approves the exact target commit. **APPROVE** at `8029ccdde09b205c9a477d5e6745716b9242cdfb`; R1/R2 independently verified resolved. Review: `docs/reviews/M0-repository-build-baseline-codex-rereview.md`, commit `59b361651a6d5cbc0ecb91c5fc5e184ebee2eb3d`. The earlier CHANGES_REQUESTED review at `82b0cfc` is preserved as history.
 
 ### Independent Codex review (2026-10-11)
 
@@ -76,7 +77,15 @@ Status as of the handoff. Evidence is in `docs/handoffs/M0-repository-build-base
   - 18 boot tests: PASS.
   - UEFI, native hardware and GitHub Actions: NOT_RUN.
 - **Evidence:** `docs/evidence/M0-repository-build-baseline/rework_526bacc/`.
-- **Next owner:** Codex, for renewed independent review. The owner holds the GitHub Actions gate. Acceptance checkboxes above are unchanged: CI is still open and Codex approval is still open.
+- **Next owner at submission:** Codex, for renewed independent review. The owner holds the GitHub Actions gate. At submission, CI and Codex approval were open; the rereview below closes only the approval gate.
+
+### Independent Codex rereview (2026-10-11)
+
+- **Verdict / exact target:** APPROVE at `8029ccdde09b205c9a477d5e6745716b9242cdfb`, from rework base `86600a3d2be7318e55a777b98a79e17621af6a81`; tested implementation `526bacccdc3c38e8d61a15cb8e50af85d4cc7557`. No new confirmed scoped defects; R1/R2 closed.
+- **Independent checks:** PASS for static checks, 82 static tests (zero skips), real unsigned package build/lintian and 8 package tests as non-root in an unprivileged disposable `debian:trixie` linux/amd64 container under emulation. Both original failure probes now satisfy the requirements. Additional non-root checks confirm failed entry/configuration leaves only `build.log`.
+- **Sensitivity:** the 30-test scanner/wrapper command independently produces exactly 8 failures at `ac362952b0c11828b4483458a3902b11524a1448`, with positive controls passing, and passes all 30 at `526bacc`. Synthetic fault injection is not image-build evidence.
+- **Evidence and limits:** committed provenance source, ISO digest binding, committed-byte checksums, config hashes, epoch and manifest consistency PASS. Serial-log classification and 14 classifier unit tests PASS. Independent full image/real boot rerun NOT_RUN; author VM records remain qualified evidence. Full commands and limits: `docs/reviews/M0-repository-build-baseline-codex-rereview.md`.
+- **Remaining gate / next owner:** Owner supplies passing GitHub Actions for the exact reviewed commit. Independent `gh run list --branch task/M0-repository-build-baseline-rework --json databaseId,headSha,conclusion,status,url,workflowName` returned `[]` (query PASS, CI NOT_RUN). Task is IN_VERIFICATION; no READY_TO_MERGE, merge, push or M0 completion claim.
 
 ## Security considerations
 
@@ -101,7 +110,7 @@ Status as of the handoff. Evidence is in `docs/handoffs/M0-repository-build-base
 - **Documentation/research owner:** Haiku 5.5 medium subagent; canonical role `TRIAGE`, with narrowly scoped documentation edits explicitly assigned. It must not invent architecture or alter canonical product requirements.
 - **Independent reviewer:** Codex, canonical role `REVIEWER`.
 - **Branch/worktree:** `task/M0-repository-build-baseline`, created from the recorded base commit. Each writing subagent must own a separate worktree/branch with disjoint file ownership. If isolation is unavailable, run write phases serially; do not permit concurrent edits to a shared writable worktree.
-- **Target commit:** implementation commit `5ae0dc526336b7f3c6dec10b94ff4b78f135d593`, which was built and booted. The review target is the docs-only evidence/handoff commit at the tip of `task/M0-repository-build-baseline`; its exact SHA is given in the Codex request. Handoff: `docs/handoffs/M0-repository-build-baseline.md`.
+- **Current target commit:** `8029ccdde09b205c9a477d5e6745716b9242cdfb` on `task/M0-repository-build-baseline-rework`, worktree `../cham3-worktrees/M0-001-rework`, rework base `86600a3d2be7318e55a777b98a79e17621af6a81`. Built/booted implementation `526bacccdc3c38e8d61a15cb8e50af85d4cc7557`; changes after it are docs-only. Handoff: `docs/handoffs/M0-repository-build-baseline-rework.md`. Original implementation and assignment below are historical context.
 - **Setup commits (not implementation):** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (owner task preparation: this record and `docs/STATUS.md`, parent is the recorded base) and the coordinator commit that moved this task to `IN_PROGRESS` and recorded the assignments below.
 
 ### Coordinator assignment (2026-10-11)

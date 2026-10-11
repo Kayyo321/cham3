@@ -1,6 +1,6 @@
 # Development Status
 
-**Evidence snapshot:** 2026-10-11. This file records evidence from task M0-001 (handoff `docs/handoffs/M0-repository-build-baseline.md`) and the independent Codex review `docs/reviews/M0-repository-build-baseline-codex.md` (commit `fc2c342e6fdf35476016c9f676167fdbbc354eb7`).
+**Evidence snapshot:** 2026-10-11. Current task M0-001 evidence: `docs/handoffs/M0-repository-build-baseline-rework.md` and independent Codex rereview `docs/reviews/M0-repository-build-baseline-codex-rereview.md` (commit `59b361651a6d5cbc0ecb91c5fc5e184ebee2eb3d`). The original handoff/review are preserved as historical evidence.
 
 ## Repository
 
@@ -9,7 +9,7 @@
 - **Inspected base commit:** `26eada8258eca60935319520c05917a8a547cdbf`.
 - **Task preparation commit:** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (parent `26eada8`). It adds the M0-001 task record and this status update. The working tree was clean when implementation started.
 - **Implementation evidence (branch `task/M0-repository-build-baseline`, implementation commit `5ae0dc5`):** a Debian live-build configuration for a minimal Debian 13 amd64 live development image; build, static-check and secret-scan scripts; a documentation-only `cham3-base` M0 skeleton package; a QEMU boot-test harness; `unittest` suites; a GitHub Actions workflow; and `docs/engineering/developer_setup.md`. There is no cham3 product functionality: no services, enforcement, contracts, sandboxing, networking modes, desktop or installer.
-- **Current milestone/task:** M0-001 is IN_REVIEW for the R1/R2 rework. Codex previously returned CHANGES_REQUESTED at `82b0cfc`. The fixes are in `526bacc` on the unmerged branch `task/M0-repository-build-baseline-rework`. The revised target awaits renewed independent Codex review. GitHub Actions execution remains open. M0 is not complete.
+- **Current milestone/task:** M0-001 is IN_VERIFICATION. Codex APPROVE at exact target `8029ccdde09b205c9a477d5e6745716b9242cdfb` on the unmerged branch `task/M0-repository-build-baseline-rework`, implementation `526bacccdc3c38e8d61a15cb8e50af85d4cc7557`. R1/R2 are independently verified resolved. The next owner is the owner for the remaining GitHub Actions acceptance gate. M0 is not complete.
 
 ## Verified state
 
@@ -26,12 +26,19 @@
   - Independent Codex checks at `82b0cfc`: PASS for static checks, 70 static tests with zero skips, package build/lintian and 8 package tests as non-root in an unprivileged disposable Debian trixie linux/amd64 container under emulation; 14 boot-classifier unit tests PASS on the host.
   - Independent failure-path probes: FAIL for R1 (scanner reports PASS with grep missing) and R2 (build wrapper continues after configuration failure and reports PASS). Probes used only synthetic fixtures/fault injection; they are not real image or enforcement tests.
   - Independent GitHub query: workflow-specific query BLOCKED by HTTP 404; branch-wide query PASS with no runs (`[]`). No exact-target passing GitHub Actions evidence is available.
-- **Rework status (M0-001, `526bacc`):**
+- **Author-recorded rework status (M0-001, `526bacc`):**
   - PASS, as non-root in a disposable Debian 13.3 amd64 container and in a clean Debian 13.7 amd64 VM (TCG): static checks, 82 static tests (0 skipped), package build (lintian exit 0) and 8 package tests.
   - PASS in the VM: real image build (ISO sha256 `ed1165d57926f2521d629d0b10430f4bf4e2938410ea2bdfb433849c9e3da71d`) and 17 image tests.
   - PASS: host-QEMU BIOS boot to a login prompt, and 18 boot tests.
   - R1/R2 regression controls: 8 failures before the fix (`ac36295`), all pass after it. They are synthetic fault injection, not image or enforcement tests.
   - GitHub Actions, UEFI and native hardware: NOT_RUN.
+- **Independent rereview (`8029ccdde09b205c9a477d5e6745716b9242cdfb`):**
+  - PASS: static checks, 82 static tests (zero skips), real unsigned package build/lintian and 8 package tests as non-root in an unprivileged disposable Debian 13.3 `debian:trixie` linux/amd64 container under emulation.
+  - PASS: original missing-grep probe returns 2; original configuration-failure probe returns 1 and calls only `config`; no ISO published. Additional non-root config/entry-failure assertions leave exactly `build.log`.
+  - Sensitivity PASS: 30 scanner/wrapper tests reproduce 8 failures at tests-only `ac36295`, with positive controls passing; all 30 pass at `526bacc`. Synthetic control-flow coverage only.
+  - PASS: provenance source, ISO digest binding, committed provenance/manifest checksums, config hashes, epoch and manifest consistency; committed serial-log classification; 14 synthetic boot-classifier unit tests.
+  - Independent full image build/real boot rerun: NOT_RUN. Author VM records were inspected; absent raw ISO/build-log bytes were not independently hashed.
+  - GitHub query PASS: `gh run list --branch task/M0-repository-build-baseline-rework --json databaseId,headSha,conclusion,status,url,workflowName` returned `[]`; GitHub Actions execution remains NOT_RUN. No exact-target passing run is evidenced.
 - **Boot/image status (M0-001):**
   - PASS: the image booted to a serial login prompt in a disposable QEMU TCG VM (SeaBIOS, no disk, no network) on the macOS arm64 host.
   - UEFI and hardware boot: NOT_RUN.
@@ -41,13 +48,13 @@
 
 - **Implemented functionality:** M0 build and repository foundations only, on an unmerged branch under review. No cham3 product functionality from `PROJECT.md` is implemented.
 - **Partial functionality:** Unknown.
-- **Known defects:** Codex findings R1 (Medium, scanner accepted grep execution failures) and R2 (Medium, image wrapper lost `lb config`/work-dir failures) were found at `82b0cfc`. Proposed fixes are in `526bacc`, with regression tests that fail on the reviewed scripts (`ac36295`) and pass after the fix. They remain open until Codex verifies them. Evidence: `docs/handoffs/M0-repository-build-baseline-rework.md`.
-- **Active tasks / pending reviews:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is IN_REVIEW: the R1/R2 rework is pending renewed independent Codex review. The owner retains the open GitHub Actions gate. Approval, integration and post-merge checks remain required.
+- **Known defects:** R1/R2 from `82b0cfc` are closed by independent rereview at `8029ccd`; no new confirmed scoped defects. Existing concerns and verification limits remain in `docs/reviews/M0-repository-build-baseline-codex-rereview.md`.
+- **Active tasks / pending gates:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is IN_VERIFICATION with independent Codex approval recorded. Next owner: owner for passing GitHub Actions on the exact reviewed commit. Owner-approved integration and post-merge checks remain required; READY_TO_MERGE and DONE have not been set.
 - **Architectural blockers:** Details left open by `PROJECT.md` require ADRs before dependent implementation, including concrete app identity/attribution mechanism, resource-specific mediation boundaries, network backend interfaces, and operational key recovery details.
 
 ## Recommended next work
 
-1. Repair M0-001 R1/R2, rerun affected checks and obtain renewed independent approval for an exact revised commit. Owner then records passing `m0_checks.yml` on an exact reviewed commit; integrator merges through the owner-approved process and records post-merge checks. Resolve package metadata and license placeholders before publication. M0 remains incomplete throughout these pending gates.
+1. Owner records passing `m0_checks.yml` on exact reviewed commit `8029ccdde09b205c9a477d5e6745716b9242cdfb`; integrator then follows the owner-approved merge process and records post-merge checks. Material implementation changes require renewed review. Resolve package metadata and license placeholders before publication. M0 remains incomplete throughout these pending gates. No push or merge was performed in this rereview.
 2. Before cryptographic or privileged implementation, split specification details into owner-approved ADRs and define testable interfaces.
 
 Do not update this status based on plans, generated code claims, or chat summaries alone. Link commits, files, and test artifacts for any new implementation claim.
