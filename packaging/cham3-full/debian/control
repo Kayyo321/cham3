@@ -1,0 +1,50 @@
+Source: cham3-full
+Section: metapackages
+Priority: optional
+Maintainer: cham3 developers <maintainers@cham3.invalid>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+
+Package: cham3-full
+Architecture: all
+Depends: ${misc:Depends},
+ cham3-desktop,
+ nmap,
+ zenmap,
+ masscan,
+ bind9-dnsutils,
+ whois,
+ wireshark,
+ tshark,
+ tcpdump,
+ nethogs,
+ iftop,
+ sqlmap,
+ nikto,
+ ffuf,
+ gobuster,
+ aircrack-ng,
+ binwalk,
+ libimage-exiftool-perl,
+ hashcat,
+ john,
+ hydra,
+ torbrowser-launcher
+Description: cham3 desktop plus the curated Debian 13 application suite (M1)
+ Metapackage for the cham3 M1 desktop image. It installs cham3-desktop and the
+ curated suite that is available from Debian 13 (trixie): nmap with Zenmap,
+ masscan, bind9-dnsutils, whois, Wireshark and tshark, tcpdump, nethogs,
+ iftop, sqlmap, nikto, ffuf, gobuster, aircrack-ng, binwalk, exiftool,
+ hashcat, john, hydra and the Tor Browser launcher. nikto comes from the
+ Debian non-free archive area and torbrowser-launcher from contrib.
+ .
+ Planned, pending source review (NOT installed by this package, because they
+ are not available in Debian 13 or need a separately reviewed source):
+ LibreWolf, Ghidra, Metasploit Framework, searchsploit and exploitdb, OWASP
+ ZAP, WPScan, Cutter, radare2 or rizin, mitmproxy and amass. None of them is
+ a dependency and no external package source is configured.
+ .
+ Package presence is not a safety or isolation claim. Installing this
+ metapackage does not sandbox any tool, apply a permission contract or enforce
+ a network mode; those features do not exist in M1.

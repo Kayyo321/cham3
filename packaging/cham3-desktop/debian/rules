@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+# M1 desktop package. Content comes from the repo desktop/ and assets/ trees,
+# staged into the build directory by build/scripts/build_packages.sh (see
+# debian/cham3-extra-sources).
+pkg_dest = debian/cham3-desktop
+
+%:
+	dh $@
+
+# Fail the build if any plasmoid's copy of the shared tokens drifted from the
+# source of truth (a Plasma applet package must be self-contained, so each one
+# carries a copy).
+override_dh_auto_build:
+	set -e; for plasmoid in desktop/plasma/plasmoids/org.cham3.*; do \
+	    cmp -s desktop/plasma/shared/cham3_shared.js "$$plasmoid/contents/code/cham3_shared.js" || \
+	    { echo "cham3_shared.js drift in $$plasmoid" >&2; exit 1; }; \
+	done
+
+override_dh_install:
+	dh_install
+	# Wallpaper image: KDE image-wallpaper layout, resolution-named file.
+	install -D -m 0644 assets/wallpapers/cham3_minimal_charcoal.png \
+	    $(pkg_dest)/usr/share/wallpapers/Cham3/contents/images/3840x2160.png
+	# Layout template org.cham3.panel: the panel script keeps its repo name and
+	# is installed under the name Plasma requires (contents/layout.js).
+	install -D -m 0644 desktop/plasma/layout-templates/org.cham3.panel/metadata.json \
+	    $(pkg_dest)/usr/share/plasma/layout-templates/org.cham3.panel/metadata.json
+	install -D -m 0644 desktop/plasma/layout/cham3_panel_layout.js \
+	    $(pkg_dest)/usr/share/plasma/layout-templates/org.cham3.panel/contents/layout.js
+	# System-wide defaults (lowest precedence, overridden by user config):
+	# make the cham3 look-and-feel the default for new profiles and carry the
+	# color scheme values, because KDE reads colors from kdeglobals.
+	install -d $(pkg_dest)/etc/xdg
+	sed -e 's/^contrast=4$$/contrast=4\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze/' \
+	    -e '/^\[Cham3Accents\]$$/,$$d' \
+	    desktop/plasma/color-schemes/Cham3Dark.colors > $(pkg_dest)/etc/xdg/kdeglobals
+	printf '\n[Icons]\nTheme=breeze-dark\n' >> $(pkg_dest)/etc/xdg/kdeglobals
+	printf '[Theme]\nname=breeze-dark\n' > $(pkg_dest)/etc/xdg/plasmarc
