@@ -1,7 +1,7 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** IN_VERIFICATION (Codex APPROVE at exact target `8029ccdde09b205c9a477d5e6745716b9242cdfb`; R1/R2 resolved; GitHub Actions is the remaining acceptance gate)
-- **Next owner / action:** Owner records a passing GitHub Actions run for the exact reviewed commit. No push or merge performed. READY_TO_MERGE requires all acceptance gates; DONE/M0 completion requires owner-approved merge and post-merge checks.
+- **State:** READY_TO_MERGE (Codex APPROVE and GitHub Actions PASS at exact target `8029ccdde09b205c9a477d5e6745716b9242cdfb`; all acceptance criteria have evidence)
+- **Next owner / action:** Codex acting as INTEGRATOR under the owner's 2026-10-11 instruction to merge into `origin` and push. Complete the merge and post-merge checks before DONE/M0 completion.
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -41,9 +41,9 @@ Status after independent rereview. Evidence is in `docs/handoffs/M0-repository-b
   - Limitation: the VM's CPU is emulated (QEMU TCG); no native-hardware build was run.
 - [x] The build definition uses Debian live-build, records material inputs, tool versions and provenance, and makes no unsupported bit-for-bit reproducibility claim.
 - [x] The minimal package skeleton builds, and its metadata and dependencies are documented accurately. It does not advertise absent cham3 functionality.
-- [ ] CI runs the applicable static checks and package/build validation without production secrets, and exact CI and local check results are recorded.
+- [x] CI runs the applicable static checks and package/build validation without production secrets, and exact CI and local check results are recorded.
   - Independent local checks at `8029ccd`: PASS; they do not satisfy GitHub Actions execution.
-  - GitHub Actions execution: NOT_RUN. Independent branch-wide query returned `[]`; no passing exact-target run is evidenced. **Open.**
+  - GitHub Actions PASS at exact reviewed target `8029ccdde09b205c9a477d5e6745716b9242cdfb`: [run 38173172929](https://github.com/Kayyo321/cham3/actions/runs/38173172929). Static, package and image jobs all succeeded. Durable run/step metadata and log summaries: `docs/evidence/M0-repository-build-baseline/ci_8029ccd.json`.
 - [x] A boot attempt of the initial image is performed in a disposable VM, recording the artifact identity, VM environment, result and limitations.
   - Author-recorded PASS on QEMU TCG (BIOS) to a serial login prompt at `526bacc`. ISO sha256 `ed1165d57926f2521d629d0b10430f4bf4e2938410ea2bdfb433849c9e3da71d`; independently confirmed consistency across committed records and classified the serial log. Independent real boot rerun NOT_RUN.
 - [x] `docs/STATUS.md` reflects only evidence from the task and distinguishes M0 work from later milestones.
@@ -88,6 +88,16 @@ Status after independent rereview. Evidence is in `docs/handoffs/M0-repository-b
 - **Remaining gate / next owner:** Owner supplies passing GitHub Actions for the exact reviewed commit. Independent `gh run list --branch task/M0-repository-build-baseline-rework --json databaseId,headSha,conclusion,status,url,workflowName` returned `[]` (query PASS, CI NOT_RUN). Task is IN_VERIFICATION; no READY_TO_MERGE, merge, push or M0 completion claim.
 
 ## Security considerations
+
+### Owner-authorized integration (2026-10-11)
+
+- Scope: approved M0 rework and review/status records, plus the requested `.DS_Store` ignore rule. Unrelated artwork/ADR branches and dirty primary files are excluded. Primary and author/reviewer worktrees are preserved.
+- Integration base: `d988253caf8e1ba55b4dc45764f6ec3e51fd2803`, local `origin` tracking remote `origin/origin`. Candidate branch `codex/m0-origin-ready` in `../cham3-worktrees/M0-001-final-integration`, from reviewed-record tip `f5439cc604dae3dc6b9c4901890c4b676abd3d34`.
+- Owner instruction now authorizes publishing and merging; earlier no-push/no-merge limits described in historical reviews no longer apply to this integration phase.
+- Published reviewed task branch with `git push origin refs/heads/task/M0-repository-build-baseline-rework:refs/heads/task/M0-repository-build-baseline-rework`, triggering the exact-target CI run above.
+- GitHub-hosted ephemeral `ubuntu-latest` runners, `debian:trixie` amd64 containers: PASS for `build/scripts/run_static_checks.sh`, 82 static tests as non-root builder, unsigned package build/lintian exit 0, 8 package tests, real live-build image, 17 image tests, disposable QEMU boot and 18 boot tests. Image job is privileged only inside that ephemeral runner; no privileged host changes or production secrets were used.
+- `.DS_Store` rule ported in `827d872de9fd57ccd42feb244e0afd42f2300c4f` while preserving existing M0 ignore rules. `git check-ignore` PASS for root/nested paths; `git ls-files '*DS_Store*'` returns no tracked files in the candidate. The original cleanup commit `1230d2a` also untracks three files on the separate artwork-based branch, preserving disk files; its unrelated ancestors are not merged.
+- Required post-merge checks remain pending. READY_TO_MERGE does not mean DONE or product security enforcement.
 
 - Build definitions, package metadata, and CI affect the distribution supply chain and require independent review.
 - Do not put production signing keys, user signing keys, tokens, or other secrets in the repository, ordinary CI, logs, or build artifacts.
