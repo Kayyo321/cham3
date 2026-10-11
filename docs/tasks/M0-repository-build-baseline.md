@@ -1,7 +1,7 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** READY_TO_MERGE (Codex APPROVE and GitHub Actions PASS at exact target `8029ccdde09b205c9a477d5e6745716b9242cdfb`; all acceptance criteria have evidence)
-- **Next owner / action:** Codex acting as INTEGRATOR under the owner's 2026-10-11 instruction to merge into `origin` and push. Complete the merge and post-merge checks before DONE/M0 completion.
+- **State:** MERGED (owner-authorized merge `2bb14924aef910d762811a32de0b1bbbf864b2af` into local `origin`; exact-target review/CI passed; remote push and post-merge verification follow)
+- **Next owner / action:** Codex INTEGRATOR publishes `origin` and records post-merge GitHub Actions. DONE/M0 completion remains pending until post-merge checks pass.
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -97,7 +97,8 @@ Status after independent rereview. Evidence is in `docs/handoffs/M0-repository-b
 - Published reviewed task branch with `git push origin refs/heads/task/M0-repository-build-baseline-rework:refs/heads/task/M0-repository-build-baseline-rework`, triggering the exact-target CI run above.
 - GitHub-hosted ephemeral `ubuntu-latest` runners, `debian:trixie` amd64 containers: PASS for `build/scripts/run_static_checks.sh`, 82 static tests as non-root builder, unsigned package build/lintian exit 0, 8 package tests, real live-build image, 17 image tests, disposable QEMU boot and 18 boot tests. Image job is privileged only inside that ephemeral runner; no privileged host changes or production secrets were used.
 - `.DS_Store` rule ported in `827d872de9fd57ccd42feb244e0afd42f2300c4f` while preserving existing M0 ignore rules. `git check-ignore` PASS for root/nested paths; `git ls-files '*DS_Store*'` returns no tracked files in the candidate. The original cleanup commit `1230d2a` also untracks three files on the separate artwork-based branch, preserving disk files; its unrelated ancestors are not merged.
-- Required post-merge checks remain pending. READY_TO_MERGE does not mean DONE or product security enforcement.
+- All acceptance gates were recorded in READY_TO_MERGE commit `833c39b88ebbbb50c0eeb54776158b9d610afe9a`. `git merge --no-ff codex/m0-origin-ready` then produced merge `2bb14924aef910d762811a32de0b1bbbf864b2af`, with first parent `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` and candidate parent `833c39b88ebbbb50c0eeb54776158b9d610afe9a`. No conflicts or implementation edits.
+- Post-merge GitHub Actions will run on the published branch. Required post-merge checks remain pending; MERGED does not mean DONE or product security enforcement.
 
 - Build definitions, package metadata, and CI affect the distribution supply chain and require independent review.
 - Do not put production signing keys, user signing keys, tokens, or other secrets in the repository, ordinary CI, logs, or build artifacts.
