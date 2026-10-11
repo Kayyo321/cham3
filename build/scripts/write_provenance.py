@@ -102,7 +102,9 @@ def lb_config_command(auto_config_path):
     for line in text.splitlines():
         stripped = line.strip()
         if stripped.startswith("lb config"):
-            return re.sub(r"\s+", " ", stripped)
+            command = re.sub(r"\s+", " ", stripped)
+            # Drop the pass-through of extra arguments; it is not part of the fixed command.
+            return command.replace(' "${@}"', "")
     return None
 
 
