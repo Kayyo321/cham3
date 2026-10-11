@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "cham3 developers"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "M1 visual foundation: 2x2 contract tool grid. All tools unavailable.",
+        "EnabledByDefault": true,
+        "Icon": "document-edit",
+        "Id": "org.cham3.contract_dock",
+        "License": "AGPL-3.0-only",
+        "Name": "cham3 Contract Dock",
+        "Version": "0.0.0-m1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

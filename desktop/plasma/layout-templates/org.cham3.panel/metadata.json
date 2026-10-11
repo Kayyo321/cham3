@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/LayoutTemplate",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "cham3 developers"
+            }
+        ],
+        "Category": "",
+        "Description": "cham3 right-edge vertical panel (M1 visual foundation, ADR 0002)",
+        "EnabledByDefault": true,
+        "Id": "org.cham3.panel",
+        "License": "AGPL-3.0-only",
+        "Name": "cham3 Panel",
+        "Version": "0.0.0-m1"
+    },
+    "X-Plasma-Shell": "plasmashell",
+    "X-Plasma-ContainmentCategories": [
+        "panel"
+    ]
+}

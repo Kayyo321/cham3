@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "cham3 developers"
+            }
+        ],
+        "Category": "",
+        "Description": "cham3 dark desktop defaults: right-edge panel and color scheme (M1 visual foundation)",
+        "Id": "org.cham3.desktop",
+        "License": "AGPL-3.0-only",
+        "Name": "cham3",
+        "Version": "0.0.0-m1"
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;cham3;",
+    "X-Plasma-APIVersion": "2"
+}
