@@ -73,6 +73,8 @@ jobs:
 
   image_build:
     runs-on: ubuntu-latest
+    # SECURITY: "--privileged" below is acceptable only on GitHub-hosted ephemeral
+    # runners. Do not move this job to self-hosted runners without a security review.
     container:
       image: debian:trixie
       options: --privileged

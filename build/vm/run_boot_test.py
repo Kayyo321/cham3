@@ -34,9 +34,13 @@ FailMarkers = [
     ("initramfs_shell", re.compile(r"\(initramfs\)")),
     ("live_boot_no_medium", re.compile(r"Unable to find a medium")),
     ("emergency_mode", re.compile(r"You are in emergency mode")),
+    ("rescue_mode", re.compile(r"You are in rescue mode")),
+    ("maintenance_password_prompt", re.compile(r"Give root password for maintenance")),
 ]
 LoginPrompt = re.compile(r"(?m)^[A-Za-z0-9][A-Za-z0-9_.\-]* login: ?")
-ShellPrompt = re.compile(r"(?m)^[A-Za-z0-9_.\-]+@[A-Za-z0-9_.\-]+:[^\r\n]*[$#] ?$")
+# Non-root autologin prompt ending in "$". A root prompt ending in "#" is never a PASS.
+ShellPrompt = re.compile(r"(?m)^(?!root@)[A-Za-z0-9_.\-]+@[A-Za-z0-9_.\-]+:[^\r\n]*\$ ?$")
+RootPrompt = re.compile(r"(?m)^root@[A-Za-z0-9_.\-]+:[^\r\n]*# ?$")
 AnsiEscape = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]")
 
 
@@ -44,7 +48,8 @@ def classify_boot_log(log_text):
     """Classify serial console text.
 
     Returns a dict with result ("PASS", "FAIL" or "PENDING"), reason, and
-    markers (list of matched marker names). Failure markers win over a prompt.
+    markers (list of matched marker names). Failure markers win over a prompt;
+    a root shell prompt without a login prompt is a FAIL, never a PASS.
     """
     text = AnsiEscape.sub("", log_text).replace("\r", "")
     for name, pattern in FailMarkers:
@@ -52,6 +57,8 @@ def classify_boot_log(log_text):
             return {"result": "FAIL", "reason": "failure marker seen: " + name, "markers": [name]}
     if LoginPrompt.search(text):
         return {"result": "PASS", "reason": "login prompt reached on serial console", "markers": ["login_prompt"]}
+    if RootPrompt.search(text):
+        return {"result": "FAIL", "reason": "unexpected root shell on serial console", "markers": ["root_shell"]}
     if ShellPrompt.search(text):
         return {"result": "PASS", "reason": "autologin shell prompt on serial console", "markers": ["shell_prompt"]}
     return {"result": "PENDING", "reason": "no login prompt or failure marker yet", "markers": []}

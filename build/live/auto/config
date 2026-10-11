@@ -5,6 +5,10 @@
 # no cham3 functionality. The result is a development artifact, not a distribution.
 set -eu
 
+# Mirrors: the plain-HTTP official Debian mirrors are the Debian default and are kept
+# on purpose. APT verifies the signed InRelease files with debian-archive-keyring and
+# authentication is not disabled (--apt-secure true). HTTPS would add transport
+# confidentiality only; switching to HTTPS is a possible follow-up.
 lb config noauto \
     --mode debian \
     --distribution trixie \
