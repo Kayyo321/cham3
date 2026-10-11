@@ -128,8 +128,15 @@ def uniqueness_problems(paths):
     return problems
 
 
+def require_desktop_tree():
+    """A missing desktop/ tree is a FAIL, not a vacuous pass over zero launchers."""
+    if not os.path.isdir(m1_support.desktop_path(m1_support.DesktopTreeDir)):
+        raise AssertionError("required directory missing: %s" % m1_support.DesktopTreeDir)
+
+
 class desktop_files_real_t(unittest.TestCase):
     def test_every_shipped_desktop_entry_is_valid(self):
+        require_desktop_tree()
         paths = desktop_sources()
         root = m0_support.repo_root()
         problems = []
@@ -145,6 +152,7 @@ class desktop_files_real_t(unittest.TestCase):
         self.assertEqual(problems, [], "desktop entry problems")
 
     def test_no_launcher_points_at_absent_backend(self):
+        require_desktop_tree()
         problems = []
         for relative in desktop_sources():
             try:
