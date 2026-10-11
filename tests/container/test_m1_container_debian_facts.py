@@ -93,14 +93,17 @@ def facts_problems(listings, imported_modules, session_name, cham3_depends):
 
 def download(scratch):
     """apt-get download the packages into scratch and return {package: deb path}."""
-    completed = subprocess.run(
-        ["apt-get", "download"] + list(DownloadPackages),
-        cwd=scratch,
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=900,
-    )
+    try:
+        completed = subprocess.run(
+            ["apt-get", "download"] + list(DownloadPackages),
+            cwd=scratch,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=900,
+        )
+    except FileNotFoundError:
+        raise AssertionError("BLOCKED (host environment): apt-get is absent; run in a debian:trixie container") from None
     if completed.returncode != 0:
         raise AssertionError(
             "BLOCKED: apt-get download failed (network or package index): " + completed.stderr.strip()
