@@ -1,114 +1,281 @@
-# M1 readiness packet: built-in application suite
+# M1 readiness packet: built-in application suite (revision 2)
 
-- **Status:** RESEARCH PACKET for independent Codex review. Availability only. No package in this packet has been installed, built, or run.
-- **Retrieval date:** 2026-10-11. Archive snapshots: trixie index Release 2026-09-12; Kali `kali-rolling` Release 2026-10-09.
-- **Detail:** `docs/research/M1_package_disposition.md` (matrix, resolutions, short names for each index and its sha256).
-- **Scope rule (task):** Debian 13 first; a Debian-native equivalent second; a Kali-origin package only if no suitable Debian option exists, and only through a narrowly pinned, separately reviewed source.
+- **Status:** RESEARCH PACKET for independent Codex review. It is not an approval of the suite and not an implementation. No package in it has been installed, built, booted, or approved. The Debian subset is available. The complete requested suite is NOT satisfied.
+- **Suite status (2026-10-11):** UNRESOLVED. Nine requested items have no approved, verified source yet (section 2). `M1_acceptance_matrix_corrections.md` sets A8 to a non-PASS status until that changes.
+- **Detail:** `M1_package_disposition.md` (per-tool matrix, authenticated-source designs, closure and origin results, firmware analysis, evidence index).
+- **Environment limit:** every simulation ran in amd64 containers under emulation on an arm64 macOS host. The results are early signals, not native x86-64 evidence. The native gates in section 6 decide.
+- **Scope rule (task):** Debian 13 first; a Debian-native equivalent second; a Kali-origin package only where no suitable Debian option exists, only through a narrowly pinned and separately reviewed source; no general Kali repository.
 
-## 1. Include-now set (Debian 13 trixie, available, pending the normal M1 build review)
+## 1. Debian subset (available in trixie; not yet built or installed)
 
-Availability is confirmed from the trixie archive indices. Installation and execution are NOT confirmed.
+Availability is confirmed from the signed trixie index and apt candidates. Installation and execution are NOT confirmed. Re-record versions at the target commit.
 
-| Area | Debian packages (trixie version, area) |
+| Area | Debian 13 packages (version as observed, area) |
 |---|---|
-| Privacy browser (Tor) | `torbrowser-launcher` 0.3.7-3 (contrib). Recommends `tor` 0.4.9.11-0+deb13u1 (main). |
-| Traffic analysis | `wireshark` 4.4.18-0+deb13u1, `tshark` 4.4.18-0+deb13u1, `wireshark-common` 4.4.18-0+deb13u1 (net, main); `tcpdump` 4.99.5-2; `nethogs` 0.8.8-1; `iftop` 1.0~pre4-9+b1 (net, main) |
-| Information gathering | `nmap` 7.95+dfsg-3; `zenmap` 7.95+dfsg-3 (net, main); `masscan` 2:1.3.2+ds1-2; `bind9-dnsutils` 1:9.20.26-1~deb13u1 (for `dnsutils`); `whois` 5.6.3 |
-| Web app analysis | `sqlmap` 1.9.6-1; `ffuf` 2.1.0-1+b9 (devel); `gobuster` 3.6.0-1+b10 (utils); `nikto` 1:2.1.5-3.1 (**non-free**) |
-| Wireless | `aircrack-ng` 1:1.7+git20230807.4bf83f1a-2 (net, main) |
-| Password/crypto auditing | `hashcat` 6.2.6+ds2-1; `john` 1.9.0-2; `hydra` 9.5-3 (main) |
-| Reverse engineering / forensics | `binwalk` 2.4.3+dfsg1-2+deb13u1 (devel, main); `libimage-exiftool-perl` 13.25+dfsg-1 (perl, main) |
-| KDE core (keep) | `plasma-desktop` 4:6.3.6-1; `plasma-workspace` 4:6.3.6-2 (Wayland session `plasma.desktop`); `kwin-wayland` 4:6.3.6-1; `sddm` 0.21.0+git20250502.4fe234b-2; `systemsettings` 4:6.3.4-2; `dolphin` 4:25.04.3-1+deb13u1; `konsole` 4:25.04.2-1; `kate` 4:25.04.3-2 (`kwrite` optional, 4:25.04.3-2); `ark` 4:25.04.3-1; `okular` 4:25.04.2-1+deb13u1; `gwenview` 4:25.04.3-1; `kde-spectacle` 4:6.3.5-2; `plasma-systemmonitor` 6.3.6-1; `fonts-noto` 20201225-2; `qml-module-org-kde-qqc2desktopstyle` 5.116.1-1 (Recommends) |
-| Dev/build helper (not a user app) | `extrepo` 0.14 (admin, main) only if the owner approves the LibreWolf path in section 3 |
+| Privacy browser (Tor) | `torbrowser-launcher` 0.3.7-3 (contrib, sha256 `a70a9da8...`). Recommends `tor` 0.4.9.14-0+deb13u1 (trixie-security). |
+| Traffic analysis | `wireshark-common` 4.4.19-0+deb13u1 candidate (pool 4.4.18); `wireshark` and `tshark` (main); `tcpdump` 4.99.5-2; `nethogs` 0.8.8-1; `iftop` 1.0~pre4-9+b1 |
+| Information gathering | `nmap` 7.95+dfsg-3; `zenmap` 7.95+dfsg-3; `masscan` 2:1.3.2+ds1-2; `bind9-dnsutils` 1:9.20.26-1~deb13u1 (for `dnsutils`); `whois` 5.6.3 |
+| Web application analysis | `sqlmap` 1.9.6-1; `ffuf` 2.1.0-1+b9; `gobuster` 3.6.0-1+b10; `nikto` 1:2.1.5-3.1 (**non-free**) |
+| Wireless | `aircrack-ng` 1:1.7+git20230807.4bf83f1a-2 |
+| Password and crypto auditing | `hashcat` 6.2.6+ds2-1; `john` 1.9.0-2; `hydra` 9.5-3 |
+| Reverse engineering and forensics | `binwalk` 2.4.3+dfsg1-2+deb13u1; `libimage-exiftool-perl` 13.25+dfsg-1 (virtual `exiftool`) |
+| KDE core (keep) | `plasma-desktop` 4:6.3.6-1; `plasma-workspace` 4:6.3.6-2 (Wayland session `plasma.desktop`); `kwin-wayland` 4:6.3.6-1; `sddm` 0.21.0+git20250502.4fe234b-2; `systemsettings` 4:6.3.4-2; `dolphin` 4:25.04.3-1+deb13u1; `konsole` 4:25.04.2-1; `kate` 4:25.04.3-2; `ark` 4:25.04.3-1; `okular` 4:25.04.2-1+deb13u1; `gwenview` 4:25.04.3-1; `kde-spectacle` 4:6.3.5-2; `plasma-systemmonitor` 6.3.6-1; `fonts-noto` 20201225-2; `qml-module-org-kde-qqc2desktopstyle` 5.116.1-1 |
 
-Items confirmed present in trixie but excluded from the suite (must be absent in the image): `thunar`, `pcmanfm`, `qterminal`, `xfce4-terminal`, `tilix`, `mousepad`, `xarchiver`, `file-roller`, `evince`, `atril`, `ristretto`, `firefox-esr` (as stock browser). `leafpad` is not in trixie.
+Substitutions to accept at review: `plasma-workspace-wayland` to `plasma-workspace`; `spectacle` to `kde-spectacle`; `qqc2-desktop-style` to `qml-module-org-kde-qqc2desktopstyle`; `dnsutils` to `bind9-dnsutils`; `exiftool` to `libimage-exiftool-perl`.
 
-Name substitutions to accept at review: `plasma-workspace-wayland` -> `plasma-workspace`; `spectacle` -> `kde-spectacle`; `qqc2-desktop-style` -> `qml-module-org-kde-qqc2desktopstyle`; `dnsutils` -> `bind9-dnsutils`; `exiftool` -> `libimage-exiftool-perl`.
+Excluded alternatives (must be absent from the image closure): `thunar`, `pcmanfm`, `qterminal`, `xfce4-terminal`, `tilix`, `mousepad`, `xarchiver`, `file-roller`, `evince`, `atril`, `ristretto`, and `firefox-esr` as the stock browser. `leafpad` is not in trixie.
 
-### Per-item review evidence still required (Debian set)
+Debian-set evidence still required at the target: the trixie `Release` signature (GOODSIG verified with `04B54C3CDCA79751B16BC6B5225629DF75B188BD`; a second signature `4CB5…E131` is not in the shipped keyring and is not verified), `getcap` and mode checks for dumpcap (section 4), and the `nikto` non-free licence decision.
 
-- Trixie Release signature verified in the build environment (not run in this research: the signing key `4CB50190207B4758A3F73A796ED0E7B82643E131` was not retrieved).
-- Image sets `wireshark-common/install-setuid` explicitly (see section 4). Verify `getcap /usr/bin/dumpcap` after install (NOT_RUN).
-- Confirm `nikto` non-free terms are acceptable for the image, and that `non-free` and `contrib` archive areas are enabled.
-- Confirm the image's `exiftool` binary path (package description says it ships the program; the path was not verified).
-- Desktop-entry validation and launcher-target checks at the image build (task requirement; not part of this research).
+## 2. Foreign roles: status, closure class, and blocker
 
-## 2. GATED set (NOT in the build; each needs separate review before inclusion)
+Closure classes (early signal, emulated; the native gate in section 6 governs): **CLEAN** (only the candidate comes from Kali); **CLEAN_WITH_KALI_ONLY_DEPS** (also needs Kali-only names absent from trixie); **LEAKY_BASE_SKEW** (needs a Kali replacement of a package trixie provides); **UNRESOLVABLE**.
 
-### 2a. Third-party repository (not Kali, not Debian)
+| # | Requested item | Source considered | Closure class | Blocker or condition | Owner decision needed |
+|---|---|---|---|---|---|
+| 1 | LibreWolf (clearnet browser) | Official repository `repo.librewolf.net` (not Kali, not Debian). Key provenance in disposition section 1.2 and 3.1. | CLEAN (own repository, 92 Debian dependencies) | None technical. Third-party source needs approval. | Approve or reject the source. |
+| 2 | Official Tor Browser | Debian `torbrowser-launcher` 0.3.7-3 (contrib) | Debian package; no Kali path | Self-update and first-use download outside apt | Accept the update path (disposition 3.2). |
+| 3 | mitmproxy / mitmweb | Kali `mitmproxy` 12.2.3-0kali5; upstream PyPI 12.2.3 (not validated) | LEAKY_BASE_SKEW | Kali-only Python 3.14 stack; `libc6 >= 2.42` (trixie 2.41) | Scope amendment, or an approved upstream PyPI route with a hash-locked dependency set. |
+| 4 | OWASP ZAP or Burp Suite Community | ZAP: Kali `zaproxy` 2.17.0-0kali1 (CLEAN); Burp: Kali `burpsuite` 2026.8-0kali1 (CLEAN technically) | ZAP CLEAN; Burp CLEAN but licence-blocked | Burp licence and redistribution review is blocking. | Choose ZAP or Burp (or neither). |
+| 5 | amass | Kali `amass` 5.1.1-0kali3 + Kali-only `libpostal-data` 1.1.4-0kali1 | CLEAN_WITH_KALI_ONLY_DEPS | Allowlist of two packages; runtime model downloads by the user | Approve the two-package allowlist. |
+| 6 | wpscan | Kali `wpscan` 4.1.0-0kali1 (non-free) | LEAKY_BASE_SKEW | `ruby-addressable >= 2.9` (trixie 2.8.7-2); Kali-only `ruby-cms-scanner` | Scope amendment, or omit. |
+| 7 | metasploit-framework | Kali `metasploit-framework` 6.5.3-0kali1; Rapid7 apt returned HTTP 403 here (BLOCKED) | LEAKY_BASE_SKEW | Kali non-free `oracle-instantclient-basic` (proprietary client) needs `libaio1t64 >= 0.3.113-8+kali1` | Scope amendment, or omit. |
+| 8 | searchsploit (exploitdb) | Kali `exploitdb` 20260904-0kali1 (`/usr/bin/searchsploit` confirmed) | CLEAN | Allowlist of one package; data licence not checked | Approve the allowlist entry. |
+| 9 | Ghidra | Kali `ghidra` 12.1.4+ds-0kali1 with Kali-only `ghidra-data` 10.5-0kali1, JDK from Debian-Security; or NSA GitHub release | CLEAN (strict design; 132 to 133 new packages) | About 0.9 GB installed plus a JDK; `ghidra-data` needed for function is NOT_RUN | Accept the footprint and source, or choose the upstream release. |
+| 10 | radare2 or Cutter | radare2: Kali `radare2` 6.0.4+dfsg-1 with two Kali-only libraries (CLEAN_WITH_KALI_ONLY_DEPS). Cutter: Kali `rizin-cutter` 2.5.0-0kali1 (LEAKY: Qt 6.10 and Python 3.14 from Kali). | radare2 CLEAN_WITH_KALI_ONLY_DEPS; Cutter LEAKY | Cutter needs a Kali Qt and Python replacement | Choose radare2 (recommended by this revision) or drop Cutter. |
 
-**LibreWolf (clearnet privacy browser).** Not in Debian, not in the Kali archive.
+Items 3, 6, 7, and the Cutter branch of item 10 are the LEAKY set. They cannot enter the image through the approved mechanism without a base-library replacement from Kali, which the task does not permit.
 
-- Path: extrepo's `librewolf` definition, repo `https://repo.librewolf.net`, suite `librewolf`, `main`, amd64 arm64. Key fingerprint `662E 3CDD 6FE3 2900 2D0C A5BB 4033 9DD8 2B12 EF16` (LibreWolf Maintainers, created 2022-05-14), key sha256 `cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad`.
-- Required review evidence before inclusion:
-  1. Owner approval of this third-party source (the task requires it).
-  2. Independent confirmation of the LibreWolf key fingerprint against a LibreWolf project source (not done; the LibreWolf page does not publish it).
-  3. Fetch `repo.librewolf.net` `InRelease`/`Release.gpg`, verify with the pinned key. NOT_RUN.
-  4. Narrow pin (proposal in the matrix section 3.1): `Pin-Priority: -1` default for origin `repo.librewolf.net`, `librewolf` only at 500. Pin behavior NOT validated.
-  5. Dependency closure of `librewolf` against trixie. NOT computed.
-  6. Upgrade evidence: `apt upgrade` leaves Debian packages unchanged; `librewolf` updates only from its pinned origin. NOT performed.
-  7. Decision whether the key ships in the cham3 packaging (preferred) or is fetched at build time with a fingerprint check. Runtime `extrepo update` is not recommended.
-- Fallback (owner decision only): Debian `firefox-esr` 140.15.0esr-1~deb13u1 is excluded as the stock browser by the task. Not a substitute without a new owner decision.
+Also recorded: `rizin` (Kali 0.9.1-0kali1) is LEAKY (`librizin0` needs `libc6 >= 2.42`). Its only use is Cutter's dependency.
 
-**Tor Browser:** not a gated item. `torbrowser-launcher` (INCLUDE-NOW candidate, section 1) is the authenticated Debian path. Owner must accept its self-update through Tor's updater, outside apt.
+### 2.1 Authenticated-source designs (not enabled)
 
-### 2b. Kali-origin candidates (no Debian-native equivalent in trixie)
+LibreWolf and Kali designs, including keyring files, pins, and the origin-change rule, are in disposition section 3. Summary:
 
-Every item below is GATED-KALI. None is included in the M1 build. None has a dependency closure computed. The Kali archive key `827C 8569 F251 8CC6 77FE CA1A ED65 462E C8D5 E4C5` verified the `kali-rolling` Release signature in this research (PASS).
+- **LibreWolf:** `Signed-By` a keyring shipped in packaging (sha256 `cd1c45eb...`, primary `662E3CDD6FE329002D0CA5BB40339DD82B12EF16`). Pin `Package: *`, `Pin: release n=librewolf`, `Pin-Priority: -1`; `librewolf` at 500. Do not run extrepo at build or install time.
+- **Kali:** `Signed-By` a single-key keyring for `827C8569F2518CC677FECA1AED65462EC8D5E4C5` (armored sha256 `bbaef4b3...`). Exclude the legacy 2012 key `44C6513A…0BF6`. Pin `Package: *`, `Pin: release o=Kali`, `Pin-Priority: -1`; each owner-approved name at 500, and no others. Pin-Priority 50 is rejected: it installed unlisted Kali packages in simulation.
 
-| Tool | Kali package (version, area) | Kali pool file, sha256 | Why no Debian option | Review still required |
-|---|---|---|---|---|
-| OWASP ZAP | `zaproxy` 2.17.0-0kali1 (utils, all) | `pool/main/z/zaproxy/zaproxy_2.17.0-0kali1_all.deb`, `9490cc3c613ca847db8f12c5c6b00d162e17274e4fcfed566bb93d1aa1feda47` | Not in Debian (tracker 404) | Closure (Java runtime), licence, pin, upgrade |
-| Burp Suite Community | `burpsuite` 2026.8-0kali1 (net, main) | `pool/main/b/burpsuite/burpsuite_2026.8-0kali1_amd64.deb`, `6e68cad47c66d854ab944aa417a54290c18b396e0727583108b790b857638b1f` (344 MB) | Not in Debian (Debian `burp` is a backup tool) | PortSwigger licence and redistribution (**blocking**), closure, pin, upgrade |
-| wpscan | `wpscan` 4.1.0-0kali1 (utils, **non-free**) | `pool/non-free/w/wpscan/wpscan_4.1.0-0kali1_all.deb`, `20caf190d6adc4cc2bedc5b8df34038aaacb452853ac5dfede260aafe49583e9` | Not in Debian (tracker 404) | Non-free licence, third-party API use, Ruby closure, pin |
-| Metasploit Framework | `metasploit-framework` 6.5.3-0kali1 (net, main) | `pool/main/m/metasploit-framework/metasploit-framework_6.5.3-0kali1_amd64.deb`, `fcb1100612b748b5122f3413033279693f80fd42a9e6122c3464f4db748c19b6` (270 MB) | Not in Debian (tracker 404) | Licence, Ruby closure, owner decision whether an exploit framework belongs in M1 |
-| searchsploit (exploitdb) | `exploitdb` 20260904-0kali1 (utils, all) | `pool/main/e/exploitdb/exploitdb_20260904-0kali1_all.deb`, `b417d86c6e3c126d2fa2c9be2f8d6c10417697fc95ebaf5a729c299d59d3f385` | Not in Debian (tracker 404) | Confirm `searchsploit` path, data licence, pin |
-| Ghidra | `ghidra` 12.1.4+ds-0kali1 (misc, main) | `pool/main/g/ghidra/ghidra_12.1.4+ds-0kali1_amd64.deb`, `128b96ae74b22eb508401378950a6b8eb3274c2e29b50f10d1a59f1fca3caad6` (515 MB) | Not in Debian (tracker 404) | JDK closure, licence, disk size, pin |
-| Cutter | `rizin-cutter` 2.5.0-0kali1 + `rizin` 0.9.1-0kali1 | `rizin-cutter_2.5.0-0kali1_amd64.deb` `e0e647c191b41bd6b4ffb3bf6b76c8ed5dd381dc00ae179aab94edc7b0440d79`; `rizin_0.9.1-0kali1_amd64.deb` `41a2acc204a9adad6174139ea3b0b50639f67bb0e664bbf6601defdc91002fd1` | Not in trixie (Rizin also absent) | Qt/Rizin closure from Kali, licence, pin |
-| radare2 | `radare2` 6.0.4+dfsg-1 (devel, main) | `pool/main/r/radare2/radare2_6.0.4+dfsg-1_amd64.deb`, `dcb375213e9c1477ae08d47bfb25c1b13a6ba2d41bc2665b81a4bae66bb64eb0` | Trixie has none; Debian unstable 6.1.8 is cross-release and not permitted | Owner choice radare2 vs Cutter; closure; pin |
-| mitmproxy | `mitmproxy` 12.2.3-0kali5 (net, all) | `pool/main/m/mitmproxy/mitmproxy_12.2.3-0kali5_all.deb`, `0d2d281a0cc9353a612efb2295124226bf6060f1802976b0e4fe5c45dbc6a26d` | Trixie has none; Debian testing/sid 8.1.1-4 is cross-release, flagged for autoremoval 2026-11-16 and carries open CVE-2026-40606 | Closure (Python), licence, pin |
-| amass | `amass` 5.1.1-0kali3 (net, main) | `pool/main/a/amass/amass_5.1.1-0kali3_amd64.deb`, `72d3563addb64ada4527170be7b45a88d7aec29acb367261365a6beecea11999` | Not in trixie (tracker 404) | Licence, closure, pin |
+## 3. Owner and architecture decisions (summary; full list in disposition section 10)
 
-Evidence URLs: `https://http.kali.org/kali/dists/kali-rolling/main/binary-amd64/Packages.gz` (sha256 `5302e9aa9fcffaf31bc607e92237db807f6a236bb922eb61b97c5ed64886f1d0`); `https://http.kali.org/kali/dists/kali-rolling/non-free/binary-amd64/Packages.gz` (sha256 `8854213cd07d7e2367aa2be4844e8039cd2836722c728d7eeb86dc61664e5b0a`).
+1. LibreWolf: approve the third-party repository (item 1).
+2. Tor Browser: accept the launcher's self-update and first-use download outside apt (item 2).
+3. Kali allowlist: approve per-package entries for the CLEAN items (items 5, 8, 9, 10-radare2), each subject to the native gate and Codex re-review.
+4. Scope amendment or omission for the LEAKY items (3, 6, 7, and Cutter).
+5. ZAP or Burp (item 4). Burp requires a licence review first.
+6. Firmware: accept the explicit removal of the two b43 installers, or approve a build-time, hash-pinned blob package with licence review (section 5).
+7. Wireshark: approve the fail-closed capture design (section 4).
+8. Kali keyring: approve shipping a single-key keyring in packaging.
+9. Name substitutions and Zenmap (section 1).
 
-### 2c. Common review requirements for every Kali candidate
+## 4. Wireshark and dumpcap capture privilege (corrected)
 
-For each allowlisted Kali package, before inclusion:
+- Keep `wireshark-common/install-setuid boolean true` in `build/live-desktop/config/preseed/cham3_wireshark.cfg.chroot`. `true` gives the `wireshark` group with `cap_net_raw,cap_net_admin` file capabilities. `false` removes the non-root capture mechanism entirely.
+- The defect Codex F3 describes is the setuid fallback. The upstream postinst applies `u=rwxs` when `setcap` fails, and when `setcap` is absent. `libcap2-bin` is a hard dependency of `wireshark-common`, so the fallback is reached only when `setcap` fails (for example on a filesystem without security xattrs). The fix must make that path fail closed, and gate F3-CAP must test it.
+- Membership: no automatic members (Debian README). Membership is capture authority.
+- Open: whether `security.capability` xattrs survive the live-build squashfs (NOT_RUN).
+- Earlier advice to "set the non-setuid answer" is withdrawn (disposition section 5).
 
-1. Owner-approved allowlist entry with exact package name and version.
-2. Narrow source: `Suites: kali-rolling`, `Components` limited to the areas actually needed, `Signed-By` a pinned keyring. Default `Pin-Priority: -1` for origin `Kali`, with only the allowlisted names raised. Exact priorities NOT validated.
-3. Keyring provenance: how the image obtains the Kali key (fingerprint `827C…E4C5`) must be decided and reviewed. Not decided.
-4. Dependency closure resolved against trixie. Every Kali-origin dependency that would replace a trixie library must be listed and reviewed, because Kali rolling is not trixie.
-5. Upgrade evidence on a trixie system: Debian packages are not replaced by Kali versions; allowlisted Kali packages upgrade only within their pin.
-6. Licence review per package (not performed for any candidate).
-7. Independent Codex review of the complete set (required by the task before any GATED package enters `cham3-full`).
+## 5. Firmware blocker: two install-time fetch packages (new)
 
-## 3. Open owner and architecture decisions
+- live-build scheduled `firmware-b43-installer` and `firmware-b43legacy-installer` (contrib) into the image because their contents are `.placeholder` files under `usr/lib/firmware/`. The M1 config's `--firmware-chroot true` makes live-build schedule every such package in every configured archive area.
+- Both postinsts download fixed URLs (GitHub; `downloads.openwrt.org`) and verify an embedded SHA-512. In a chroot they always download, whatever the hardware. Codex's M1 image attempt failed here (DNS and proxy 403), which is why M1 has no ISO.
+- A static audit of all 47 pre-blocklist firmware packages found network fetches only in these two.
+- No Debian archive area ships b43 or b43legacy blobs. Self-contained coverage for brcmfmac and brcmsmac is in `firmware-brcm80211`.
+- Recommendation: set `--firmware-chroot false` and use an explicit 42-package list (`docs/research/evidence/firmware/proposed_set_without_b43_installers_42.txt`). This removes the build-time fetch and is an explicit reduction: b43 and b43legacy SoftMAC Wi-Fi do not work out of the box. The installed-system opt-in path (`apt install firmware-b43-installer`) remains. The config change belongs to m1_worker.
 
-1. **LibreWolf:** approve or reject the third-party `repo.librewolf.net` source (section 2a).
-2. **Tor Browser:** accept torbrowser-launcher's self-update path for M1, or require a different design.
-3. **Clearnet browser fallback:** if LibreWolf is gated, decide whether Debian `firefox-esr` may fill the clearnet role (currently excluded by the task).
-4. **Burp vs ZAP:** choose one, or neither. Burp requires a licence review first.
-5. **Gated tool scope:** confirm that M1 ships without the Kali-origin tools (the default under the sourcing rule) or approve a specific reviewed subset.
-6. **Wireshark group name:** use Debian's `wireshark` group (recommended) rather than a new group. Confirm the image's `install-setuid` answer (non-setuid).
-7. **Name substitutions:** accept `plasma-workspace`, `kde-spectacle`, `qml-module-org-kde-qqc2desktopstyle`, `bind9-dnsutils`, and `libimage-exiftool-perl` in the contract.
-8. **Zenmap:** confirm the Nmap GUI is acceptable on the KDE desktop, or name a KDE-native alternative (none researched).
-9. **Radare2 vs Cutter:** the task allows either; owner picks one.
-10. **Kali key provenance:** decide how the image obtains and verifies the Kali archive key.
-11. **Trixie archive key:** confirm the image build pins the trixie automatic key `4CB5…E131` (signature verification NOT_RUN in this research).
+## 6. Native verification gates for Codex Remote (fold into `codex_remote_verification.md`)
 
-## 4. Wireshark / dumpcap capture privilege (summary)
+Run on the native x86-64 Codex Remote Debian 13 host, inside a disposable `debian:trixie` container with `/out` mounted. All gates are simulations (`apt-get -s`), not installations. Record each criterion as PASS, FAIL, NOT_RUN, or BLOCKED with the transcript path. The native results replace the emulated early signals in disposition section 7.
 
-- Debian group: **`wireshark`** (system group, created by `wireshark-common` postinst).
-- `dumpcap` is `root:wireshark` with file capabilities `cap_net_raw,cap_net_admin=eip` (`setcap`). Setuid is only a fallback if `setcap` fails and the `wireshark-common/install-setuid` answer permits it.
-- Adding a user: `sudo usermod -a -G wireshark <username>` (manual, per Debian README). Member capture authority is `cap_net_raw` and `cap_net_admin`, not a root shell.
-- Set the setuid question to the non-setuid answer in the image. The default was NOT read (template fetch returned 404).
-- Disposable-VM check (NOT_RUN): confirm `getcap` output, group ownership, and a non-root group member capturing on an interface.
+### 6.1 Gate F2-CLOSURE (closure, signatures, and pins)
 
-## 5. What this packet does NOT claim
+```sh
+#!/bin/sh
+# GATE F2-CLOSURE: simulation only. Native x86-64. Writes transcripts to /out/f2_closure.
+set -eu
+out=/out/f2_closure
+mkdir -p /work "$out"
 
-- No package is installed, built, executed, or verified to run.
-- No Kali package is approved. No third-party repository is approved.
-- No dependency closure is complete for any candidate.
-- Trixie and Kali signatures on the indices were checked only as described in the matrix section 1 (Kali PASS; trixie NOT_RUN).
-- Package availability is not evidence of security, correctness, or M2–M4 enforcement.
+# 1. Approved Debian suites only (no backports).
+cat > /etc/apt/sources.list.d/debian.sources <<'SRC'
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+
+Types: deb
+URIs: http://deb.debian.org/debian-security
+Suites: trixie-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+SRC
+rm -f /etc/apt/sources.list
+apt-get -q update
+apt-get -q install -y --no-install-recommends ca-certificates curl gnupg
+
+# 2. Kali key over HTTPS with certificate verification; check SHA-256 and primary fingerprint.
+curl -fsS --proto '=https' --tlsv1.2 -o /work/kali_archive_key.asc https://archive.kali.org/archive-key.asc
+echo 'bbaef4b375fdae6d361d648355c9a003b081d421a40f39440f296cbd458071b1  /work/kali_archive_key.asc' | sha256sum -c -
+gpg --batch --with-colons --show-keys /work/kali_archive_key.asc | awk -F: '$1=="fpr"{print $10; exit}' | grep -qx '827C8569F2518CC677FECA1AED65462EC8D5E4C5'
+gpg --batch --dearmor -o /usr/share/keyrings/cham3_kali_archive.gpg /work/kali_archive_key.asc
+
+# 3. LibreWolf key: same checks (SHA-256 cd1c45eb..., primary 662E3CDD...).
+curl -fsS --proto '=https' --tlsv1.2 -o /work/librewolf_pubkey.gpg https://repo.librewolf.net/pubkey.gpg
+echo 'cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad  /work/librewolf_pubkey.gpg' | sha256sum -c -
+gpg --batch --with-colons --show-keys /work/librewolf_pubkey.gpg | awk -F: '$1=="fpr"{print $10; exit}' | grep -qx '662E3CDD6FE329002D0CA5BB40339DD82B12EF16'
+gpg --batch --dearmor -o /usr/share/keyrings/cham3_librewolf.gpg /work/librewolf_pubkey.gpg
+
+# 4. Candidate sources (proposed). Kali: main and non-free (non-free only for the LEAKY non-free tests).
+cat > /etc/apt/sources.list.d/cham3_kali.sources <<'SRC'
+Types: deb
+URIs: http://http.kali.org/kali/
+Suites: kali-rolling
+Components: main non-free
+Signed-By: /usr/share/keyrings/cham3_kali_archive.gpg
+SRC
+cat > /etc/apt/sources.list.d/cham3_librewolf.sources <<'SRC'
+Types: deb
+URIs: https://repo.librewolf.net
+Suites: librewolf
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/cham3_librewolf.gpg
+SRC
+apt-get -q update > "$out/apt_update.log" 2>&1
+! grep -E 'NO_PUBKEY|GPG error|NOSPLIT' "$out/apt_update.log"
+
+# 5. Pin helper. Kali and LibreWolf origins are blocked (-1) by default. Only the named packages are raised to 500.
+pin_file=/etc/apt/preferences.d/cham3_gate.pref
+pin_for() {
+  {
+    printf 'Package: *\nPin: release o=Kali\nPin-Priority: -1\n\n'
+    printf 'Package: *\nPin: release n=librewolf\nPin-Priority: -1\n\n'
+    for name in "$@"; do
+      if [ "$name" = librewolf ]; then
+        printf 'Package: librewolf\nPin: release n=librewolf\nPin-Priority: 500\n\n'
+      else
+        printf 'Package: %s\nPin: release o=Kali\nPin-Priority: 500\n\n' "$name"
+      fi
+    done
+  } > "$pin_file"
+}
+
+# 6. Strict closures. The allowlist is the candidate plus the Kali-only names from the emulated solver
+#    (disposition section 7). The native run must re-derive any name the index no longer matches.
+sim() {
+  label=$1; target=$2; shift 2
+  pin_for "$target" "$@"
+  apt-get -s install --no-install-recommends -y "$target" > "$out/$label.strict.log" 2>&1 || true
+  printf '%s e_lines=%s kali_only_inst=%s\n' "$label" \
+    "$(grep -c '^E: ' "$out/$label.strict.log" || true)" \
+    "$(grep '^Inst ' "$out/$label.strict.log" | grep 'kali-rolling' | grep -vc 'Debian' || true)" >> "$out/summary.txt"
+}
+sim zaproxy zaproxy
+sim burpsuite burpsuite
+sim exploitdb exploitdb
+sim ghidra ghidra ghidra-data
+sim amass amass libpostal-data
+sim radare2 radare2 libradare2-6.0.0t64 libradare2-common
+sim mitmproxy mitmproxy python3-mitmproxy-rs python3-mitmproxy-linux libpython3.14 libpython3.14-stdlib libpython3.14-minimal
+sim wpscan wpscan ruby-cms-scanner
+sim rizin rizin librizin0 librizin-common
+sim rizin_cutter rizin-cutter libcgraph8 libgvc7 libpyside6-py3-6.10 libpython3.14
+sim metasploit_framework metasploit-framework oracle-instantclient-basic
+
+# 7. Controls: each candidate must be unavailable with no allowlist (expect "has no installation candidate").
+pin_for
+for name in zaproxy burpsuite exploitdb ghidra amass radare2 mitmproxy wpscan rizin rizin-cutter metasploit-framework; do
+  apt-get -s install --no-install-recommends -y "$name" > "$out/$name.control.log" 2>&1 || true
+done
+
+# 8. Measure (leak measurement only; never used to install): Kali at 500, no allowlist.
+printf 'Package: *\nPin: release o=Kali\nPin-Priority: 500\n\n' > "$pin_file"
+for name in zaproxy ghidra amass radare2 mitmproxy; do
+  apt-get -s install --no-install-recommends -y "$name" > "$out/$name.measure.log" 2>&1 || true
+  grep '^Inst [^ ]* \[' "$out/$name.measure.log" | grep 'kali-rolling' | grep -v 'Debian' > "$out/$name.measure_base_upgrades.txt" || true
+done
+
+# 9. Origin preservation: strict design, base container, no allowlist. Expect zero Kali-origin lines.
+pin_for
+apt-cache policy libc6 libgcc-s1 libstdc++6 curl > "$out/policy_strict.txt"
+apt-get -s dist-upgrade > "$out/dist_upgrade_strict.log" 2>&1 || true
+test "$(grep '^Inst ' "$out/dist_upgrade_strict.log" | grep -c 'kali-rolling' || true)" -eq 0
+
+# 10. LibreWolf (own repository): strict design with librewolf at 500.
+pin_for librewolf
+apt-get -s install --no-install-recommends -y librewolf > "$out/librewolf.strict.log" 2>&1 || true
+grep '^Inst ' "$out/librewolf.strict.log" | grep 'LibreWolf Software Repository' > "$out/librewolf_origin_lines.txt" || true
+
+# 11. M1 context: the 53 Debian names of cham3-desktop and cham3-full plus each CLEAN candidate.
+m1_names='aircrack-ng ark bind9-dnsutils binwalk dbus-user-session dolphin ffuf fonts-noto-color-emoji fonts-noto-core gobuster gwenview hashcat hydra iftop john kate kde-spectacle kf6-breeze-icon-theme kio-extras konsole kscreen kwin-wayland libimage-exiftool-perl libpam-systemd masscan nethogs nikto nmap okular plasma-desktop plasma-nm plasma-pa plasma-systemmonitor plasma-workspace powerdevil qml6-module-org-kde-kirigami qml6-module-org-kde-plasma-plasma5support qt6-image-formats-plugins sddm sddm-theme-debian-breeze sqlmap systemsettings tcpdump torbrowser-launcher tshark unzip whois wireplumber wireshark xdg-desktop-portal-kde xwayland zenmap zip'
+pin_for zaproxy
+apt-get -s install --no-install-recommends -y $m1_names zaproxy > "$out/m1_context_zaproxy.log" 2>&1 || true
+# Repeat the m1 step for exploitdb, ghidra (+ ghidra-data), amass (+ libpostal-data), and radare2 (+ its two libraries).
+
+# 12. Transcript checksums.
+( cd "$out" && sha256sum ./* > SHA256SUMS )
+```
+
+Pass criteria for F2-CLOSURE:
+
+- **P1 (CLEAN candidates: zaproxy, exploitdb, ghidra, amass, radare2):** `e_lines=0`; no `Remv` line; the Kali-origin `Inst` names equal the allowlist exactly.
+- **P2 (LEAKY candidates: mitmproxy, wpscan, rizin, rizin-cutter, metasploit-framework):** still `E:` lines. If one now resolves, record the new class and re-review before any inclusion.
+- **P3 (controls):** every control log contains `has no installation candidate`.
+- **P4 (origin preservation):** `dist_upgrade_strict.log` has zero Kali-origin `Inst` lines (the `test` in step 9 passes).
+- **P5 (LibreWolf):** exit 0; `librewolf_origin_lines.txt` contains only `librewolf`.
+- **P6 (M1 context):** exit 0 for each CLEAN candidate with the 53-name set.
+- **P7 (signatures):** `apt_update.log` has no NO_PUBKEY or GPG error; the three key checks match the recorded fingerprints and hashes.
+
+Known limits: the allowlists come from the emulated solver on 2026-10-11. Native results may differ if the indices changed. Simulation does not prove that a package installs or runs.
+
+### 6.2 Gate F2-ORIGIN (upgrade behaviour with an allowlisted package)
+
+Optional and must be approved by the coordinator, because it needs installed state. The default is the simulated installed state used in disposition section 3.3: append one dpkg status stanza in the disposable container, run `apt-get -s dist-upgrade` under the strict pin, then restore the status file. Pass only if the only Kali-origin line is the allowlisted package. Record the simulation as simulation.
+
+### 6.3 Gate FW-B43 (firmware scheduling and fetch)
+
+```sh
+# GATE FW-B43: static and build-config checks. No installer is run.
+apt-cache rdepends --no-recommends --no-suggests firmware-b43-installer firmware-b43legacy-installer
+# Expect: no reverse dependencies.
+
+# Reproduce the live-build selection from the indices live-build fetches:
+#   for area in main contrib non-free non-free-firmware; do
+#     for arch in all amd64; do
+#       curl -fsS "http://deb.debian.org/debian/dists/trixie/$area/Contents-$arch.gz" | gunzip -c |
+#         awk '/^(usr\/)?lib\/firmware/ { print $NF }'
+#     done
+#   done | sort -u
+# Remove the section prefix, drop firmware-nvidia-gsp and firmware-nvidia-tesla-gsp, apply the amd64 ARM blocklist,
+# and add firmware-linux. Expect 44 names; without the two installers, 42.
+# Compare with docs/research/evidence/firmware/proposed_set_without_b43_installers_42.txt.
+
+# After the change (--firmware-chroot false and an explicit package list):
+dpkg-query -W 'firmware-b43*' 2>/dev/null      # expect: empty on the built system
+# Build log must not contain: "Resolving github.com", "downloads.openwrt.org", or "Some problem occurred during the firmware download".
+```
+
+Pass criteria: no `firmware-b43*` package in the chroot or the installed system; the chroot firmware set equals the reviewed 42-package list; the build log contains no fetch attempts for firmware.
+
+### 6.4 Gate F3-CAP (dumpcap capture privilege)
+
+```sh
+# GATE F3-CAP: installed system (disposable VM). Pass only if no setuid bit is ever set.
+stat -c '%a %U:%G %n' /usr/bin/dumpcap      # expect: 754 root:wireshark
+getcap /usr/bin/dumpcap                     # expect: cap_net_admin,cap_net_raw=eip
+# Failure path (negative control): run the wireshark-common postinst with a setcap stub that fails.
+# Expect: no setuid bit. The upstream postinst produces 4754 here, so the test FAILS until the packaging change lands.
+# Membership: a non-member capture is denied; a member capture succeeds.
+# Live system: getcap on the mounted live /usr/bin/dumpcap (NOT_RUN until the ISO exists).
+```
+
+## 7. What this packet does NOT claim
+
+- No package is installed, built, booted, approved, or enabled.
+- No foreign source is approved. LibreWolf, the Kali allowlist, and any upstream route need owner approval first.
+- Closure and origin results are emulated early signals. Only section 6 gates, run natively, can confirm them.
+- The LibreWolf key has no independent second channel. The trixie second signature `4CB5…E131` is unverified.
+- Firmware disposition is a recommendation. It has not been implemented or tested on hardware.
+- The Wireshark setuid fallback is unfixed. Its test is designed but not run.
+- Package availability and closure are not evidence of security, correctness, or M2–M4 enforcement.
