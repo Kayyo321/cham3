@@ -1,7 +1,7 @@
 # Task: M1 — Bootable desktop distribution
 
-- **State:** IN_REVIEW (integrated candidate `b82919c`; fast gates PASS in-container, heavy gates assigned to Codex Remote; awaiting independent Codex review)
-- **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER; `m1_worker` (Sonnet 5.5) IMPLEMENTER; `m1_test_reviewer` (Haiku 5.5) TEST_ENGINEER/internal REVIEWER; `m1_docs_research` (Haiku 5.5) docs/research. Independent REVIEWER/SECURITY REVIEWER: Codex (not yet run).
+- **State:** IN_PROGRESS (repair cycle). Independent Codex review of `b82919c` returned **CHANGES_REQUESTED** on 2026-10-11 (`docs/reviews/M1-bootable-desktop-distribution-codex.md`). Repairing findings F1–F5 and the full-suite/firmware items against the reviewed commit; a new immutable implementation target will be recorded and resubmitted to Codex. Not approved; not merged; M1 is not complete.
+- **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER; `m1_worker` (Sonnet 5.5) IMPLEMENTER; `m1_test_reviewer` (Haiku 5.5) TEST_ENGINEER/internal REVIEWER; `m1_docs_research` (Haiku 5.5) docs/research. Independent REVIEWER/SECURITY REVIEWER: Codex (OpenAI) — completed first review of `b82919c` (CHANGES_REQUESTED); re-review pending at the new target.
 - **Created / updated:** 2026-10-11
 - **Base commit (M1 implementation baseline):** `401c6cf9a550c81decf832cbc346f6908b9c95ef` (current `main`; includes approved ADR 0002 and current branding assets). The older historical base `3f4690d80c87f4d1a2da88a9bbc1ba7bacb1dedc` recorded at drafting is superseded as the implementation baseline and kept as context only.
 
