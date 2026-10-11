@@ -54,6 +54,8 @@ lintian_status=0
 (cd "${packages_out}" && lintian --fail-on error --info --display-info -- ./*.changes) \
     2>&1 | tee "${packages_out}/lintian.txt" || lintian_status=$?
 # With "set -o pipefail" the pipeline status is lintian's own status.
+echo "# lintian exit status: ${lintian_status}" \
+    | tee -a "${packages_out}/lintian.txt"
 if [ "${lintian_status}" -ne 0 ]; then
     echo "build_packages: lintian reported errors (exit ${lintian_status})" >&2
     exit 1
