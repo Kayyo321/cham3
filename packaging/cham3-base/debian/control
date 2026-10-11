@@ -10,11 +10,11 @@ Package: cham3-base
 Architecture: all
 Depends: ${misc:Depends}
 Description: cham3 M0 development skeleton (no functionality)
- This package is an M0 development skeleton for the cham3 project. It
- installs only documentation under /usr/share/doc/cham3-base. It installs
- no services, no security policy, no enforcement components and no system
- configuration. It exists only to validate Debian packaging and live image
- integration.
+ This package is an empty M0 development skeleton for the cham3 project.
+ It installs only documentation under /usr/share/doc/cham3-base. It
+ installs no services, no security policy, no enforcement components and
+ no system configuration. It exists only to validate Debian packaging and
+ live image integration.
  .
  Installing this package does not make a system a cham3 system and does not
  provide application isolation, permission contracts or network controls.
