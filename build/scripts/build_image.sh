@@ -7,9 +7,19 @@
 # Environment:
 #   CHAM3_OUT_DIR                  output root (default <repo>/out)
 #   CHAM3_WORK_DIR                 live-build work dir (default $CHAM3_OUT_DIR/live-build-work)
+#   CHAM3_LIVE_DIR                 live-build config dir / image profile (default build/live);
+#                                  the M1 desktop image uses build/live-desktop
+#   CHAM3_IMAGE_NAME               output image basename (default cham3-m0-dev-amd64)
 #   CHAM3_ALLOW_UNVERIFIED_HOST=1  allow a host that is not Debian 13 amd64; recorded
 #                                  as an unverified host in provenance.json
-# Outputs in $CHAM3_OUT_DIR/image/: cham3-m0-dev-amd64.iso, .packages (package
+#   CHAM3_STAGE_DRYRUN=1           print the local packages that would be staged for the
+#                                  selected profile (from its cham3-local-packages manifest)
+#                                  and exit, without root or a build (for tests)
+# Each image profile's cham3-local-packages manifest names which locally built packages
+# belong in that image; only those are staged into config/packages.chroot. live-build
+# force-installs every .deb placed there, so an unparameterized M0 build must not stage
+# the M1 desktop suite.
+# Outputs in $CHAM3_OUT_DIR/image/: <CHAM3_IMAGE_NAME>.iso, .packages (package
 # manifest), build.log, provenance.json, SHA256SUMS.
 # Limits: bit-for-bit reproducibility is NOT claimed. The image is an M0 development
 # artifact with no cham3 functionality, not an installable cham3 distribution.
@@ -35,6 +45,10 @@ live_dir_abs="${repo_root}/${live_dir_rel}"
 [ -d "${live_dir_abs}" ] || die "CHAM3_LIVE_DIR not found: ${live_dir_rel}"
 [ -f "${live_dir_abs}/auto/config" ] || die "CHAM3_LIVE_DIR missing auto/config: ${live_dir_rel}"
 
+# Each profile declares which locally built packages belong in its image.
+local_packages_manifest="${live_dir_abs}/cham3-local-packages"
+[ -f "${local_packages_manifest}" ] || die "CHAM3_LIVE_DIR missing cham3-local-packages manifest: ${live_dir_rel}/cham3-local-packages"
+
 # Validate the output and work directories first (before the root check, so this is
 # testable unprivileged). The work dir is cleaned and rewritten by this script, so
 # refuse anything that could point at a system or source directory.
@@ -51,6 +65,43 @@ repo_root_resolved=$(realpath -m -- "${repo_root}")
 [ "${work_dir}" != "${repo_root_resolved}" ] || die "refusing CHAM3_WORK_DIR equal to the repository root (${work_dir})"
 image_dir="${out_dir}/image"
 packages_dir="${out_dir}/packages"
+
+# Select, per the profile manifest, which locally built packages to stage. This runs
+# before the root check so it is testable unprivileged (CHAM3_STAGE_DRYRUN=1). Matching
+# is by each .deb's real Package field, not its filename.
+command -v dpkg-deb > /dev/null 2>&1 || die "missing tool: dpkg-deb (see build/host_packages.txt)"
+shopt -s nullglob
+deb_files=("${packages_dir}"/*.deb)
+shopt -u nullglob
+[ "${#deb_files[@]}" -gt 0 ] || die "no .deb files in ${packages_dir}; run build/scripts/build_packages.sh first"
+
+declare -A built_deb_by_name=()
+for deb in "${deb_files[@]}"; do
+    pkg_name=$(dpkg-deb -f "${deb}" Package 2> /dev/null) || die "cannot read Package field of ${deb}"
+    [ -n "${pkg_name}" ] || die "empty Package field in ${deb}"
+    [ -z "${built_deb_by_name[${pkg_name}]:-}" ] \
+        || die "two built .deb files provide package ${pkg_name}: ${built_deb_by_name[${pkg_name}]} and ${deb}"
+    built_deb_by_name[${pkg_name}]="${deb}"
+done
+
+staged_debs=()
+staged_names=()
+while IFS= read -r raw_line || [ -n "${raw_line}" ]; do
+    line=${raw_line%%#*}
+    line=$(printf '%s' "${line}" | tr -d '[:space:]')
+    [ -n "${line}" ] || continue
+    deb_path=${built_deb_by_name[${line}]:-}
+    [ -n "${deb_path}" ] \
+        || die "profile ${live_dir_rel} requires package '${line}' but no built .deb provides it (run build/scripts/build_packages.sh)"
+    staged_debs+=("${deb_path}")
+    staged_names+=("${line}")
+done < "${local_packages_manifest}"
+[ "${#staged_debs[@]}" -gt 0 ] || die "profile manifest ${live_dir_rel}/cham3-local-packages names no packages"
+
+if [ "${CHAM3_STAGE_DRYRUN:-0}" = "1" ]; then
+    printf '%s\n' "${staged_names[@]}"
+    exit 0
+fi
 
 [ "$(id -u)" -eq 0 ] || die "must run as root (live-build needs chroot and mounts); use a disposable environment"
 
@@ -69,11 +120,6 @@ fi
 for tool in lb debootstrap git python3 sha256sum; do
     command -v "${tool}" > /dev/null 2>&1 || die "missing tool: ${tool} (see build/host_packages.txt)"
 done
-
-shopt -s nullglob
-deb_files=("${packages_dir}"/*.deb)
-shopt -u nullglob
-[ "${#deb_files[@]}" -gt 0 ] || die "no .deb files in ${packages_dir}; run build/scripts/build_packages.sh first"
 
 # SOURCE_DATE_EPOCH: commit time of HEAD unless already set (no reproducibility claim).
 git_cmd=(git -c "safe.directory=${repo_root}" -C "${repo_root}")
@@ -96,13 +142,14 @@ rm -f "${image_dir}/${image_name}".* "${image_dir}/build.log" "${image_dir}/prov
 touch "${work_dir}/${marker_name}"
 cp -a "${live_dir_abs}/." "${work_dir}/"
 mkdir -p "${work_dir}/config/packages.chroot"
-cp -p "${deb_files[@]}" "${work_dir}/config/packages.chroot/"
+cp -p "${staged_debs[@]}" "${work_dir}/config/packages.chroot/"
 
 started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 log_file="${image_dir}/build.log"
 {
     echo "build_image: started ${started_utc}"
     echo "build_image: SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH} unverified_host_override=${unverified_override}"
+    echo "build_image: profile=${live_dir_rel} staged local packages: ${staged_names[*]}"
     echo "build_image: live-build $(dpkg-query -W -f='${Version}' live-build)"
 } | tee "${log_file}"
 
