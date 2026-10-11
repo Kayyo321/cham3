@@ -30,3 +30,11 @@ NOT_RUN — product tests; visual-only asset.
 Independent review: pending owner design review.
 Next owner/action: user design review.
 
+Branding folder cleanup:
+User requested this be the only image in assets/branding.
+Baseline: 5905ec54127bd178b24d0b41e8412d3867380729.
+Removed ten superseded PNG/SVG assets; historical text records retained.
+PASS — pathlib inventory confirms cham3_imagegen_rose_facets.png is the
+only remaining image in assets/branding. Earlier assets remain in Git history.
+NOT_RUN — product tests; folder cleanup only, no product behavior changed.
+
