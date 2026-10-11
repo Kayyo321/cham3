@@ -1,0 +1,116 @@
+# M0 repository and build baseline checks. Uses no secrets and no production
+# credentials. Container jobs run in debian:trixie; the image job is privileged
+# because live-build needs chroot and mount access. Results from these jobs are
+# development evidence only.
+name: m0_checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CHAM3_OUT_DIR: ${{ github.workspace }}/out
+  CHAM3_REPO_ROOT: ${{ github.workspace }}
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  static_checks:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Mark workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install build host packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends $(grep -v '^#' build/host_packages.txt)
+      - name: Static checks
+        run: build/scripts/run_static_checks.sh
+      - name: Static check tests
+        run: tests/run_tests.sh static
+
+  package_build:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Mark workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install build host packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends $(grep -v '^#' build/host_packages.txt)
+      - name: Build packages (unsigned) and run lintian
+        run: build/scripts/build_packages.sh
+      - name: Package tests
+        run: tests/run_tests.sh packages
+      - name: Upload package results
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        with:
+          name: m0_packages
+          path: out/packages
+          retention-days: 7
+
+  image_build:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie
+      options: --privileged
+    timeout-minutes: 120
+    steps:
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Mark workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install build host packages
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends $(grep -v '^#' build/host_packages.txt)
+      - name: Build packages
+        run: build/scripts/build_packages.sh
+      - name: Build live image
+        run: build/scripts/build_image.sh
+      - name: Image tests
+        run: tests/run_tests.sh image
+      - name: Boot test in a throwaway VM
+        run: >-
+          python3 build/vm/run_boot_test.py
+          --iso out/image/cham3-m0-dev-amd64.iso
+          --out-dir out/boot_test
+          --accel auto
+          --timeout-seconds 1800
+      - name: Upload image results
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        with:
+          name: m0_image
+          path: |
+            out/image
+            out/boot_test
+          retention-days: 3

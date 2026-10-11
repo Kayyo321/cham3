@@ -1,0 +1,6 @@
+#!/bin/sh
+# Purpose: run "lb build" for the cham3 M0 development image (see auto/config).
+# build/scripts/build_image.sh wraps this and captures the log.
+set -eu
+
+lb build noauto "${@}"

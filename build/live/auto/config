@@ -1,0 +1,34 @@
+#!/bin/sh
+# Purpose: live-build configuration for the cham3 M0 development image.
+# Invoked by "lb config". Written against live-build 20250505+deb13u1 (Debian 13).
+# Limits: M0 foundation only. Debian main, no desktop, no installer, no firmware,
+# no cham3 functionality. The result is a development artifact, not a distribution.
+set -eu
+
+lb config noauto \
+    --mode debian \
+    --distribution trixie \
+    --architecture amd64 \
+    --archive-areas main \
+    --debian-installer none \
+    --binary-image iso-hybrid \
+    --bootloaders syslinux,grub-efi \
+    --firmware-chroot false \
+    --firmware-binary false \
+    --security true \
+    --updates true \
+    --apt-secure true \
+    --apt-recommends false \
+    --cache false \
+    --mirror-bootstrap http://deb.debian.org/debian/ \
+    --mirror-chroot http://deb.debian.org/debian/ \
+    --mirror-chroot-security http://security.debian.org/ \
+    --mirror-binary http://deb.debian.org/debian/ \
+    --mirror-binary-security http://security.debian.org/ \
+    --bootappend-live "boot=live components console=tty0 console=ttyS0,115200n8" \
+    --image-name cham3-m0-dev \
+    --iso-application "cham3 M0 development image" \
+    --iso-publisher "cham3 project; M0 development build, not a release" \
+    --iso-preparer "cham3 M0 build via live-build" \
+    --iso-volume "CHAM3_M0_DEV" \
+    "${@}"
