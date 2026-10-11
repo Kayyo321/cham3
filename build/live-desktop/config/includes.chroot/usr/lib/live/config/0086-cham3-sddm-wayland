@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# shellcheck source=/dev/null
 . /usr/lib/live/config.sh
 
 ## live-config(7) component (live-config's own script layout; the hyphenated
@@ -42,7 +43,7 @@ check_component ()
 		exit 0
 	fi
 
-	echo -n " cham3-sddm-wayland"
+	printf ' %s' "cham3-sddm-wayland"
 }
 
 apply_component ()
