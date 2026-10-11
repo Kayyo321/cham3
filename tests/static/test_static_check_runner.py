@@ -6,6 +6,7 @@ YAML syntax). The original repository is never modified.
 """
 
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -72,6 +73,29 @@ class static_check_runner_t(unittest.TestCase):
             "runner passed despite %s defect in %s" % (label, mutated),
         )
         self.assertIn("FAIL", output)
+
+
+class static_check_file_discovery_t(unittest.TestCase):
+    """Regression test for review finding F2: a tree without git metadata must
+    fail file discovery, not report per-check PASS over zero files."""
+
+    def test_tree_without_git_fails_file_discovery(self):
+        root = m0_support.repo_root()
+        with tempfile.TemporaryDirectory() as temp:
+            copy = os.path.join(temp, "tree")
+            os.makedirs(copy)
+            for relative in m0_support.tracked_files():
+                source = os.path.join(root, relative)
+                destination = os.path.join(copy, relative)
+                os.makedirs(os.path.dirname(destination), exist_ok=True)
+                shutil.copy2(source, destination)
+            self.assertFalse(os.path.exists(os.path.join(copy, ".git")))
+            completed = run_runner(copy)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 1, output)
+        self.assertIn("FAIL file_discovery", output)
+        for line in ("PASS shellcheck", "PASS py_compile", "PASS yamllint"):
+            self.assertNotIn(line, output, "per-check PASS reported over zero files")
 
 
 if __name__ == "__main__":
