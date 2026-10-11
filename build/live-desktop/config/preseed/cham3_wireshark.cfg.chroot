@@ -1,6 +1,17 @@
 # Applied by live-build with debconf-set-selections BEFORE package installation.
-# Lets wireshark-common install dumpcap with file capabilities and restrict it to
-# the "wireshark" group, so packet capture works through group membership and
-# not through running Wireshark or tshark as root. No user is added to the group
-# by the image; membership is a deliberate per-user administrative step.
+#
+# "true" selects Debian's group-based layout for the capture helper dumpcap:
+# group "wireshark" plus the file capabilities cap_net_admin and cap_net_raw,
+# instead of root-only capture. By itself this answer is NOT a non-setuid
+# configuration: when setcap is missing or fails, wireshark-common falls back to
+# a set-user-id root dumpcap.
+#
+# The no-setuid, fail-closed policy for /usr/bin/dumpcap is enforced by the
+# cham3-desktop package, not by this answer: a dpkg-statoverride plus a dpkg
+# file trigger in its postinst stop the set-user-id fallback on install,
+# upgrade and dpkg-reconfigure. If the capabilities cannot be set, capture by
+# non-root users is unavailable; it never runs as set-user-id root.
+#
+# The image adds no user to the "wireshark" group. Membership is a deliberate
+# per-user administrative step that lets that user capture packets.
 wireshark-common wireshark-common/install-setuid boolean true

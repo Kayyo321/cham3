@@ -1,0 +1,4 @@
+# Re-assert the dumpcap capture policy (see debian/postinst) whenever any
+# package installs, upgrades or removes /usr/bin/dumpcap (wireshark-common).
+# noawait: the package that ships dumpcap does not wait for this trigger.
+interest-noawait /usr/bin/dumpcap
