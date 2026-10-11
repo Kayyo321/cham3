@@ -8,3 +8,6 @@ __pycache__/
 *.iso
 *.buildinfo
 *.changes
+
+# macOS folder metadata, at any directory depth.
+.DS_Store
