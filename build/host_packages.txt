@@ -15,6 +15,7 @@ shellcheck
 yamllint
 
 # Debian package build and lint (build/scripts/build_packages.sh)
+build-essential
 debhelper
 dpkg-dev
 fakeroot
