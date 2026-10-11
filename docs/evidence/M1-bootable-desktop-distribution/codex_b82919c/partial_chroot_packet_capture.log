@@ -1,5 +1,7 @@
 Capturing on 'Loopback: lo'
 File: /tmp/codex-member-packet.pcapng
-Packets: 1 Packets captured: 1
+
+Packets: 1
+Packets captured: 1
 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
 capture_exit=0

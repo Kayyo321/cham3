@@ -5,6 +5,8 @@ This is reviewer evidence for implementation commit
 `401c6cf9a550c81decf832cbc346f6908b9c95ef`, collected on 2026-10-11.
 See [the review](../../../reviews/M1-bootable-desktop-distribution-codex.md)
 for findings, acceptance dispositions and CHANGES_REQUESTED verdict.
+Committed log transcripts normalize terminal carriage returns and trailing whitespace for readable text. `raw_log_SHA256SUMS` records the original log bytes; original copies remain in `/workspace/M1-review-evidence/`. No substantive output was removed.
+
 No product implementation was changed. All elevated work ran in a disposable
 Docker container on the native x86-64 Debian 13 Codex Remote environment.
 

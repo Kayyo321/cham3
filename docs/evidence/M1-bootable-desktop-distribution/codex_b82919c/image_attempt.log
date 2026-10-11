@@ -1,36 +1,36 @@
 build_image: started 2026-10-11T22:41:52Z
 build_image: SOURCE_DATE_EPOCH=1791757603 unverified_host_override=0
 build_image: live-build 1:20250505+deb13u1
-[2026-10-11 22:41:52] lb config 
+[2026-10-11 22:41:52] lb config
 P: Executing auto/config script.
 [2026-10-11 22:41:52] lb config noauto --mode debian --distribution trixie --architecture amd64 --archive-areas main contrib non-free non-free-firmware --debian-installer live --binary-image iso-hybrid --bootloaders syslinux,grub-efi --firmware-chroot true --firmware-binary true --security true --updates true --apt-secure true --apt-recommends false --cache false --mirror-bootstrap http://deb.debian.org/debian/ --mirror-chroot http://deb.debian.org/debian/ --mirror-chroot-security http://security.debian.org/ --mirror-binary http://deb.debian.org/debian/ --mirror-binary-security http://security.debian.org/ --bootappend-live boot=live components console=tty0 console=ttyS0,115200n8 --image-name cham3-m1-desktop --iso-application cham3 M1 desktop image --iso-publisher cham3 project; M1 development build, not a release --iso-preparer cham3 M1 build via live-build --iso-volume CHAM3_M1_DESKTOP
 P: Using http proxy: http://172.31.6.77:8080
 P: Updating config tree for a debian/trixie/amd64 system
 P: Symlinking hooks...
-[2026-10-11 22:41:53] lb build 
+[2026-10-11 22:41:53] lb build
 P: Executing auto/build script.
 [2026-10-11 22:41:53] lb build noauto
 P: Using http proxy: http://172.31.6.77:8080
 P: live-build 20250505+deb13u1
 P: Building for a debian/trixie/amd64 system
-[2026-10-11 22:41:53] lb bootstrap 
+[2026-10-11 22:41:53] lb bootstrap
 P: Setting up clean exit handler
 [2026-10-11 22:41:53] lb bootstrap_cache restore
-[2026-10-11 22:41:53] lb bootstrap_debootstrap 
+[2026-10-11 22:41:53] lb bootstrap_debootstrap
 P: Begin bootstrapping system...
 P: If the following stage fails, the most likely cause of the problem is with your mirror configuration or a caching proxy.
 P: Running debootstrap...
-I: Retrieving InRelease 
+I: Retrieving InRelease
 I: Checking Release signature
 I: Valid Release signature
-I: Retrieving Packages 
-I: Validating Packages 
-I: Retrieving Packages 
-I: Validating Packages 
-I: Retrieving Packages 
-I: Validating Packages 
-I: Retrieving Packages 
-I: Validating Packages 
+I: Retrieving Packages
+I: Validating Packages
+I: Retrieving Packages
+I: Validating Packages
+I: Retrieving Packages
+I: Validating Packages
+I: Retrieving Packages
+I: Validating Packages
 I: Resolving dependencies of required packages...
 I: Resolving dependencies of base packages...
 I: Checking component main on http://deb.debian.org/debian...
@@ -684,7 +684,7 @@ P: Saving bootstrap stage to cache...
 P: Bootstrap stage completed
 P: Begin unmounting filesystems...
 P: Saving caches...
-[2026-10-11 22:43:09] lb chroot 
+[2026-10-11 22:43:09] lb chroot
 P: Setting up clean exit handler
 [2026-10-11 22:43:09] lb chroot_cache restore
 [2026-10-11 22:43:09] lb chroot_prep install all mode-archives-chroot
@@ -770,19 +770,103 @@ Get:2 http://security.debian.org trixie-security/main amd64 libpcre2-8-0 amd64 1
 Get:3 http://security.debian.org trixie-security/main amd64 openssl-provider-legacy amd64 3.5.7-1~deb13u3 [316 kB]
 Get:4 http://security.debian.org trixie-security/main amd64 libssl3t64 amd64 3.5.7-1~deb13u3 [2458 kB]
 Fetched 3383 kB in 0s (11.7 MB/s)
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../liblzma5_5.8.1-1+deb13u2_amd64.deb ...
 Unpacking liblzma5:amd64 (5.8.1-1+deb13u2) over (5.8.1-1+deb13u1) ...
 Setting up liblzma5:amd64 (5.8.1-1+deb13u2) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../libpcre2-8-0_10.46-1~deb13u3_amd64.deb ...
 Unpacking libpcre2-8-0:amd64 (10.46-1~deb13u3) over (10.46-1~deb13u2) ...
 Setting up libpcre2-8-0:amd64 (10.46-1~deb13u3) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../openssl-provider-legacy_3.5.7-1~deb13u3_amd64.deb ...
 Unpacking openssl-provider-legacy (3.5.7-1~deb13u3) over (3.5.7-1~deb13u2) ...
 Setting up openssl-provider-legacy (3.5.7-1~deb13u3) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../libssl3t64_3.5.7-1~deb13u3_amd64.deb ...
 Unpacking libssl3t64:amd64 (3.5.7-1~deb13u3) over (3.5.7-1~deb13u2) ...
 Setting up libssl3t64:amd64 (3.5.7-1~deb13u3) ...
@@ -792,9 +876,9 @@ Building dependency tree...
 Reading state information...
 Calculating upgrade...
 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-[2026-10-11 22:43:16] lb chroot_linux-image 
+[2026-10-11 22:43:16] lb chroot_linux-image
 P: Begin scheduling kernel image installation...
-[2026-10-11 22:43:16] lb chroot_firmware 
+[2026-10-11 22:43:16] lb chroot_firmware
 P: Begin scheduling firmware installation...
 --2026-10-11 22:43:16--  http://deb.debian.org/debian//dists/trixie/main/Contents-all.gz
 Connecting to 172.31.6.77:8080... connected.
@@ -1892,9 +1976,9 @@ Saving to: 'cache/contents.chroot/trixie/non-free-firmware/contents-amd64.gz'
 
 2026-10-11 22:43:23 (510 MB/s) - 'cache/contents.chroot/trixie/non-free-firmware/contents-amd64.gz' saved [1149/1149]
 
-[2026-10-11 22:43:24] lb chroot_preseed 
+[2026-10-11 22:43:24] lb chroot_preseed
 P: Begin executing local preseeds...
-[2026-10-11 22:43:24] lb chroot_includes_before_packages 
+[2026-10-11 22:43:24] lb chroot_includes_before_packages
 P: Begin copying chroot includes before packages have been installed...
 [2026-10-11 22:43:24] lb chroot_package-lists install
 P: Begin queueing installation of package lists (install pass)...
@@ -1911,7 +1995,28 @@ After this operation, 432 kB of additional disk space will be used.
 Get:1 http://deb.debian.org/debian trixie/main amd64 dctrl-tools amd64 2.24-3+b1 [104 kB]
 Fetched 104 kB in 0s (2434 kB/s)
 Selecting previously unselected package dctrl-tools.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../dctrl-tools_2.24-3+b1_amd64.deb ...
 Unpacking dctrl-tools (2.24-3+b1) ...
 Setting up dctrl-tools (2.24-3+b1) ...
@@ -1922,9 +2027,51 @@ The following packages will be REMOVED:
   dctrl-tools*
 0 upgraded, 0 newly installed, 1 to remove and 0 not upgraded.
 After this operation, 432 kB disk space will be freed.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7863 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7863 files and directories currently installed.)
 Removing dctrl-tools (2.24-3+b1) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Purging configuration files for dctrl-tools (2.24-3+b1) ...
 [2026-10-11 22:43:26] lb chroot_install-packages install
 P: Begin installing packages (install pass)...
@@ -3737,7 +3884,28 @@ Get:1181 http://deb.debian.org/debian trixie/main amd64 wireless-regdb all 2026.
 Preconfiguring packages ...
 Fetched 1155 MB in 1min 3s (18.4 MB/s)
 Selecting previously unselected package libdbus-1-3:amd64.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../000-libdbus-1-3_1.16.2-2_amd64.deb ...
 Unpacking libdbus-1-3:amd64 (1.16.2-2) ...
 Selecting previously unselected package dbus-bin.
@@ -4493,7 +4661,28 @@ Preparing to unpack .../250-libxi6_2%3a1.8.2-1_amd64.deb ...
 Unpacking libxi6:amd64 (2:1.8.2-1) ...
 Setting up psmisc (23.7-2) ...
 Selecting previously unselected package libkscreenlocker6:amd64.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 16030 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 16030 files and directories currently installed.)
 Preparing to unpack .../0-libkscreenlocker6_6.3.5-1_amd64.deb ...
 Unpacking libkscreenlocker6:amd64 (6.3.5-1) ...
 Selecting previously unselected package linux-base.
@@ -4519,7 +4708,28 @@ Preparing to unpack .../7-initramfs-tools_0.148.4_all.deb ...
 Unpacking initramfs-tools (0.148.4) ...
 Setting up linux-base (4.12.1) ...
 Selecting previously unselected package linux-image-6.12.111+deb13-amd64.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 16182 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 16182 files and directories currently installed.)
 Preparing to unpack .../linux-image-6.12.111+deb13-amd64_6.12.111-1_amd64.deb ...
 Unpacking linux-image-6.12.111+deb13-amd64 (6.12.111-1) ...
 Selecting previously unselected package poppler-data.
@@ -4535,7 +4745,28 @@ Setting up libpython3.13-minimal:amd64 (3.13.5-2+deb13u5) ...
 Setting up libexpat1:amd64 (2.8.3-1~deb13u1) ...
 Setting up python3.13-minimal (3.13.5-2+deb13u5) ...
 Selecting previously unselected package python3-minimal.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 22239 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 22239 files and directories currently installed.)
 Preparing to unpack .../python3-minimal_3.13.5-1_amd64.deb ...
 Unpacking python3-minimal (3.13.5-1) ...
 Selecting previously unselected package media-types.
@@ -4552,7 +4783,28 @@ Preparing to unpack .../libpython3-stdlib_3.13.5-1_amd64.deb ...
 Unpacking libpython3-stdlib:amd64 (3.13.5-1) ...
 Setting up python3-minimal (3.13.5-1) ...
 Selecting previously unselected package python3.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 22692 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 22692 files and directories currently installed.)
 Preparing to unpack .../python3_3.13.5-1_amd64.deb ...
 Unpacking python3 (3.13.5-1) ...
 Selecting previously unselected package isa-support:amd64.
@@ -4560,7 +4812,28 @@ Preparing to unpack .../isa-support_27_amd64.deb ...
 Unpacking isa-support:amd64 (27) ...
 Setting up isa-support:amd64 (27) ...
 Selecting previously unselected package sse3-support.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 22734 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 22734 files and directories currently installed.)
 Preparing to unpack .../000-sse3-support_27_amd64.deb ...
 Unpacking sse3-support (27) ...
 Selecting previously unselected package sudo.
@@ -7320,10 +7593,14 @@ Setting up libudfread0:amd64 (1.1.2-1+b2) ...
 Setting up libkf6auth-data (6.13.0-1) ...
 Setting up kwin-data (4:6.3.6-1) ...
 Setting up tpm-udev (0.6+nmu1) ...
-Running in chroot, ignoring request.
-Running in chroot, ignoring request.
-Running in chroot, ignoring request.
-Running in chroot, ignoring request.
+Running in chroot, ignoring request.
+
+Running in chroot, ignoring request.
+
+Running in chroot, ignoring request.
+
+Running in chroot, ignoring request.
+
 Setting up libnorm1t64:amd64 (1.5.9+dfsg-3.1+b2) ...
 Setting up libcdparanoia0:amd64 (3.10.2+debian-14+b1) ...
 Setting up libsharpyuv0:amd64 (1.5.0-0.1) ...
@@ -7435,7 +7712,8 @@ Setting up libxcb-shape0:amd64 (1.17.0-2+b1) ...
 Setting up binutils-common:amd64 (2.44-3) ...
 Setting up firmware-misc-nonfree (20250410-2) ...
 Setting up x11-common (1:7.7+24+deb13u1) ...
-Running in chroot, ignoring request.
+Running in chroot, ignoring request.
+
 All runlevel operations denied by policy
 invoke-rc.d: policy-rc.d denied execution of start.
 Setting up libsensors-config (1:3.6.2-2) ...
@@ -7598,7 +7876,8 @@ Setting up libkf6textwidgets-data (6.13.0-1) ...
 Setting up usb.ids (2025.07.26-1) ...
 Setting up firmware-ipw2x00 (20250410-2) ...
 Setting up sudo (1.9.16p2-3+deb13u2) ...
-Running in chroot, ignoring request.
+Running in chroot, ignoring request.
+
 All runlevel operations denied by policy
 invoke-rc.d: policy-rc.d denied execution of start.
 Setting up libipt2 (2.1.2-1) ...
@@ -7683,7 +7962,8 @@ Setting up sse3-support (27) ...
 Setting up gpgconf (2.4.7-21+deb13u1+b5) ...
 Setting up libxcvt0:amd64 (0.1.3-1) ...
 Setting up live-config-systemd (11.0.5) ...
-Created symlink '/etc/systemd/system/basic.target.wants/live-config.service' → '/usr/lib/systemd/system/live-config.service'.
+Created symlink '/etc/systemd/system/basic.target.wants/live-config.service' → '/usr/lib/systemd/system/live-config.service'.
+
 Setting up libopencore-amrnb0:amd64 (0.1.6-1+b2) ...
 Setting up libtasn1-6:amd64 (4.20.0-2+deb13u1) ...
 Setting up libmd4c0:amd64 (0.5.2-2+b1) ...
@@ -7727,8 +8007,10 @@ Setting up glib-networking-common (2.80.1-1) ...
 Setting up libkf6declarative-data (6.13.0-1) ...
 Setting up libbinutils:amd64 (2.44-3) ...
 Setting up dbus-system-bus-common (1.16.2-2) ...
-Creating group 'messagebus' with GID 991.
-Creating user 'messagebus' (System Message Bus) with UID 991 and GID 991.
+Creating group 'messagebus' with GID 991.
+
+Creating user 'messagebus' (System Message Bus) with UID 991 and GID 991.
+
 Setting up gobuster (3.6.0-1+b10) ...
 Setting up libisl23:amd64 (0.27-1) ...
 Setting up libde265-0:amd64 (1.0.15-1+deb13u2) ...
@@ -7818,10 +8100,14 @@ Setting up libtss2-tcti-spi-helper0t64:amd64 (4.1.3-1.2) ...
 Setting up libfftw3-single3:amd64 (3.3.10-2+b1) ...
 Setting up libxdamage1:amd64 (1:1.1.6-1+b2) ...
 Setting up gpg-agent (2.4.7-21+deb13u1+b5) ...
-Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent-browser.socket' → '/usr/lib/systemd/user/gpg-agent-browser.socket'.
-Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent-extra.socket' → '/usr/lib/systemd/user/gpg-agent-extra.socket'.
-Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent-ssh.socket' → '/usr/lib/systemd/user/gpg-agent-ssh.socket'.
-Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent.socket' → '/usr/lib/systemd/user/gpg-agent.socket'.
+Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent-browser.socket' → '/usr/lib/systemd/user/gpg-agent-browser.socket'.
+
+Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent-extra.socket' → '/usr/lib/systemd/user/gpg-agent-extra.socket'.
+
+Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent-ssh.socket' → '/usr/lib/systemd/user/gpg-agent-ssh.socket'.
+
+Created symlink '/etc/systemd/user/sockets.target.wants/gpg-agent.socket' → '/usr/lib/systemd/user/gpg-agent.socket'.
+
 Setting up libzmq5:amd64 (4.3.5-1+b3) ...
 Setting up libxpm4:amd64 (1:3.5.17-1+deb13u1) ...
 Setting up libv4lconvert0t64:amd64 (1.30.1-1) ...
@@ -7887,7 +8173,8 @@ Setting up libxfixes3:amd64 (1:6.0.0-2+b4) ...
 Setting up libdbus-glib-1-2:amd64 (0.114-1) ...
 Setting up libteamdctl0:amd64 (1.31-1+b2) ...
 Setting up dbus (1.16.2-2) ...
-Running in chroot, ignoring request.
+Running in chroot, ignoring request.
+
 All runlevel operations denied by policy
 invoke-rc.d: policy-rc.d denied execution of start.
 Setting up libopenexr-3-1-30:amd64 (3.1.13-2) ...
@@ -7964,7 +8251,8 @@ Setting up libxfont2:amd64 (1:2.0.6-1+deb13u1) ...
 Setting up libopenmpt0t64:amd64 (0.7.13-1+b1) ...
 Setting up libavahi-client3:amd64 (0.8-16) ...
 Setting up gpg (2.4.7-21+deb13u1+b5) ...
-Created symlink '/etc/systemd/user/sockets.target.wants/keyboxd.socket' → '/usr/lib/systemd/user/keyboxd.socket'.
+Created symlink '/etc/systemd/user/sockets.target.wants/keyboxd.socket' → '/usr/lib/systemd/user/keyboxd.socket'.
+
 Setting up libgudev-1.0-0:amd64 (238-6) ...
 Setting up libpolkit-gobject-1-0:amd64 (126-2) ...
 Setting up libgstreamer1.0-0:amd64 (1.26.2-2) ...
@@ -8042,7 +8330,8 @@ Setting up libdconf1:amd64 (0.40.0-5) ...
 Setting up libglibmm-2.4-1t64:amd64 (2.66.8-1) ...
 Setting up libsphinxbase3t64:amd64 (0.8+5prealpha+1-21+b1) ...
 Setting up dirmngr (2.4.7-21+deb13u1+b5) ...
-Created symlink '/etc/systemd/user/sockets.target.wants/dirmngr.socket' → '/usr/lib/systemd/user/dirmngr.socket'.
+Created symlink '/etc/systemd/user/sockets.target.wants/dirmngr.socket' → '/usr/lib/systemd/user/dirmngr.socket'.
+
 Setting up dbus-user-session (1.16.2-2) ...
 Setting up libswresample5:amd64 (7:7.1.5-0+deb13u1) ...
 Setting up libqt5core5t64:amd64 (5.15.15+dfsg-6+deb13u1) ...
@@ -8127,7 +8416,8 @@ wget: unable to resolve host address 'downloads.openwrt.org'
 dpkg: error processing package firmware-b43legacy-installer (--configure):
  installed firmware-b43legacy-installer package post-installation script subprocess returned error exit status 1
 Setting up accountsservice (23.13.9-7) ...
-Created symlink '/etc/systemd/system/graphical.target.wants/accounts-daemon.service' → '/usr/lib/systemd/system/accounts-daemon.service'.
+Created symlink '/etc/systemd/system/graphical.target.wants/accounts-daemon.service' → '/usr/lib/systemd/system/accounts-daemon.service'.
+
 Setting up libngtcp2-crypto-gnutls8:amd64 (1.11.0-1+deb13u1) ...
 Setting up libpangocairo-1.0-0:amd64 (1.56.3-1) ...
 Setting up libqt6dbus6:amd64 (6.8.2+dfsg-9+deb13u2) ...
@@ -8163,9 +8453,12 @@ Setting up clang-18 (1:18.1.8-18+b1) ...
 Setting up libkf6doctools6:amd64 (6.13.0-1) ...
 Setting up dconf-service (0.40.0-5) ...
 Setting up network-manager (1.52.1-1) ...
-Created symlink '/etc/systemd/system/dbus-org.freedesktop.nm-dispatcher.service' → '/usr/lib/systemd/system/NetworkManager-dispatcher.service'.
-Created symlink '/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service' → '/usr/lib/systemd/system/NetworkManager-wait-online.service'.
-Created symlink '/etc/systemd/system/multi-user.target.wants/NetworkManager.service' → '/usr/lib/systemd/system/NetworkManager.service'.
+Created symlink '/etc/systemd/system/dbus-org.freedesktop.nm-dispatcher.service' → '/usr/lib/systemd/system/NetworkManager-dispatcher.service'.
+
+Created symlink '/etc/systemd/system/network-online.target.wants/NetworkManager-wait-online.service' → '/usr/lib/systemd/system/NetworkManager-wait-online.service'.
+
+Created symlink '/etc/systemd/system/multi-user.target.wants/NetworkManager.service' → '/usr/lib/systemd/system/NetworkManager.service'.
+
 Setting up libqt6sensors6:amd64 (6.8.2-3) ...
 Setting up libxaw7:amd64 (2:1.0.16-1) ...
 Setting up fonts-urw-base35 (20200910-8) ...
@@ -8237,9 +8530,12 @@ Setting up vlc-plugin-base:amd64 (3.0.24-0+deb13u1) ...
 Setting up xserver-common (2:21.1.16-1.3+deb13u4) ...
 Setting up xwayland (2:24.1.6-1) ...
 Setting up pipewire:amd64 (1.4.2-1) ...
-Created symlink '/etc/systemd/user/default.target.wants/filter-chain.service' → '/usr/lib/systemd/user/filter-chain.service'.
-Created symlink '/etc/systemd/user/sockets.target.wants/pipewire.socket' → '/usr/lib/systemd/user/pipewire.socket'.
-Created symlink '/etc/systemd/user/default.target.wants/pipewire.service' → '/usr/lib/systemd/user/pipewire.service'.
+Created symlink '/etc/systemd/user/default.target.wants/filter-chain.service' → '/usr/lib/systemd/user/filter-chain.service'.
+
+Created symlink '/etc/systemd/user/sockets.target.wants/pipewire.socket' → '/usr/lib/systemd/user/pipewire.socket'.
+
+Created symlink '/etc/systemd/user/default.target.wants/pipewire.service' → '/usr/lib/systemd/user/pipewire.service'.
+
 Setting up libkdecorations3private2:amd64 (4:6.3.4-1) ...
 Setting up libkf6bookmarks6:amd64 (6.13.0-1) ...
 Setting up libkdsoap-qt6-2:amd64 (2.2.0+dfsg-3) ...
@@ -8296,15 +8592,18 @@ Setting up libkf6i18n6:amd64 (6.13.0-1) ...
 Setting up libqt6webchannel6:amd64 (6.8.2-2) ...
 Setting up libkf6windowsystem6:amd64 (6.13.0-2) ...
 Setting up wireplumber (0.5.8-2) ...
-Created symlink '/etc/systemd/user/pipewire.service.wants/wireplumber.service' → '/usr/lib/systemd/user/wireplumber.service'.
+Created symlink '/etc/systemd/user/pipewire.service.wants/wireplumber.service' → '/usr/lib/systemd/user/wireplumber.service'.
+
 Setting up libqt6svgwidgets6:amd64 (6.8.2-3) ...
 Setting up libkf6userfeedbackcore6:amd64 (6.13.0-1) ...
 Setting up libkf6runner6:amd64 (6.13.0-1) ...
 Setting up libkf6dnssd6:amd64 (6.13.0-1) ...
 Setting up xserver-xorg-video-vesa (1:2.6.0-2) ...
 Setting up pipewire-pulse (1.4.2-1) ...
-Created symlink '/etc/systemd/user/default.target.wants/pipewire-pulse.service' → '/usr/lib/systemd/user/pipewire-pulse.service'.
-Created symlink '/etc/systemd/user/sockets.target.wants/pipewire-pulse.socket' → '/usr/lib/systemd/user/pipewire-pulse.socket'.
+Created symlink '/etc/systemd/user/default.target.wants/pipewire-pulse.service' → '/usr/lib/systemd/user/pipewire-pulse.service'.
+
+Created symlink '/etc/systemd/user/sockets.target.wants/pipewire-pulse.socket' → '/usr/lib/systemd/user/pipewire-pulse.socket'.
+
 Setting up libkf6i18nqml6:amd64 (6.13.0-1) ...
 Setting up glib-networking:amd64 (2.80.1-1) ...
 Setting up libkf6i18nlocaledata6:amd64 (6.13.0-1) ...
@@ -8439,12 +8738,14 @@ Setting up python3-pyqt5 (5.15.11+dfsg-2) ...
 Setting up qml6-module-qtpositioning:amd64 (6.8.2-3) ...
 Setting up libkpipewiredmabuf6:amd64 (6.3.6-1) ...
 Setting up xdg-desktop-portal (1.20.3+ds-1) ...
-Created symlink '/etc/systemd/user/graphical-session-pre.target.wants/xdg-desktop-portal-rewrite-launchers.service' → '/usr/lib/systemd/user/xdg-desktop-portal-rewrite-launchers.service'.
+Created symlink '/etc/systemd/user/graphical-session-pre.target.wants/xdg-desktop-portal-rewrite-launchers.service' → '/usr/lib/systemd/user/xdg-desktop-portal-rewrite-launchers.service'.
+
 Setting up libqt6quickcontrols2-6:amd64 (6.8.2+dfsg-7) ...
 Setting up sddm (0.21.0+git20250502.4fe234b-2) ...
 usermod: no changes
 usermod: no changes
-Running in chroot, ignoring request.
+Running in chroot, ignoring request.
+
 All runlevel operations denied by policy
 invoke-rc.d: policy-rc.d denied execution of reload.
 Setting up qml6-module-org-kde-config:amd64 (6.13.0-2) ...
@@ -8478,7 +8779,8 @@ Setting up qml6-module-org-kde-pipewire:amd64 (6.3.6-1) ...
 Setting up libplasmaquick6:amd64 (6.3.5-1) ...
 Setting up libklipper6 (4:6.3.6-2) ...
 Setting up baloo6 (6.13.0-1) ...
-Created symlink '/etc/systemd/user/graphical-session.target.wants/kde-baloo.service' → '/usr/lib/systemd/user/kde-baloo.service'.
+Created symlink '/etc/systemd/user/graphical-session.target.wants/kde-baloo.service' → '/usr/lib/systemd/user/kde-baloo.service'.
+
 Setting up qml6-module-org-kde-iconthemes:amd64 (6.13.0-2) ...
 Setting up libkf6texteditor6:amd64 (6.13.0-1) ...
 Setting up libkf6baloowidgets6:amd64 (4:25.04.0-1) ...
@@ -8488,17 +8790,28 @@ Setting up konsole-kpart (4:25.04.2-1) ...
 Setting up qml6-module-org-kde-ksvg (6.13.0-1) ...
 Setting up libkf6kcmutils6:amd64 (6.13.0-2) ...
 Setting up drkonqi (6.3.4-1) ...
-Created symlink '/etc/systemd/user/default.target.wants/drkonqi-coredump-cleanup.service' → '/usr/lib/systemd/user/drkonqi-coredump-cleanup.service'.
-Created symlink '/etc/systemd/user/timers.target.wants/drkonqi-coredump-cleanup.timer' → '/usr/lib/systemd/user/drkonqi-coredump-cleanup.timer'.
-Created symlink '/etc/systemd/user/sockets.target.wants/drkonqi-coredump-launcher.socket' → '/usr/lib/systemd/user/drkonqi-coredump-launcher.socket'.
-Created symlink '/etc/systemd/user/sockets.target.upholds/drkonqi-coredump-launcher.socket' → '/usr/lib/systemd/user/drkonqi-coredump-launcher.socket'.
-Created symlink '/etc/systemd/user/plasma-core.target.wants/drkonqi-coredump-pickup.service' → '/usr/lib/systemd/user/drkonqi-coredump-pickup.service'.
-Created symlink '/etc/systemd/user/default.target.wants/drkonqi-sentry-postman.path' → '/usr/lib/systemd/user/drkonqi-sentry-postman.path'.
-Created symlink '/etc/systemd/user/plasma-core.target.wants/drkonqi-sentry-postman.path' → '/usr/lib/systemd/user/drkonqi-sentry-postman.path'.
-Created symlink '/etc/systemd/user/timers.target.wants/drkonqi-sentry-postman.timer' → '/usr/lib/systemd/user/drkonqi-sentry-postman.timer'.
-Created symlink '/etc/systemd/user/plasma-core.target.wants/drkonqi-sentry-postman.timer' → '/usr/lib/systemd/user/drkonqi-sentry-postman.timer'.
-Created symlink '/etc/systemd/system/systemd-coredump@.service.wants/drkonqi-coredump-processor@.service' → '/usr/lib/systemd/system/drkonqi-coredump-processor@.service'.
-Unit /usr/lib/systemd/system/drkonqi-coredump-processor@.service is added as a dependency to a non-existent unit systemd-coredump@.service.
+Created symlink '/etc/systemd/user/default.target.wants/drkonqi-coredump-cleanup.service' → '/usr/lib/systemd/user/drkonqi-coredump-cleanup.service'.
+
+Created symlink '/etc/systemd/user/timers.target.wants/drkonqi-coredump-cleanup.timer' → '/usr/lib/systemd/user/drkonqi-coredump-cleanup.timer'.
+
+Created symlink '/etc/systemd/user/sockets.target.wants/drkonqi-coredump-launcher.socket' → '/usr/lib/systemd/user/drkonqi-coredump-launcher.socket'.
+
+Created symlink '/etc/systemd/user/sockets.target.upholds/drkonqi-coredump-launcher.socket' → '/usr/lib/systemd/user/drkonqi-coredump-launcher.socket'.
+
+Created symlink '/etc/systemd/user/plasma-core.target.wants/drkonqi-coredump-pickup.service' → '/usr/lib/systemd/user/drkonqi-coredump-pickup.service'.
+
+Created symlink '/etc/systemd/user/default.target.wants/drkonqi-sentry-postman.path' → '/usr/lib/systemd/user/drkonqi-sentry-postman.path'.
+
+Created symlink '/etc/systemd/user/plasma-core.target.wants/drkonqi-sentry-postman.path' → '/usr/lib/systemd/user/drkonqi-sentry-postman.path'.
+
+Created symlink '/etc/systemd/user/timers.target.wants/drkonqi-sentry-postman.timer' → '/usr/lib/systemd/user/drkonqi-sentry-postman.timer'.
+
+Created symlink '/etc/systemd/user/plasma-core.target.wants/drkonqi-sentry-postman.timer' → '/usr/lib/systemd/user/drkonqi-sentry-postman.timer'.
+
+Created symlink '/etc/systemd/system/systemd-coredump@.service.wants/drkonqi-coredump-processor@.service' → '/usr/lib/systemd/system/drkonqi-coredump-processor@.service'.
+
+Unit /usr/lib/systemd/system/drkonqi-coredump-processor@.service is added as a dependency to a non-existent unit systemd-coredump@.service.
+
 Setting up libkf6notifyconfig6:amd64 (6.13.0-1) ...
 Setting up libkf6texteditor-bin (6.13.0-1) ...
 Setting up qml6-module-org-kde-kirigamiaddons-treeview:amd64 (1.7.0-1) ...
@@ -8518,8 +8831,10 @@ Sucessfully set capabilities for powerdevil
 Setting up qml6-module-org-kde-newstuff (6.13.0-1) ...
 Setting up ark (4:25.04.3-1) ...
 Setting up libkscreenlocker6:amd64 (6.3.5-1) ...
-[0;1;31mSystem has not been booted with systemd as init system (PID 1). Can't operate.[0m
-[0;1;31mFailed to connect to system scope bus via local transport: Host is down[0m
+[0;1;31mSystem has not been booted with systemd as init system (PID 1). Can't operate.[0m
+
+[0;1;31mFailed to connect to system scope bus via local transport: Host is down[0m
+
 Setting up kde-cli-tools (4:6.3.4-1) ...
 Setting up kwin-style-breeze (4:6.3.5-1) ...
 Setting up qml6-module-org-kde-kirigamiaddons-tableview:amd64 (1.7.0-1) ...
@@ -8573,13 +8888,18 @@ Setting up kimageformat6-plugins (6.13.0-2) ...
 Setting up gwenview (4:25.04.3-1) ...
 Setting up parted (3.6-5) ...
 Setting up udisks2 (2.10.1-12.1+deb13u2) ...
-Running in chroot, ignoring request.
-Created symlink '/etc/systemd/system/graphical.target.wants/udisks2.service' → '/usr/lib/systemd/system/udisks2.service'.
+Running in chroot, ignoring request.
+
+Created symlink '/etc/systemd/system/graphical.target.wants/udisks2.service' → '/usr/lib/systemd/system/udisks2.service'.
+
 Setting up plasma-workspace (4:6.3.6-2) ...
 update-alternatives: using /usr/bin/startplasma-x11 to provide /usr/bin/x-session-manager (x-session-manager) in auto mode
-Created symlink '/etc/systemd/user/plasma-workspace.service' → '/usr/lib/systemd/user/plasma-kcminit.service'.
-Created symlink '/etc/systemd/user/plasma-core.target.wants/plasma-ksmserver.service' → '/usr/lib/systemd/user/plasma-ksmserver.service'.
-Created symlink '/etc/systemd/user/plasma-core.target.wants/plasma-plasmashell.service' → '/usr/lib/systemd/user/plasma-plasmashell.service'.
+Created symlink '/etc/systemd/user/plasma-workspace.service' → '/usr/lib/systemd/user/plasma-kcminit.service'.
+
+Created symlink '/etc/systemd/user/plasma-core.target.wants/plasma-ksmserver.service' → '/usr/lib/systemd/user/plasma-ksmserver.service'.
+
+Created symlink '/etc/systemd/user/plasma-core.target.wants/plasma-plasmashell.service' → '/usr/lib/systemd/user/plasma-plasmashell.service'.
+
 Setting up sddm-theme-breeze (4:6.3.6-1) ...
 update-alternatives: using /usr/share/sddm/themes/breeze to provide /usr/share/sddm/themes/debian-theme (sddm-debian-theme) in auto mode
 Setting up sddm-theme-debian-breeze (4:6.3.6-1) ...
@@ -8590,9 +8910,12 @@ Processing triggers for udev (257.13-1~deb13u1) ...
 Processing triggers for procps (2:4.0.4-9) ...
 Processing triggers for sgml-base (1.31+nmu1) ...
 Setting up polkitd (126-2) ...
-Creating group 'polkitd' with GID 990.
-Creating user 'polkitd' (User for polkitd) with UID 990 and GID 990.
-Running in chroot, ignoring request.
+Creating group 'polkitd' with GID 990.
+
+Creating user 'polkitd' (User for polkitd) with UID 990 and GID 990.
+
+Running in chroot, ignoring request.
+
 All runlevel operations denied by policy
 invoke-rc.d: policy-rc.d denied execution of reload.
 Setting up polkit-kde-agent-1 (4:6.3.6-1) ...

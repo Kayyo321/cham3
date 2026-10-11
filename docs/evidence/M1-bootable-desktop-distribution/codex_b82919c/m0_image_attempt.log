@@ -1,30 +1,30 @@
 build_image: started 2026-10-11T22:44:05Z
 build_image: SOURCE_DATE_EPOCH=1791757603 unverified_host_override=0
 build_image: live-build 1:20250505+deb13u1
-[2026-10-11 22:44:05] lb config 
+[2026-10-11 22:44:05] lb config
 P: Executing auto/config script.
 [2026-10-11 22:44:05] lb config noauto --mode debian --distribution trixie --architecture amd64 --archive-areas main --debian-installer none --binary-image iso-hybrid --bootloaders syslinux,grub-efi --firmware-chroot false --firmware-binary false --security true --updates true --apt-secure true --apt-recommends false --cache false --mirror-bootstrap http://deb.debian.org/debian/ --mirror-chroot http://deb.debian.org/debian/ --mirror-chroot-security http://security.debian.org/ --mirror-binary http://deb.debian.org/debian/ --mirror-binary-security http://security.debian.org/ --bootappend-live boot=live components console=tty0 console=ttyS0,115200n8 --image-name cham3-m0-dev --iso-application cham3 M0 development image --iso-publisher cham3 project; M0 development build, not a release --iso-preparer cham3 M0 build via live-build --iso-volume CHAM3_M0_DEV
 P: Using http proxy: http://172.31.6.77:8080
 P: Updating config tree for a debian/trixie/amd64 system
 P: Symlinking hooks...
-[2026-10-11 22:44:06] lb build 
+[2026-10-11 22:44:06] lb build
 P: Executing auto/build script.
 [2026-10-11 22:44:06] lb build noauto
 P: Using http proxy: http://172.31.6.77:8080
 P: live-build 20250505+deb13u1
 P: Building for a debian/trixie/amd64 system
-[2026-10-11 22:44:06] lb bootstrap 
+[2026-10-11 22:44:06] lb bootstrap
 P: Setting up clean exit handler
 [2026-10-11 22:44:06] lb bootstrap_cache restore
-[2026-10-11 22:44:06] lb bootstrap_debootstrap 
+[2026-10-11 22:44:06] lb bootstrap_debootstrap
 P: Begin bootstrapping system...
 P: If the following stage fails, the most likely cause of the problem is with your mirror configuration or a caching proxy.
 P: Running debootstrap...
-I: Retrieving InRelease 
+I: Retrieving InRelease
 I: Checking Release signature
 I: Valid Release signature
-I: Retrieving Packages 
-I: Validating Packages 
+I: Retrieving Packages
+I: Validating Packages
 I: Resolving dependencies of required packages...
 I: Resolving dependencies of base packages...
 I: Checking component main on http://deb.debian.org/debian...
@@ -678,7 +678,7 @@ P: Saving bootstrap stage to cache...
 P: Bootstrap stage completed
 P: Begin unmounting filesystems...
 P: Saving caches...
-[2026-10-11 22:45:26] lb chroot 
+[2026-10-11 22:45:26] lb chroot
 P: Setting up clean exit handler
 [2026-10-11 22:45:26] lb chroot_cache restore
 [2026-10-11 22:45:27] lb chroot_prep install all mode-archives-chroot
@@ -752,19 +752,103 @@ Get:2 http://security.debian.org trixie-security/main amd64 libpcre2-8-0 amd64 1
 Get:3 http://security.debian.org trixie-security/main amd64 openssl-provider-legacy amd64 3.5.7-1~deb13u3 [316 kB]
 Get:4 http://security.debian.org trixie-security/main amd64 libssl3t64 amd64 3.5.7-1~deb13u3 [2458 kB]
 Fetched 3383 kB in 1s (4736 kB/s)
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../liblzma5_5.8.1-1+deb13u2_amd64.deb ...
 Unpacking liblzma5:amd64 (5.8.1-1+deb13u2) over (5.8.1-1+deb13u1) ...
 Setting up liblzma5:amd64 (5.8.1-1+deb13u2) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../libpcre2-8-0_10.46-1~deb13u3_amd64.deb ...
 Unpacking libpcre2-8-0:amd64 (10.46-1~deb13u3) over (10.46-1~deb13u2) ...
 Setting up libpcre2-8-0:amd64 (10.46-1~deb13u3) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../openssl-provider-legacy_3.5.7-1~deb13u3_amd64.deb ...
 Unpacking openssl-provider-legacy (3.5.7-1~deb13u3) over (3.5.7-1~deb13u2) ...
 Setting up openssl-provider-legacy (3.5.7-1~deb13u3) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../libssl3t64_3.5.7-1~deb13u3_amd64.deb ...
 Unpacking libssl3t64:amd64 (3.5.7-1~deb13u3) over (3.5.7-1~deb13u2) ...
 Setting up libssl3t64:amd64 (3.5.7-1~deb13u3) ...
@@ -774,12 +858,12 @@ Building dependency tree...
 Reading state information...
 Calculating upgrade...
 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
-[2026-10-11 22:45:35] lb chroot_linux-image 
+[2026-10-11 22:45:35] lb chroot_linux-image
 P: Begin scheduling kernel image installation...
-[2026-10-11 22:45:35] lb chroot_firmware 
-[2026-10-11 22:45:35] lb chroot_preseed 
+[2026-10-11 22:45:35] lb chroot_firmware
+[2026-10-11 22:45:35] lb chroot_preseed
 P: Begin executing local preseeds...
-[2026-10-11 22:45:35] lb chroot_includes_before_packages 
+[2026-10-11 22:45:35] lb chroot_includes_before_packages
 P: Begin copying chroot includes before packages have been installed...
 [2026-10-11 22:45:35] lb chroot_package-lists install
 P: Begin queueing installation of package lists (install pass)...
@@ -796,7 +880,28 @@ After this operation, 432 kB of additional disk space will be used.
 Get:1 http://deb.debian.org/debian trixie/main amd64 dctrl-tools amd64 2.24-3+b1 [104 kB]
 Fetched 104 kB in 0s (2565 kB/s)
 Selecting previously unselected package dctrl-tools.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Preparing to unpack .../dctrl-tools_2.24-3+b1_amd64.deb ...
 Unpacking dctrl-tools (2.24-3+b1) ...
 Setting up dctrl-tools (2.24-3+b1) ...
@@ -807,9 +912,51 @@ The following packages will be REMOVED:
   dctrl-tools*
 0 upgraded, 0 newly installed, 1 to remove and 0 not upgraded.
 After this operation, 432 kB disk space will be freed.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7863 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7863 files and directories currently installed.)
 Removing dctrl-tools (2.24-3+b1) ...
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 7822 files and directories currently installed.)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 7822 files and directories currently installed.)
 Purging configuration files for dctrl-tools (2.24-3+b1) ...
 [2026-10-11 22:45:37] lb chroot_install-packages install
 P: Begin installing packages (install pass)...

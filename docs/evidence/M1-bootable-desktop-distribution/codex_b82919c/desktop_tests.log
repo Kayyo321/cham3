@@ -41,7 +41,7 @@ test_invalid_id_and_duplicate_id_are_rejected (test_m1_static_desktop_files.desk
 test_missing_exec_and_name_reported (test_m1_static_desktop_files.desktop_files_fixture_t.test_missing_exec_and_name_reported) ... ok
 test_missing_registered_category_is_rejected (test_m1_static_desktop_files.desktop_files_fixture_t.test_missing_registered_category_is_rejected) ... ok
 test_positive_control_accepted (test_m1_static_desktop_files.desktop_files_fixture_t.test_positive_control_accepted) ... ok
-test_every_shipped_desktop_entry_is_valid (test_m1_static_desktop_files.desktop_files_real_t.test_every_shipped_desktop_entry_is_valid) ... 
+test_every_shipped_desktop_entry_is_valid (test_m1_static_desktop_files.desktop_files_real_t.test_every_shipped_desktop_entry_is_valid) ...
 [m1] desktop-file-validate not installed: built-in parser used for 0 file(s)
 ok
 test_no_launcher_points_at_absent_backend (test_m1_static_desktop_files.desktop_files_real_t.test_no_launcher_points_at_absent_backend) ... ok
