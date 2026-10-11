@@ -1,0 +1,31 @@
+# Debian 13 (trixie) packages needed on an M0 build host.
+# Single source of truth for developer documentation and CI:
+#   sudo apt-get install --no-install-recommends $(grep -v '^#' build/host_packages.txt)
+# Validated target for M0: Debian 13 on x86-64. Other hosts are unverified.
+
+# Source checkout and general tooling
+git
+ca-certificates
+python3
+file
+rsync
+
+# Static checks
+shellcheck
+yamllint
+
+# Debian package build and lint (build/scripts/build_packages.sh)
+debhelper
+dpkg-dev
+fakeroot
+lintian
+
+# Live image build (build/scripts/build_image.sh, needs root)
+live-build
+debootstrap
+squashfs-tools
+xorriso
+cpio
+
+# Image inspection and boot test (build/vm/run_boot_test.py)
+qemu-system-x86
