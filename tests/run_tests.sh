@@ -17,17 +17,21 @@ CHAM3_OUT_DIR=${CHAM3_OUT_DIR:-$CHAM3_REPO_ROOT/out}
 export CHAM3_REPO_ROOT CHAM3_OUT_DIR
 
 usage() {
-    echo "usage: $0 static|packages|image|boot|all" >&2
+    echo "usage: $0 static|packages|image|boot|desktop|image-m1|all" >&2
 }
 
 run_suite() {
+    # desktop: M1 static desktop/package checks (no build artifacts needed).
+    # image-m1: M1 image-artifact checks (need the M1 image in $CHAM3_OUT_DIR).
     case "$1" in
-        packages) dir_name=packaging ;;
-        *) dir_name=$1 ;;
+        packages) dir_name=packaging; pattern='test_*.py' ;;
+        desktop) dir_name=desktop; pattern='test_m1_static_*.py' ;;
+        image-m1) dir_name=desktop; pattern='test_m1_image_*.py' ;;
+        *) dir_name=$1; pattern='test_*.py' ;;
     esac
     suite_dir="$script_dir/$dir_name"
-    echo "== tests/$dir_name (repo: $CHAM3_REPO_ROOT, out: $CHAM3_OUT_DIR) =="
-    python3 -m unittest discover -v -s "$suite_dir" -p 'test_*.py'
+    echo "== tests/$dir_name ($1, repo: $CHAM3_REPO_ROOT, out: $CHAM3_OUT_DIR) =="
+    python3 -m unittest discover -v -s "$suite_dir" -p "$pattern"
 }
 
 if [ "$#" -ne 1 ]; then
@@ -36,11 +40,11 @@ if [ "$#" -ne 1 ]; then
 fi
 
 case "$1" in
-    static|packages|image|boot)
+    static|packages|image|boot|desktop|image-m1)
         suites=$1
         ;;
     all)
-        suites="static packages image boot"
+        suites="static packages image boot desktop"
         ;;
     *)
         usage
