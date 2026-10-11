@@ -20,6 +20,7 @@ This is a dependency-oriented plan derived from `PROJECT.md`, not an implementat
 - **Objective:** Verify signed, deterministic, versioned contracts and current authorization.
 - **Dependencies:** Approved schema/interface decisions where PROJECT leaves detail open; M0.
 - **Deliverables:** Ed25519, deterministic CBOR, COSE_Sign1 integration using maintained libraries; authority classes, registry, expiry/revocation/revision checks, vault boundary.
+- **Future architecture goal (PROPOSED):** [ADR 0001 — ECR](../decisions/0001_eternal_contract_repository.md) proposes an append-only signed contract DAG, canonical audit transactions, and protected registry indexes. Resolve lifecycle/audit, schema, storage, and anti-replay decisions and obtain owner approval before dependent implementation.
 - **Security:** Key custody, canonical encoding, domain separation, replay and recovery.
 - **Verification/exit:** Positive and negative cryptographic/authorization tests pass; no app can request arbitrary signing.
 
@@ -41,6 +42,7 @@ This is a dependency-oriented plan derived from `PROJECT.md`, not an implementat
 - **Objective:** Inspect and authorize a running app's contract from the desktop.
 - **Dependencies:** M2–M4 stable attribution and enforcement APIs.
 - **Deliverables:** Super+Click path, verified window/process attribution, inspector, trusted auth UI, signed revision workflow, runtime status.
+- **Future architecture goal (PROPOSED):** ADR 0001 adds trusted commit descriptions, persistent/temporary history-tree inspection, snapshot comparisons, and fresh authenticated approval, with committed state distinguished from confirmed enforcement.
 - **Security:** UI is not authority; exact approved content shown; cancel and spoof tests.
 - **Verification/exit:** End-to-end inspect/propose/authorize/enforce status tested without falsely displaying desired state as active.
 
@@ -48,6 +50,7 @@ This is a dependency-oriented plan derived from `PROJECT.md`, not an implementat
 - **Objective:** Safely handle changed policies and active resources.
 - **Dependencies:** M4–M5.
 - **Deliverables:** Quarantine, socket teardown, controlled restart, revocation handling, crash recovery and status reconciliation.
+- **Future architecture goal (PROPOSED):** ADR 0001 adds forward-signed historical restore under current policy, temporary-branch lifecycle handling, and transaction recovery. No stale-contract replay or delay of mandatory fail-closed denial is permitted.
 - **Security:** Fail closed through all intermediate states; resource-specific limits documented.
 - **Verification/exit:** Crash/restart/rollback and active access tests meet approved semantics.
 
