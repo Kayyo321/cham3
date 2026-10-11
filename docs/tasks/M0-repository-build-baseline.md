@@ -1,6 +1,6 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** READY
+- **State:** IN_PROGRESS
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -66,6 +66,24 @@ Establish repeatable M0 development entry points and evidence by adding the init
 - **Independent reviewer:** Codex, canonical role `REVIEWER`.
 - **Branch/worktree:** `task/M0-repository-build-baseline`, created from the recorded base commit. Each writing subagent must own a separate worktree/branch with disjoint file ownership. If isolation is unavailable, run write phases serially; do not permit concurrent edits to a shared writable worktree.
 - **Target commit:** To be recorded by Claude Code at handoff.
+- **Setup commits (not implementation):** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (owner task preparation: this record and `docs/STATUS.md`, parent is the recorded base) and the coordinator commit that moved this task to `IN_PROGRESS` and recorded the assignments below.
+
+### Coordinator assignment (2026-10-11)
+
+The integration branch `task/M0-repository-build-baseline` is checked out in the dedicated worktree `../cham3-worktrees/M0-001-integration` and is owned by the coordinator/integrator. The primary checkout is not used for M0-001 writes. At 12:55:05 on 2026-10-11, another session switched it to the unrelated branch `codex/cham3-logo` and committed there. Each writing subagent owns one separate worktree and branch, created from the setup commit, with disjoint file ownership. Integration happens only after the coordinator inspects each agent's exact diff.
+
+| Role | Branch | Worktree | Owned paths |
+|---|---|---|---|
+| COORDINATOR / INTEGRATOR | `task/M0-repository-build-baseline` | `../cham3-worktrees/M0-001-integration` | `docs/tasks/M0-repository-build-baseline.md`, `docs/STATUS.md`, `docs/handoffs/`, `docs/evidence/`, integration merges |
+| IMPLEMENTER | `task/M0-repository-build-baseline-implementer` | `../cham3-worktrees/M0-001-implementer` | `.gitignore`, `.yamllint.yml`, `.github/workflows/`, `build/`, `packaging/` |
+| TEST_ENGINEER, then read-only REVIEWER | `test/M0-repository-build-baseline` | `../cham3-worktrees/M0-001-test` | `tests/` (review phase: read-only, no edits) |
+| TRIAGE with assigned docs | `task/M0-repository-build-baseline-docs` | `../cham3-worktrees/M0-001-docs` | `docs/engineering/developer_setup.md`, the development section of `README.md` |
+
+The entry-point names, output layout, and provenance fields given to the subagents are local implementation choices within this task's scope. They are not architecture decisions.
+
+### Execution environment note
+
+The coordinator's host is macOS on Apple Silicon (arm64), so it is not a Debian 13 x86-64 build host. Builds and checks for this task run only inside disposable Debian 13 `amd64` environments (containers and/or a QEMU virtual machine) that run on that host. The verification record names each environment exactly. A result obtained under x86-64 emulation is labelled as such and is not presented as a native Debian 13 x86-64 host result.
 
 ## Decisions / blockers
 
