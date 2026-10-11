@@ -127,12 +127,12 @@ Package lists and metapackages must avoid desktop conflicts, document unavailabl
 - **Coordinator / implementer:** Codex, COORDINATOR / IMPLEMENTER for this specification change.
 - **Implementation owner:** TBD for the M1 product implementation.
 - **Reviewer / test owner:** Independent reviewer and test owner TBD; the task author cannot approve this security-sensitive work.
-- **Branch/worktree for this specification change:** `task/M1-bootable-desktop-spec`, `/tmp/cham3-m1-bootable-desktop-spec`.
+- **Specification branch/worktree:** `task/M1-bootable-desktop-spec`, `/private/tmp/cham3-m1-bootable-desktop-spec`; integrated with ADR 0002 at `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd`, then removed during repository reconciliation.
 - **Task implementation branch/worktree:** TBD; create a dedicated branch/worktree from an approved implementation baseline.
-- **Target commit:** To be recorded after specification review.
+- **Specification target commit:** `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd`. The task remains DRAFT.
 
 ## Decisions / blockers
 
 - **Resolved owner decisions (2026-10-11):** Prefer Debian 13 packages; use a Debian-native equivalent for an unavailable or incompatible requested tool; permit selected Kali-origin packages only when no suitable Debian-native option exists and only through a narrowly pinned, separately reviewed source; include the suite in default `cham3-full`.
 - **Open implementation reviews:** Determine exact package-by-package dispositions and review any Kali-origin allowlist, dependency closure, source pinning, signature/origin verification, and upgrade behavior before implementation.
-- **BLOCKED condition and next action:** ADR 0002 is approved and present, and package policy/default placement are decided. Keep this specification DRAFT until the M0 dependency is ready; then assign implementation, test, and independent review owners before moving to READY. Package-by-package substitutions and any Kali-origin allowlist remain implementation evidence and review gates.
+- **Blocker and next action:** The M0 dependency is satisfied. Keep this task DRAFT until implementation, test, and independent review owners are assigned and package-by-package dispositions are prepared for review. Then move it to READY only when those inputs and interfaces are settled. Any Kali-origin allowlist, dependency closure, source pinning, signature/origin verification, and upgrade behavior remain required review evidence before implementation.

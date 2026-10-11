@@ -57,7 +57,7 @@
 
 ## Recommended next work
 
-1. Owner/coordinator plans the next milestone from the completed M0 baseline. Resolve package metadata and license placeholders before release publication. Material implementation changes require renewed review. Historical reviews remain unchanged.
+1. M0 is complete. The M1 task specification is present and remains DRAFT; assign implementation, test, and independent review owners and settle package-by-package dispositions before moving it to READY. Resolve package metadata and license placeholders before release publication.
 2. Before cryptographic or privileged implementation, split specification details into owner-approved ADRs and define testable interfaces.
 
 Do not update this status based on plans, generated code claims, or chat summaries alone. Link commits, files, and test artifacts for any new implementation claim.
