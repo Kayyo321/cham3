@@ -97,11 +97,11 @@ shopt -u nullglob
 [ "${#iso_candidates[@]}" -eq 1 ] || die "expected exactly one ISO in ${work_dir}, found ${#iso_candidates[@]}"
 cp -p "${iso_candidates[0]}" "${image_dir}/${image_name}.iso"
 
-manifest_source=""
-for candidate in "${work_dir}"/*.packages "${work_dir}"/*.contents; do
-    case "${candidate}" in *.packages) manifest_source=${candidate}; break ;; esac
-done
-[ -n "${manifest_source}" ] && [ -f "${manifest_source}" ] || die "live-build package manifest (*.packages) not found in ${work_dir}"
+shopt -s nullglob
+manifest_candidates=("${work_dir}"/*.packages)
+shopt -u nullglob
+[ "${#manifest_candidates[@]}" -eq 1 ] || die "expected exactly one *.packages manifest in ${work_dir}, found ${#manifest_candidates[@]}"
+manifest_source=${manifest_candidates[0]}
 cp -p "${manifest_source}" "${image_dir}/${image_name}.packages"
 
 python3 "${script_dir}/write_provenance.py" \
