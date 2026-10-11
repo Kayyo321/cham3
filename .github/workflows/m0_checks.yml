@@ -105,6 +105,8 @@ jobs:
           --out-dir out/boot_test
           --accel auto
           --timeout-seconds 1800
+      - name: Boot result tests
+        run: tests/run_tests.sh boot
       - name: Upload image results
         if: always()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0

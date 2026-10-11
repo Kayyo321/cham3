@@ -29,15 +29,15 @@ import tempfile
 import threading
 import time
 
-fail_markers = [
+FailMarkers = [
     ("kernel_panic", re.compile(r"Kernel panic")),
     ("initramfs_shell", re.compile(r"\(initramfs\)")),
     ("live_boot_no_medium", re.compile(r"Unable to find a medium")),
     ("emergency_mode", re.compile(r"You are in emergency mode")),
 ]
-login_prompt = re.compile(r"(?m)^[A-Za-z0-9][A-Za-z0-9_.\-]* login: ?")
-shell_prompt = re.compile(r"(?m)^[A-Za-z0-9_.\-]+@[A-Za-z0-9_.\-]+:[^\r\n]*[$#] ?$")
-ansi_escape = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]")
+LoginPrompt = re.compile(r"(?m)^[A-Za-z0-9][A-Za-z0-9_.\-]* login: ?")
+ShellPrompt = re.compile(r"(?m)^[A-Za-z0-9_.\-]+@[A-Za-z0-9_.\-]+:[^\r\n]*[$#] ?$")
+AnsiEscape = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-_]")
 
 
 def classify_boot_log(log_text):
@@ -46,13 +46,13 @@ def classify_boot_log(log_text):
     Returns a dict with result ("PASS", "FAIL" or "PENDING"), reason, and
     markers (list of matched marker names). Failure markers win over a prompt.
     """
-    text = ansi_escape.sub("", log_text).replace("\r", "")
-    for name, pattern in fail_markers:
+    text = AnsiEscape.sub("", log_text).replace("\r", "")
+    for name, pattern in FailMarkers:
         if pattern.search(text):
             return {"result": "FAIL", "reason": "failure marker seen: " + name, "markers": [name]}
-    if login_prompt.search(text):
+    if LoginPrompt.search(text):
         return {"result": "PASS", "reason": "login prompt reached on serial console", "markers": ["login_prompt"]}
-    if shell_prompt.search(text):
+    if ShellPrompt.search(text):
         return {"result": "PASS", "reason": "autologin shell prompt on serial console", "markers": ["shell_prompt"]}
     return {"result": "PENDING", "reason": "no login prompt or failure marker yet", "markers": []}
 
@@ -160,7 +160,7 @@ def runtime_checks_for(result_info, capture, process):
     while time.time() < deadline:
         new_text = capture.text()[start:]
         if end_token + "2" in new_text:
-            return {"performed": True, "output": ansi_escape.sub("", new_text).replace("\r", "")}
+            return {"performed": True, "output": AnsiEscape.sub("", new_text).replace("\r", "")}
         time.sleep(1)
     return {"performed": False, "reason": "timeout waiting for command output"}
 
