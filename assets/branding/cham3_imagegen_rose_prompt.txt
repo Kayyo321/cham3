@@ -1,0 +1,39 @@
+Cham3 imagegen rose logo — design handoff
+
+State: IMPLEMENTED; awaiting owner design review.
+Role/provider: Codex IMPLEMENTER.
+Baseline: 2360d96506b86b0130dd51b147870ec59898685b.
+Implementation reference: commit containing this record and cham3_imagegen_rose.png.
+Worktree/branch: /Users/jessicabruce/cham3 / codex/cham3-reference-logo.
+Approved scope change: user requested redoing the latest color changes through
+the imagegen skill, without SVG. Directly edit the illustrated reference
+identified by the user; replace foreground purple with dark rose and make 3 rose.
+Method: built-in image_gen image editing. No SVG or coded image cleanup used
+for this deliverable. Previous assets and unrelated files preserved.
+Security impact: none; no product behavior or architecture changes.
+
+Final prompt:
+Use case: precise-object-edit.
+Edit target: the supplied illustrated Cham3 logo, NOT a redesigned logo.
+Preserve this image's exact smooth illustrated chameleon anatomy, friendly expression, round eyes, facets, limbs, and spiral tail, the exact overlapping composition, the three head directions, and original "Cham3" letter shapes. The user wants this original illustration edited directly, not an SVG redraw or a different character.
+Make these precise COLOR changes:
+1. On the FOREGROUND PINK CHAMELEON ONLY, recolor ALL dark purple/plum areas to DARK ROSE/BURGUNDY #751D42. Specifically the large inner body area behind the bent front leg and inside the pink curved back (near x39%, y55% of the image), the purple chest below the chin, and any other purple facet of the foreground animal. Keep those regions just as dark, but clearly deep ROSE/red rather than purple. Foreground animal must use only pink and rose shades. Preserve pink highlights and the angular facets.
+2. In the wordmark "Cham3", keep the letters "Cham" pale white-grey and change ONLY the numeral "3" to bright ROSE #FF3388, matching the foreground pink/rose color.
+3. Make the fills visually clean flat solid color regions. Remove fine hatching, hashing, grain, speckling, and mottled AI texture from the main chameleon and background. Every facet is a single flat color without gradient, lighting, texture, or dithering. Preserve the existing facet boundaries and keep the charming original illustration, not a crude new silhouette.
+Unchanged requirements: exactly THREE closely overlapping chameleons; middle silhouette remains solid purple with two asymmetric dark eye spots and intermediate rightward head turn; back/top silhouette pale white-grey with one dark eye spot in right-facing side profile. Rear layers progress slightly up and RIGHT. Their tails are entirely occluded. Only the foreground pink spiral tail is visible. Keep dark eye spots, black foreground pupils and simple white catchlights, small smile, exact "Cham3" spelling and case, original font/size/placement beneath the mark, centered layout, and near-black background.
+Avoid: purple anywhere in foreground animal, visible rear tails, new anatomy, big spiral redesign, hard new contour shapes, changes to wordmark typography, additional animals, extra text, gradients, glow, texture, noise, mockup, watermark.
+
+Verification:
+PASS — visual inspection of generated output: foreground inner body and chest
+deep rose, numeral 3 bright rose, Cham letters pale grey, original illustrated
+character retained, three overlapping heads with dark rear eye spots, rear
+tails hidden, only foreground spiral visible.
+PASS — file command confirms saved raster PNG.
+NOT_RUN — exact pixel color uniformity: a generated raster image does not
+guarantee single-color fills, despite the flat-fill prompt.
+NOT_RUN — product tests; visual asset only.
+Independent review: pending owner design review.
+Limits: generated raster, with slight rendering changes from the reference;
+the negative space inside the foreground tail now uses dark rose.
+Next owner/action: user design review.
+
