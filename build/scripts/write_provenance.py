@@ -18,8 +18,8 @@ import re
 import subprocess
 import sys
 
-provenance_format = "cham3_m0_provenance_v1"
-tool_packages = [
+ProvenanceFormat = "cham3_m0_provenance_v1"
+ToolPackages = [
     "live-build",
     "debootstrap",
     "dpkg-dev",
@@ -181,7 +181,7 @@ def main():
         )
 
     provenance = {
-        "provenance_format": provenance_format,
+        "provenance_format": ProvenanceFormat,
         "reproducibility": "not_claimed",
         "source": {"git_commit": git_commit, "git_tree_dirty": git_tree_dirty},
         "build_host": {
@@ -194,7 +194,7 @@ def main():
             "in_container": in_container(),
             "unverified_host_override": args.unverified_host_override == "1",
         },
-        "tools": {package: package_version(package) for package in tool_packages},
+        "tools": {package: package_version(package) for package in ToolPackages},
         "inputs": {
             "distribution": bootstrap.get("LB_DISTRIBUTION"),
             "architecture": bootstrap.get("LB_ARCHITECTURE"),
