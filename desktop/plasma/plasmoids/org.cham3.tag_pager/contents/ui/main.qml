@@ -13,7 +13,7 @@ import "../code/cham3_shared.js" as Shared
 PlasmoidItem {
     id: root
 
-    readonly property string state_text: Shared.unavailable_text("tag navigation", Shared.ReasonSessionServicesAbsent)
+    readonly property string state_text: Shared.unavailable_text("tag navigation", Shared.reason_session_services_absent)
 
     toolTipMainText: "Tag pager"
     toolTipSubText: state_text
@@ -66,7 +66,7 @@ PlasmoidItem {
             anchors.bottom: parent.bottom
             width: parent.width - 4
             horizontalAlignment: Text.AlignHCenter
-            text: Shared.StateUnavailable
+            text: Shared.state_unavailable
             font.pixelSize: 9
             fontSizeMode: Text.Fit
             minimumPixelSize: 7
@@ -103,7 +103,7 @@ PlasmoidItem {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             color: Kirigami.Theme.disabledTextColor
-            text: Shared.FoundationNotice
+            text: Shared.foundation_notice
         }
     }
 }

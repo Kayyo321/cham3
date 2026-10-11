@@ -10,35 +10,35 @@
 
 // Accent colors (ADR 0002): Rose = Direct, Purple = Tor, White = Offline.
 // A color is never the only carrier of meaning; every use is paired with text.
-var RoseDirect = "#ff2e7e";
-var PurpleTor = "#8b4df0";
-var WhiteOffline = "#f2f2f2";
+var rose_direct = "#ff2e7e";
+var purple_tor = "#8b4df0";
+var white_offline = "#f2f2f2";
 
 // Dark surfaces.
-var SurfaceBase = "#17171b";
-var SurfaceRaised = "#1f2026";
-var SurfaceBorder = "#3a3b44";
-var TextPrimary = "#f2f2f2";
-var TextMuted = "#b4b7c2";
+var surface_base = "#17171b";
+var surface_raised = "#1f2026";
+var surface_border = "#3a3b44";
+var text_primary = "#f2f2f2";
+var text_muted = "#b4b7c2";
 
 // Panel geometry (logical px); the layout script is authoritative for width.
-var PanelWidth = 60;
+var panel_width = 60;
 
 // State vocabulary.
-var StateUnavailable = "unavailable";
-var StateDisconnected = "disconnected";
-var StateUnverified = "unverified";
-var StateUnknown = "unknown";
+var state_unavailable = "unavailable";
+var state_disconnected = "disconnected";
+var state_unverified = "unverified";
+var state_unknown = "unknown";
 
 // Reasons.
-var ReasonBackendAbsent = "backend not present (M2+/ADR 0001)";
-var ReasonSessionServicesAbsent = "cham3 session services not present";
-var ReasonEnforcementAbsent = "no trusted enforcement present";
+var reason_backend_absent = "backend not present (M2+/ADR 0001)";
+var reason_session_services_absent = "cham3 session services not present";
+var reason_enforcement_absent = "no trusted enforcement present";
 
 // "<what>: unavailable - <why>"
 function unavailable_text(what, why) {
-    return what + ": " + StateUnavailable + " - " + why;
+    return what + ": " + state_unavailable + " - " + why;
 }
 
 // Footer shown in every popup so the foundation status is never implied away.
-var FoundationNotice = "M1 visual foundation only. This control performs no security action and reports no active security state.";
+var foundation_notice = "M1 visual foundation only. This control performs no security action and reports no active security state.";

@@ -18,7 +18,7 @@ PlasmoidItem {
     readonly property string settings_entry: "systemsettings.desktop"
 
     toolTipMainText: "System Settings"
-    toolTipSubText: "Opens KDE System Settings. cham3 security sections: " + Shared.StateUnavailable + " (M1)."
+    toolTipSubText: "Opens KDE System Settings. cham3 security sections: " + Shared.state_unavailable + " (M1)."
 
     P5Support.DataSource {
         id: apps

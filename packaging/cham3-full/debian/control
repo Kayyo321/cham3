@@ -39,11 +39,13 @@ Description: cham3 desktop plus the curated Debian 13 application suite (M1)
  hashcat, john, hydra and the Tor Browser launcher. nikto comes from the
  Debian non-free archive area and torbrowser-launcher from contrib.
  .
- Planned, pending source review (NOT installed by this package, because they
- are not available in Debian 13 or need a separately reviewed source):
- LibreWolf, Ghidra, Metasploit Framework, searchsploit and exploitdb, OWASP
- ZAP, WPScan, Cutter, radare2 or rizin, mitmproxy and amass. None of them is
- a dependency and no external package source is configured.
+ Planned, pending source review (documented gaps, NOT installed by this
+ package). The following requested tools are not available in Debian 13
+ (trixie), or need a separately reviewed source, and are not dependencies:
+ LibreWolf, ghidra, metasploit-framework, exploitdb (searchsploit), zaproxy
+ (OWASP ZAP), wpscan, cutter, radare2, rizin, mitmproxy, amass; no
+ external package source is configured. Until they are resolved the image has
+ no disassembler or decompiler and no mitmproxy.
  .
  Package presence is not a safety or isolation claim. Installing this
  metapackage does not sandbox any tool, apply a permission contract or enforce

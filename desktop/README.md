@@ -19,7 +19,7 @@ foundation**, not a security feature.
 - The look-and-feel package `plasma/look-and-feel/org.cham3.desktop/`, the
   color scheme `plasma/color-schemes/Cham3Dark.colors` (dark surfaces; the
   Rose, Purple and White alias accents are recorded in its `Cham3Accents`
-  group), and the wallpaper metadata `plasma/wallpapers/Cham3/`. The wallpaper
+  group), and the wallpaper metadata `plasma/wallpapers/cham3/` (installed as the KDE wallpaper package `Cham3`). The wallpaper
   image and logos are installed from `assets/` by the package.
 
 ## What this is not (inertness)
@@ -57,10 +57,11 @@ No `.desktop` launchers are shipped: the panel opens only applications that the
   6.3): `org.kde.plasma.private.sessions` (session actions, loaded through a
   Loader so only the session buttons degrade if it is missing) and the
   `apps` data engine of `org.kde.plasma.plasma5support` (application launch).
-- Naming: project identifiers are `snake_case`; constants in the shared
-  JavaScript are `PascalCase`. The following are external spellings kept as
-  required: QML import aliases (`Kirigami`, `PlasmaComponents`, `P5Support`,
-  `Shared` must start upper-case in QML), Qt/KDE/Plasma API names, KDE JSON
-  keys (`KPlugin`, `X-Plasma-API-Minimum-Version`), the KDE color-scheme file
-  format and the file name `Cham3Dark.colors`, and the Plasma-fixed layout file
-  name `org.kde.plasma.desktop-layout.js`.
+- Naming: all project identifiers, including the constants in the shared
+  JavaScript, are `snake_case` (the repo naming test does not exempt
+  constants). The following are external spellings kept as required: QML import
+  aliases (`Kirigami`, `PlasmaComponents`, `P5Support`, `Shared` must start
+  upper-case in QML), Qt/KDE/Plasma API names, KDE JSON keys (`KPlugin`,
+  `X-Plasma-API-Minimum-Version`), the KDE color-scheme file format and the
+  file name `Cham3Dark.colors`, the KDE wallpaper package id `Cham3`, and the
+  Plasma-fixed layout file name `org.kde.plasma.desktop-layout.js`.

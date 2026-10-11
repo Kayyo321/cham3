@@ -53,14 +53,14 @@ Item {
                 width: 13
                 height: 13
                 radius: width / 2
-                color: Shared.SurfaceBase
+                color: Shared.surface_base
                 border.width: 1
-                border.color: Shared.TextMuted
+                border.color: Shared.text_muted
                 Text {
                     anchors.centerIn: parent
                     text: "?"
                     font.pixelSize: 9
-                    color: Shared.TextPrimary
+                    color: Shared.text_primary
                 }
             }
         }

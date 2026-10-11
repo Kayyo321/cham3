@@ -12,7 +12,7 @@ import "../code/cham3_shared.js" as Shared
 PlasmoidItem {
     id: root
 
-    readonly property string state_text: "Network Protocol Editor " + Shared.StateUnavailable + " (M4 enforcement not present)"
+    readonly property string state_text: "Network Protocol Editor " + Shared.state_unavailable + " (M4 enforcement not present)"
 
     toolTipMainText: "Network Protocol Editor"
     toolTipSubText: state_text
@@ -37,9 +37,9 @@ PlasmoidItem {
             anchors.fill: parent
             anchors.margins: 3
             radius: 5
-            color: Shared.SurfaceRaised
+            color: Shared.surface_raised
             border.width: 1
-            border.color: compact.activeFocus ? Shared.TextPrimary : Shared.SurfaceBorder
+            border.color: compact.activeFocus ? Shared.text_primary : Shared.surface_border
 
             // Routing glyph: one source node branching to three targets.
             Canvas {
@@ -50,8 +50,8 @@ PlasmoidItem {
                 onPaint: {
                     var ctx = getContext("2d")
                     ctx.reset()
-                    ctx.strokeStyle = Shared.TextMuted
-                    ctx.fillStyle = Shared.TextMuted
+                    ctx.strokeStyle = Shared.text_muted
+                    ctx.fillStyle = Shared.text_muted
                     ctx.lineWidth = 1.5
                     ctx.beginPath()
                     ctx.moveTo(4, 8)
@@ -77,11 +77,11 @@ PlasmoidItem {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2
                 horizontalAlignment: Text.AlignHCenter
-                text: Shared.StateUnavailable
+                text: Shared.state_unavailable
                 font.pixelSize: 8
                 fontSizeMode: Text.Fit
                 minimumPixelSize: 6
-                color: Shared.TextMuted
+                color: Shared.text_muted
             }
             MouseArea {
                 anchors.fill: parent
@@ -114,7 +114,7 @@ PlasmoidItem {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             color: Kirigami.Theme.disabledTextColor
-            text: Shared.FoundationNotice
+            text: Shared.foundation_notice
         }
     }
 }
