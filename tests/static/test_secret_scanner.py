@@ -143,5 +143,95 @@ class secret_scanner_t(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
 
 
+class secret_scanner_regression_t(unittest.TestCase):
+    """Regression tests for review findings F1, F3 and F4 (fail-closed reading,
+    exact path:line reporting, and symlink handling)."""
+
+    def require_non_root(self):
+        if os.geteuid() == 0:
+            self.skipTest(
+                "running as root: chmod cannot make a file unreadable, so the "
+                "unreadable-file check cannot be exercised"
+            )
+
+    def test_unreadable_file_is_error_exit_two(self):
+        self.require_non_root()
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_file(temp, "unreadable.txt", pem_header("RSA PRIVATE KEY") + "\n")
+            os.chmod(path, 0)
+            try:
+                completed = scan(path)
+            finally:
+                os.chmod(path, 0o600)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 2, output)
+        self.assertIn("scan_secrets: ERROR cannot scan", completed.stderr)
+        self.assertIn(path, completed.stderr)
+        self.assertNotIn("no matches", output, "unscanned file reported as clean")
+
+    def test_unreadable_file_inside_scanned_directory_is_error(self):
+        self.require_non_root()
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_file(temp, "hidden.txt", "plain text\n")
+            os.chmod(path, 0)
+            try:
+                completed = scan(temp)
+            finally:
+                os.chmod(path, 0o600)
+        self.assertNotEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        self.assertIn("scan_secrets: ERROR cannot scan", completed.stderr)
+        self.assertIn(path, completed.stderr)
+
+    def test_unreadable_file_plus_finding_exits_one_and_reports_both(self):
+        self.require_non_root()
+        with tempfile.TemporaryDirectory() as temp:
+            hidden = write_file(temp, "hidden.txt", "plain text\n")
+            write_file(temp, "found.txt", pem_header("RSA PRIVATE KEY") + "\n")
+            os.chmod(hidden, 0)
+            try:
+                completed = scan(temp)
+            finally:
+                os.chmod(hidden, 0o600)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 1, output)
+        self.assertIn("found.txt:1", output)
+        self.assertIn("scan_secrets: ERROR cannot scan", completed.stderr)
+
+    def test_finding_in_colon_named_file_reports_path_and_line(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_file(temp, "colon:name.txt", "x\n" + pem_header("RSA PRIVATE KEY") + "\n")
+            completed = scan(path)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 1, output)
+        self.assertIn("colon:name.txt:2", output)
+
+    def test_finding_in_file_with_space_reports_path_and_line(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_file(temp, "with space.txt", "x\n" + pem_header("RSA PRIVATE KEY") + "\n")
+            completed = scan(path)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 1, output)
+        self.assertIn("with space.txt:2", output)
+
+    def test_symlink_inside_scanned_dir_to_outside_secret_is_detected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            scanned = os.path.join(temp, "scanned")
+            outside = os.path.join(temp, "outside")
+            os.makedirs(scanned)
+            os.makedirs(outside)
+            target = write_file(outside, "target.key", pem_header("RSA PRIVATE KEY") + "\n")
+            os.symlink(target, os.path.join(scanned, "link.txt"))
+            completed = scan(scanned)
+        self.assertEqual(completed.returncode, 1, completed.stdout + completed.stderr)
+
+    def test_lone_dangling_symlink_exits_zero(self):
+        with tempfile.TemporaryDirectory() as temp:
+            scanned = os.path.join(temp, "scanned")
+            os.makedirs(scanned)
+            os.symlink(os.path.join(temp, "missing.key"), os.path.join(scanned, "dangling.txt"))
+            completed = scan(scanned)
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

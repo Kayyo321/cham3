@@ -87,5 +87,44 @@ class boot_classifier_t(unittest.TestCase):
         self.assert_result("", "PENDING")
 
 
+class boot_rescue_and_root_shell_t(unittest.TestCase):
+    """Regression tests for review finding F5: rescue mode, the maintenance
+    password prompt and an unexpected root shell are not a healthy boot."""
+
+    def classify_result(self, log_text):
+        result = classify(log_text)
+        self.assertIsInstance(result.get("reason"), str)
+        self.assertTrue(result["reason"].strip(), "reason must not be empty")
+        return result
+
+    def test_rescue_mode_fails(self):
+        log_text = (
+            "[  OK  ] Reached target rescue.target.\n"
+            "You are in rescue mode. After logging in, type \"journalctl -xb\" to view system logs.\n"
+        )
+        self.assertEqual(self.classify_result(log_text)["result"], "FAIL")
+
+    def test_maintenance_password_prompt_fails(self):
+        log_text = (
+            "Give root password for maintenance\n"
+            "(or press Control-D to continue): "
+        )
+        self.assertEqual(self.classify_result(log_text)["result"], "FAIL")
+
+    def test_bare_root_shell_without_login_prompt_fails(self):
+        log_text = "Debian GNU/Linux 13 debian ttyS0\n\nroot@debian:~# "
+        result = self.classify_result(log_text)
+        self.assertEqual(result["result"], "FAIL")
+        self.assertIn("unexpected root shell", result["reason"])
+
+    def test_non_root_autologin_prompt_passes(self):
+        log_text = "Debian GNU/Linux 13 debian ttyS0\n\nuser@debian:~$ "
+        self.assertEqual(self.classify_result(log_text)["result"], "PASS")
+
+    def test_login_prompt_passes(self):
+        log_text = "Debian GNU/Linux 13 debian ttyS0\n\ndebian login: "
+        self.assertEqual(self.classify_result(log_text)["result"], "PASS")
+
+
 if __name__ == "__main__":
     unittest.main()
