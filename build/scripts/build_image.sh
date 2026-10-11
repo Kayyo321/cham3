@@ -17,10 +17,23 @@ set -eu -o pipefail
 
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH='' cd -- "${script_dir}/../.." && pwd)
-image_name="cham3-m0-dev-amd64"
+# Image profile selectors. Defaults reproduce the M0 development image exactly,
+# so an unparameterized invocation (for example M0 CI) is unchanged. The M1
+# desktop image sets CHAM3_LIVE_DIR=build/live-desktop and
+# CHAM3_IMAGE_NAME=cham3-m1-desktop-amd64.
+image_name=${CHAM3_IMAGE_NAME:-cham3-m0-dev-amd64}
+live_dir_rel=${CHAM3_LIVE_DIR:-build/live}
 marker_name=".cham3_live_build_work"
 
 die() { echo "build_image: $*" >&2; exit 1; }
+
+# The live-build config directory must stay inside the repository.
+case "${live_dir_rel}" in
+    /*|*..*) die "refusing unsafe CHAM3_LIVE_DIR: ${live_dir_rel}" ;;
+esac
+live_dir_abs="${repo_root}/${live_dir_rel}"
+[ -d "${live_dir_abs}" ] || die "CHAM3_LIVE_DIR not found: ${live_dir_rel}"
+[ -f "${live_dir_abs}/auto/config" ] || die "CHAM3_LIVE_DIR missing auto/config: ${live_dir_rel}"
 
 # Validate the output and work directories first (before the root check, so this is
 # testable unprivileged). The work dir is cleaned and rewritten by this script, so
@@ -81,7 +94,7 @@ fi
 rm -rf "${work_dir:?}/auto" "${work_dir:?}/config"
 rm -f "${image_dir}/${image_name}".* "${image_dir}/build.log" "${image_dir}/provenance.json" "${image_dir}/SHA256SUMS"
 touch "${work_dir}/${marker_name}"
-cp -a "${repo_root}/build/live/." "${work_dir}/"
+cp -a "${live_dir_abs}/." "${work_dir}/"
 mkdir -p "${work_dir}/config/packages.chroot"
 cp -p "${deb_files[@]}" "${work_dir}/config/packages.chroot/"
 
@@ -129,6 +142,7 @@ cp -p "${manifest_source}" "${image_dir}/${image_name}.packages"
 python3 "${script_dir}/write_provenance.py" \
     --output "${image_dir}/provenance.json" \
     --repo-root "${repo_root}" \
+    --live-dir "${live_dir_rel}" \
     --work-dir "${work_dir}" \
     --packages-dir "${packages_dir}" \
     --artifact "${image_dir}/${image_name}.iso" \

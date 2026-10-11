@@ -132,6 +132,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--output", required=True, help="provenance.json path to write")
     parser.add_argument("--repo-root", required=True)
+    parser.add_argument(
+        "--live-dir",
+        default="build/live",
+        help="repo-relative live-build config directory (default build/live)",
+    )
     parser.add_argument("--work-dir", required=True, help="live-build work directory (holds config/ and chroot/)")
     parser.add_argument("--packages-dir", required=True, help="directory with the local .deb files")
     parser.add_argument("--artifact", action="append", default=[], help="output file to record (repeatable)")
@@ -154,7 +159,7 @@ def main():
     apt_value = lists if lists is not None else None
 
     live_inputs = {}
-    live_root = os.path.join(args.repo_root, "build", "live")
+    live_root = os.path.join(args.repo_root, args.live_dir)
     for current, _dirs, files in sorted(os.walk(live_root)):
         for name in sorted(files):
             path = os.path.join(current, name)
@@ -208,7 +213,7 @@ def main():
             },
             "security_updates_enabled": chroot_cfg.get("LB_SECURITY"),
             "updates_enabled": chroot_cfg.get("LB_UPDATES"),
-            "lb_config_command": lb_config_command(os.path.join(args.repo_root, "build", "live", "auto", "config")),
+            "lb_config_command": lb_config_command(os.path.join(args.repo_root, args.live_dir, "auto", "config")),
             "source_date_epoch": args.source_date_epoch,
             "apt_release_files": apt_value,
             "apt_release_files_unavailable_reason": lists_reason,
