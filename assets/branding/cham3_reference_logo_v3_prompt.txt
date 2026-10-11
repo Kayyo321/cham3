@@ -1,0 +1,34 @@
+Cham3 logo revision v3 — design handoff
+
+State: IMPLEMENTED; awaiting owner design review.
+Owner/role/provider: Codex IMPLEMENTER.
+Approved scope change: user requested enough overlap to hide both silhouettes' tails.
+Scope: standalone raster logo only; no product behavior or architecture changes.
+Security impact: none; security review not required.
+Baseline: 6a77ee49a82993f4b95154bf1b9c61e9993901d9.
+Worktree: /Users/jessicabruce/cham3.
+Branch: codex/cham3-reference-logo.
+Implementation reference: commit containing this record and cham3_reference_logo_v3.png.
+Tool: built-in image_gen, image editing.
+Previous assets and unrelated untracked .DS_Store files preserved.
+
+Final prompt:
+Use case: precise-object-edit.
+Edit target: the supplied Cham3 logo.
+User request: increase overlap until BOTH background silhouettes' tails are completely hidden.
+Change ONLY the stacking/overlap needed to achieve this. Bring purple down and tuck its lower body and entire curled tail behind the detailed pink foreground chameleon's body. Bring the pale white-grey silhouette down and tuck its lower body and entire curled tail behind the purple/pink bodies. The result is a compact overlapping three-chameleon mark, with visible pink foreground animal plus purple and pale grey upper-body/head silhouettes peeking out behind, sequentially offset a small step upward and to the RIGHT.
+MANDATORY: Exactly ONE visible spiral tail in the entire logo, belonging to the detailed PINK foreground chameleon. ZERO visible purple or grey tails, tail curls, spirals, curved tail tips, or negative-space tail holes. These tails are occluded completely by the overlapping animals, not displayed separately. Retain enough smooth shoulders/upper backs to make the two rear layers recognizable as chameleons.
+Preserve the pink animal's exact faceted pink/magenta character, its friendly face and both glossy eyes, tall crest, bent arm, complete pink spiral tail. Preserve purple head's intermediate three-quarter rightward orientation, with one large and one smaller dark eye spot. Preserve pale white-grey head's right-facing side profile with one dark round eye spot. Keep all THREE heads clearly visible and the gradual head turn from pink to purple to grey. Purple and grey silhouettes stay uniform solid colors apart from dark eye spots.
+Preserve the near-black background, centered pale bold geometric sans-serif "Cham3" title underneath, exact spelling/case, crisp edges, clean margins. No extra animals, no added text, no scenery, no watermark, no glow.
+
+Verification:
+PASS — visual inspection of the generated output in the built-in image tool:
+only pink foreground spiral tail visible; purple and grey tails fully hidden,
+all three heads visible with gradual right turn, dark eye spots retained,
+and exact "Cham3" wordmark below.
+PASS — file command confirms saved PNG.
+NOT_RUN — product build/security tests; no product behavior changed.
+Independent review: pending owner design review.
+Limits: raster image on dark background; no vector/transparent export.
+Next owner/action: user design review.
+
