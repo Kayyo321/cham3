@@ -1,6 +1,6 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** IN_PROGRESS
+- **State:** IN_REVIEW (handed to Codex for independent review; no verdict yet)
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -32,15 +32,22 @@ Establish repeatable M0 development entry points and evidence by adding the init
 
 ## Acceptance criteria
 
-- [ ] The task implementation is on a task-specific branch based on the recorded baseline; exact branch/worktree and target commit are recorded.
-- [ ] A clean checkout can follow the documented developer instructions to build the initial M0 image/package artifacts without undocumented host state or production credentials.
-- [ ] The build definition uses Debian live-build, records material inputs/tool versions and provenance, and makes no unsupported bit-for-bit reproducibility claim.
-- [ ] The minimal package skeleton builds and its metadata/dependencies are documented accurately; it does not advertise absent cham3 functionality.
-- [ ] CI runs the applicable static checks and package/build validation without production secrets. Exact CI and local check results are recorded.
-- [ ] A boot attempt of the initial image is performed in a disposable VM. Record the artifact identity, VM environment, result, and limitations. A blocked or failed required boot check leaves this task open; do not mark it complete.
-- [ ] `docs/STATUS.md` reflects only evidence from the task and distinguishes M0 work from later milestones.
-- [ ] A durable handoff under `docs/handoffs/` uses `docs/templates/HANDOFF.md`, identifies the exact base and target commits, verification outcomes, risks, review state, and next action.
-- [ ] Codex independently reviews the exact target commit. `CHANGES_REQUESTED` returns the task to implementation; complete M0 only after Codex returns `APPROVE` and all other acceptance criteria have evidence.
+Status as of the handoff. Evidence is in `docs/handoffs/M0-repository-build-baseline.md` and `docs/evidence/M0-repository-build-baseline/`.
+
+- [x] The task implementation is on a task-specific branch based on the recorded baseline, and the exact branch, worktree and target commit are recorded.
+- [x] A clean checkout can follow the documented developer instructions to build the initial M0 image and package artifacts, without undocumented host state or production credentials.
+  - Evidence: PASS in a disposable Debian 13.7 amd64 VM at `5ae0dc5`.
+  - Limitation: the VM's CPU is emulated (QEMU TCG); no native-hardware build was run.
+- [x] The build definition uses Debian live-build, records material inputs, tool versions and provenance, and makes no unsupported bit-for-bit reproducibility claim.
+- [x] The minimal package skeleton builds, and its metadata and dependencies are documented accurately. It does not advertise absent cham3 functionality.
+- [ ] CI runs the applicable static checks and package/build validation without production secrets, and exact CI and local check results are recorded.
+  - Local and CI-equivalent results: PASS.
+  - GitHub Actions execution: NOT_RUN, because the branch was not published. **Open.**
+- [x] A boot attempt of the initial image is performed in a disposable VM, recording the artifact identity, VM environment, result and limitations.
+  - PASS on QEMU TCG (BIOS) to a serial login prompt. ISO sha256 `060382a0…0bf1478`.
+- [x] `docs/STATUS.md` reflects only evidence from the task and distinguishes M0 work from later milestones.
+- [x] A durable handoff under `docs/handoffs/` uses `docs/templates/HANDOFF.md` and identifies the exact base and target commits, verification outcomes, risks, review state and next action.
+- [ ] Codex independently reviews the exact target commit. `CHANGES_REQUESTED` returns the task to implementation. M0 is complete only after Codex returns `APPROVE` and all other acceptance criteria have evidence. **Pending.**
 
 ## Security considerations
 
@@ -65,7 +72,7 @@ Establish repeatable M0 development entry points and evidence by adding the init
 - **Documentation/research owner:** Haiku 5.5 medium subagent; canonical role `TRIAGE`, with narrowly scoped documentation edits explicitly assigned. It must not invent architecture or alter canonical product requirements.
 - **Independent reviewer:** Codex, canonical role `REVIEWER`.
 - **Branch/worktree:** `task/M0-repository-build-baseline`, created from the recorded base commit. Each writing subagent must own a separate worktree/branch with disjoint file ownership. If isolation is unavailable, run write phases serially; do not permit concurrent edits to a shared writable worktree.
-- **Target commit:** To be recorded by Claude Code at handoff.
+- **Target commit:** implementation commit `5ae0dc526336b7f3c6dec10b94ff4b78f135d593`, which was built and booted. The review target is the docs-only evidence/handoff commit at the tip of `task/M0-repository-build-baseline`; its exact SHA is given in the Codex request. Handoff: `docs/handoffs/M0-repository-build-baseline.md`.
 - **Setup commits (not implementation):** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (owner task preparation: this record and `docs/STATUS.md`, parent is the recorded base) and the coordinator commit that moved this task to `IN_PROGRESS` and recorded the assignments below.
 
 ### Coordinator assignment (2026-10-11)
