@@ -1,6 +1,6 @@
 # Task: M1 — Bootable desktop distribution
 
-- **State:** IN_PROGRESS (readiness packet prepared concurrently; see Assignment and Git)
+- **State:** IN_REVIEW (integrated candidate `b82919c`; fast gates PASS in-container, heavy gates assigned to Codex Remote; awaiting independent Codex review)
 - **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER; `m1_worker` (Sonnet 5.5) IMPLEMENTER; `m1_test_reviewer` (Haiku 5.5) TEST_ENGINEER/internal REVIEWER; `m1_docs_research` (Haiku 5.5) docs/research. Independent REVIEWER/SECURITY REVIEWER: Codex (not yet run).
 - **Created / updated:** 2026-10-11
 - **Base commit (M1 implementation baseline):** `401c6cf9a550c81decf832cbc346f6908b9c95ef` (current `main`; includes approved ADR 0002 and current branding assets). The older historical base `3f4690d80c87f4d1a2da88a9bbc1ba7bacb1dedc` recorded at drafting is superseded as the implementation baseline and kept as context only.
@@ -136,7 +136,7 @@ Package lists and metapackages must avoid desktop conflicts, document unavailabl
   - `test/M1` — `/Users/jessicabruce/cham3-worktrees/M1-test` (test owner; `tests/`).
   - `docs/M1-research` — `/Users/jessicabruce/cham3-worktrees/M1-docs` (package disposition matrix and readiness packet under `docs/research/`).
 - **Persistent subagent definitions:** `.claude/agents/m1_worker.md`, `.claude/agents/m1_test_reviewer.md`, `.claude/agents/m1_docs_research.md`.
-- **Target commit:** recorded at handoff once the candidate is integrated on `task/M1-bootable-desktop`.
+- **Target commit:** `b82919c6ddbdb1f84f8db35e3ded8559c40b242f` on `task/M1-bootable-desktop`. Handoff: `docs/handoffs/M1-bootable-desktop-distribution.md`.
 - **Historical specification record:** `task/M1-bootable-desktop-spec` at `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd` (worktree removed during reconciliation).
 
 ## Decisions / blockers
