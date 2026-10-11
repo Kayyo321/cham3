@@ -1,6 +1,6 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** IN_REVIEW (handed to Codex for independent review; no verdict yet)
+- **State:** CHANGES_REQUESTED (Codex independent review found R1/R2; returns to IMPLEMENTER)
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
@@ -47,7 +47,16 @@ Status as of the handoff. Evidence is in `docs/handoffs/M0-repository-build-base
   - PASS on QEMU TCG (BIOS) to a serial login prompt. ISO sha256 `060382a0…0bf1478`.
 - [x] `docs/STATUS.md` reflects only evidence from the task and distinguishes M0 work from later milestones.
 - [x] A durable handoff under `docs/handoffs/` uses `docs/templates/HANDOFF.md` and identifies the exact base and target commits, verification outcomes, risks, review state and next action.
-- [ ] Codex independently reviews the exact target commit. `CHANGES_REQUESTED` returns the task to implementation. M0 is complete only after Codex returns `APPROVE` and all other acceptance criteria have evidence. **Pending.**
+- [ ] Codex independently reviews and approves the exact target commit. Codex reviewed `82b0cfcf255672ce58c15ad32a5aad201bbde7bd` and returned **CHANGES_REQUESTED**. Review: `docs/reviews/M0-repository-build-baseline-codex.md`, commit `fc2c342e6fdf35476016c9f676167fdbbc354eb7`. The approval gate remains open; R1/R2 require repair, verification and renewed independent review.
+
+### Independent Codex review (2026-10-11)
+
+- **Verdict / exact target:** CHANGES_REQUESTED at `82b0cfcf255672ce58c15ad32a5aad201bbde7bd`; built/booted implementation remains `5ae0dc526336b7f3c6dec10b94ff4b78f135d593`.
+- **Required fix R1 (Medium):** `build/scripts/scan_secrets.sh:71-75` accepts grep execution failures other than status 2. Missing grep was independently reproduced as exit 0 / PASS on unscanned input. Accept only statuses 0/1 as successful scanning; handle all others as scan errors and add dependency-failure controls without printing fixture values.
+- **Required fix R2 (Medium):** `build/scripts/build_image.sh:97-102` loses configuration failure inside the subshell/pipeline guarded by `||`. Independent fault injection returned 42 from `lb config`, yet invoked `lb build` and obtained wrapper exit 0 / PASS with synthetic outputs. Explicitly propagate work-directory/configuration failures; add a regression requiring no subsequent build or newly published successful artifacts.
+- **Independent normal-path verification:** PASS for static checks, 70 static tests (zero skips), unsigned package build/lintian and 8 package tests as non-root in a disposable `debian:trixie` linux/amd64 container under emulation. PASS for 14 host classifier unit tests and committed evidence consistency. Independent real image build/boot: NOT_RUN. Full commands, evidence and limits are in the review.
+- **CI gate:** workflow-specific `gh run list` query is BLOCKED by HTTP 404 (workflow absent on default branch); branch-wide run query succeeded with `[]`. GitHub Actions execution remains NOT_RUN and does not satisfy acceptance. Simulations are not CI approval.
+- **Next owner / action:** IMPLEMENTER repairs R1/R2 in its assigned worktree, adds sensitive regressions and supplies an exact revised target with affected checks and handoff. Coordinator routes renewed independent review. Owner runs and records GitHub Actions on an exact reviewed commit. Integrator follows owner-approved merge and post-merge checks only after all required gates pass. No push or merge was performed by the reviewer; M0 is not complete.
 
 ## Security considerations
 
