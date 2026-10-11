@@ -1,0 +1,303 @@
+### mode=measure target=metasploit-framework extra_allow=oracle-instantclient-basic
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=measure target=metasploit-framework. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: metasploit-framework
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: oracle-instantclient-basic
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y metasploit-framework
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  gcc-14-base librtmp1
+Use 'apt autoremove' to remove them.
+The following additional packages will be installed:
+  binutils-common binutils-mingw-w64-base binutils-mingw-w64-i686
+  binutils-mingw-w64-x86-64 bundler curl gcc-16-base gcc-mingw-w64-base
+  gcc-mingw-w64-i686-win32 gcc-mingw-w64-i686-win32-runtime
+  gcc-mingw-w64-x86-64-win32 gcc-mingw-w64-x86-64-win32-runtime git git-man
+  john john-data libaio1t64 libblas3 libc-bin libc-gconv-modules-extra
+  libc-l10n libc6 libcurl3t64-gnutls libcurl4-gnutls libcurl4t64 libdbus-1-3
+  liberror-perl libexpat1 libgcc-s1 libgcrypt20 libgdbm-compat4t64 libgdbm6t64
+  libgomp1 libgpg-error0 libicu78 libisl23 libjson-perl liblinear4 liblua5.4-0
+  libmpc3 libmpfr6 libnghttp3-9 libngtcp2-16 libngtcp2-crypto-gnutls8
+  libngtcp2-crypto-ossl0 libnuma1 libpcap0.8t64 libperl5.42 libpq5 libproc2-1
+  libpython3-stdlib libpython3.14-minimal libpython3.14-stdlib libruby
+  libruby3.3 libstdc++6 libsystemd-shared libsystemd0 libtext-charwidth-perl
+  libtext-wrapi18n-perl libudev1 liburing2 libxml2-16 libxslt1.1 libyaml-0-2
+  locales media-types mingw-w64-common mingw-w64-i686-dev mingw-w64-x86-64-dev
+  nasm netbase nmap nmap-common oracle-instantclient-basic perl perl-base
+  perl-modules-5.42 postgresql postgresql-18 postgresql-client-18
+  postgresql-client-common postgresql-common procps python3 python3-minimal
+  python3.14 python3.14-minimal rake ruby ruby-bundler ruby-csv
+  ruby-did-you-mean ruby-json ruby-net-telnet ruby-ruby2-keywords
+  ruby-rubygems ruby-webrick ruby-xmlrpc ruby3.3 rubygems-integration
+  sensible-utils ssl-cert systemd ucf wget
+Suggested packages:
+  gcc-16-locales gettext-base git-doc git-email git-gui gitk gitweb git-cvs
+  git-svn wordlist gdbm-l10n liblinear-tools liblinear-dev libpq-oauth
+  libapparmor1 libarchive13t64 libbpf1 libcryptsetup12 libdw1t64 libelf1t64
+  libfdisk1 libfido2-1 libkmod2 libmicrohttpd12t64 libpwquality1 libqrencode4
+  libtss2-esys-3.0.2-0t64 libtss2-mu-4.0.1-0t64 libtss2-rc0t64
+  libtss2-tcti-device0t64 clamav clamav-daemon default-jre-headless wine
+  wine64 ncat ndiff zenmap perl-doc libterm-readline-gnu-perl
+  | libterm-readline-perl-perl make libtap-harness-archive-perl postgresql-doc
+  postgresql-doc-18 python3-doc python3-tk python3-venv python3.14-venv
+  python3.14-doc binutils binfmt-support ri ruby-dev systemd-container
+  systemd-homed systemd-imds systemd-userdbd systemd-boot systemd-report
+  systemd-resolved systemd-repart polkitd
+Recommended packages:
+  build-essential less ruby-dev sudo patch ssh-client libjson-xs-perl
+  ruby-sdbm postgresql-18-jit sysstat e2fsprogs logrotate psmisc
+  linux-sysctl-defaults zip fonts-lato libjs-jquery default-dbus-system-bus
+  | dbus-system-bus systemd-timesyncd | time-daemon systemd-tpm
+  systemd-cryptsetup libapparmor1 libbpf1 libcryptsetup12 libkmod2
+The following NEW packages will be installed:
+  binutils-common binutils-mingw-w64-base binutils-mingw-w64-i686
+  binutils-mingw-w64-x86-64 bundler gcc-16-base gcc-mingw-w64-base
+  gcc-mingw-w64-i686-win32 gcc-mingw-w64-i686-win32-runtime
+  gcc-mingw-w64-x86-64-win32 gcc-mingw-w64-x86-64-win32-runtime git git-man
+  john john-data libaio1t64 libblas3 libc-gconv-modules-extra libc-l10n
+  libcurl3t64-gnutls libcurl4-gnutls libdbus-1-3 liberror-perl libexpat1
+  libgdbm-compat4t64 libgdbm6t64 libgomp1 libicu78 libisl23 libjson-perl
+  liblinear4 liblua5.4-0 libmpc3 libmpfr6 libngtcp2-16
+  libngtcp2-crypto-gnutls8 libngtcp2-crypto-ossl0 libnuma1 libpcap0.8t64
+  libperl5.42 libpq5 libproc2-1 libpython3-stdlib libpython3.14-minimal
+  libpython3.14-stdlib libruby libruby3.3 libsystemd-shared
+  libtext-charwidth-perl libtext-wrapi18n-perl liburing2 libxml2-16 libxslt1.1
+  libyaml-0-2 locales media-types metasploit-framework mingw-w64-common
+  mingw-w64-i686-dev mingw-w64-x86-64-dev nasm netbase nmap nmap-common
+  oracle-instantclient-basic perl perl-modules-5.42 postgresql postgresql-18
+  postgresql-client-18 postgresql-client-common postgresql-common procps
+  python3 python3-minimal python3.14 python3.14-minimal rake ruby ruby-bundler
+  ruby-csv ruby-did-you-mean ruby-json ruby-net-telnet ruby-ruby2-keywords
+  ruby-rubygems ruby-webrick ruby-xmlrpc ruby3.3 rubygems-integration
+  sensible-utils ssl-cert systemd ucf wget
+The following packages will be upgraded:
+  curl libc-bin libc6 libcurl4t64 libgcc-s1 libgcrypt20 libgpg-error0
+  libnghttp3-9 libstdc++6 libsystemd0 libudev1 perl-base
+12 upgraded, 95 newly installed, 0 to remove and 105 not upgraded.
+Inst libc6 [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Conf libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-bin [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64])
+Conf libc6 (2.43-6 kali-rolling [amd64])
+Conf libc-bin (2.43-6 kali-rolling [amd64])
+Inst gcc-16-base (16.2.0-3 kali-rolling [amd64])
+Conf gcc-16-base (16.2.0-3 kali-rolling [amd64])
+Inst libgcc-s1 [14.2.0-19] (16.2.0-3 kali-rolling [amd64])
+Conf libgcc-s1 (16.2.0-3 kali-rolling [amd64])
+Inst perl-base [5.40.1-6+deb13u1] (5.42.3-1 kali-rolling [amd64])
+Conf perl-base (5.42.3-1 kali-rolling [amd64])
+Inst libsystemd-shared (262-1 kali-rolling [amd64])
+Inst libsystemd0 [257.13-1~deb13u1] (262-1 kali-rolling [amd64])
+Conf libsystemd0 (262-1 kali-rolling [amd64])
+Conf libsystemd-shared (262-1 kali-rolling [amd64])
+Inst systemd (262-1 kali-rolling [amd64])
+Inst libexpat1 (2.8.4-1 kali-rolling [amd64])
+Inst libpython3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Inst python3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Conf libpython3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Conf libexpat1 (2.8.4-1 kali-rolling [amd64])
+Conf python3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Inst python3-minimal (3.14.7-3 kali-rolling [amd64])
+Inst media-types (14.0.0 kali-rolling [all])
+Inst netbase (6.6 kali-rolling [all])
+Inst libpython3.14-stdlib (3.14.7-4 kali-rolling [amd64])
+Inst python3.14 (3.14.7-4 kali-rolling [amd64])
+Inst libpython3-stdlib (3.14.7-3 kali-rolling [amd64])
+Conf python3-minimal (3.14.7-3 kali-rolling [amd64])
+Inst python3 (3.14.7-3 kali-rolling [amd64])
+Inst libstdc++6 [14.2.0-19] (16.2.0-3 kali-rolling [amd64])
+Conf libstdc++6 (16.2.0-3 kali-rolling [amd64])
+Inst libudev1 [257.13-1~deb13u1] (262-1 kali-rolling [amd64])
+Conf libudev1 (262-1 kali-rolling [amd64])
+Inst libproc2-1 (2:4.0.7-1 kali-rolling [amd64])
+Inst procps (2:4.0.7-1 kali-rolling [amd64])
+Inst sensible-utils (0.0.26 kali-rolling [all])
+Inst libc-l10n (2.43-6 kali-rolling [all])
+Inst locales (2.43-6 kali-rolling [all])
+Inst perl-modules-5.42 (5.42.3-1 kali-rolling [all])
+Inst libgdbm6t64 (1.26-1+b2 kali-rolling [amd64])
+Inst libgdbm-compat4t64 (1.26-1+b2 kali-rolling [amd64])
+Inst libperl5.42 (5.42.3-1 kali-rolling [amd64])
+Inst perl (5.42.3-1 kali-rolling [amd64])
+Inst libtext-charwidth-perl (0.04-12+b1 kali-rolling [amd64])
+Inst libtext-wrapi18n-perl (0.06-11 kali-rolling [all])
+Inst ucf (3.0056 kali-rolling [all])
+Inst wget (1.25.0-3 kali-rolling [amd64])
+Inst binutils-common (2.47-6 kali-rolling [amd64])
+Inst binutils-mingw-w64-base (2.47-6+13.3+b1 kali-rolling [amd64])
+Inst binutils-mingw-w64-i686 (2.47-6+13.3+b1 kali-rolling [amd64])
+Inst binutils-mingw-w64-x86-64 (2.47-6+13.3+b1 kali-rolling [amd64])
+Inst rubygems-integration (1.20.1 kali-rolling [all])
+Inst rake (13.4.2-1 kali-rolling [all]) []
+Inst ruby-csv (3.3.6-1 kali-rolling [all]) []
+Inst ruby-did-you-mean (2.0.0-1 kali-rolling [all]) []
+Inst ruby-net-telnet (0.2.0-1 Debian:13.7/stable, kali-rolling [all]) []
+Inst ruby-ruby2-keywords (0.0.5-1 Debian:13.7/stable, kali-rolling [all]) []
+Inst ruby-webrick (1.9.2-2 kali-rolling [all]) []
+Inst ruby-xmlrpc (0.3.3-2 Debian:13.7/stable, kali-rolling [all]) []
+Inst libyaml-0-2 (0.2.5-2+b1 kali-rolling [amd64]) []
+Inst libruby3.3 (3.3.8-2.2 kali-rolling [amd64]) []
+Inst ruby3.3 (3.3.8-2.2 kali-rolling [amd64]) []
+Inst libruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64]) []
+Inst ruby-rubygems (4.0.20-1 kali-rolling [all]) []
+Inst ruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64])
+Inst ruby-bundler (4.0.20-1 kali-rolling [all])
+Inst bundler (4.0.20-1 kali-rolling [all])
+Inst libnghttp3-9 [1.8.0-1] (1.17.0-1 kali-rolling [amd64])
+Inst libngtcp2-16 (1.24.0-1 kali-rolling [amd64])
+Inst libngtcp2-crypto-ossl0 (1.24.0-1 kali-rolling [amd64])
+Inst curl [8.14.1-2+deb13u5] (8.22.0-1 kali-rolling [amd64]) []
+Inst libcurl4t64 [8.14.1-2+deb13u5] (8.22.0-1 kali-rolling [amd64])
+Inst gcc-mingw-w64-base (16.2.0-1+29 kali-rolling [amd64])
+Inst mingw-w64-common (14.0.0-1 kali-rolling [all])
+Inst mingw-w64-i686-dev (14.0.0-1 kali-rolling [all])
+Inst gcc-mingw-w64-i686-win32-runtime (16.2.0-1+29 kali-rolling [amd64])
+Inst libisl23 (0.28-1 kali-rolling [amd64])
+Inst libmpfr6 (4.2.2-3 kali-rolling [amd64])
+Inst libmpc3 (1.3.1-3 kali-rolling [amd64])
+Inst gcc-mingw-w64-i686-win32 (16.2.0-1+29 kali-rolling [amd64])
+Inst mingw-w64-x86-64-dev (14.0.0-1 kali-rolling [all])
+Inst gcc-mingw-w64-x86-64-win32-runtime (16.2.0-1+29 kali-rolling [amd64])
+Inst gcc-mingw-w64-x86-64-win32 (16.2.0-1+29 kali-rolling [amd64])
+Inst libngtcp2-crypto-gnutls8 (1.24.0-1 kali-rolling [amd64])
+Inst libcurl4-gnutls (8.22.0-1 kali-rolling [amd64])
+Inst libcurl3t64-gnutls (8.22.0-1 kali-rolling [amd64])
+Inst liberror-perl (0.17030-1 Debian:13.7/stable, kali-rolling [all])
+Inst git-man (1:2.53.0-1 kali-rolling [all])
+Inst git (1:2.53.0-1 kali-rolling [amd64])
+Inst john-data (1.9.0-Jumbo-1+git20211102-0kali11 kali-rolling [all])
+Inst libgomp1 (16.2.0-3 kali-rolling [amd64])
+Inst libdbus-1-3 (1.16.2-5+b1 kali-rolling [amd64])
+Inst libpcap0.8t64 (1.10.7-1 kali-rolling [amd64])
+Inst john (1.9.0-Jumbo-1+git20211102-0kali11 kali-rolling [amd64])
+Inst libaio1t64 (0.3.113-9+kali2 kali-rolling [amd64])
+Inst libblas3 (3.12.1-8 kali-rolling [amd64])
+Inst libgpg-error0 [1.51-4] (1.61-5 kali-rolling [amd64])
+Inst libgcrypt20 [1.11.0-7+deb13u1] (1.12.2-1 kali-rolling [amd64])
+Inst libicu78 (78.3-2 kali-rolling [amd64])
+Inst libjson-perl (4.10000-1 Debian:13.7/stable, kali-rolling [all])
+Inst liblinear4 (2.3.0+dfsg-5+b3 kali-rolling [amd64])
+Inst liblua5.4-0 (5.4.9-1 kali-rolling [amd64])
+Inst libnuma1 (2.0.19-1+b2 kali-rolling [amd64])
+Inst libpq5 (18.6-3 kali-rolling [amd64])
+Inst liburing2 (2.15-1 kali-rolling [amd64])
+Inst libxml2-16 (2.15.4+dfsg-1 kali-rolling [amd64])
+Inst libxslt1.1 (1.1.45-0.1 kali-rolling [amd64])
+Inst nasm (3.01-1 kali-rolling [amd64])
+Inst nmap-common (7.99+dfsg-1kali1 kali-rolling [all])
+Inst nmap (7.99+dfsg-1kali1 kali-rolling [amd64])
+Inst postgresql-client-common (293 kali-rolling [all])
+Inst postgresql-client-18 (18.6-3 kali-rolling [amd64])
+Inst ssl-cert (1.2.0 kali-rolling [all])
+Inst postgresql-common (293 kali-rolling [all])
+Inst postgresql-18 (18.6-3 kali-rolling [amd64])
+Inst postgresql (18+293 kali-rolling [all])
+Inst ruby-json (2.21.2+dfsg-1 kali-rolling [amd64])
+Inst oracle-instantclient-basic (19.6.0.0.0-0kali5 kali-rolling [amd64])
+Inst metasploit-framework (6.5.3-0kali1 kali-rolling [amd64])
+Conf systemd (262-1 kali-rolling [amd64])
+Conf media-types (14.0.0 kali-rolling [all])
+Conf netbase (6.6 kali-rolling [all])
+Conf libpython3.14-stdlib (3.14.7-4 kali-rolling [amd64])
+Conf python3.14 (3.14.7-4 kali-rolling [amd64])
+Conf libpython3-stdlib (3.14.7-3 kali-rolling [amd64])
+Conf python3 (3.14.7-3 kali-rolling [amd64])
+Conf libproc2-1 (2:4.0.7-1 kali-rolling [amd64])
+Conf procps (2:4.0.7-1 kali-rolling [amd64])
+Conf sensible-utils (0.0.26 kali-rolling [all])
+Conf libc-l10n (2.43-6 kali-rolling [all])
+Conf locales (2.43-6 kali-rolling [all])
+Conf perl-modules-5.42 (5.42.3-1 kali-rolling [all])
+Conf libgdbm6t64 (1.26-1+b2 kali-rolling [amd64])
+Conf libgdbm-compat4t64 (1.26-1+b2 kali-rolling [amd64])
+Conf libperl5.42 (5.42.3-1 kali-rolling [amd64])
+Conf perl (5.42.3-1 kali-rolling [amd64])
+Conf libtext-charwidth-perl (0.04-12+b1 kali-rolling [amd64])
+Conf libtext-wrapi18n-perl (0.06-11 kali-rolling [all])
+Conf ucf (3.0056 kali-rolling [all])
+Conf wget (1.25.0-3 kali-rolling [amd64])
+Conf binutils-common (2.47-6 kali-rolling [amd64])
+Conf binutils-mingw-w64-base (2.47-6+13.3+b1 kali-rolling [amd64])
+Conf binutils-mingw-w64-i686 (2.47-6+13.3+b1 kali-rolling [amd64])
+Conf binutils-mingw-w64-x86-64 (2.47-6+13.3+b1 kali-rolling [amd64])
+Conf rubygems-integration (1.20.1 kali-rolling [all])
+Conf rake (13.4.2-1 kali-rolling [all])
+Conf ruby-csv (3.3.6-1 kali-rolling [all])
+Conf ruby-did-you-mean (2.0.0-1 kali-rolling [all])
+Conf ruby-net-telnet (0.2.0-1 Debian:13.7/stable, kali-rolling [all])
+Conf ruby-ruby2-keywords (0.0.5-1 Debian:13.7/stable, kali-rolling [all])
+Conf ruby-webrick (1.9.2-2 kali-rolling [all])
+Conf ruby-xmlrpc (0.3.3-2 Debian:13.7/stable, kali-rolling [all])
+Conf libyaml-0-2 (0.2.5-2+b1 kali-rolling [amd64])
+Conf libruby3.3 (3.3.8-2.2 kali-rolling [amd64])
+Conf ruby3.3 (3.3.8-2.2 kali-rolling [amd64])
+Conf libruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64])
+Conf ruby-rubygems (4.0.20-1 kali-rolling [all])
+Conf ruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64])
+Conf ruby-bundler (4.0.20-1 kali-rolling [all])
+Conf bundler (4.0.20-1 kali-rolling [all])
+Conf libnghttp3-9 (1.17.0-1 kali-rolling [amd64])
+Conf libngtcp2-16 (1.24.0-1 kali-rolling [amd64])
+Conf libngtcp2-crypto-ossl0 (1.24.0-1 kali-rolling [amd64])
+Conf curl (8.22.0-1 kali-rolling [amd64])
+Conf libcurl4t64 (8.22.0-1 kali-rolling [amd64])
+Conf gcc-mingw-w64-base (16.2.0-1+29 kali-rolling [amd64])
+Conf mingw-w64-common (14.0.0-1 kali-rolling [all])
+Conf mingw-w64-i686-dev (14.0.0-1 kali-rolling [all])
+Conf gcc-mingw-w64-i686-win32-runtime (16.2.0-1+29 kali-rolling [amd64])
+Conf libisl23 (0.28-1 kali-rolling [amd64])
+Conf libmpfr6 (4.2.2-3 kali-rolling [amd64])
+Conf libmpc3 (1.3.1-3 kali-rolling [amd64])
+Conf gcc-mingw-w64-i686-win32 (16.2.0-1+29 kali-rolling [amd64])
+Conf mingw-w64-x86-64-dev (14.0.0-1 kali-rolling [all])
+Conf gcc-mingw-w64-x86-64-win32-runtime (16.2.0-1+29 kali-rolling [amd64])
+Conf gcc-mingw-w64-x86-64-win32 (16.2.0-1+29 kali-rolling [amd64])
+Conf libngtcp2-crypto-gnutls8 (1.24.0-1 kali-rolling [amd64])
+Conf libcurl4-gnutls (8.22.0-1 kali-rolling [amd64])
+Conf libcurl3t64-gnutls (8.22.0-1 kali-rolling [amd64])
+Conf liberror-perl (0.17030-1 Debian:13.7/stable, kali-rolling [all])
+Conf git-man (1:2.53.0-1 kali-rolling [all])
+Conf git (1:2.53.0-1 kali-rolling [amd64])
+Conf john-data (1.9.0-Jumbo-1+git20211102-0kali11 kali-rolling [all])
+Conf libgomp1 (16.2.0-3 kali-rolling [amd64])
+Conf libdbus-1-3 (1.16.2-5+b1 kali-rolling [amd64])
+Conf libpcap0.8t64 (1.10.7-1 kali-rolling [amd64])
+Conf john (1.9.0-Jumbo-1+git20211102-0kali11 kali-rolling [amd64])
+Conf libaio1t64 (0.3.113-9+kali2 kali-rolling [amd64])
+Conf libblas3 (3.12.1-8 kali-rolling [amd64])
+Conf libgpg-error0 (1.61-5 kali-rolling [amd64])
+Conf libgcrypt20 (1.12.2-1 kali-rolling [amd64])
+Conf libicu78 (78.3-2 kali-rolling [amd64])
+Conf libjson-perl (4.10000-1 Debian:13.7/stable, kali-rolling [all])
+Conf liblinear4 (2.3.0+dfsg-5+b3 kali-rolling [amd64])
+Conf liblua5.4-0 (5.4.9-1 kali-rolling [amd64])
+Conf libnuma1 (2.0.19-1+b2 kali-rolling [amd64])
+Conf libpq5 (18.6-3 kali-rolling [amd64])
+Conf liburing2 (2.15-1 kali-rolling [amd64])
+Conf libxml2-16 (2.15.4+dfsg-1 kali-rolling [amd64])
+Conf libxslt1.1 (1.1.45-0.1 kali-rolling [amd64])
+Conf nasm (3.01-1 kali-rolling [amd64])
+Conf nmap-common (7.99+dfsg-1kali1 kali-rolling [all])
+Conf nmap (7.99+dfsg-1kali1 kali-rolling [amd64])
+Conf postgresql-client-common (293 kali-rolling [all])
+Conf postgresql-client-18 (18.6-3 kali-rolling [amd64])
+Conf ssl-cert (1.2.0 kali-rolling [all])
+Conf postgresql-common (293 kali-rolling [all])
+Conf postgresql-18 (18.6-3 kali-rolling [amd64])
+Conf postgresql (18+293 kali-rolling [all])
+Conf ruby-json (2.21.2+dfsg-1 kali-rolling [amd64])
+Conf oracle-instantclient-basic (19.6.0.0.0-0kali5 kali-rolling [amd64])
+Conf metasploit-framework (6.5.3-0kali1 kali-rolling [amd64])
+### exit=0

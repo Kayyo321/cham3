@@ -1,0 +1,151 @@
+#!/bin/sh
+set -e
+
+#########################################################################
+
+VERSION=""
+
+BROADCOM_WL=""
+
+WL_APSTA="wl_apsta-3.130.20.0.o"
+
+DOWNLOAD="${WL_APSTA}"
+
+URL="https://downloads.openwrt.org/sources/${WL_APSTA}"
+
+SHA512SUM="d89ed52045307449bbae79a4d1807cc6cd89ae67c4a22e8e8aa51c1396edbb6ed8b157cd0756faf8b660a537b48b62117c57967f2048245b5b102d9d9bca4bbd"
+
+FIRMWARE_INSTALL_DIR="/usr/lib/firmware"
+
+B43="b43legacy"
+
+#########################################################################
+# stable sections below, not updated for firmware updates		#
+#########################################################################
+
+. /usr/share/debconf/confmodule
+
+latest_firmware ()
+{
+tmp=$(mktemp -q -d)
+
+cd $tmp
+
+# use apt proxy
+APT_PROXIES=$(apt-config shell \
+http_proxy Acquire::http::Proxy \
+https_proxy Acquire::https::Proxy \
+ftp_proxy Acquire::ftp::Proxy \
+)
+
+if [ -n "$APT_PROXIES" ]; then
+        eval export $APT_PROXIES
+fi
+
+if ! wget --timeout=60 "${URL}"; then
+	echo "$0: Some problem occurred during the firmware download. Please check your internet connection." 1>&2
+	exit 1
+fi
+if ! sha512sum -c /dev/stdin << EOF; then
+${SHA512SUM}  ${DOWNLOAD}
+EOF
+	echo "$0: Downloaded firmware did not match known SHA512 checksum, aborting." 1>&2
+	exit 1
+fi
+if [ "${DOWNLOAD}" != "${WL_APSTA}" ]; then
+	if ! tar xvjf "${DOWNLOAD}" "${WL_APSTA}"; then
+		echo "$0: Unpacking firmware file failed, unable to continue (is /tmp full?)." 1>&2
+		exit 1
+	fi
+fi
+catalog="${FIRMWARE_INSTALL_DIR}/${B43}/firmware-${B43}-installer.catalog"
+if [ -f "${catalog}" ]; then
+	echo "$0: Deleting old extracted firmware..." 1>&2
+	LC_ALL=C xargs -r -0 -a "${catalog}" dpkg-query -S 2>&1 1>/dev/null | sed -es',[^/]\+,,' | xargs -r rm -f --
+	rm "${catalog}"
+fi
+mkdir -p "${FIRMWARE_INSTALL_DIR}/${B43}"
+retcode=0
+b43-fwcutter -w "${FIRMWARE_INSTALL_DIR}" "${WL_APSTA}" | while read line
+do	echo "${line}"
+	file="${line#Extracting }"
+	if [ "${file}" != "${line}" ]
+	then	if [ "${retcode}" -ne 0 ]
+		then	rm "${FIRMWARE_INSTALL_DIR}/${file}"
+
+		elif [ -z "${FIRMWARE_INSTALL_DIR}/${file}" ] || \
+		! printf %s/%s\\000 "${FIRMWARE_INSTALL_DIR}" "${file}" >> "${catalog}"
+		then	echo "$0: Failed during extraction of ${file} from ${WL_APSTA}" 1>&2
+			echo "$0: Warning, manual removal/cleaning of ${FIRMWARE_INSTALL_DIR}/${B43} may be needed!" 1>&2
+			rm "${FIRMWARE_INSTALL_DIR}/${file}"
+			retcode=1
+		fi
+	fi
+done
+
+rm -f "${DOWNLOAD}" "${WL_APSTA}"
+rm -rf "${BROADCOM_WL}"
+
+# otherwise can't delete things
+cd /
+
+rmdir $tmp || echo "$0: DEBUG: targeted cleaning failed" 1>&2
+
+rm -rf $tmp
+[ ${retcode} -eq 0 ] || exit ${retcode}
+}
+
+# check environment
+if [ "$(stat -c %d/%i /)" != "$(stat -Lc %d/%i /proc/1/root 2>/dev/null)" ];
+ then
+    echo "A chroot environment has been detected."
+    echo "Remember this firmware needs kernel >= 2.6.25."
+    latest_firmware
+    exit 0
+ else
+    echo "No chroot environment found. Starting normal installation"
+fi
+
+# install firmware unconditional if the corresponding debconf value is true
+# this is usefull for live-systems or similar systems that should work on
+# changing hardware
+db_get b43-fwcutter/install-unconditional
+if [ "$RET" = "true" ] ; then
+    latest_firmware
+    exit 0
+fi
+
+# Fix for BCM4306 [14e4:4320] (rev 02)
+chip=`lspci -n | grep -o "14e4:4320 (rev 02)"` || true
+if [ "$chip" ] ; then
+   echo "Your card is BCM4306 [14e4:4320] (rev 02), using b43legacy firmware"
+   latest_firmware
+   exit 0
+fi
+
+# check chip
+supported=0
+pci=`lspci -n | grep -o "14e4:[1234567890abcdef]\+"` || true
+
+if [ -n "$pci" ]; then
+        for device in $pci; do
+                device_id=`echo $device | cut -d: -f2`
+                case $device_id in
+                4301 | 4306 | 4320 | 4324 |  4325)
+                        supported=1
+                        break
+                ;;
+		esac
+        done
+fi
+
+if [ "$supported" = 0 ]; then
+        echo "No supported card found."
+        echo "Use b43 firmware. This is just for the b43legacy driver."
+        echo "Aborting."
+        exit 0
+fi
+
+latest_firmware
+
+

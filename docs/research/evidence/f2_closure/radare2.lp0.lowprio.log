@@ -1,0 +1,41 @@
+### mode=lowprio target=radare2 extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=lowprio target=radare2. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 50
+
+Package: radare2
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y radare2
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libcapstone5 libmagic-mgc libmagic1t64 libradare2-6.0.0t64 libradare2-common
+  libzip5
+Suggested packages:
+  file
+Recommended packages:
+  libradare2-dev
+The following NEW packages will be installed:
+  libcapstone5 libmagic-mgc libmagic1t64 libradare2-6.0.0t64 libradare2-common
+  libzip5 radare2
+0 upgraded, 7 newly installed, 0 to remove and 1 not upgraded.
+Inst libcapstone5 (5.0.7-1~deb13u1 Debian:13.7/stable [amd64])
+Inst libmagic-mgc (1:5.46-5 Debian:13.7/stable [amd64])
+Inst libmagic1t64 (1:5.46-5 Debian:13.7/stable [amd64])
+Inst libzip5 (1.11.3-2 Debian:13.7/stable [amd64])
+Inst libradare2-common (6.0.4+dfsg-1 kali-rolling [all])
+Inst libradare2-6.0.0t64 (6.0.4+dfsg-1 kali-rolling [amd64])
+Inst radare2 (6.0.4+dfsg-1 kali-rolling [amd64])
+Conf libcapstone5 (5.0.7-1~deb13u1 Debian:13.7/stable [amd64])
+Conf libmagic-mgc (1:5.46-5 Debian:13.7/stable [amd64])
+Conf libmagic1t64 (1:5.46-5 Debian:13.7/stable [amd64])
+Conf libzip5 (1.11.3-2 Debian:13.7/stable [amd64])
+Conf libradare2-common (6.0.4+dfsg-1 kali-rolling [all])
+Conf libradare2-6.0.0t64 (6.0.4+dfsg-1 kali-rolling [amd64])
+Conf radare2 (6.0.4+dfsg-1 kali-rolling [amd64])
+### exit=0

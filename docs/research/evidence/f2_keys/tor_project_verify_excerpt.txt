@@ -1,0 +1,12 @@
+cmd.exe
+.
+Fetching the Tor Developers key
+The Tor Browser team signs Tor Browser releases. Import the Tor Browser Developers signing key (0xEF6E286DDA85EA2A4BA7DE684E2C6E8793298290):
+gpg --auto-key-locate nodefault,wkd --locate-keys torbrowser@torproject.org
+This should show you something like:
+gpg: key 4E2C6E8793298290: public key "Tor Browser Developers (signing key) &lt;torbrowser@torproject.org&gt;" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+      EF6E286DDA85EA2A4BA7DE684E2C6E8793298290
+uid           [ unknown] Tor Browser Developers (signing key) &lt;torbrowser@torproject.org&gt;
+NOTE: Your output may deviate somewhat from the above (eg. expiration dates), however you should see the key correctly imported.

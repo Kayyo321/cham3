@@ -1,0 +1,23 @@
+#!/bin/sh
+# vim:ts=2:sw=2:et
+
+set -e
+
+case "$1" in
+  purge)
+         rm -f /etc/default/raspi-firmware-custom
+    ;;
+esac
+
+# Automatically added by dh_installdeb/13.23
+dpkg-maintscript-helper rm_conffile /etc/kernel/postinst.d/linux-firmware-raspi3 1.20161123-2 -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postrm.d/50raspi3-firmware /etc/kernel/postrm.d/z50-raspi-firmware 1.20190718-1\~ -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postinst.d/50raspi3-firmware /etc/kernel/postinst.d/z50-raspi-firmware 1.20190718-1\~ -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/initramfs/post-update.d/50raspi3-firmware /etc/initramfs/post-update.d/z50-raspi-firmware 1.20190718-1\~ -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postrm.d/z50-raspi3-firmware /etc/kernel/postrm.d/z50-raspi-firmware -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postinst.d/z50-raspi3-firmware /etc/kernel/postinst.d/z50-raspi-firmware -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/initramfs/post-update.d/z50-raspi3-firmware /etc/initramfs/post-update.d/z50-raspi-firmware -- "$@"
+# End automatically added section
+
+
+exit 0

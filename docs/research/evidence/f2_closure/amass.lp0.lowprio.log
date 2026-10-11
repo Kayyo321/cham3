@@ -1,0 +1,31 @@
+### mode=lowprio target=amass extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=lowprio target=amass. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 50
+
+Package: amass
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y amass
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libapparmor1 libpostal-data sudo
+Suggested packages:
+  postgresql
+The following NEW packages will be installed:
+  amass libapparmor1 libpostal-data sudo
+0 upgraded, 4 newly installed, 0 to remove and 1 not upgraded.
+Inst libapparmor1 (4.1.0-1 Debian:13.7/stable [amd64])
+Inst sudo (1.9.16p2-3+deb13u2 Debian:13.7/stable [amd64])
+Inst libpostal-data (1.1.4-0kali1 kali-rolling [all])
+Inst amass (5.1.1-0kali3 kali-rolling [amd64])
+Conf libapparmor1 (4.1.0-1 Debian:13.7/stable [amd64])
+Conf sudo (1.9.16p2-3+deb13u2 Debian:13.7/stable [amd64])
+Conf libpostal-data (1.1.4-0kali1 kali-rolling [all])
+Conf amass (5.1.1-0kali3 kali-rolling [amd64])
+### exit=0

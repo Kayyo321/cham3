@@ -1,0 +1,37 @@
+### mode=lowprio target=wpscan extra_allow=ruby-cms-scanner
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=lowprio target=wpscan. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 50
+
+Package: wpscan
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: ruby-cms-scanner
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y wpscan
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ wpscan : Depends: ruby-addressable (>= 2.9) but 2.8.7-2 is to be installed
+          Depends: ruby-ferrum (>= 0.8) but it is not going to be installed
+E: Unable to correct problems, you have held broken packages.
+E: The following information from --solver 3.0 may provide additional context:
+   Unable to satisfy dependencies. Reached two conflicting decisions:
+   1. ruby-addressable:amd64=2.9.0-1 is not selected for install
+   2. ruby-addressable:amd64=2.9.0-1 is selected for install because:
+      1. wpscan:amd64=4.1.0-0kali1 is selected for install
+      2. wpscan:amd64 Depends ruby-addressable (>= 2.9)
+### exit=100

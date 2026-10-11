@@ -1,0 +1,66 @@
+### mode=strict allowlist=none
+--- apt-cache policy libc6
+libc6:
+  Installed: 2.41-12+deb13u4
+  Candidate: 2.41-12+deb13u4
+  Version table:
+     2.43-6 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+ *** 2.41-12+deb13u4 500
+        500 http://deb.debian.org/debian trixie/main amd64 Packages
+        100 /var/lib/dpkg/status
+--- apt-cache policy libgcc-s1
+libgcc-s1:
+  Installed: 14.2.0-19
+  Candidate: 14.2.0-19
+  Version table:
+     16.2.0-3 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+ *** 14.2.0-19 500
+        500 http://deb.debian.org/debian trixie/main amd64 Packages
+        100 /var/lib/dpkg/status
+--- apt-cache policy libstdc++6
+libstdc++6:
+  Installed: 14.2.0-19
+  Candidate: 14.2.0-19
+  Version table:
+     16.2.0-3 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+ *** 14.2.0-19 500
+        500 http://deb.debian.org/debian trixie/main amd64 Packages
+        100 /var/lib/dpkg/status
+--- apt-cache policy curl
+curl:
+  Installed: 8.14.1-2+deb13u5
+  Candidate: 8.14.1-2+deb13u5
+  Version table:
+     8.22.0-1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+ *** 8.14.1-2+deb13u5 500
+        500 http://deb.debian.org/debian trixie/main amd64 Packages
+        100 /var/lib/dpkg/status
+--- apt-cache policy exploitdb
+exploitdb:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     20260904-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+--- apt-cache policy zaproxy
+zaproxy:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     2.17.0-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+### dist-upgrade -s
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Calculating upgrade...
+The following packages will be upgraded:
+  liblzma5
+1 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Inst liblzma5 [5.8.1-1+deb13u1] (5.8.1-1+deb13u2 Debian-Security:13/stable-security [amd64])
+Conf liblzma5 (5.8.1-1+deb13u2 Debian-Security:13/stable-security [amd64])
+### exit=0

@@ -1,0 +1,8 @@
+gpg: directory '/root/.gnupg' created
+gpg: keybox '/root/.gnupg/pubring.kbx' created
+gpg: /root/.gnupg/trustdb.gpg: trustdb created
+pub   rsa4096 2022-05-14 [SC]
+      662E 3CDD 6FE3 2900 2D0C  A5BB 4033 9DD8 2B12 EF16
+uid                      LibreWolf Maintainers <gpg@librewolf.net>
+sub   rsa4096 2022-05-14 [S]
+

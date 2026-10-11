@@ -1,0 +1,48 @@
+package	candidate_version	scripts	network_hits	first_network_line
+alsa-topology-conf	1.2.5.1-3	none	0	-
+amd64-microcode	3.20250311.1	postinst,postrm,	2	# for details, see http://www.debian.org/doc/debian-policy/ or
+atmel-firmware	1.3-7.1	none	0	-
+bluez-firmware	1.2-13	none	0	-
+dahdi-firmware-nonfree	2.11.1.0.20170917-3	postrm,	1	# for details, see http://www.debian.org/doc/debian-policy/ or
+firmware-amd-graphics	20250410-2	postinst,	0	-
+firmware-ast	20140808-10	postinst,	0	-
+firmware-ath9k-htc	1.4.0-110-ge888634+dfsg1-0.1	none	0	-
+firmware-atheros	20250410-2	none	0	-
+firmware-b43-installer	1:019-14	postinst,prerm,	2	URL="https://github.com/minios-linux/b43-firmware/releases/download/b43-firmware/${DOWNLOAD}"
+firmware-b43legacy-installer	1:019-14	postinst,prerm,	2	URL="https://downloads.openwrt.org/sources/${WL_APSTA}"
+firmware-bnx2	20250410-2	postinst,	0	-
+firmware-bnx2x	20250410-2	postinst,	0	-
+firmware-brcm80211	20250410-2	none	0	-
+firmware-carl9170	1.9.9-450-gad1c721+dfsg-0.1	none	0	-
+firmware-cavium	20250410-2	postinst,	0	-
+firmware-cirrus	20250410-2	none	0	-
+firmware-intel-graphics	20250410-2	postinst,preinst,	0	-
+firmware-intel-misc	20250410-2	postinst,preinst,	0	-
+firmware-intel-sound	20250410-2	none	0	-
+firmware-ipw2x00	20250410-2	postrm,preinst,	0	-
+firmware-ivtv	20250410-2	postrm,preinst,	0	-
+firmware-iwlwifi	20250410-2	none	0	-
+firmware-libertas	20250410-2	none	0	-
+firmware-linux-free	20241210-2	postinst,	0	-
+firmware-marvell-prestera	20250410-2	postinst,preinst,	0	-
+firmware-mediatek	20250410-2	postinst,preinst,	0	-
+firmware-misc-nonfree	20250410-2	postinst,preinst,	0	-
+firmware-myricom	20250410-2	postinst,	0	-
+firmware-netronome	20250410-2	postinst,	0	-
+firmware-netxen	20250410-2	postinst,	0	-
+firmware-nvidia-graphics	20250410-2	postinst,preinst,	0	-
+firmware-nvidia-tesla-535-gsp	535.274.02-1~deb13u1	none	0	-
+firmware-qcom-soc	20250410-2	none	0	-
+firmware-qlogic	20250410-2	postinst,	0	-
+firmware-realtek	20250410-2	postinst,preinst,	0	-
+firmware-samsung	20250410-2	none	0	-
+firmware-siano	20250410-2	none	0	-
+firmware-sof-signed	2025.01-1	postinst,postrm,preinst,prerm,	0	-
+firmware-ti-connectivity	20250410-2	none	0	-
+firmware-zd1211	1:1.5-13	none	0	-
+indi-dsi	0.4+20221223123028-2	none	0	-
+intel-microcode	3.20251111.1~deb13u1	postinst,postrm,	2	# for details, see http://www.debian.org/doc/debian-policy/ or
+libfishcamp1t64	1.2+20220607003151-3	triggers,	0	-
+libsbig4t64	4.9.9-7	triggers,	0	-
+raspi-firmware	1.20240424+ds-6	postinst,postrm,preinst,prerm,triggers,	2	    # Ensure the target directory exists. See https://bugs.debian.org/887062
+wireless-regdb	2026.05.30-1~deb13u1	postinst,prerm,	0	-
