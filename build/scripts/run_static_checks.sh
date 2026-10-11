@@ -30,7 +30,13 @@ need_tool() {
     fi
 }
 
-mapfile -d '' tracked_files < <(git_cmd ls-files -z)
+# Fail closed: if file discovery fails, no per-check result may be reported.
+if ! git_cmd ls-files -z > "${tmp_dir}/tracked_files.list"; then
+    echo "FAIL file_discovery"
+    echo "static checks: FAIL"
+    exit 1
+fi
+mapfile -d '' tracked_files < "${tmp_dir}/tracked_files.list"
 
 # Tracked shell scripts: *.sh, or any file whose first line is a sh/bash shebang.
 shell_files=()

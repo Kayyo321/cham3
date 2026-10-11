@@ -17,14 +17,27 @@ set -eu -o pipefail
 
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 repo_root=$(CDPATH='' cd -- "${script_dir}/../.." && pwd)
-out_dir=${CHAM3_OUT_DIR:-${repo_root}/out}
-work_dir=${CHAM3_WORK_DIR:-${out_dir}/live-build-work}
-image_dir="${out_dir}/image"
-packages_dir="${out_dir}/packages"
 image_name="cham3-m0-dev-amd64"
 marker_name=".cham3_live_build_work"
 
 die() { echo "build_image: $*" >&2; exit 1; }
+
+# Validate the output and work directories first (before the root check, so this is
+# testable unprivileged). The work dir is cleaned and rewritten by this script, so
+# refuse anything that could point at a system or source directory.
+out_dir_raw=${CHAM3_OUT_DIR-${repo_root}/out}
+[ -n "${out_dir_raw}" ] || die "refusing empty CHAM3_OUT_DIR"
+out_dir=$(realpath -m -- "${out_dir_raw}") || die "refusing CHAM3_OUT_DIR that cannot be resolved: ${out_dir_raw}"
+work_dir_raw=${CHAM3_WORK_DIR-${out_dir}/live-build-work}
+[ -n "${work_dir_raw}" ] || die "refusing empty CHAM3_WORK_DIR"
+work_dir=$(realpath -m -- "${work_dir_raw}") || die "refusing CHAM3_WORK_DIR that cannot be resolved: ${work_dir_raw}"
+repo_root_resolved=$(realpath -m -- "${repo_root}")
+[ "${out_dir}" != "/" ] || die "refusing CHAM3_OUT_DIR that resolves to /"
+[ "${work_dir}" != "/" ] || die "refusing CHAM3_WORK_DIR that resolves to /"
+[ "${work_dir}" != "${out_dir}" ] || die "refusing CHAM3_WORK_DIR equal to CHAM3_OUT_DIR (${work_dir})"
+[ "${work_dir}" != "${repo_root_resolved}" ] || die "refusing CHAM3_WORK_DIR equal to the repository root (${work_dir})"
+image_dir="${out_dir}/image"
+packages_dir="${out_dir}/packages"
 
 [ "$(id -u)" -eq 0 ] || die "must run as root (live-build needs chroot and mounts); use a disposable environment"
 

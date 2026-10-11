@@ -8,7 +8,6 @@ git
 ca-certificates
 python3
 file
-rsync
 
 # Static checks
 shellcheck
@@ -26,6 +25,7 @@ live-build
 debootstrap
 squashfs-tools
 xorriso
+# cpio is a hard Depends of live-build (used for includes handling).
 cpio
 
 # Image inspection and boot test (build/vm/run_boot_test.py)
