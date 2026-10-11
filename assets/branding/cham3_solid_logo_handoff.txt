@@ -1,0 +1,56 @@
+Cham3 solid-color vector logo — handoff
+
+State: IMPLEMENTED; ready for owner design review.
+Role/provider: Codex IMPLEMENTER.
+Baseline: 9fac6d4b1aef8c6ff493ebd2fb2673991a59dc3d.
+Implementation reference: commit containing this record and cham3_solid_logo.svg.
+Worktree/branch: /Users/jessicabruce/cham3 / codex/cham3-reference-logo.
+
+Approved scope:
+User explicitly chose an SVG redraw to guarantee solid fills. User then
+requested replacing purple in the foreground rose chameleon with dark rose.
+Preserve three overlapping chameleons, successive rightward head turns and
+positions, dark eye spots, fully hidden rear tails, and "Cham3" underneath.
+No product behavior, architecture, integration, or existing asset replacements.
+Security impact: none; no security review required.
+
+Delivered:
+cham3_solid_logo.svg — manually redrawn chameleons, solid path fills/strokes;
+outlined wordmark derived from the previous logo so no font is required.
+cham3_solid_logo.png — 1254 x 1254 preview rendered from that SVG.
+
+Palette:
+#101014 near-black
+#E6E6E6 pale grey
+#FFFFFF eye catchlights
+#8916AC middle silhouette only
+#751D42 dark rose replacing foreground purple
+#AC245F deep rose facet
+#D5267A rose facet
+#FF3388 bright pink
+#FF72AE light pink
+
+Verification:
+PASS — Python XML inspection: only svg/title/desc/defs/clipPath/path/rect/
+g/ellipse/circle elements, every visible fill and stroke a constant hex color,
+exactly nine colors, no styles, opacity, gradients, patterns, filters or images.
+PASS — foreground_chameleon group contains #751D42 and excludes #8916AC.
+PASS — PNG interior samples are uniform; dark rose at (500,790) is
+(117,29,66), purple at (620,360) is (137,22,172).
+PASS — render command:
+rsvg-convert -o assets/branding/cham3_solid_logo.png assets/branding/cham3_solid_logo.svg
+PASS — visual inspection using view_image: three heads, rear eye spots,
+hidden rear tails, foreground spiral, Cham3 wordmark, rose foreground.
+FAIL — preceding built-in image edit did not guarantee flat color:
+20 x 20 interior samples included 170 pink colors, 28 purple colors and
+19 grey colors. That generated attempt was not selected as a deliverable.
+NOT_RUN — product build/security tests; no product code changed.
+
+Limits:
+This is a vector redraw, with simplified facets and small geometry differences
+from the generated reference. PNG edge antialiasing blends adjacent colors;
+the SVG shapes themselves are uniformly filled. Dark background retained.
+Independent review: no external design review yet.
+Next owner/action: user reviews the finished visual.
+Unrelated .DS_Store files and all previous logo versions preserved.
+
