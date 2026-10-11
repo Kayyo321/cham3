@@ -204,7 +204,9 @@ class cham3_base_package_t(unittest.TestCase):
             self.assertIn(needle, joined, "checker missed defect: " + needle)
 
     def test_wrong_expected_version_is_rejected(self):
-        problems = check_package(real_deb_path(), "9.9.9~wrong")
+        with tempfile.TemporaryDirectory() as temp:
+            deb = stage_package(temp, "fixture.deb", files=doc_files())
+            problems = check_package(deb, "9.9.9~wrong")
         self.assertTrue(
             any("Version" in problem for problem in problems),
             "version mismatch not reported",

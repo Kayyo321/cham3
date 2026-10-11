@@ -87,8 +87,8 @@ class package_source_t(unittest.TestCase):
         self.assertNotIn("Pre-Depends", binary)
 
     def test_maintainer_is_reserved_placeholder(self):
-        stanzas = binary_stanza()
-        maintainer = stanzas[1].get("Maintainer", "")
+        source = binary_stanza()[0]
+        maintainer = source.get("Maintainer", "")
         addresses = re.findall(r"<([^>]+)>", maintainer)
         self.assertTrue(addresses, "Maintainer must include an email address")
         for address in addresses:
