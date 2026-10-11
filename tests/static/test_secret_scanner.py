@@ -7,6 +7,8 @@ which includes this file, so a literal would make the repository scan fail.
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -231,6 +233,135 @@ class secret_scanner_regression_t(unittest.TestCase):
             os.symlink(os.path.join(temp, "missing.key"), os.path.join(scanned, "dangling.txt"))
             completed = scan(scanned)
         self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+
+
+# Tools the scanner needs in PATH when it is given PATH arguments, apart from grep.
+# The scanner runs through its absolute #!/bin/bash shebang, so bash is not looked up.
+ScannerSupportTools = ("dirname", "mktemp", "find", "rm", "cut")
+CrashingGrep = "#!/bin/sh\nkill -s SEGV $$\n"
+UnexpectedStatusGrep = "#!/bin/sh\nexit 3\n"
+# Crashes only for files whose name contains "broken"; otherwise runs the real grep.
+SelectiveCrashGrep = """#!/bin/sh
+for last_arg in "$@"; do :; done
+case "${last_arg}" in
+    *broken*) kill -s SEGV $$ ;;
+esac
+exec %s "$@"
+"""
+
+
+class secret_scanner_dependency_t(unittest.TestCase):
+    """Regression tests for Codex review finding R1: a missing, non-executable,
+    crashed or otherwise failing search tool (grep) must be a scan error, never
+    a PASS. Each test runs the scanner with a PATH that holds only the tools it
+    needs, so the fault is confined to grep. Fixtures are synthetic."""
+
+    def setUp(self):
+        self.scratch = tempfile.TemporaryDirectory()
+        self.addCleanup(self.scratch.cleanup)
+        self.tools_dir = os.path.join(self.scratch.name, "tools")
+        os.makedirs(self.tools_dir)
+        for tool in ScannerSupportTools:
+            os.symlink(self.require_tool(tool), os.path.join(self.tools_dir, tool))
+        self.data_dir = os.path.join(self.scratch.name, "data")
+        os.makedirs(self.data_dir)
+
+    def require_tool(self, name):
+        path = shutil.which(name)
+        if path is None:
+            raise AssertionError("required executable not found: " + name)
+        return os.path.realpath(path)
+
+    def install_real_grep(self):
+        os.symlink(self.require_tool("grep"), os.path.join(self.tools_dir, "grep"))
+
+    def install_grep_script(self, content, mode=0o755):
+        path = os.path.join(self.tools_dir, "grep")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(content)
+        os.chmod(path, mode)
+
+    def scan_with_tools(self, *paths):
+        env = dict(os.environ)
+        env["PATH"] = self.tools_dir
+        return subprocess.run(
+            [scanner()] + list(paths),
+            cwd=self.scratch.name,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+
+    def write_clean(self, name="clean.txt"):
+        return write_file(self.data_dir, name, "nothing secret here\n")
+
+    def write_secret(self, name):
+        self.token = github_token("ghp_", 36)
+        return write_file(self.data_dir, name, "TOKEN=" + self.token + "\n")
+
+    def assert_scan_error(self, completed, path):
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 2, output)
+        self.assertIn("scan_secrets: ERROR cannot scan " + path, completed.stderr)
+        self.assertNotIn("PASS", output, "unscanned input reported as clean")
+        self.assertNotIn(self.token, output, "scanner printed the fixture value")
+
+    def test_clean_input_passes_with_real_grep(self):
+        # Positive control: the restricted PATH itself is sufficient for a clean scan.
+        self.install_real_grep()
+        completed = self.scan_with_tools(self.write_clean())
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        self.assertIn("scan_secrets: PASS", completed.stdout)
+
+    def test_finding_is_reported_with_real_grep(self):
+        # Positive control: the restricted PATH detects a synthetic finding.
+        self.install_real_grep()
+        path = self.write_secret("found.txt")
+        completed = self.scan_with_tools(path)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 1, output)
+        self.assertIn("found.txt:1", output)
+        self.assertNotIn(self.token, output, "scanner printed the fixture value")
+
+    def test_missing_grep_is_scan_error(self):
+        path = self.write_secret("unscanned.txt")
+        self.assert_scan_error(self.scan_with_tools(path), path)
+
+    def test_non_executable_grep_is_scan_error(self):
+        self.install_grep_script(CrashingGrep, mode=0o644)
+        path = self.write_secret("unscanned.txt")
+        self.assert_scan_error(self.scan_with_tools(path), path)
+
+    def test_crashing_grep_is_scan_error(self):
+        self.install_grep_script(CrashingGrep)
+        path = self.write_secret("unscanned.txt")
+        self.assert_scan_error(self.scan_with_tools(path), path)
+
+    def test_unexpected_grep_status_is_scan_error(self):
+        self.install_grep_script(UnexpectedStatusGrep)
+        path = self.write_secret("unscanned.txt")
+        self.assert_scan_error(self.scan_with_tools(path), path)
+
+    def test_crash_on_one_file_with_clean_other_is_scan_error(self):
+        self.install_grep_script(SelectiveCrashGrep % self.require_tool("grep"))
+        self.write_clean()
+        broken = self.write_secret("broken.txt")
+        completed = self.scan_with_tools(self.data_dir)
+        self.assert_scan_error(completed, broken)
+        self.assertNotIn("clean.txt", completed.stderr, "a scanned file was reported as unscanned")
+
+    def test_finding_takes_precedence_over_crash_on_other_file(self):
+        self.install_grep_script(SelectiveCrashGrep % self.require_tool("grep"))
+        broken = self.write_clean("broken.txt")
+        self.write_secret("found.txt")
+        completed = self.scan_with_tools(self.data_dir)
+        output = completed.stdout + completed.stderr
+        self.assertEqual(completed.returncode, 1, output)
+        self.assertIn("found.txt:1", output)
+        self.assertIn("scan_secrets: ERROR cannot scan " + broken, completed.stderr)
+        self.assertNotIn(self.token, output, "scanner printed the fixture value")
 
 
 if __name__ == "__main__":
