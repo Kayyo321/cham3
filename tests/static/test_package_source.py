@@ -159,7 +159,14 @@ class package_source_t(unittest.TestCase):
         self.assertRegex(text, CopyrightFormatPattern)
         self.assertRegex(text, r"(?m)^License:\s*AGPL-3\s*$")
         self.assertNotIn("AGPL-3+", text)
-        self.assertNotIn("any later version", text)
+        # The reproduced AGPL body legitimately contains "any later version" in
+        # its own how-to-apply boilerplate. Only the Files: stanza (the grant)
+        # must not claim an "or later" license.
+        files_match = re.search(r"(?ms)^Files:.*?(?=\n\s*\n|\Z)", text)
+        self.assertIsNotNone(files_match, "copyright has no Files: stanza")
+        files_stanza = files_match.group(0)
+        self.assertNotIn("any later version", files_stanza)
+        self.assertNotIn("or later", files_stanza)
         self.assertRegex(text, r"(?i)PROJECT\.md")
         self.assertRegex(text, r"(?i)before public release")
 
