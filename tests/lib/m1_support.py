@@ -166,8 +166,11 @@ MainMenuCategories = frozenset({
 })
 
 # Names that legitimately break the snake_case rule (external KDE boundaries,
-# documented in ADR 0002 and the M1 contract).
-ExternalBoundaryStems = frozenset({"Cham3Dark"})
+# documented in ADR 0002 and the M1 contract): the Cham3Dark color-scheme file
+# and the Cham3 wallpaper theme directory. KDE references both by these exact
+# capitalized names (color-scheme and wallpaper theme identifiers), so they are
+# external-interface spellings, not cham3 internal identifiers.
+ExternalBoundaryStems = frozenset({"Cham3Dark", "Cham3"})
 
 
 def desktop_path(relative):

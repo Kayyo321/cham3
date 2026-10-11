@@ -63,8 +63,10 @@ def path_component_problems(relative_path):
         stem = part.split(".", 1)[0]
         if part.endswith((".colors",)):
             stem = part[: -len(".colors")]
-            if stem in m1_support.ExternalBoundaryStems:
-                continue
+        # External KDE boundary names (color-scheme / wallpaper theme ids such as
+        # Cham3Dark and Cham3) are referenced verbatim by KDE and are exempt.
+        if stem in m1_support.ExternalBoundaryStems:
+            continue
         if not SnakeName.match(stem):
             problems.append("%s: not snake_case: %s" % (relative_path, part))
     return problems

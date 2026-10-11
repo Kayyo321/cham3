@@ -1,7 +1,8 @@
 """Static checks for the M1 panel layout and cham3 plasmoid packaging (ADR 0002).
 
 Panel: one vertical panel on the right screen edge, thickness given as a literal
-logical-pixel width in [56, 64], and exactly the nine ADR 0002 widgets in order
+logical-pixel height in [56, 64] (Plasma's panel thickness property), and exactly
+the nine ADR 0002 widgets in order
 (eight cham3 plasmoids, then the upstream system tray and digital clock).
 Plasmoids: each of the eight cham3 plasmoids has metadata.json with KPlugin.Id
 equal to its directory name and org.cham3.<snake_case>, plus contents/ui/main.qml.
@@ -44,23 +45,28 @@ def layout_problems(js_text):
     locations = LocationPattern.findall(code)
     if locations != ["right"]:
         problems.append("panel must be on the right screen edge, found %r" % locations)
-    widths = []
+    # Plasma's panel scripting object exposes thickness as `height` for BOTH
+    # orientations (there is no `width` property on a scripting Panel); `length`
+    # controls the long dimension. So a right-edge panel's thickness is set with
+    # `panel.height`. Using `width` would set a non-existent property and leave
+    # the default thickness, so it is rejected.
+    thickness_values = []
     for name, value in ThicknessPattern.findall(code):
-        if name == "height":
-            problems.append("vertical panel thickness must be set with width, found height")
+        if name == "width":
+            problems.append("panel thickness must be set with height (the Plasma scripting thickness property for both orientations), found width")
         else:
-            widths.append(value)
-    if len(widths) != 1:
-        problems.append("panel width must be set exactly once, found %d" % len(widths))
+            thickness_values.append(value)
+    if len(thickness_values) != 1:
+        problems.append("panel thickness (height) must be set exactly once, found %d" % len(thickness_values))
     else:
-        literal = LiteralNumber.match(widths[0])
+        literal = LiteralNumber.match(thickness_values[0])
         if not literal:
-            problems.append("panel width must be a literal logical-pixel value, found %r" % widths[0].strip())
+            problems.append("panel thickness must be a literal logical-pixel value, found %r" % thickness_values[0].strip())
         else:
             value = float(literal.group(1))
             if not m1_support.PanelMinWidth <= value <= m1_support.PanelMaxWidth:
                 problems.append(
-                    "panel width %s outside [%d, %d] logical px"
+                    "panel thickness %s outside [%d, %d] logical px"
                     % (literal.group(1), m1_support.PanelMinWidth, m1_support.PanelMaxWidth)
                 )
     widgets = tuple(WidgetPattern.findall(code))
@@ -125,16 +131,27 @@ def plasmoid_dirs_by_component():
 
 
 def cham3_plasmoid_dir_names():
-    """Every org.cham3.* directory under desktop/ that carries a plasmoid metadata.json."""
+    """Every org.cham3.* directory under desktop/ that is a Plasma applet
+    (metadata.json KPackageStructure == Plasma/Applet). This excludes the
+    look-and-feel package and the panel layout-template, which are org.cham3.*
+    packages but not plasmoids."""
     root = m1_support.desktop_path(m1_support.DesktopTreeDir)
     names = set()
     if not os.path.isdir(root):
         return names
     for dirpath, _, _ in os.walk(root):
         base = os.path.basename(dirpath)
-        if base.startswith(m1_support.Cham3Namespace) and base != LookAndFeelId:
-            if os.path.isfile(os.path.join(dirpath, "metadata.json")):
-                names.add(base)
+        if not base.startswith(m1_support.Cham3Namespace):
+            continue
+        metadata_path = os.path.join(dirpath, "metadata.json")
+        if not os.path.isfile(metadata_path):
+            continue
+        try:
+            metadata = m1_support.load_json(metadata_path)
+        except (ValueError, OSError):
+            continue
+        if metadata.get("KPackageStructure") == PlasmoidStructure:
+            names.add(base)
     return names
 
 
@@ -152,7 +169,7 @@ class panel_layout_fixture_t(unittest.TestCase):
         return (
             "var panel = new Panel;\n"
             "panel.location = 'right';\n"
-            "panel.width = 60;\n"
+            "panel.height = 60;\n"
             + widgets + "\n"
         )
 
@@ -163,16 +180,16 @@ class panel_layout_fixture_t(unittest.TestCase):
         problems = layout_problems(self.good().replace("'right'", "'left'"))
         self.assertTrue(any("right screen edge" in p for p in problems), problems)
 
-    def test_width_outside_range_is_rejected(self):
-        problems = layout_problems(self.good().replace("panel.width = 60", "panel.width = 70"))
+    def test_thickness_outside_range_is_rejected(self):
+        problems = layout_problems(self.good().replace("panel.height = 60", "panel.height = 70"))
         self.assertTrue(any("outside [56, 64]" in p for p in problems), problems)
 
-    def test_height_instead_of_width_is_rejected(self):
-        problems = layout_problems(self.good().replace("panel.width = 60", "panel.height = 60"))
-        self.assertTrue(any("set with width" in p for p in problems), problems)
+    def test_width_instead_of_height_is_rejected(self):
+        problems = layout_problems(self.good().replace("panel.height = 60", "panel.width = 60"))
+        self.assertTrue(any("set with height" in p for p in problems), problems)
 
-    def test_non_literal_width_is_rejected(self):
-        problems = layout_problems(self.good().replace("panel.width = 60", "panel.width = 40 * scale"))
+    def test_non_literal_thickness_is_rejected(self):
+        problems = layout_problems(self.good().replace("panel.height = 60", "panel.height = 40 * scale"))
         self.assertTrue(any("literal" in p for p in problems), problems)
 
     def test_swapped_order_is_rejected(self):

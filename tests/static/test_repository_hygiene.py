@@ -25,7 +25,11 @@ ForbiddenComponents = frozenset({"out", ".build", "live-build-work", "chroot", "
 ShellInterpreters = ("#!/bin/sh", "#!/bin/bash")
 SnakeCaseStem = re.compile(r"^[a-z][a-z0-9_]*$")
 SnakeCheckedRoots = ("build/", "tests/", ".github/workflows/")
-SnakeCheckExemptRoots = ("build/live/",)
+# build/live/ (M0) and build/live-desktop/ (M1) hold live-build and live-config
+# trees whose file and directory names (auto/, package-lists/, the numbered
+# live-config components, *.list.chroot, *.cfg.chroot) are upstream external
+# naming boundaries, not cham3 identifiers. Both are exempt from snake_case.
+SnakeCheckExemptRoots = ("build/live/", "build/live-desktop/")
 StrictModePattern = re.compile(r"(?m)^\s*set\s+-[a-zA-Z]*e")
 
 
