@@ -1,0 +1,37 @@
+Cham3 reference logo — design handoff
+
+State: IMPLEMENTED; awaiting owner design review.
+Owner/role/provider: Codex IMPLEMENTER, user-requested visual asset.
+Scope: standalone logo based on the attached pink chameleon, two background
+silhouettes above it (purple, then white-grey), progressively facing right,
+with the exact title "Cham3" underneath.
+Exclusions: product behavior, architecture, installed UI, replacement of existing assets.
+Security impact: none; security review not required.
+Baseline: 36bf0349a40d7564825e470eec86cbfde2c411a4.
+Working directory: /Users/jessicabruce/cham3.
+Branch: codex/cham3-reference-logo.
+Implementation reference: commit containing this record and cham3_reference_logo.png.
+Tool: built-in image_gen, reference-image generation.
+
+Final prompt:
+Use case: logo-brand.
+Asset type: Cham3 project logo, one finished square logo image.
+Input image: reference for the exact front chameleon character and illustration style. Reproduce the recognizable pink faceted chameleon with its tall crest, large friendly eyes, subtle smiling mouth, bent legs and tight spiral tail, facing three-quarter toward the viewer as in the reference.
+Primary request: Add exactly TWO more chameleons as SOLID SILHOUETTES behind and ABOVE the pink front chameleon. Make a compact overlapping ascending stack of exactly THREE chameleons total. The middle chameleon is entirely solid rich purple, sits above and behind the pink one, and its head is turned slightly more toward the viewer's right. The highest/back chameleon is entirely solid pale white-grey, above and behind the purple one, and looks furthest to the right, almost a right-facing side profile. The successive HEAD DIRECTIONS gradually turn right, not just their positions. Expose enough of each silhouette's head, crest, body and curled tail that all three animals remain recognizable. Back silhouettes have no colored eye details, no faces, no facets, no internal shading, simply clean uniform filled chameleon silhouettes with negative space for the tail spiral. Preserve the original pink foreground chameleon's faceted pink/magenta illustration character.
+Composition: highest pale silhouette upper back, purple silhouette middle, detailed pink chameleon lowest and foremost; balanced centered stacked logo with breathing room. Keep all heads individually visible. Center a large clean geometric sans-serif title BELOW the animals with a clear gap.
+Text (verbatim): "Cham3" (capital C, lowercase h a m, numeral 3). Wordmark pale white-grey, bold, precise, legible.
+Backdrop: uniform near-black matching the supplied reference.
+Constraints: exactly three chameleons, one pink detailed foreground character plus two solid background silhouettes (purple then white-grey from lower to higher); no extra animals, no extra text, no scenery, no mockup, no watermark, no frame, no glow. Polished sharp edges.
+
+Verification:
+PASS — visual inspection of generated output in the built-in tool: three
+recognizable chameleons, detailed pink foreground matching the reference,
+purple and pale silhouettes above/behind, right-facing back heads, and exact
+"Cham3" title underneath.
+Limit — the change in head angle between the two solid silhouettes is subtle.
+This is a raster logo concept on a dark background; uniform pixel colors and
+vector scalability have not been verified.
+NOT_RUN — product build/security tests; no product behavior changed.
+Independent review: none yet; owner design review is the next action.
+Existing branding assets are preserved.
+
