@@ -1,0 +1,34 @@
+Cham3 logo revision v2 — design handoff
+
+State: IMPLEMENTED; awaiting owner design review.
+Owner/role/provider: Codex IMPLEMENTER.
+Approved scope change: user requested closer overlap, successive rightward
+offsets, purple head halfway between pink and grey, and dark eye spots on
+both rear silhouettes. Previous asset preserved.
+Scope/exclusions: standalone raster logo only; no product behavior or architecture changes.
+Security impact: none; no security review required.
+Baseline: 292451fb38aa35101100913cae604f62d6dcf12b.
+Worktree: /Users/jessicabruce/cham3.
+Branch: codex/cham3-reference-logo.
+Implementation reference: commit containing this record and cham3_reference_logo_v2.png.
+Tool: built-in image_gen, image editing.
+
+Final prompt:
+Use case: precise-object-edit.
+Edit target: supplied Cham3 logo. Revise only the overlapping arrangement and the two rear silhouettes' head directions and eye spots. Preserve the detailed pink chameleon character, original faceted pink/magenta illustration style, original dark background, purple and pale white-grey palette, and the exact "Cham3" wordmark beneath.
+Make the logo a much more compact overlapping diagonal stack of EXACTLY THREE chameleons. Pink is front/lower/LEFT; purple is middle, behind pink and offset modestly UP and RIGHT; pale white-grey is rearmost, behind purple and offset another modest step UP and RIGHT. Back animals must NOT drift left. Their bodies and curled tails substantially overlap, with roughly 65 percent of each rear animal covered by the one in front, like closely staggered cards, not three separately standing figures. Keep all three heads and crests clearly visible, diagonally stepping UP-RIGHT. Do not stretch them.
+Crucial head turn: retain pink's three-quarter near-frontal face with two eyes. Change the purple chameleon's head to an intermediate three-quarter view rotated halfway from pink's near-frontal direction to the grey chameleon's full right-facing side profile: purple shows a large near dark circular eye spot and a smaller far dark eye spot partially visible on the right edge, an asymmetrical face, with a snout pointing diagonally right, clearly different from the grey profile. Grey looks fully RIGHT in side profile with one dark round eye spot. This creates a visibly gradual rotation across the three HEADS, not just different positions.
+Rear chameleons remain clean solid silhouettes apart from dark near-black eye spots: purple body/head one solid rich purple, grey one solid pale white-grey. No glossy pupils, highlights, colored eye rings, or shading on the rear silhouettes. Place eyes anatomically on the bulging chameleon eye region, not randomly on bodies. Retain characteristic raised crests and curled tails; rear legs and tails partly hidden by the compact overlap.
+Keep a balanced centered logo, generous clean margins, exact "Cham3" title centered beneath with a clear gap, pale bold geometric sans-serif like the original. Exactly three animals, no additional text, no mockup, no watermark.
+
+Verification:
+PASS — visual inspection in built-in image tool: closer body/tail overlap,
+background layers move up/right, purple face has two asymmetric dark eye
+spots and an intermediate head direction, grey profile has one dark eye spot,
+pink character and exact "Cham3" title retained.
+PASS — file command confirms saved PNG.
+NOT_RUN — product tests; visual-only asset.
+Independent review: pending owner design review.
+Limits: raster concept on dark background; no vector or transparent export.
+Next owner/action: user design review.
+
