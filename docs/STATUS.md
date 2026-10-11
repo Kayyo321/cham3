@@ -9,7 +9,7 @@
 - **Inspected base commit:** `26eada8258eca60935319520c05917a8a547cdbf`.
 - **Task preparation commit:** `d988253caf8e1ba55b4dc45764f6ec3e51fd2803` (parent `26eada8`). It adds the M0-001 task record and this status update. The working tree was clean when implementation started.
 - **Implementation evidence (branch `task/M0-repository-build-baseline`, implementation commit `5ae0dc5`):** a Debian live-build configuration for a minimal Debian 13 amd64 live development image; build, static-check and secret-scan scripts; a documentation-only `cham3-base` M0 skeleton package; a QEMU boot-test harness; `unittest` suites; a GitHub Actions workflow; and `docs/engineering/developer_setup.md`. There is no cham3 product functionality: no services, enforcement, contracts, sandboxing, networking modes, desktop or installer.
-- **Current milestone/task:** M0-001 is CHANGES_REQUESTED. Codex reviewed exact target `82b0cfcf255672ce58c15ad32a5aad201bbde7bd`; two confirmed defects require implementation fixes and renewed independent review. GitHub Actions execution remains open. M0 is not complete.
+- **Current milestone/task:** M0-001 is IN_PROGRESS for rework of R1/R2 (after CHANGES_REQUESTED) on branch `task/M0-repository-build-baseline-rework`, based on `86600a3`. Codex reviewed exact target `82b0cfcf255672ce58c15ad32a5aad201bbde7bd`; two confirmed defects require implementation fixes and renewed independent review. GitHub Actions execution remains open. M0 is not complete.
 
 ## Verified state
 
@@ -36,7 +36,7 @@
 - **Implemented functionality:** M0 build and repository foundations only, on an unmerged branch under review. No cham3 product functionality from `PROJECT.md` is implemented.
 - **Partial functionality:** Unknown.
 - **Known defects:** Two independent Codex findings are open at `82b0cfc`: R1 (Medium), scanner accepts search-tool execution failures other than grep status 2 (`build/scripts/scan_secrets.sh:71-75`); R2 (Medium), root image wrapper loses configuration failure inside its guarded pipeline (`build/scripts/build_image.sh:97-102`). Both have independent reproductions in `docs/reviews/M0-repository-build-baseline-codex.md`. Earlier internal-review fixes do not resolve these findings.
-- **Active tasks / pending reviews:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is CHANGES_REQUESTED. Next owner is IMPLEMENTER for R1/R2 fixes and sensitive regression tests, then coordinator for a revised handoff and renewed independent review. Owner retains the open GitHub Actions gate; approval, integration and post-merge checks remain required.
+- **Active tasks / pending reviews:** M0-001 (`docs/tasks/M0-repository-build-baseline.md`) is IN_PROGRESS (R1/R2 rework after CHANGES_REQUESTED). Current owner is IMPLEMENTER for R1/R2 fixes and sensitive regression tests, then coordinator for a revised handoff and renewed independent review. Owner retains the open GitHub Actions gate; approval, integration and post-merge checks remain required.
 - **Architectural blockers:** Details left open by `PROJECT.md` require ADRs before dependent implementation, including concrete app identity/attribution mechanism, resource-specific mediation boundaries, network backend interfaces, and operational key recovery details.
 
 ## Recommended next work

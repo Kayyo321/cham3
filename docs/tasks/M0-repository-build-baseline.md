@@ -1,6 +1,6 @@
 # Task M0-001 — Repository and build baseline
 
-- **State:** CHANGES_REQUESTED (Codex independent review found R1/R2; returns to IMPLEMENTER)
+- **State:** IN_PROGRESS (rework of Codex findings R1/R2 after CHANGES_REQUESTED; branch `task/M0-repository-build-baseline-rework`, worktree `../cham3-worktrees/M0-001-rework`, rework base `86600a3d2be7318e55a777b98a79e17621af6a81`)
 - **Owner / role / provider:** Claude Code Opus 5.5 / COORDINATOR and INTEGRATOR; Sonnet 5.5 high / IMPLEMENTER; Haiku 5.5 high / TEST_ENGINEER and then REVIEWER; Haiku 5.5 medium / TRIAGE with assigned documentation edits
 - **Reviewer:** Codex / independent REVIEWER
 - **Created / updated:** 2026-10-11
