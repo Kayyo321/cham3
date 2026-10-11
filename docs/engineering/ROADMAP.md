@@ -10,11 +10,11 @@ This is a dependency-oriented plan derived from `PROJECT.md`, not an implementat
 - **Verification/exit:** Clean checkout builds initial image/packages; record VM boot result and limitations.
 
 ## M1 — Bootable desktop distribution
-- **Objective:** Deliver installable Debian 13 with KDE Plasma 6 Wayland and cham3 desktop defaults.
-- **Dependencies:** M0.
-- **Deliverables:** Image build, package metadata, branding, default right-side panel, install/update path.
-- **Security:** Do not imply policy enforcement exists in a themed image.
-- **Verification/exit:** Image build and installation/boot checks pass in a declared VM; package sources and update behavior documented.
+- **Objective:** Deliver an installable Debian 13 (Trixie) x86-64 image with KDE Plasma 6 on Wayland, cham3 branding, the default right-side panel, and a curated desktop/security application suite.
+- **Dependencies:** M0 build baseline; approved panel composition in [ADR 0002](../decisions/0002_default_right_taskbar_layout.md); package-by-package source and dependency review under the owner-approved policy recorded in the [M1 task specification](../tasks/M1-bootable-desktop-distribution.md).
+- **Deliverables:** Debian live-build image and installer path; `cham3-desktop` and `cham3-full` package metadata with the curated security suite in the default `cham3-full` set; cham3 styling; the visual/package foundation for the nine-component 56–64 logical-pixel panel defined in [ADR 0002](../decisions/0002_default_right_taskbar_layout.md) and scoped by the [M1 task specification](../tasks/M1-bootable-desktop-distribution.md); LibreWolf and Tor Browser; Wireshark/tshark, proxy and web auditing tools, CLI traffic monitors, and a curated security-tool suite; categorized launcher entries; documented package sources and update behavior. Prefer Debian packages, use Debian-native equivalents for unavailable/incompatible tools, and allow selected Kali-origin packages only through narrowly pinned, separately reviewed sources where no suitable native option exists. Preserve Debian KDE utilities and prune duplicate file managers, terminals, editors, archive managers, viewers, and screenshot/resource utilities. Full trusted panel interactions are M5 scope under M5-001.
+- **Security:** M1 provides desktop layout, UI scaffolding, and package configuration only for M2–M4 backend-dependent features. Missing backends must show unavailable/disconnected status; no visual control may imply active cryptographic authorization, sandboxing, network-mode enforcement, or kill-switch isolation.
+- **Verification/exit:** Build an installable ISO from declared Debian 13 x86-64 inputs; boot and install it in a declared disposable VM; verify Plasma Wayland, branding, panel layout, categorized launchers, package sourcing, and duplicate-utility absence. Record exact evidence and limitations. This exit does not establish M2–M4 enforcement.
 
 ## M2 — Contract format, key authority, and registry
 - **Objective:** Verify signed, deterministic, versioned contracts and current authorization.
