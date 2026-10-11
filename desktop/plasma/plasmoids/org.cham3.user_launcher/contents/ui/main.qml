@@ -33,7 +33,7 @@ PlasmoidItem {
     ]
 
     toolTipMainText: "User launcher"
-    toolTipSubText: "key_id: " + Shared.StateUnavailable + " (no identity service present)"
+    toolTipSubText: "key_id: " + Shared.state_unavailable + " (no identity service present)"
 
     P5Support.DataSource {
         id: apps
@@ -73,9 +73,9 @@ PlasmoidItem {
             width: 40
             height: 40
             radius: width / 2
-            color: Shared.SurfaceRaised
+            color: Shared.surface_raised
             border.width: 2
-            border.color: compact.activeFocus ? Shared.TextPrimary : Shared.SurfaceBorder
+            border.color: compact.activeFocus ? Shared.text_primary : Shared.surface_border
             Kirigami.Icon {
                 anchors.centerIn: parent
                 width: 26
@@ -102,7 +102,7 @@ PlasmoidItem {
             Layout.fillWidth: true
             font.bold: true
             wrapMode: Text.WordWrap
-            text: "key_id: " + Shared.StateUnavailable
+            text: "key_id: " + Shared.state_unavailable
         }
         PlasmaComponents.Label {
             Layout.fillWidth: true
@@ -123,11 +123,12 @@ PlasmoidItem {
             Repeater {
                 model: root.applications
                 delegate: PlasmaComponents.Button {
-                    required property var modelData
+                    required property int index
+                    readonly property var application: root.applications[index]
                     Layout.fillWidth: true
-                    text: modelData.label
-                    icon.name: modelData.icon
-                    onClicked: apps.launch(modelData.entry)
+                    text: application.label
+                    icon.name: application.icon
+                    onClicked: apps.launch(application.entry)
                 }
             }
         }
@@ -173,14 +174,14 @@ PlasmoidItem {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             visible: root.session_item === null
-            text: "Session actions: " + Shared.StateUnavailable + " (Plasma session module could not be loaded)."
+            text: "Session actions: " + Shared.state_unavailable + " (Plasma session module could not be loaded)."
         }
 
         PlasmaComponents.Label {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             color: Kirigami.Theme.disabledTextColor
-            text: "Search, categories and contract badges are not present (M5). Applications launched here are not contract-verified: " + Shared.StateUnverified + ". " + Shared.FoundationNotice
+            text: "Search, categories and contract badges are not present (M5). Applications launched here are not contract-verified: " + Shared.state_unverified + ". " + Shared.foundation_notice
         }
     }
 }

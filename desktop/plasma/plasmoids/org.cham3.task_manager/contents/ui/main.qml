@@ -19,7 +19,7 @@ import "../code/cham3_shared.js" as Shared
 PlasmoidItem {
     id: root
 
-    readonly property string state_text: Shared.unavailable_text("alias, tag and network attribution", Shared.ReasonSessionServicesAbsent)
+    readonly property string state_text: Shared.unavailable_text("alias, tag and network attribution", Shared.reason_session_services_absent)
 
     toolTipMainText: "Task manager"
     toolTipSubText: state_text
@@ -65,7 +65,7 @@ PlasmoidItem {
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10
                 height: 1
-                color: Shared.SurfaceBorder
+                color: Shared.surface_border
             }
 
             // Section B: other-tag apps. Dimmed and empty: no tag data exists.
@@ -73,7 +73,7 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 opacity: 0.7
-                text: "other tags: " + Shared.StateUnavailable
+                text: "other tags: " + Shared.state_unavailable
                 font.pixelSize: 8
                 wrapMode: Text.WordWrap
                 color: Kirigami.Theme.disabledTextColor
@@ -82,7 +82,7 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 visible: view_loader.status !== Loader.Ready
                 horizontalAlignment: Text.AlignHCenter
-                text: "window list: " + Shared.StateUnavailable
+                text: "window list: " + Shared.state_unavailable
                 font.pixelSize: 8
                 wrapMode: Text.WordWrap
                 color: Kirigami.Theme.disabledTextColor

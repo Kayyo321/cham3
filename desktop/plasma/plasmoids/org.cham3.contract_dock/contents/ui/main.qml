@@ -28,7 +28,7 @@ PlasmoidItem {
     ]
 
     toolTipMainText: "Contract dock"
-    toolTipSubText: "All four contract tools: " + Shared.StateUnavailable + " - backend not present (M2+/ADR 0001)"
+    toolTipSubText: "All four contract tools: " + Shared.state_unavailable + " - backend not present (M2+/ADR 0001)"
 
     compactRepresentation: Item {
         id: compact
@@ -48,16 +48,16 @@ PlasmoidItem {
                 model: root.tools
                 delegate: Rectangle {
                     id: tile
-                    required property var modelData
                     required property int index
+                    readonly property var tool: root.tools[index]
                     Layout.preferredWidth: 26
                     Layout.preferredHeight: 26
                     radius: 5
-                    color: Shared.SurfaceRaised
+                    color: Shared.surface_raised
                     border.width: 1
-                    border.color: tile.activeFocus ? Shared.TextPrimary : Shared.SurfaceBorder
+                    border.color: tile.activeFocus ? Shared.text_primary : Shared.surface_border
                     activeFocusOnTab: true
-                    Accessible.name: modelData.name + ": unavailable"
+                    Accessible.name: tool.name + ": unavailable"
                     Accessible.role: Accessible.Button
                     Keys.onPressed: event => {
                         if (event.key === Qt.Key_Space || event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -69,7 +69,7 @@ PlasmoidItem {
                         anchors.centerIn: parent
                         width: 16
                         height: 16
-                        source: modelData.icon
+                        source: tool.icon
                         opacity: 0.8
                     }
                     // Strike-through mark: second, non-color cue for "unavailable".
@@ -78,7 +78,7 @@ PlasmoidItem {
                         width: 20
                         height: 1
                         rotation: -45
-                        color: Shared.TextMuted
+                        color: Shared.text_muted
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -96,7 +96,7 @@ PlasmoidItem {
             anchors.bottom: parent.bottom
             width: parent.width - 4
             horizontalAlignment: Text.AlignHCenter
-            text: Shared.StateUnavailable
+            text: Shared.state_unavailable
             font.pixelSize: 9
             fontSizeMode: Text.Fit
             minimumPixelSize: 7
@@ -134,7 +134,7 @@ PlasmoidItem {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             color: Kirigami.Theme.disabledTextColor
-            text: Shared.FoundationNotice
+            text: Shared.foundation_notice
         }
     }
 }

@@ -14,7 +14,7 @@ import "../code/cham3_shared.js" as Shared
 PlasmoidItem {
     id: root
 
-    readonly property string state_text: Shared.unavailable_text("alias selection", Shared.ReasonSessionServicesAbsent)
+    readonly property string state_text: Shared.unavailable_text("alias selection", Shared.reason_session_services_absent)
     // Last clicked segment, for the explanatory panel only. It is NOT a selection.
     property string pressed_segment: ""
 
@@ -23,9 +23,9 @@ PlasmoidItem {
 
     // Segment table: start angle in degrees (0 = 3 o'clock, clockwise).
     readonly property var segments: [
-        { name: "Direct", tier: "Rose", color: Shared.RoseDirect, start: -90 },
-        { name: "Tor", tier: "Purple", color: Shared.PurpleTor, start: 30 },
-        { name: "Offline", tier: "White", color: Shared.WhiteOffline, start: 150 }
+        { name: "Direct", tier: "Rose", color: Shared.rose_direct, start: -90 },
+        { name: "Tor", tier: "Purple", color: Shared.purple_tor, start: 30 },
+        { name: "Offline", tier: "White", color: Shared.white_offline, start: 150 }
     ]
 
     compactRepresentation: Item {
@@ -79,7 +79,7 @@ PlasmoidItem {
             anchors.bottom: parent.bottom
             width: parent.width - 4
             horizontalAlignment: Text.AlignHCenter
-            text: Shared.StateUnavailable
+            text: Shared.state_unavailable
             font.pixelSize: 9
             fontSizeMode: Text.Fit
             minimumPixelSize: 7
@@ -130,18 +130,19 @@ PlasmoidItem {
         Repeater {
             model: root.segments
             delegate: RowLayout {
-                required property var modelData
+                required property int index
+                readonly property var segment: root.segments[index]
                 spacing: Kirigami.Units.smallSpacing
                 Rectangle {
                     width: Kirigami.Units.gridUnit
                     height: Kirigami.Units.gridUnit
                     radius: width / 2
-                    color: modelData.color
-                    border.color: Shared.SurfaceBorder
+                    color: segment.color
+                    border.color: Shared.surface_border
                     Accessible.ignored: true
                 }
                 PlasmaComponents.Label {
-                    text: modelData.name + " alias (" + modelData.tier + "): " + Shared.StateUnavailable
+                    text: segment.name + " alias (" + segment.tier + "): " + Shared.state_unavailable
                 }
             }
         }
@@ -155,7 +156,7 @@ PlasmoidItem {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             color: Kirigami.Theme.disabledTextColor
-            text: Shared.FoundationNotice
+            text: Shared.foundation_notice
         }
     }
 }

@@ -14,7 +14,7 @@ import "../code/cham3_shared.js" as Shared
 PlasmoidItem {
     id: root
 
-    readonly property string state_text: "Full Isolation Kill " + Shared.StateUnavailable + " - " + Shared.ReasonEnforcementAbsent
+    readonly property string state_text: "Full Isolation Kill " + Shared.state_unavailable + " - " + Shared.reason_enforcement_absent
 
     toolTipMainText: "Full Isolation Kill"
     toolTipSubText: state_text
@@ -43,9 +43,9 @@ PlasmoidItem {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.topMargin: 2
-            color: Shared.SurfaceRaised
+            color: Shared.surface_raised
             border.width: 1
-            border.color: compact.activeFocus ? Shared.TextPrimary : Shared.SurfaceBorder
+            border.color: compact.activeFocus ? Shared.text_primary : Shared.surface_border
             opacity: 0.7
 
             // Both halves are identical: there is no "on" or "off" position to read.
@@ -54,9 +54,9 @@ PlasmoidItem {
                 width: parent.width - 6
                 height: parent.height / 2 - 4
                 radius: 3
-                color: Shared.SurfaceBase
+                color: Shared.surface_base
                 border.width: 1
-                border.color: Shared.SurfaceBorder
+                border.color: Shared.surface_border
             }
             Rectangle {
                 x: 3
@@ -64,16 +64,16 @@ PlasmoidItem {
                 width: parent.width - 6
                 height: parent.height / 2 - 4
                 radius: 3
-                color: Shared.SurfaceBase
+                color: Shared.surface_base
                 border.width: 1
-                border.color: Shared.SurfaceBorder
+                border.color: Shared.surface_border
             }
             PlasmaComponents.Label {
                 anchors.centerIn: parent
                 text: "?"
                 font.bold: true
                 font.pixelSize: 14
-                color: Shared.TextPrimary
+                color: Shared.text_primary
             }
         }
 
@@ -82,7 +82,7 @@ PlasmoidItem {
             anchors.bottom: parent.bottom
             width: parent.width - 4
             horizontalAlignment: Text.AlignHCenter
-            text: Shared.StateUnavailable
+            text: Shared.state_unavailable
             font.pixelSize: 9
             fontSizeMode: Text.Fit
             minimumPixelSize: 7
@@ -114,13 +114,13 @@ PlasmoidItem {
         PlasmaComponents.Label {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
-            text: "Requested position: none. Enforcement state: " + Shared.StateUnknown + " (" + Shared.StateUnavailable + "). This control does not change the firewall, network interfaces or radios and cannot start or simulate a kill. Network connectivity is not affected by this panel."
+            text: "Requested position: none. Enforcement state: " + Shared.state_unknown + " (" + Shared.state_unavailable + "). This control does not change the firewall, network interfaces or radios and cannot start or simulate a kill. Network connectivity is not affected by this panel."
         }
         PlasmaComponents.Label {
             Layout.fillWidth: true
             wrapMode: Text.WordWrap
             color: Kirigami.Theme.disabledTextColor
-            text: Shared.FoundationNotice
+            text: Shared.foundation_notice
         }
     }
 }
