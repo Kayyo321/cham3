@@ -42,7 +42,8 @@ Depends: ${misc:Depends},
  unzip,
  zip
 Recommends: fonts-noto,
- kinfocenter
+ kinfocenter,
+ qml6-module-org-kde-desktop
 Description: cham3 KDE Plasma 6 Wayland desktop defaults (M1 visual foundation)
  Installs the cham3 desktop customization for KDE Plasma 6 on Wayland: a dark
  color scheme, the cham3 wallpaper and logos, a look-and-feel package that
