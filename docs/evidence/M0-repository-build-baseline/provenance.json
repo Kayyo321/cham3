@@ -1,0 +1,103 @@
+{
+  "build_finished_utc": "2026-10-11T19:20:43Z",
+  "build_host": {
+    "dpkg_architecture": "amd64",
+    "in_container": false,
+    "kernel_release": "6.12.111+deb13-cloud-amd64",
+    "machine": "x86_64",
+    "os_id": "debian",
+    "os_version_codename": "trixie",
+    "os_version_id": "13",
+    "unverified_host_override": false
+  },
+  "build_started_utc": "2026-10-11T18:52:11Z",
+  "inputs": {
+    "apt_release_files": [
+      {
+        "date": "Sun, 11 Oct 2026 19:15:20 +0000",
+        "file": "_packages_._Release",
+        "sha256": "19e4d557dd7a5aa23f3152e0cad06bd0df6cefb4269e242b36189c727d8fec2b"
+      },
+      {
+        "date": "Sun, 11 Oct 2026 14:17:37 UTC",
+        "file": "deb.debian.org_debian_dists_trixie-updates_InRelease",
+        "sha256": "b64618446aa09adb8dd4ca5d1cc0b77cf9aa0f9dc7ae63e9b20332ae360155e8"
+      },
+      {
+        "date": "Sat, 12 Sep 2026 07:55:41 UTC",
+        "file": "deb.debian.org_debian_dists_trixie_InRelease",
+        "sha256": "0584fba32e13e0ab8285fb16c27adea1ec03a73669c18702821094fd6ca86675"
+      },
+      {
+        "date": "Sun, 11 Oct 2026 12:12:11 UTC",
+        "file": "security.debian.org_dists_trixie-security_InRelease",
+        "sha256": "3aa9ba8fc86be9eb335aaa82d06b91f8d1ba8c2a9319b5ef9793b565a3a1c28f"
+      }
+    ],
+    "apt_release_files_unavailable_reason": null,
+    "architecture": "amd64",
+    "archive_areas": "main",
+    "distribution": "trixie",
+    "lb_config_command": "lb config noauto --mode debian --distribution trixie --architecture amd64 --archive-areas main --debian-installer none --binary-image iso-hybrid --bootloaders syslinux,grub-efi --firmware-chroot false --firmware-binary false --security true --updates true --apt-secure true --apt-recommends false --cache false --mirror-bootstrap http://deb.debian.org/debian/ --mirror-chroot http://deb.debian.org/debian/ --mirror-chroot-security http://security.debian.org/ --mirror-binary http://deb.debian.org/debian/ --mirror-binary-security http://security.debian.org/ --bootappend-live \"boot=live components console=tty0 console=ttyS0,115200n8\" --image-name cham3-m0-dev --iso-application \"cham3 M0 development image\" --iso-publisher \"cham3 project; M0 development build, not a release\" --iso-preparer \"cham3 M0 build via live-build\" --iso-volume \"CHAM3_M0_DEV\"",
+    "live_config_file_sha256": {
+      "build/live/auto/build": "c5344d29e8bba41940eaf6fb208c3e9122e419a6dd84e853f5d34e1dbab45d7e",
+      "build/live/auto/clean": "96883a707804e3bafede7230afc4c1f96b3856af4c837f1b76105f47c5f70551",
+      "build/live/auto/config": "7c9c0ce31d3ccfc7c80eef74a921ad53f9f583cc2c736e627f3c678b266ddb91",
+      "build/live/config/package-lists/m0_base.list.chroot": "c25406bece4009623075f9d927cccd26f624dae7deaa1bd1e0ce868fd2c06458"
+    },
+    "mirrors": {
+      "binary": "http://deb.debian.org/debian/",
+      "binary_security": "http://security.debian.org/",
+      "bootstrap": "http://deb.debian.org/debian/",
+      "chroot": "http://deb.debian.org/debian/",
+      "chroot_security": "http://security.debian.org/"
+    },
+    "package_versions_note": "installed package versions of the image are listed in the .packages manifest",
+    "security_updates_enabled": "true",
+    "source_date_epoch": "1791744318",
+    "updates_enabled": "true"
+  },
+  "local_packages": [
+    {
+      "file": "cham3-base_0.0.0~m0_all.deb",
+      "package": "cham3-base",
+      "sha256": "19b33e909c7f6f3d7f8e8955a9cbff6fdeb1c716508702059ea7dc7db3fa5fbc",
+      "version": "0.0.0~m0"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "cham3-m0-dev-amd64.iso",
+      "sha256": "060382a0daba662d6f2354ce9abcbdde77c9337743f699ffeef2dea0e0bf1478",
+      "size_bytes": 313524224
+    },
+    {
+      "file": "cham3-m0-dev-amd64.packages",
+      "sha256": "47e08926216c7b2f06985ddc9c8f99943a0ae27dd2b6f903f2efb562f02cd9d3",
+      "size_bytes": 4122
+    },
+    {
+      "file": "build.log",
+      "sha256": "26e0b91f64e5a321c9378f1ffe619d2ae7b978bd2d019d21c828911886cf438c",
+      "size_bytes": 123892
+    }
+  ],
+  "provenance_format": "cham3_m0_provenance_v1",
+  "reproducibility": "not_claimed",
+  "source": {
+    "git_commit": "5ae0dc526336b7f3c6dec10b94ff4b78f135d593",
+    "git_tree_dirty": false
+  },
+  "tools": {
+    "debhelper": "13.24.2",
+    "debian-archive-keyring": "2025.1",
+    "debootstrap": "1.0.141",
+    "dpkg-dev": "1.22.22",
+    "lintian": "2.122.0",
+    "live-build": "1:20250505+deb13u1",
+    "qemu-system-x86": "1:10.0.13+ds-0+deb13u1",
+    "squashfs-tools": "1:4.6.1-1",
+    "xorriso": "1.5.6-1.2+b1"
+  },
+  "written_utc": "2026-10-11T19:20:50Z"
+}

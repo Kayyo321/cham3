@@ -1,0 +1,9 @@
+# out/image/SHA256SUMS
+ed1165d57926f2521d629d0b10430f4bf4e2938410ea2bdfb433849c9e3da71d  cham3-m0-dev-amd64.iso
+47e08926216c7b2f06985ddc9c8f99943a0ae27dd2b6f903f2efb562f02cd9d3  cham3-m0-dev-amd64.packages
+6190207b9af77fe5d58b69b74b36ef4aec2947c69ab26334a3608e565d775481  build.log
+0ff55ace47cdaa1647715a0c8114b7a4e8a6d0c229748878f01d5d5c3acf69fa  provenance.json
+# out/packages/SHA256SUMS
+19b33e909c7f6f3d7f8e8955a9cbff6fdeb1c716508702059ea7dc7db3fa5fbc  cham3-base_0.0.0~m0_all.deb
+c171de7d4a24d43448b7c26253bc3e36f1d2db43f407b7b387bc245eb4c92cee  cham3-base_0.0.0~m0_amd64.buildinfo
+9a7e1bb8ec2464c4c0e880e46cd64c808a9788c8bfd6cc91618c0e9fadb69559  cham3-base_0.0.0~m0_amd64.changes

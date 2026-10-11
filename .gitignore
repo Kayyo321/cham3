@@ -1,0 +1,13 @@
+# Build outputs and scratch state. Never commit build outputs, packages,
+# images, logs or secrets.
+out/
+__pycache__/
+*.pyc
+*.deb
+*.udeb
+*.iso
+*.buildinfo
+*.changes
+
+# macOS folder metadata, at any directory depth.
+.DS_Store

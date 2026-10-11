@@ -1,0 +1,151 @@
+test_clean_input_passes_with_real_grep (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_clean_input_passes_with_real_grep) ... ok
+test_crash_on_one_file_with_clean_other_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_crash_on_one_file_with_clean_other_is_scan_error) ... FAIL
+test_crashing_grep_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_crashing_grep_is_scan_error) ... FAIL
+test_finding_is_reported_with_real_grep (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_finding_is_reported_with_real_grep) ... ok
+test_finding_takes_precedence_over_crash_on_other_file (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_finding_takes_precedence_over_crash_on_other_file) ... FAIL
+test_missing_grep_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_missing_grep_is_scan_error) ... FAIL
+test_non_executable_grep_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_non_executable_grep_is_scan_error) ... FAIL
+test_unexpected_grep_status_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_unexpected_grep_status_is_scan_error) ... FAIL
+test_finding_in_colon_named_file_reports_path_and_line (tests.static.test_secret_scanner.secret_scanner_regression_t.test_finding_in_colon_named_file_reports_path_and_line) ... ok
+test_finding_in_file_with_space_reports_path_and_line (tests.static.test_secret_scanner.secret_scanner_regression_t.test_finding_in_file_with_space_reports_path_and_line) ... ok
+test_lone_dangling_symlink_exits_zero (tests.static.test_secret_scanner.secret_scanner_regression_t.test_lone_dangling_symlink_exits_zero) ... ok
+test_symlink_inside_scanned_dir_to_outside_secret_is_detected (tests.static.test_secret_scanner.secret_scanner_regression_t.test_symlink_inside_scanned_dir_to_outside_secret_is_detected) ... ok
+test_unreadable_file_inside_scanned_directory_is_error (tests.static.test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_inside_scanned_directory_is_error) ... ok
+test_unreadable_file_is_error_exit_two (tests.static.test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_is_error_exit_two) ... ok
+test_unreadable_file_plus_finding_exits_one_and_reports_both (tests.static.test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_plus_finding_exits_one_and_reports_both) ... ok
+test_aws_access_key_id_is_detected (tests.static.test_secret_scanner.secret_scanner_t.test_aws_access_key_id_is_detected) ... ok
+test_clean_file_exits_zero (tests.static.test_secret_scanner.secret_scanner_t.test_clean_file_exits_zero) ... ok
+test_github_tokens_are_detected_and_not_printed_in_full (tests.static.test_secret_scanner.secret_scanner_t.test_github_tokens_are_detected_and_not_printed_in_full) ... ok
+test_pem_private_key_blocks_are_detected (tests.static.test_secret_scanner.secret_scanner_t.test_pem_private_key_blocks_are_detected) ... ok
+test_public_key_block_is_not_flagged (tests.static.test_secret_scanner.secret_scanner_t.test_public_key_block_is_not_flagged) ... ok
+test_recursive_directory_scan_finds_nested_secret (tests.static.test_secret_scanner.secret_scanner_t.test_recursive_directory_scan_finds_nested_secret) ... ok
+test_repository_default_scan_is_clean (tests.static.test_secret_scanner.secret_scanner_t.test_repository_default_scan_is_clean) ... ok
+test_scanner_does_not_flag_itself (tests.static.test_secret_scanner.secret_scanner_t.test_scanner_does_not_flag_itself) ... ok
+test_slack_tokens_are_detected (tests.static.test_secret_scanner.secret_scanner_t.test_slack_tokens_are_detected) ... ok
+test_truncated_aws_prefix_is_not_flagged (tests.static.test_secret_scanner.secret_scanner_t.test_truncated_aws_prefix_is_not_flagged) ... ok
+test_usage_error_exits_two (tests.static.test_secret_scanner.secret_scanner_t.test_usage_error_exits_two) ... ok
+test_build_failure_after_config_publishes_nothing (tests.static.test_build_image_failure_paths.build_image_failure_paths_t.test_build_failure_after_config_publishes_nothing) ... ok
+test_config_failure_stops_before_build_and_publishes_nothing (tests.static.test_build_image_failure_paths.build_image_failure_paths_t.test_config_failure_stops_before_build_and_publishes_nothing) ... FAIL
+test_successful_stub_build_publishes_artifacts (tests.static.test_build_image_failure_paths.build_image_failure_paths_t.test_successful_stub_build_publishes_artifacts) ... ok
+test_work_dir_entry_failure_runs_no_live_build (tests.static.test_build_image_failure_paths.build_image_failure_paths_t.test_work_dir_entry_failure_runs_no_live_build) ... FAIL
+
+======================================================================
+FAIL: test_crash_on_one_file_with_clean_other_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_crash_on_one_file_with_clean_other_is_scan_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 352, in test_crash_on_one_file_with_clean_other_is_scan_error
+    self.assert_scan_error(completed, broken)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 306, in assert_scan_error
+    self.assertEqual(completed.returncode, 2, output)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2 : scan_secrets: PASS (no matches for the configured patterns)
+
+
+======================================================================
+FAIL: test_crashing_grep_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_crashing_grep_is_scan_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 340, in test_crashing_grep_is_scan_error
+    self.assert_scan_error(self.scan_with_tools(path), path)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 306, in assert_scan_error
+    self.assertEqual(completed.returncode, 2, output)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2 : scan_secrets: PASS (no matches for the configured patterns)
+
+
+======================================================================
+FAIL: test_finding_takes_precedence_over_crash_on_other_file (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_finding_takes_precedence_over_crash_on_other_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 363, in test_finding_takes_precedence_over_crash_on_other_file
+    self.assertIn("scan_secrets: ERROR cannot scan " + broken, completed.stderr)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'scan_secrets: ERROR cannot scan /tmp/tmp2efx3v9u/data/broken.txt' not found in 'scan_secrets: FAIL (potential secrets found; values not shown)\n'
+
+======================================================================
+FAIL: test_missing_grep_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_missing_grep_is_scan_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 330, in test_missing_grep_is_scan_error
+    self.assert_scan_error(self.scan_with_tools(path), path)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 306, in assert_scan_error
+    self.assertEqual(completed.returncode, 2, output)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2 : scan_secrets: PASS (no matches for the configured patterns)
+
+
+======================================================================
+FAIL: test_non_executable_grep_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_non_executable_grep_is_scan_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 335, in test_non_executable_grep_is_scan_error
+    self.assert_scan_error(self.scan_with_tools(path), path)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 306, in assert_scan_error
+    self.assertEqual(completed.returncode, 2, output)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2 : scan_secrets: PASS (no matches for the configured patterns)
+
+
+======================================================================
+FAIL: test_unexpected_grep_status_is_scan_error (tests.static.test_secret_scanner.secret_scanner_dependency_t.test_unexpected_grep_status_is_scan_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 345, in test_unexpected_grep_status_is_scan_error
+    self.assert_scan_error(self.scan_with_tools(path), path)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_secret_scanner.py", line 306, in assert_scan_error
+    self.assertEqual(completed.returncode, 2, output)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2 : scan_secrets: PASS (no matches for the configured patterns)
+
+
+======================================================================
+FAIL: test_config_failure_stops_before_build_and_publishes_nothing (tests.static.test_build_image_failure_paths.build_image_failure_paths_t.test_config_failure_stops_before_build_and_publishes_nothing)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_build_image_failure_paths.py", line 165, in test_config_failure_stops_before_build_and_publishes_nothing
+    self.assert_failed_without_publishing(completed, ["config"])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_build_image_failure_paths.py", line 153, in assert_failed_without_publishing
+    self.assertNotEqual(completed.returncode, 0, output)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0 : build_image: started 2026-10-11T19:52:23Z
+build_image: SOURCE_DATE_EPOCH=1700000000 unverified_host_override=0
+build_image: live-build 1:20250505+deb13u1
+fault injection: lb config exit 42
+build_image: PASS (artifacts in /tmp/tmp0eq0pi4y/out/image)
+
+
+======================================================================
+FAIL: test_work_dir_entry_failure_runs_no_live_build (tests.static.test_build_image_failure_paths.build_image_failure_paths_t.test_work_dir_entry_failure_runs_no_live_build)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work-prefix/tests/static/test_build_image_failure_paths.py", line 173, in test_work_dir_entry_failure_runs_no_live_build
+    self.assert_failed_without_publishing(completed, [])
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/work-prefix/tests/static/test_build_image_failure_paths.py", line 155, in assert_failed_without_publishing
+    self.assertEqual(self.lb_calls(), expected_calls, output)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['config', 'build'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'config'
+
+- ['config', 'build']
++ [] : build_image: started 2026-10-11T19:52:25Z
+build_image: SOURCE_DATE_EPOCH=1700000000 unverified_host_override=0
+build_image: live-build 0-fault-injection
+/work-prefix/build/scripts/build_image.sh: line 98: cd: /tmp/tmpn6e18uew/out/live-build-work: No such file or directory
+fault injection: lb config exit 0
+build_image: expected exactly one ISO in /tmp/tmpn6e18uew/out/live-build-work, found 0
+
+
+----------------------------------------------------------------------
+Ran 30 tests in 26.166s
+
+FAILED (failures=8)

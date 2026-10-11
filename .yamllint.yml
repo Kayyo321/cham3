@@ -1,0 +1,11 @@
+---
+# yamllint configuration for cham3 (M0). Used by build/scripts/run_static_checks.sh.
+extends: default
+
+rules:
+  line-length:
+    max: 120
+  # GitHub Actions uses the bare key "on".
+  truthy:
+    check-keys: false
+  document-start: disable

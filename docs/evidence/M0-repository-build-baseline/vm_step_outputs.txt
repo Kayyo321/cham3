@@ -1,0 +1,229 @@
+===== 00_vm_environment.log =====
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+VERSION_CODENAME=trixie
+DEBIAN_VERSION_FULL=13.7
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+Linux cham3-m0-build 6.12.111+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.111-1 (2026-09-28) x86_64 GNU/Linux
+amd64
+6
+               total        used        free      shared  buff/cache   available
+Mem:            3920         294        3683           0         127        3625
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1        40G  596M   37G   2% /
+qemu
+status: done
+uid=1000(builder) gid=1000(builder) groups=1000(builder),27(sudo)
+
+
+===== 02_clone.log =====
+Cloning into 'cham3'...
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: is subject to change. To configure the initial branch name to use in all
+hint: of your new repositories, which will suppress this warning, call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+Note: switching to '5ae0dc526336b7f3c6dec10b94ff4b78f135d593'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 5ae0dc5 docs(reviews): record M0-001 internal subagent review
+5ae0dc526336b7f3c6dec10b94ff4b78f135d593 1791744318 docs(reviews): record M0-001 internal subagent review
+
+
+===== 04_static_checks.log =====
+== shellcheck (8 files)
+== py_compile (17 files)
+== yamllint (2 files)
+== scan_secrets
+scan_secrets: PASS (no matches for the configured patterns)
+
+== summary
+PASS shellcheck
+PASS py_compile
+PASS yamllint
+PASS scan_secrets
+static checks: PASS
+
+
+===== 07_tests_packages.log =====
+== tests/packaging (repo: /home/builder/cham3, out: /home/builder/cham3/out) ==
+test_defective_package_is_rejected (test_cham3_base_package.cham3_base_package_t.test_defective_package_is_rejected) ... ok
+test_real_package_passes_checker (test_cham3_base_package.cham3_base_package_t.test_real_package_passes_checker) ... ok
+test_well_formed_fixture_is_accepted (test_cham3_base_package.cham3_base_package_t.test_well_formed_fixture_is_accepted) ... ok
+test_wrong_expected_version_is_rejected (test_cham3_base_package.cham3_base_package_t.test_wrong_expected_version_is_rejected) ... ok
+test_deb_version_matches_changelog_version (test_packages_output.packages_output_t.test_deb_version_matches_changelog_version) ... ok
+test_exactly_the_expected_deb_is_built (test_packages_output.packages_output_t.test_exactly_the_expected_deb_is_built) ... ok
+test_lintian_report_has_no_errors (test_packages_output.packages_output_t.test_lintian_report_has_no_errors) ... ok
+test_sha256sums_verify_and_cover_build_outputs (test_packages_output.packages_output_t.test_sha256sums_verify_and_cover_build_outputs) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.244s
+
+OK
+
+
+===== 09_tests_image.log =====
+== tests/image (repo: /home/builder/cham3, out: /home/builder/cham3/out) ==
+test_apt_release_files_recorded_or_reason_given (test_image_artifacts.image_artifacts_t.test_apt_release_files_recorded_or_reason_given) ... ok
+test_build_timestamps_are_ordered (test_image_artifacts.image_artifacts_t.test_build_timestamps_are_ordered) ... ok
+test_image_sha256sums_verify_and_cover_iso (test_image_artifacts.image_artifacts_t.test_image_sha256sums_verify_and_cover_iso) ... ok
+test_iso_is_iso9660 (test_image_artifacts.image_artifacts_t.test_iso_is_iso9660) ... ok
+test_local_packages_match_built_deb (test_image_artifacts.image_artifacts_t.test_local_packages_match_built_deb) ... ok
+test_outputs_record_iso_size_and_digest (test_image_artifacts.image_artifacts_t.test_outputs_record_iso_size_and_digest) ... ok
+test_package_manifest_lists_cham3_base_at_expected_version (test_image_artifacts.image_artifacts_t.test_package_manifest_lists_cham3_base_at_expected_version) ... ok
+test_provenance_build_host_is_recorded (test_image_artifacts.image_artifacts_t.test_provenance_build_host_is_recorded) ... ok
+test_provenance_inputs_match_m0_definition (test_image_artifacts.image_artifacts_t.test_provenance_inputs_match_m0_definition) ... ok
+test_provenance_source_is_exact_clean_commit (test_image_artifacts.image_artifacts_t.test_provenance_source_is_exact_clean_commit) ... ok
+test_provenance_tools_are_versioned (test_image_artifacts.image_artifacts_t.test_provenance_tools_are_versioned) ... ok
+test_provenance_top_level_schema (test_image_artifacts.image_artifacts_t.test_provenance_top_level_schema) ... ok
+test_source_date_epoch_is_head_commit_time (test_image_artifacts.image_artifacts_t.test_source_date_epoch_is_head_commit_time) ... ok
+test_text_artifacts_contain_no_secrets (test_image_artifacts.image_artifacts_t.test_text_artifacts_contain_no_secrets) ... ok
+test_cham3_base_documentation_present_in_image (test_image_contents.image_contents_t.test_cham3_base_documentation_present_in_image) ... ok
+test_cham3_base_is_installed_at_expected_version (test_image_contents.image_contents_t.test_cham3_base_is_installed_at_expected_version) ... ok
+test_no_desktop_or_tor_packages_installed (test_image_contents.image_contents_t.test_no_desktop_or_tor_packages_installed) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 11.285s
+
+OK
+
+
+===== 10_artifact_secret_scan.log =====
+scan_secrets: PASS (no matches for the configured patterns)
+
+
+===== 05_tests_static.log (unittest summary lines) =====
+test_out_dir_root_is_refused (test_build_image_guards.build_image_guards_t.test_out_dir_root_is_refused) ... ok
+test_work_dir_equal_to_out_dir_is_refused_and_nothing_removed (test_build_image_guards.build_image_guards_t.test_work_dir_equal_to_out_dir_is_refused_and_nothing_removed) ... ok
+test_work_dir_root_is_refused (test_build_image_guards.build_image_guards_t.test_work_dir_root_is_refused) ... ok
+test_artifact_retention_is_short (test_ci_workflow.ci_workflow_t.test_artifact_retention_is_short) ... ok
+test_git_installed_and_safe_directory_configured (test_ci_workflow.ci_workflow_t.test_git_installed_and_safe_directory_configured) ... ok
+test_jobs_run_in_debian_trixie_containers (test_ci_workflow.ci_workflow_t.test_jobs_run_in_debian_trixie_containers) ... ok
+test_no_secrets_context_or_pull_request_target (test_ci_workflow.ci_workflow_t.test_no_secrets_context_or_pull_request_target) ... ok
+test_no_write_permission_grants (test_ci_workflow.ci_workflow_t.test_no_write_permission_grants) ... ok
+test_runs_static_packages_image_and_boot_steps (test_ci_workflow.ci_workflow_t.test_runs_static_packages_image_and_boot_steps) ... ok
+test_third_party_actions_pinned_to_full_sha (test_ci_workflow.ci_workflow_t.test_third_party_actions_pinned_to_full_sha) ... ok
+test_top_level_permissions_are_contents_read_only (test_ci_workflow.ci_workflow_t.test_top_level_permissions_are_contents_read_only) ... ok
+test_workflow_triggers (test_ci_workflow.ci_workflow_t.test_workflow_triggers) ... ok
+test_each_entry_is_one_debian_package_name (test_host_packages.host_packages_t.test_each_entry_is_one_debian_package_name) ... ok
+test_no_duplicate_entries (test_host_packages.host_packages_t.test_no_duplicate_entries) ... ok
+test_required_build_host_packages_listed (test_host_packages.host_packages_t.test_required_build_host_packages_listed) ... ok
+test_apt_authentication_is_not_disabled (test_live_build_config.live_build_config_t.test_apt_authentication_is_not_disabled) ... ok
+test_architecture_is_amd64 (test_live_build_config.live_build_config_t.test_architecture_is_amd64) ... ok
+test_archive_areas_are_main_only (test_live_build_config.live_build_config_t.test_archive_areas_are_main_only) ... ok
+test_binary_image_is_iso_hybrid (test_live_build_config.live_build_config_t.test_binary_image_is_iso_hybrid) ... ok
+test_debian_installer_disabled (test_live_build_config.live_build_config_t.test_debian_installer_disabled) ... ok
+test_distribution_is_trixie (test_live_build_config.live_build_config_t.test_distribution_is_trixie) ... ok
+test_iso_metadata_names_m0_development_image (test_live_build_config.live_build_config_t.test_iso_metadata_names_m0_development_image) ... ok
+test_lb_config_is_invoked_noauto (test_live_build_config.live_build_config_t.test_lb_config_is_invoked_noauto) ... ok
+test_mirrors_are_official_debian_hosts (test_live_build_config.live_build_config_t.test_mirrors_are_official_debian_hosts) ... ok
+test_non_free_firmware_is_off (test_live_build_config.live_build_config_t.test_non_free_firmware_is_off) ... ok
+test_package_lists_add_no_out_of_scope_components (test_live_build_config.live_build_config_t.test_package_lists_add_no_out_of_scope_components) ... ok
+test_package_name_rule_rejects_out_of_scope_names (test_live_build_config.live_build_config_t.test_package_name_rule_rejects_out_of_scope_names) ... ok
+test_security_and_updates_are_not_disabled (test_live_build_config.live_build_config_t.test_security_and_updates_are_not_disabled) ... ok
+test_serial_console_boot_parameters_present (test_live_build_config.live_build_config_t.test_serial_console_boot_parameters_present) ... ok
+test_binary_stanza_metadata_and_dependencies (test_package_source.package_source_t.test_binary_stanza_metadata_and_dependencies) ... ok
+test_changelog_and_control_emails_are_reserved (test_package_source.package_source_t.test_changelog_and_control_emails_are_reserved) ... ok
+test_changelog_version_and_distribution (test_package_source.package_source_t.test_changelog_version_and_distribution) ... ok
+test_copyright_reflects_agpl_and_pending_license_choice (test_package_source.package_source_t.test_copyright_reflects_agpl_and_pending_license_choice) ... ok
+test_description_states_m0_skeleton_limits (test_package_source.package_source_t.test_description_states_m0_skeleton_limits) ... ok
+test_install_and_dirs_stay_under_doc_directory (test_package_source.package_source_t.test_install_and_dirs_stay_under_doc_directory) ... ok
+test_license_file_is_agpl_v3 (test_package_source.package_source_t.test_license_file_is_agpl_v3) ... ok
+test_maintainer_is_reserved_placeholder (test_package_source.package_source_t.test_maintainer_is_reserved_placeholder) ... ok
+test_no_maintainer_scripts_conffiles_or_units (test_package_source.package_source_t.test_no_maintainer_scripts_conffiles_or_units) ... ok
+test_rules_is_executable_and_no_compat_file (test_package_source.package_source_t.test_rules_is_executable_and_no_compat_file) ... ok
+test_source_format_is_native_3_0 (test_package_source.package_source_t.test_source_format_is_native_3_0) ... ok
+test_source_stanza_metadata (test_package_source.package_source_t.test_source_stanza_metadata) ... ok
+test_gitignore_ignores_out_directory (test_repository_hygiene.repository_hygiene_t.test_gitignore_ignores_out_directory) ... ok
+test_new_build_and_test_names_are_snake_case (test_repository_hygiene.repository_hygiene_t.test_new_build_and_test_names_are_snake_case) ... ok
+test_no_build_outputs_are_tracked (test_repository_hygiene.repository_hygiene_t.test_no_build_outputs_are_tracked) ... ok
+test_scripts_and_shebang_files_are_executable (test_repository_hygiene.repository_hygiene_t.test_scripts_and_shebang_files_are_executable) ... ok
+test_shell_scripts_have_shebang_and_strict_mode (test_repository_hygiene.repository_hygiene_t.test_shell_scripts_have_shebang_and_strict_mode) ... ok
+test_snake_case_rule_detects_camel_case (test_repository_hygiene.repository_hygiene_t.test_snake_case_rule_detects_camel_case) ... ok
+test_finding_in_colon_named_file_reports_path_and_line (test_secret_scanner.secret_scanner_regression_t.test_finding_in_colon_named_file_reports_path_and_line) ... ok
+test_finding_in_file_with_space_reports_path_and_line (test_secret_scanner.secret_scanner_regression_t.test_finding_in_file_with_space_reports_path_and_line) ... ok
+test_lone_dangling_symlink_exits_zero (test_secret_scanner.secret_scanner_regression_t.test_lone_dangling_symlink_exits_zero) ... ok
+test_symlink_inside_scanned_dir_to_outside_secret_is_detected (test_secret_scanner.secret_scanner_regression_t.test_symlink_inside_scanned_dir_to_outside_secret_is_detected) ... ok
+test_unreadable_file_inside_scanned_directory_is_error (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_inside_scanned_directory_is_error) ... ok
+test_unreadable_file_is_error_exit_two (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_is_error_exit_two) ... ok
+test_unreadable_file_plus_finding_exits_one_and_reports_both (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_plus_finding_exits_one_and_reports_both) ... ok
+test_aws_access_key_id_is_detected (test_secret_scanner.secret_scanner_t.test_aws_access_key_id_is_detected) ... ok
+test_clean_file_exits_zero (test_secret_scanner.secret_scanner_t.test_clean_file_exits_zero) ... ok
+test_github_tokens_are_detected_and_not_printed_in_full (test_secret_scanner.secret_scanner_t.test_github_tokens_are_detected_and_not_printed_in_full) ... ok
+test_pem_private_key_blocks_are_detected (test_secret_scanner.secret_scanner_t.test_pem_private_key_blocks_are_detected) ... ok
+test_public_key_block_is_not_flagged (test_secret_scanner.secret_scanner_t.test_public_key_block_is_not_flagged) ... ok
+test_recursive_directory_scan_finds_nested_secret (test_secret_scanner.secret_scanner_t.test_recursive_directory_scan_finds_nested_secret) ... ok
+test_repository_default_scan_is_clean (test_secret_scanner.secret_scanner_t.test_repository_default_scan_is_clean) ... ok
+test_scanner_does_not_flag_itself (test_secret_scanner.secret_scanner_t.test_scanner_does_not_flag_itself) ... ok
+test_slack_tokens_are_detected (test_secret_scanner.secret_scanner_t.test_slack_tokens_are_detected) ... ok
+test_truncated_aws_prefix_is_not_flagged (test_secret_scanner.secret_scanner_t.test_truncated_aws_prefix_is_not_flagged) ... ok
+test_usage_error_exits_two (test_secret_scanner.secret_scanner_t.test_usage_error_exits_two) ... ok
+test_tree_without_git_fails_file_discovery (test_static_check_runner.static_check_file_discovery_t.test_tree_without_git_fails_file_discovery) ... ok
+test_clean_clone_of_head_passes (test_static_check_runner.static_check_runner_t.test_clean_clone_of_head_passes) ... ok
+test_defective_python_file_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_python_file_fails_runner) ... ok
+test_defective_shell_script_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_shell_script_fails_runner) ... ok
+test_defective_workflow_yaml_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_workflow_yaml_fails_runner) ... ok
+Ran 70 tests in 69.655s
+OK
+
+===== 03_install_host_packages.log (dpkg-query tail) =====
+debhelper	13.24.2
+debootstrap	1.0.141
+dpkg-dev	1.22.22
+git	1:2.47.3-0+deb13u1
+lintian	2.122.0
+live-build	1:20250505+deb13u1
+python3	3.13.5-1
+qemu-system-x86	1:10.0.13+ds-0+deb13u1
+shellcheck	0.10.0-1
+squashfs-tools	1:4.6.1-1
+xorriso	1.5.6-1.2+b1
+yamllint	1.37.1-1
+
+===== 08_build_image.log (first 5 and last 15 lines of 2860) =====
+build_image: started 2026-10-11T18:52:11Z
+build_image: SOURCE_DATE_EPOCH=1791744318 unverified_host_override=0
+build_image: live-build 1:20250505+deb13u1
+[2026-10-11 18:52:11] lb config 
+P: Executing auto/config script.
+...
+[2026-10-11 19:20:40] lb chroot_prep remove devpts proc selinuxfs sysfs
+[2026-10-11 19:20:41] lb chroot_sysfs remove
+P: Begin unmounting /sys...
+[2026-10-11 19:20:41] lb chroot_selinuxfs remove
+[2026-10-11 19:20:42] lb chroot_proc remove
+P: Begin unmounting /proc...
+[2026-10-11 19:20:42] lb chroot_devpts remove
+P: Begin unmounting /dev/pts...
+P: Binary stage completed
+P: Begin unmounting filesystems...
+P: Saving caches...
+[2026-10-11 19:20:43] lb source 
+P: Source stage disabled, skipping
+P: Build completed successfully
+build_image: PASS (artifacts in /home/builder/cham3/out/image)
