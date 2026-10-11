@@ -1,0 +1,4 @@
+# One repo-relative directory per line, staged into the build dir by
+# build/scripts/build_packages.sh so debian/install and debian/rules can use it.
+desktop
+assets

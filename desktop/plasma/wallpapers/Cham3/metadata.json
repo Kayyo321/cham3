@@ -1,0 +1,12 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "cham3 developers"
+            }
+        ],
+        "Id": "Cham3",
+        "License": "AGPL-3.0-only",
+        "Name": "cham3 Charcoal"
+    }
+}

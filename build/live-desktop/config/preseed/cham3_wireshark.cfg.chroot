@@ -1,0 +1,6 @@
+# Applied by live-build with debconf-set-selections BEFORE package installation.
+# Lets wireshark-common install dumpcap with file capabilities and restrict it to
+# the "wireshark" group, so packet capture works through group membership and
+# not through running Wireshark or tshark as root. No user is added to the group
+# by the image; membership is a deliberate per-user administrative step.
+wireshark-common wireshark-common/install-setuid boolean true

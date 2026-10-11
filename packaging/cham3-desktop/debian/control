@@ -1,0 +1,60 @@
+Source: cham3-desktop
+Section: kde
+Priority: optional
+Maintainer: cham3 developers <maintainers@cham3.invalid>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+
+Package: cham3-desktop
+Architecture: all
+Depends: ${misc:Depends},
+ plasma-desktop,
+ plasma-workspace,
+ kwin-wayland,
+ sddm,
+ systemsettings,
+ plasma-nm,
+ plasma-pa,
+ dolphin,
+ konsole,
+ kate,
+ ark,
+ okular,
+ gwenview,
+ kde-spectacle,
+ plasma-systemmonitor,
+ qml6-module-org-kde-kirigami,
+ qml6-module-org-kde-plasma-plasma5support,
+ kf6-breeze-icon-theme,
+ kio-extras,
+ kscreen,
+ powerdevil,
+ xdg-desktop-portal-kde,
+ xwayland,
+ libpam-systemd,
+ dbus-user-session,
+ wireplumber,
+ sddm-theme-debian-breeze,
+ fonts-noto-core,
+ fonts-noto-color-emoji,
+ qt6-image-formats-plugins,
+ unzip,
+ zip
+Recommends: fonts-noto,
+ kinfocenter
+Description: cham3 KDE Plasma 6 Wayland desktop defaults (M1 visual foundation)
+ Installs the cham3 desktop customization for KDE Plasma 6 on Wayland: a dark
+ color scheme, the cham3 wallpaper and logos, a look-and-feel package that
+ defaults to a vertical panel on the right screen edge, and eight Plasma
+ widgets (plasmoids) for that panel. It depends on the Debian KDE Plasma
+ session and the KDE core utilities (Dolphin, Konsole, Kate, Ark, Okular,
+ Gwenview, Spectacle and Plasma System Monitor).
+ .
+ This is a visual and package foundation only. The cham3 panel widgets are
+ inert: they render their layout and report every backend-dependent feature
+ (identity, alias and tag services, contracts, network protocol editor, Full
+ Isolation Kill, task attribution) as unavailable. Installing this package does
+ not provide application isolation, permission contracts, network mode
+ enforcement or a kill switch, and a widget on screen is not evidence that any
+ security policy is active.

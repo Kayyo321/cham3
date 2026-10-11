@@ -1,0 +1,62 @@
+#!/bin/sh
+
+. /usr/lib/live/config.sh
+
+## live-config(7) component (live-config's own script layout; the hyphenated
+## file name is live-config's component naming, an external boundary) for the cham3 M1 desktop image.
+## Runs after 0085-sddm. That component writes the SDDM autologin file
+## /etc/sddm.conf with an empty Session= unless the X11 Plasma session is the
+## default x-session-manager, which is not the case on a Wayland-first image.
+## This component sets the autologin session to the Plasma Wayland session.
+## It changes only the autologin session name; it does not add a user, change
+## any password or alter any security setting.
+
+#set -e
+
+read_cmdline ()
+{
+	for parameter in ${LIVE_CONFIG_CMDLINE}
+	do
+		case "${parameter}" in
+			live-config.noautologin|noautologin|live-config.nox11autologin|nox11autologin)
+				noautologin_requested="true"
+				;;
+		esac
+	done
+}
+
+check_component ()
+{
+	case "${noautologin_requested}" in
+		true)
+			exit 0
+			;;
+	esac
+
+	# Only act when SDDM is installed, 0085-sddm wrote an autologin section and
+	# this component has not run yet.
+	if ! pkg_is_installed "sddm" || \
+	   component_was_executed "cham3-sddm-wayland" || \
+	   [ ! -f /etc/sddm.conf ] || ! grep -q '^\[Autologin\]' /etc/sddm.conf
+	then
+		exit 0
+	fi
+
+	echo -n " cham3-sddm-wayland"
+}
+
+apply_component ()
+{
+	if grep -q '^Session=' /etc/sddm.conf
+	then
+		sed -i 's|^Session=.*|Session=plasma.desktop|' /etc/sddm.conf
+	else
+		sed -i '/^\[Autologin\]/a Session=plasma.desktop' /etc/sddm.conf
+	fi
+
+	touch /var/lib/live/config/cham3-sddm-wayland
+}
+
+read_cmdline
+check_component
+apply_component

@@ -1,0 +1,31 @@
+cham3-desktop for Debian
+------------------------
+
+M1 visual and package foundation. Everything shipped here is presentation.
+
+What is installed
+  /usr/share/plasma/plasmoids/org.cham3.*            eight panel plasmoids
+  /usr/share/plasma/look-and-feel/org.cham3.desktop  look-and-feel package
+  /usr/share/plasma/layout-templates/org.cham3.panel right-edge panel layout
+  /usr/share/color-schemes/Cham3Dark.colors          color scheme
+  /usr/share/wallpapers/Cham3                        wallpaper
+  /usr/share/cham3/branding                          logos
+  /etc/xdg/kdeglobals, /etc/xdg/plasmarc             system-wide default
+        look-and-feel, color scheme and icon theme (lowest precedence; any
+        user setting overrides them)
+
+What is not here
+  No contract, identity, vault, sandbox, network or kill-switch backend
+  exists in M1. The panel widgets report those features as unavailable and
+  perform no security action. No .desktop launchers are shipped for
+  applications that are not installed.
+
+Wayland
+  The cham3 session is KDE Plasma on Wayland (plasma-workspace provides the
+  "plasma.desktop" Wayland session, kwin-wayland provides the compositor).
+
+Panel layout
+  The default panel is applied by plasmashell on the first start of a new
+  user profile. An existing profile keeps its own panel configuration; apply
+  the layout to an existing profile from System Settings, Appearance, Global
+  Theme, choosing "cham3" with the option to reset the desktop layout.

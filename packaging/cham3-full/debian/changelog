@@ -1,0 +1,8 @@
+cham3-full (0.0.0~m1) UNRELEASED; urgency=low
+
+  * M1 metapackage: cham3-desktop plus the Debian 13 curated application
+    suite. Suite members absent from Debian 13 or needing a reviewed source
+    are not dependencies (see the package description).
+  * Maintainer address is a reserved placeholder pending an owner decision.
+
+ -- cham3 developers <maintainers@cham3.invalid>  Sun, 11 Oct 2026 00:00:00 +0000
