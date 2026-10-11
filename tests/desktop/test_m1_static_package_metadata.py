@@ -205,11 +205,14 @@ class package_metadata_real_t(unittest.TestCase):
         missing = sorted(set(m1_support.KdeCoreRequired) - names)
         self.assertEqual(missing, [], "KDE core utilities missing from cham3-desktop Depends")
 
-    def test_cham3_desktop_recommends_fonts_and_qqc2_style(self):
+    def test_cham3_desktop_recommends_fonts_and_plasma6_qqc2_style(self):
+        # The contract name qqc2-desktop-style is ABSENT from trixie (verified with
+        # apt-cache in debian:trixie); the Plasma 6 (KF6) style module is
+        # qml6-module-org-kde-desktop (6.13.0). See internal finding F-qqc2.
         stanza = m1_support.package_control(m1_support.PackageDesktopDir, m1_support.PackageDesktop)
         names = m1_support.relation_names(stanza.get("Recommends", ""))
         self.assertTrue(any(name.startswith("fonts-noto") for name in names), "no fonts-noto recommendation")
-        self.assertIn("qqc2-desktop-style", names)
+        self.assertIn("qml6-module-org-kde-desktop", names)
 
     def test_no_alternative_desktop_or_task_metapackage(self):
         for package_dir, package in (
@@ -265,7 +268,7 @@ class package_metadata_fixture_t(unittest.TestCase):
             "Depends: plasma-desktop, plasma-workspace-wayland, kwin-wayland, sddm,\n"
             " systemsettings, dolphin, konsole, kate, ark, okular, gwenview,\n"
             " kde-spectacle, plasma-systemmonitor\n"
-            "Recommends: fonts-noto, qqc2-desktop-style\n"
+            "Recommends: fonts-noto, qml6-module-org-kde-desktop\n"
             "Description: cham3 KDE customization\n"
             " Visual foundation only.\n"
         )
