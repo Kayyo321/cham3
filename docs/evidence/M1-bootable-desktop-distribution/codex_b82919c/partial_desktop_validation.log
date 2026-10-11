@@ -1,0 +1,12 @@
+PARTIAL CHROOT ONLY; not installed-system launcher execution.
+113 upstream desktop entries validated; nonzero results=0
+[]
+org.kde.dolphin.desktop: PRESENT
+org.kde.konsole.desktop: PRESENT
+org.kde.kate.desktop: PRESENT
+org.kde.ark.desktop: PRESENT
+org.kde.okular.desktop: PRESENT
+org.kde.gwenview.desktop: PRESENT
+org.kde.spectacle.desktop: PRESENT
+org.kde.plasma-systemmonitor.desktop: PRESENT
+systemsettings.desktop: PRESENT
