@@ -1,0 +1,32 @@
+Cham3 faceted rose belly — design handoff
+
+State: IMPLEMENTED; awaiting owner design review.
+Role/provider: Codex IMPLEMENTER.
+Baseline: a3a7999fcae55f3ac8edf6762015bae1f52724b5.
+Implementation reference: commit containing this record and cham3_imagegen_rose_facets.png.
+Worktree/branch: /Users/jessicabruce/cham3 / codex/cham3-reference-logo.
+Approved scope: replace the single dark rose belly fill with different
+rose-colored surfaces, retaining prior logo layout and colors.
+Tool: built-in image_gen image editing; no SVG or coded image edits.
+Security impact: none; no product behavior or architecture changes.
+Previous assets and unrelated files preserved.
+
+Final prompt:
+Use case: precise-object-edit.
+Edit target: supplied illustrated Cham3 logo.
+Change ONLY the broad dark rose belly/inner body of the foreground pink chameleon. It currently looks like one huge flat burgundy blob behind the bent foreleg. Give this inner body several distinct, attractive faceted surfaces that follow the curved anatomy, matching the existing faceted style of the head and crest.
+Divide that area into about FOUR broad clean purposeful planes: a medium dark rose flank below the bright upper back, a deeper burgundy inward-facing lower belly, a warmer rose chest plane beneath the chin, and a small intermediate rose connecting facet behind the foreleg. Use related DARK ROSE/red shades, such as #A22C56, #7A2143, #52162E, #B43863. Different values should visibly define the rounded torso volume while staying darker than the pink outer body and foreleg. Each plane has ONE clean flat color; sharp intentional facet boundaries. The planes must be large and elegant, never a noisy mosaic. NO purple on the foreground body. Preserve its outline, pose, bent arm, face, original friendly eyes, head geometry and tightly curled pink tail exactly. Belly facets stay inside the existing belly shape. Keep the pink outer back/limbs/tail and pale pink face highlights unchanged.
+Preserve EVERYTHING else: two closely overlapping rear silhouettes, solid purple middle with two dark eye spots in intermediate rightward orientation, pale grey back silhouette with one dark eye spot facing right; both rear tails completely hidden; near-black background; exact "Cham3" wordmark with pale grey "Cham" and bright rose "3", unchanged typography, scale, spacing and position.
+Only redesign the BELLY SURFACES, not the logo or animal anatomy. No textures, hatching, hashing, noise, speckling, gradients, glossy rendering, glow, extra characters, extra text, watermark or mockup. Smooth crisp illustrated result with clean color planes.
+
+Verification:
+PASS — visual inspection in the image tool: foreground belly now has
+distinct warm rose flank, deeper burgundy belly and rose chest planes;
+foreground remains pink/rose, numeral 3 rose, Cham letters pale grey,
+purple and grey rear silhouettes with dark eye spots and hidden tails.
+PASS — file command confirms saved PNG.
+NOT_RUN — exact pixel color uniformity; imagegen raster does not guarantee it.
+NOT_RUN — product tests; visual-only asset.
+Independent review: pending owner design review.
+Next owner/action: user design review.
+
