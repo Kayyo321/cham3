@@ -1,0 +1,422 @@
+{
+  "run": {
+    "conclusion": "success",
+    "headSha": "8029ccdde09b205c9a477d5e6745716b9242cdfb",
+    "jobs": [
+      {
+        "completedAt": "2026-10-11T20:44:07Z",
+        "conclusion": "success",
+        "databaseId": 114569902028,
+        "name": "image_build",
+        "startedAt": "2026-10-11T20:40:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-11T20:40:14Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-11T20:40:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:23Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-10-11T20:40:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:29Z",
+            "conclusion": "success",
+            "name": "Install git",
+            "number": 3,
+            "startedAt": "2026-10-11T20:40:23Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:30Z",
+            "conclusion": "success",
+            "name": "Check out repository",
+            "number": 4,
+            "startedAt": "2026-10-11T20:40:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:30Z",
+            "conclusion": "success",
+            "name": "Mark workspace safe for git",
+            "number": 5,
+            "startedAt": "2026-10-11T20:40:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:49Z",
+            "conclusion": "success",
+            "name": "Install build host packages",
+            "number": 6,
+            "startedAt": "2026-10-11T20:40:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:51Z",
+            "conclusion": "success",
+            "name": "Build packages",
+            "number": 7,
+            "startedAt": "2026-10-11T20:40:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:43:20Z",
+            "conclusion": "success",
+            "name": "Build live image",
+            "number": 8,
+            "startedAt": "2026-10-11T20:40:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:43:21Z",
+            "conclusion": "success",
+            "name": "Image tests",
+            "number": 9,
+            "startedAt": "2026-10-11T20:43:20Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:43:51Z",
+            "conclusion": "success",
+            "name": "Boot test in a throwaway VM",
+            "number": 10,
+            "startedAt": "2026-10-11T20:43:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:43:51Z",
+            "conclusion": "success",
+            "name": "Boot result tests",
+            "number": 11,
+            "startedAt": "2026-10-11T20:43:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:44:00Z",
+            "conclusion": "success",
+            "name": "Upload image results",
+            "number": 12,
+            "startedAt": "2026-10-11T20:43:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:44:00Z",
+            "conclusion": "success",
+            "name": "Post Check out repository",
+            "number": 23,
+            "startedAt": "2026-10-11T20:44:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:44:06Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 24,
+            "startedAt": "2026-10-11T20:44:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:44:06Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 25,
+            "startedAt": "2026-10-11T20:44:06Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Kayyo321/cham3/actions/runs/38173172929/job/114569902028"
+      },
+      {
+        "completedAt": "2026-10-11T20:40:58Z",
+        "conclusion": "success",
+        "databaseId": 114569902158,
+        "name": "package_build",
+        "startedAt": "2026-10-11T20:40:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-11T20:40:14Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-11T20:40:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:17Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-10-11T20:40:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:24Z",
+            "conclusion": "success",
+            "name": "Install git",
+            "number": 3,
+            "startedAt": "2026-10-11T20:40:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:25Z",
+            "conclusion": "success",
+            "name": "Check out repository",
+            "number": 4,
+            "startedAt": "2026-10-11T20:40:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:25Z",
+            "conclusion": "success",
+            "name": "Mark workspace safe for git",
+            "number": 5,
+            "startedAt": "2026-10-11T20:40:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:49Z",
+            "conclusion": "success",
+            "name": "Install build host packages",
+            "number": 6,
+            "startedAt": "2026-10-11T20:40:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:52Z",
+            "conclusion": "success",
+            "name": "Build packages (unsigned) and run lintian",
+            "number": 7,
+            "startedAt": "2026-10-11T20:40:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:53Z",
+            "conclusion": "success",
+            "name": "Package tests",
+            "number": 8,
+            "startedAt": "2026-10-11T20:40:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:53Z",
+            "conclusion": "success",
+            "name": "Upload package results",
+            "number": 9,
+            "startedAt": "2026-10-11T20:40:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:54Z",
+            "conclusion": "success",
+            "name": "Post Check out repository",
+            "number": 17,
+            "startedAt": "2026-10-11T20:40:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:58Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 18,
+            "startedAt": "2026-10-11T20:40:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:58Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 19,
+            "startedAt": "2026-10-11T20:40:58Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Kayyo321/cham3/actions/runs/38173172929/job/114569902158"
+      },
+      {
+        "completedAt": "2026-10-11T20:41:10Z",
+        "conclusion": "success",
+        "databaseId": 114569902223,
+        "name": "static_checks",
+        "startedAt": "2026-10-11T20:40:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-11T20:40:15Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-11T20:40:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:25Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-10-11T20:40:15Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:31Z",
+            "conclusion": "success",
+            "name": "Install git",
+            "number": 3,
+            "startedAt": "2026-10-11T20:40:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:32Z",
+            "conclusion": "success",
+            "name": "Check out repository",
+            "number": 4,
+            "startedAt": "2026-10-11T20:40:31Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:32Z",
+            "conclusion": "success",
+            "name": "Mark workspace safe for git",
+            "number": 5,
+            "startedAt": "2026-10-11T20:40:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:51Z",
+            "conclusion": "success",
+            "name": "Install build host packages",
+            "number": 6,
+            "startedAt": "2026-10-11T20:40:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:51Z",
+            "conclusion": "success",
+            "name": "Create unprivileged user",
+            "number": 7,
+            "startedAt": "2026-10-11T20:40:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:40:52Z",
+            "conclusion": "success",
+            "name": "Static checks",
+            "number": 8,
+            "startedAt": "2026-10-11T20:40:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:41:01Z",
+            "conclusion": "success",
+            "name": "Static check tests",
+            "number": 9,
+            "startedAt": "2026-10-11T20:40:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:41:01Z",
+            "conclusion": "success",
+            "name": "Post Check out repository",
+            "number": 17,
+            "startedAt": "2026-10-11T20:41:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:41:08Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 18,
+            "startedAt": "2026-10-11T20:41:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-11T20:41:08Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 19,
+            "startedAt": "2026-10-11T20:41:08Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Kayyo321/cham3/actions/runs/38173172929/job/114569902223"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/Kayyo321/cham3/actions/runs/38173172929"
+  },
+  "artifacts": [
+    {
+      "id": 11714732658,
+      "node_id": "MDg6QXJ0aWZhY3QxMTcxNDczMjY1OA==",
+      "name": "m0_image",
+      "size_in_bytes": 304909837,
+      "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11714732658",
+      "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11714732658/zip",
+      "expired": false,
+      "digest": "sha256:acc241284db1de98f3d04eee9f320211d3411a5dba22c2b76c682621fdfbc5d2",
+      "created_at": "2026-10-11T20:44:00Z",
+      "updated_at": "2026-10-11T20:44:00Z",
+      "expires_at": "2026-10-14T20:43:51Z",
+      "workflow_run": {
+        "id": 38173172929,
+        "repository_id": 1414489281,
+        "head_repository_id": 1414489281,
+        "head_branch": "task/M0-repository-build-baseline-rework",
+        "head_sha": "8029ccdde09b205c9a477d5e6745716b9242cdfb"
+      }
+    },
+    {
+      "id": 11714458076,
+      "node_id": "MDg6QXJ0aWZhY3QxMTcxNDQ1ODA3Ng==",
+      "name": "m0_packages",
+      "size_in_bytes": 16214,
+      "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11714458076",
+      "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11714458076/zip",
+      "expired": false,
+      "digest": "sha256:daf98d6c105fb86865310af696107e9ecf45dc16c280e351157257b36a5232c8",
+      "created_at": "2026-10-11T20:40:53Z",
+      "updated_at": "2026-10-11T20:40:53Z",
+      "expires_at": "2026-10-18T20:40:53Z",
+      "workflow_run": {
+        "id": 38173172929,
+        "repository_id": 1414489281,
+        "head_repository_id": 1414489281,
+        "head_branch": "task/M0-repository-build-baseline-rework",
+        "head_sha": "8029ccdde09b205c9a477d5e6745716b9242cdfb"
+      }
+    }
+  ],
+  "commands": [
+    "gh run view 38173172929 --json headSha,status,conclusion,url,jobs",
+    "gh api repos/Kayyo321/cham3/actions/runs/38173172929/artifacts",
+    "gh api repos/Kayyo321/cham3/actions/jobs/114569902223/logs",
+    "gh api repos/Kayyo321/cham3/actions/jobs/114569902158/logs",
+    "gh api repos/Kayyo321/cham3/actions/jobs/114569902028/logs"
+  ],
+  "log_summaries": {
+    "static": [
+      "2026-10-11T20:40:52.8947364Z static checks: PASS",
+      "2026-10-11T20:41:01.3248098Z Ran 82 tests in 8.328s"
+    ],
+    "packages": [
+      "2026-10-11T20:40:52.8434219Z # lintian exit status: 0",
+      "2026-10-11T20:40:52.8435079Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+      "2026-10-11T20:40:53.0495523Z Ran 8 tests in 0.089s"
+    ],
+    "image": [
+      "2026-10-11T20:40:51.6302333Z # lintian exit status: 0",
+      "2026-10-11T20:40:51.6302867Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+      "2026-10-11T20:43:20.7109407Z build_image: PASS (artifacts in /__w/cham3/cham3/out/image)",
+      "2026-10-11T20:43:21.3241483Z Ran 17 tests in 0.546s",
+      "2026-10-11T20:43:51.6966312Z Ran 18 tests in 0.200s"
+    ]
+  }
+}

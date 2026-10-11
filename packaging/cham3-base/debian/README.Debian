@@ -1,0 +1,14 @@
+cham3-base for Debian
+---------------------
+
+This is the M0 development skeleton of the cham3-base package. Its only
+purpose is to validate Debian packaging and live image integration for the
+M0 (repository and build baseline) milestone.
+
+It installs no services, no security policy, no enforcement components and no
+system configuration. It does not provide application isolation, permission
+contracts or network controls. A system with this package installed is not a
+cham3 system.
+
+The package metadata (maintainer address, license selection) contains
+placeholders that require owner decisions before any public release.

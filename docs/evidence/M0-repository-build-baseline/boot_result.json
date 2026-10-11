@@ -1,0 +1,23 @@
+{
+  "accel": "tcg",
+  "cpus": 2,
+  "elapsed_seconds": 57.6,
+  "firmware": "seabios (QEMU default BIOS)",
+  "host_platform": "macOS-26.3.1-arm64-arm-64bit-Mach-O arm64",
+  "iso_path": "/private/tmp/claude-501/-Users-jessicabruce-cham3/76347571-e201-4fdb-b0b4-aeedc4edb397/scratchpad/vm/evidence_final_5ae0dc5/out/image/cham3-m0-dev-amd64.iso",
+  "iso_sha256": "060382a0daba662d6f2354ce9abcbdde77c9337743f699ffeef2dea0e0bf1478",
+  "machine": "pc",
+  "matched_markers": [
+    "login_prompt",
+    "sendkey_ret_x1"
+  ],
+  "memory_mib": 1024,
+  "qemu_binary": "/opt/homebrew/bin/qemu-system-x86_64",
+  "qemu_version": "QEMU emulator version 10.2.1",
+  "reason": "login prompt reached on serial console",
+  "result": "PASS",
+  "runtime_checks": {
+    "performed": false,
+    "reason": "login prompt requires credentials; none are typed by this script"
+  }
+}

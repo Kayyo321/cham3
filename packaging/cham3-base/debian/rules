@@ -1,0 +1,4 @@
+#!/usr/bin/make -f
+# M0 skeleton: debhelper defaults only. Installs documentation, nothing else.
+%:
+	dh $@

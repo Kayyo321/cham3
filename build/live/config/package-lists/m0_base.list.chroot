@@ -1,0 +1,4 @@
+# M0 package list: only the local cham3-base skeleton package, supplied from
+# config/packages.chroot at build time. No desktop, network, security or sandbox
+# packages belong here in M0.
+cham3-base
