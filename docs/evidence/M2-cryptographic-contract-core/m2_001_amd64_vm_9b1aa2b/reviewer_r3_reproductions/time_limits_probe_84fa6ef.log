@@ -1,0 +1,3 @@
+FAIL stated latest-floor bound: floor age 5 s, remaining authorization 1735 s
+FAIL stated commit-time bound: an already-admitted future start can advance arbitrarily
+exit 0

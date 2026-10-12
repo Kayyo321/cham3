@@ -121,3 +121,14 @@ Do not update this status based on plans, generated code claims, or chat summari
 - M2-002: G1–G6 are PROPOSED as ADRs 0003–0008 with specifications and independent-oracle vectors. **No gate is approved**; M2-003..M2-008 remain DRAFT. No contract, vault, policy or ECR domain logic exists yet, and nothing here is evidence of M2 security behavior.
 - Independent review (published on `main` at 9cf882503848f8c6cc4938a588cc9fc062a9392d): **CHANGES_REQUESTED** for M2-001 and G1–G6. Revision 2 addresses R01–R11 and I01–I03, commits the reviewed amd64 locks and repeats affected checks; see the [finding resolutions](reviews/M2-001-002-finding-resolutions.md) and [re-review handoff](handoffs/M2-001-002-rereview.md). Still no approved gate and no M2 domain logic.
 - Independent re-review of revision 2 (`review/m2-001-002-r2-security` at 336f13be6a19bb871ea956d64f9cacb0936fe028, not merged): **CHANGES_REQUESTED** for M2-001 and G1–G6 (R01-r2, R07-r2, R09-r2, R12, R13; R02–R06, R08, R10, R11 and I01–I03 passed within their stated scope). **Revision 3** candidate 84fa6ef172b3fad21bb079549776252bb65624d6 addresses all five; native amd64 qualification PASS (author VM, UID 1000, clean clone) and GitHub Actions `m2_checks`/`m0_checks`/`m1_checks` PASS on that commit. See the [revision-3 finding resolutions](reviews/M2-001-002-finding-resolutions-r2.md) and [revision-3 handoff](handoffs/M2-001-002-rereview-r3.md). ADRs 0003–0008 are PROPOSED (revision 3); **no gate is approved**; M2-003..M2-008 remain DRAFT; no M2 domain logic exists and design mechanisms remain NOT_RUN.
+- Independent re-review of revision 3 (`review/m2-001-002-r3-security` at f451f2e346e6981b24802a7e9070ba09303c40d3, not merged):
+  - **CHANGES_REQUESTED** for M2-001, G1, G3, G4, G5 and G6. The open items are R14 (no authenticated IPC route for the recovery key-naming record), R15 (two stated trusted-time limits were false) and G1's independent Debian advisory check, BLOCKED again in the reviewer's environment.
+  - **G2: APPROVE for owner consideration.** This is a reviewer recommendation, not owner approval.
+  - R01-r2, R07-r2, R09-r2 and R12 PASS. The remaining earlier items are intact.
+- **Revision 4** candidate 9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a:
+  - Adds the vaultd-only registryd operation `name_recovery_keys` (R14).
+  - Replaces the two disproved time bounds with stated limits and adds owner choice ADR 0007 §8 (R15).
+  - Leaves G2's normative text unchanged.
+  - Native amd64 qualification PASS (author VM, UID 1000, clean clone). GitHub Actions `m2_checks`, `m1_checks` and `m0_checks` PASS on that commit.
+  - See the [revision-4 finding resolutions](reviews/M2-001-002-finding-resolutions-r3.md) and the [revision-4 handoff](handoffs/M2-001-002-rereview-r4.md).
+- **Still no gate is approved**: M2-003..M2-008 remain DRAFT, no M2 domain logic exists, and design mechanisms remain NOT_RUN.

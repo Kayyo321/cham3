@@ -1,0 +1,129 @@
+$ git diff --exit-code --stat 84fa6ef172b3fad21bb079549776252bb65624d6 9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a -- core Cargo.toml Cargo.lock build .github PROJECT.md docs/decisions/0001_eternal_contract_repository.md tests/m2/run_m2_tests.sh tests/m2/lib
+exit 0
+
+$ git diff --stat 84fa6ef 9b1aa2b
+ docs/STATUS.md                                     |    1 +
+ .../0003_m2_rust_toolchain_dependencies.md         |    4 +-
+ docs/decisions/0004_m2_wire_schema_hash.md         |    6 +-
+ docs/decisions/0005_m2_identity_vault_ipc.md       |   12 +-
+ docs/decisions/0006_m2_storage_anchor_recovery.md  |   20 +-
+ .../0007_m2_lifecycle_time_consumption.md          |   36 +-
+ .../0008_m2_retention_privacy_update_identity.md   |   10 +-
+ docs/decisions/README.md                           |   12 +-
+ .../advisory_review_r3/advisory_readme.md          |   23 +
+ .../advisory_review_r3/debian_behind.tsv           |    1 +
+ .../advisory_review_r3/debian_open.tsv             |  109 ++
+ .../dependency_inventory_amd64.json                | 1086 +++++++++++++++++++
+ .../advisory_review_r3/rustsec.tsv                 |    7 +
+ .../advisory_review_r3/summary.txt                 |    5 +
+ .../advisory_review_r3/triage.tsv                  |   24 +
+ .../m2_001_amd64_ci_84fa6ef/README.md              |   13 +
+ .../m2_001_amd64_ci_84fa6ef/ci_runs.json           |   11 +
+ .../qualify_amd64_log_excerpt.txt                  |   48 +
+ .../m2_001_amd64_vm_84fa6ef/README.md              |   34 +
+ .../baseline_6b4ef9d/failed_hash.log               |    2 +
+ .../baseline_6b4ef9d/failed_hash_identity.txt      |    9 +
+ .../baseline_6b4ef9d/r2_probes.log                 |   10 +
+ .../baseline_6b4ef9d/schema_holes.log              |   11 +
+ .../m2_001_amd64_vm_84fa6ef/crate_sources.log      |    1 +
+ .../dependency_inventory.md                        |   35 +
+ .../docker_build_candidate.txt                     |   11 +
+ .../downloaded_debs_diff.log                       |    0
+ .../harness/environment.json                       |   40 +
+ .../m2_001_amd64_vm_84fa6ef/harness/identity.txt   |    9 +
+ .../harness/python_harness.json                    |  122 +++
+ .../m2_001_amd64_vm_84fa6ef/harness/summary.txt    |    5 +
+ .../m2_001_amd64_vm_84fa6ef/identity.txt           |    9 +
+ .../installed_packages_diff.log                    |    0
+ .../m2_001_amd64_vm_84fa6ef/profile_settings.log   |    2 +
+ .../qualification_console.txt                      |   62 ++
+ .../r01_r2/canaries_against_revision2_scripts.log  |    8 +
+ .../r01_r2/failed_hash_identity_84fa6ef.log        |   11 +
+ .../review_tools/ecr_oracle_check.log              |    2 +
+ .../review_tools/independent_vectors.log           |   21 +
+ .../review_tools/r2_probes.log                     |   19 +
+ .../review_tools/schema_holes.log                  |   17 +
+ .../m2_001_amd64_vm_84fa6ef/rust_naming.log        |    1 +
+ .../m2_001_amd64_vm_84fa6ef/static_checks.log      |   13 +
+ .../m2_001_amd64_vm_84fa6ef/static_tests.log       |   89 ++
+ .../m2_001_amd64_vm_84fa6ef/suite_harness.log      |   81 ++
+ .../m2_001_amd64_vm_84fa6ef/suite_unit.log         |   15 +
+ .../m2_001_amd64_vm_84fa6ef/summary.txt            |   25 +
+ .../m2_001_amd64_vm_84fa6ef/toolchain.txt          |   11 +
+ .../unit/cargo_test_debug.json                     |   80 ++
+ .../unit/cargo_test_release.json                   |   81 ++
+ .../unit/ecr_vector_oracle.log                     |    1 +
+ .../m2_001_amd64_vm_84fa6ef/unit/environment.json  |   40 +
+ .../m2_001_amd64_vm_84fa6ef/unit/identity.txt      |    9 +
+ .../unit/provider_oracle.json                      |   27 +
+ .../m2_001_amd64_vm_84fa6ef/unit/summary.txt       |    7 +
+ .../valgrind_memcheck_probe_summary.txt            |    2 +
+ .../valgrind_memcheck_secure_memory_summary.txt    |    3 +
+ docs/handoffs/M2-001-002-rereview-r3.md            |  116 ++
+ docs/reviews/M2-001-002-finding-resolutions-r3.md  |   65 ++
+ docs/specs/m2_service_ipc_v1.md                    |   11 +-
+ docs/specs/m2_wire_format_v1.md                    |    2 +-
+ docs/tasks/M2-cryptographic-contract-core.md       |    5 +
+ tests/m2/harness/test_m2_ecr_oracle.py             |    4 +-
+ tests/m2/harness/test_m2_review_regressions.py     |  159 ++-
+ tests/m2/harness/test_m2_trusted_time.py           |  140 ++-
+ tests/m2/oracle/ecr_oracle.py                      |  336 +++++-
+ tests/m2/oracle/trusted_time_model.py              |   33 +
+ tests/m2/test_inventory.txt                        |   17 +
+ tests/m2/vectors/ecr_v1/vectors.json               | 1107 +++++++++++++++++++-
+ tests/m2/vectors/ecr_v1/vectors_readme.md          |    6 +-
+ 70 files changed, 4213 insertions(+), 141 deletions(-)
+
+$ vectors.json section comparison 84fa6ef -> 9b1aa2b
+admission_invalid identical
+constants identical
+format identical
+invalid identical
+journal_scenarios changed
+keys identical
+limits identical
+lineage identical
+specification identical
+status identical
+valid identical
+scenario identical: network_sibling_branches_conflict
+scenario identical: network_simultaneous_proposals_first_admitted_wins
+scenario identical: network_sibling_non_overlapping_lifetimes_conflict
+scenario identical: network_sibling_after_durable_expiry
+scenario identical: network_sibling_after_session_end
+scenario identical: network_sibling_after_restriction
+scenario identical: network_branch_revocation_frees_slot
+scenario identical: network_branch_extension_and_non_network_sibling
+scenario identical: network_trunk_commit_ends_branches
+scenario identical: restore_matches_only_persistent_history
+scenario changed: recovery_c1_complete differing step indices [21] steps 30 30
+scenario changed: recovery_rejects_stale_key differing step indices [17] steps 19 19
+scenario changed: recovery_rejects_compromised_key differing step indices [17] steps 20 20
+scenario changed: recovery_rejects_abandoned_key differing step indices [18] steps 20 20
+scenario changed: recovery_rejects_deleted_user differing step indices [17] steps 21 21
+scenario changed: recovery_rejects_bypass differing step indices [17] steps 27 27
+scenario changed: recovery_c2_requires_admin differing step indices [18] steps 20 20
+scenario changed: recovery_aborted_by_new_containment differing step indices [17] steps 23 23
+scenario changed: recovery_quarantine_requires_admin_first differing step indices [21] steps 23 23
+new scenarios: ['recovery_naming_interface', 'recovery_naming_anchor_failure_restart', 'recovery_naming_anchor_failure_retry']
+
+$ git diff --stat 42397304663bff6057e26118014c18e7b90a2040 9b1aa2b   # the revision-4 candidate commit alone
+ .../0003_m2_rust_toolchain_dependencies.md         |    4 +-
+ docs/decisions/0004_m2_wire_schema_hash.md         |    6 +-
+ docs/decisions/0005_m2_identity_vault_ipc.md       |   12 +-
+ docs/decisions/0006_m2_storage_anchor_recovery.md  |   20 +-
+ .../0007_m2_lifecycle_time_consumption.md          |   36 +-
+ .../0008_m2_retention_privacy_update_identity.md   |   10 +-
+ docs/decisions/README.md                           |   12 +-
+ docs/reviews/M2-001-002-finding-resolutions-r3.md  |   65 ++
+ docs/specs/m2_service_ipc_v1.md                    |   11 +-
+ docs/specs/m2_wire_format_v1.md                    |    2 +-
+ tests/m2/harness/test_m2_ecr_oracle.py             |    4 +-
+ tests/m2/harness/test_m2_review_regressions.py     |  159 ++-
+ tests/m2/harness/test_m2_trusted_time.py           |  140 ++-
+ tests/m2/oracle/ecr_oracle.py                      |  336 +++++-
+ tests/m2/oracle/trusted_time_model.py              |   33 +
+ tests/m2/test_inventory.txt                        |   17 +
+ tests/m2/vectors/ecr_v1/vectors.json               | 1107 +++++++++++++++++++-
+ tests/m2/vectors/ecr_v1/vectors_readme.md          |    6 +-
+ 18 files changed, 1839 insertions(+), 141 deletions(-)

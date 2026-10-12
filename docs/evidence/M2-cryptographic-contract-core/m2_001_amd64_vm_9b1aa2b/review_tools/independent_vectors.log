@@ -1,0 +1,21 @@
+PASS user_1001_identity_enrollment
+PASS user_1001_persistent_certificate
+PASS user_1001_temporary_certificate
+PASS user_1002_identity_enrollment
+PASS user_1002_persistent_certificate
+PASS user_1002_temporary_certificate
+PASS user_1001_retired_certificate
+PASS user_1001_retired_invalidation
+PASS commit_genesis
+PASS commit_revision
+PASS commit_temporary_session
+PASS commit_temporary_one_shot
+PASS commit_merge
+PASS commit_revocation
+PASS commit_restore
+PASS commit_identity_transition
+PASS commit_user_1002_genesis
+PASS commit_boundary_max_size
+PASS 17 canonical envelopes, signatures, hashes; 17 changed-preimage rejections
+ENV cryptography/OpenSSL OpenSSL 3.5.7 9 Jun 2026
+exit 0

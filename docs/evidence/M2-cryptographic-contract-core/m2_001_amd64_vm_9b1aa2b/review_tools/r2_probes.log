@@ -1,0 +1,19 @@
+PASS rejection R06 admission subject_binding_mismatch
+PASS rejection R07 legacy unbounded network schema unknown_field
+PASS rejection R07 restore network admission restore_rule
+PASS rejection R08 size envelope_decode input_too_large
+PASS maximum envelope 61440 IPC 61533
+Traceback (most recent call last):
+  File "/review/r2/r2_probes.py", line 46, in <module>
+    o.admit_chain([valid['commit_genesis']] + sibling_envelopes, resolver)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/tests/m2/oracle/ecr_oracle.py", line 1345, in admit_chain
+    journal.admit_commit(data)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/work/tests/m2/oracle/ecr_oracle.py", line 1009, in admit_commit
+    admission_error("network_grant_conflict", "a second network grant would be live in this lineage")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/tests/m2/oracle/ecr_oracle.py", line 749, in admission_error
+    raise oracle_error_t("admission", code, detail)
+oracle.oracle_error_t: admission/network_grant_conflict a second network grant would be live in this lineage
+exit 1

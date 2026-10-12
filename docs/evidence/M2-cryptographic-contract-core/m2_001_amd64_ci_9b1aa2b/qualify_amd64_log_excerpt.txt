@@ -1,0 +1,38 @@
+# Decoded job log excerpt, m2_checks run 38299143273, job 114977492780 (qualify_amd64), via GitHub MCP get_job_logs.
+# Timestamps removed. Container command: bash build/scripts/qualify_m2_rust.sh --record (workflow as committed).
+commit 9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a
+tree cb9f15101455f6c670a5f901f1e829544d45ef7d
+dirty_tracked 0
+architecture amd64
+debian_version 13.7
+uname Linux 6.17.0-1022-azure x86_64 GNU/Linux
+euid 1001
+cargo_lock_sha256 fc87901c5e58acdba21a33fe516871e45a81072585bfa2ae82aa8e60c40310f6
+identity PASS
+== qualification summary (/work/out/m2/qualification/amd64_20261012T194057Z_1)
+PASS source_identity (commit 9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a)
+PASS platform_debian_13
+INFO target_architecture (amd64: M2 qualification target)
+PASS toolchain_identity (rustc/cargo 1.85.1)
+PASS package_pins
+PASS installed_packages_lock (build/m2/debian_lock_amd64.txt)
+PASS downloaded_debs_lock (build/m2/debian_debs_amd64.sha256)
+PASS cargo_metadata_locked_offline
+PASS crate_sources
+PASS dependency_inventory
+PASS rustfmt
+PASS clippy
+PASS rust_naming
+PASS profile_settings
+PASS build_debug
+PASS build_release
+PASS soft_backends (chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat)
+PASS curve25519_fiat_backend (2 build-script outputs)
+PASS valgrind_memcheck_probe
+PASS valgrind_memcheck_secure_memory (10 tests, 0 errors; child fault processes not instrumented)
+NOT_AVAILABLE miri (requires a nightly toolchain; not provided by Debian 13)
+NOT_AVAILABLE sanitizers (-Zsanitizer requires nightly; valgrind memcheck used instead)
+NOT_AVAILABLE coverage_guided_fuzzing (cargo-fuzz/libfuzzer-sys not packaged in Debian 13 and require nightly; bounded property/mutation tests are used instead)
+PASS suite_unit
+PASS suite_harness
+m2 qualification: PASS

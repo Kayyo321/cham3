@@ -1,0 +1,2 @@
+profiles: {'bench': {'overflow-checks': True}, 'dev': {'overflow-checks': True, 'panic': 'unwind', 'debug-assertions': True, 'incremental': False}, 'release': {'overflow-checks': True, 'panic': 'abort', 'debug-assertions': False, 'codegen-units': 1, 'incremental': False, 'lto': False, 'strip': 'none'}, 'test': {'overflow-checks': True}}
+profile settings OK

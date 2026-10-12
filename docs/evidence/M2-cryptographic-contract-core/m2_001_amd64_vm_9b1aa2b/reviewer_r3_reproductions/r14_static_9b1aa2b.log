@@ -1,0 +1,21 @@
+('Operation', 'Allowed roles')
+('`lineage_head`', '`service:contractd`, `service:policyd`')
+('`append_identity` / `identity_state`', '`service:identityd`')
+('`admit`', '`service:contractd`')
+('`restrict`', '`service:contractd`, `service:policyd`, `service:identityd`, `admin`')
+('`time_sample`', '`service:policyd`')
+('`reserve_use` / `complete_use`', '`fixture_consumer` (M2), later brokers')
+('`confirm_enforcement`', '`fixture_consumer` (M2), later launcherd/netd/brokers')
+('`session_event`', '`fixture_consumer` (M2), later sessiond')
+('`history`', '`trusted_client` (own UID only), `admin`')
+('`recover_user`', '`admin`')
+('`begin_recovery`', '`trusted_client` (owner) under option C1; `admin` under C2 and after `recover_user` when the owner chooses C2')
+('`name_recovery_keys`', '`service:vaultd`')
+('`recovery_status`', '`trusted_client` (own UID), `admin`, `service:vaultd`')
+('`close_recovery`', '`trusted_client` (owner), `admin`')
+('`delete_user`', '`admin`')
+('`rollback_status`', '`service:*`, `trusted_client`')
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+AssertionError
+exit 1

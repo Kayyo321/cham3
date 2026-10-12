@@ -222,3 +222,21 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 
 - Independent re-review of a2bbb370c867da57fdc72274fb17ca19a23426e4 / 6b4ef9d87d69185ff7205b51fa417df1fed5c6f6 on `review/m2-001-002-r2-security` at 336f13be6a19bb871ea956d64f9cacb0936fe028: **CHANGES_REQUESTED** for M2-001 and G1–G6 (R01-r2 failed lock hashing still reported identity PASS; R07-r2 network uniqueness per state only; R09-r2 trusted time not rebased/persisted; R12 restore of ancestral session scope as persistent; R13 containment blocked recovery signing). Items R02–R06, R08, R10, R11 and I01–I03 passed within their stated scope and are unchanged.
 - Revision 3 (base 6b4ef9d, candidate **84fa6ef172b3fad21bb079549776252bb65624d6**) answers all five ([author response](../reviews/M2-001-002-finding-resolutions-r2.md); [handoff](../handoffs/M2-001-002-rereview-r3.md)). Native amd64 qualification in the author's disposable VM container and GitHub Actions m2/m0/m1 checks PASS at the candidate. M2-001 and M2-002 return to **IN_REVIEW**; every proposal is PROPOSED (revision 3); no gate is approved; M2-003..M2-008 remain DRAFT. ADR 0006 §9.2 is rewritten to refer to the complete recovery ceremony (§10); owner decisions G1–G6, §9.1, §9.2, ADR 0007 §4 and ADR 0008 §3 remain open.
+
+### Re-review and revision 4 (2026-10-12)
+
+- Independent re-review of 84fa6ef172b3fad21bb079549776252bb65624d6 / 42397304663bff6057e26118014c18e7b90a2040 on `review/m2-001-002-r3-security` at f451f2e346e6981b24802a7e9070ba09303c40d3:
+  - **CHANGES_REQUESTED** for M2-001, G1, G3, G4, G5 and G6; **APPROVE for owner consideration** for G2.
+  - New findings:
+    - R14: recovery key naming had no authenticated registry IPC route; R13 was FAIL only through it.
+    - R15: the cross-boot and future-start time limits were overstated.
+  - G1 additionally needs the reviewer's own Debian tracker check, which was BLOCKED by the reviewer's network (HTTP 403).
+- Revision 4 (base 4239730, candidate **9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a**) answers R14 and R15 ([author response](../reviews/M2-001-002-finding-resolutions-r3.md); [handoff](../handoffs/M2-001-002-rereview-r4.md)).
+- Native amd64 qualification in the author's disposable VM container PASS at the candidate; GitHub Actions m2/m0/m1 checks PASS at the candidate.
+- M2-001 and M2-002 return to **IN_REVIEW**. Every proposal is PROPOSED; no gate is approved; M2-003..M2-008 remain DRAFT.
+- Owner decisions, all open:
+  - G1–G6;
+  - ADR 0006 §9.1 and §9.2;
+  - ADR 0007 §4 and the new **§8** (time-bound strength);
+  - ADR 0008 §3;
+  - how G1's independent Debian check is to be obtained.

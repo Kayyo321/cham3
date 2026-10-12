@@ -1,0 +1,21 @@
+{
+ "source": "GitHub MCP connector: actions_get get_workflow_run, actions_list list_workflow_jobs, actions_list list_workflow_run_artifacts (retrieved 2026-10-12)",
+ "head_sha": "9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a",
+ "runs": [
+  {"id": 38299143273, "name": "m2_checks", "event": "push", "status": "completed", "conclusion": "success",
+   "jobs": [{"id": 114977492780, "name": "qualify_amd64", "conclusion": "success",
+             "steps": {"Set up job": "success", "Check out repository": "success", "Build pinned Debian 13 qualification container": "success",
+                       "Qualify M2 Rust toolchain and run M2 suites (unprivileged)": "success", "Upload qualification evidence": "success",
+                       "Post Check out repository": "success", "Complete job": "success"}}],
+   "artifacts": [{"id": 11770401811, "name": "m2_qualification_amd64", "size_in_bytes": 86294,
+                  "digest": "sha256:b2b3501d65e8c9a004419dbfaaecdd91a85c6f1cac2265b3a689bcf61783977f", "head_sha": "9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a"}]},
+  {"id": 38299143245, "name": "m1_checks", "event": "push", "status": "completed", "conclusion": "success",
+   "jobs": [{"id": 114977492842, "name": "static_and_desktop", "conclusion": "success", "steps_all_success": true, "step_count": 15},
+            {"id": 114977493295, "name": "privileged_capture", "conclusion": "success", "steps_all_success": true, "step_count": 12},
+            {"id": 114977493453, "name": "package_build", "conclusion": "success", "steps_all_success": true, "step_count": 12}]},
+  {"id": 38299143276, "name": "m0_checks", "event": "push", "status": "completed", "conclusion": "success",
+   "jobs": [{"id": 114977492654, "name": "image_build", "conclusion": "success", "steps_all_success": true, "step_count": 15},
+            {"id": 114977493305, "name": "package_build", "conclusion": "success", "steps_all_success": true, "step_count": 12},
+            {"id": 114977493327, "name": "static_checks", "conclusion": "success", "steps_all_success": true, "step_count": 12}]}
+ ]
+}
