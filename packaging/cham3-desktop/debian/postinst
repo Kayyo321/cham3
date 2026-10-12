@@ -142,8 +142,12 @@ enforce_dumpcap_policy() {
         report "Packet capture by non-root users is unavailable (fail closed); the set-user-id fallback is not used."
         report "Fix the cause (capability support on the file system) and run: dpkg-reconfigure cham3-desktop"
         if has_file_capabilities "${program}"; then
-            report "ERROR: ${program} still has file capabilities but is not group-restricted; refusing to continue."
-            return 1
+            if is_group_restricted "${program}"; then
+                report "file capabilities that were already on the group-restricted ${program} could not be removed and are left as they are"
+            else
+                report "ERROR: ${program} has file capabilities that could not be removed and is not group-restricted; refusing to continue."
+                return 1
+            fi
         fi
     fi
 
