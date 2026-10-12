@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/review/archive/cham3_m2_review_evidence/schema_holes.py", line 10, in <module>
+    o.admit_chain([bytes.fromhex(vs['commit_genesis']['envelope']),b],resolver)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/tests/m2/oracle/ecr_oracle.py", line 812, in admit_chain
+    admission_error("subject_binding_mismatch", "subject differs from the lineage's authoritative subject")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/tests/m2/oracle/ecr_oracle.py", line 741, in admission_error
+    raise oracle_error_t("admission", code, detail)
+oracle.oracle_error_t: admission/subject_binding_mismatch subject differs from the lineage's authoritative subject
+schema_holes exit 1

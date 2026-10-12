@@ -1,0 +1,24 @@
+source	issue	component reached	applicability to current M2 binaries and tests	disposition
+cbor2	CVE-2026-26209	test oracle only (python3-cbor2 decoding of cham3's own vectors)	not in any M2 binary; inputs are repository-generated vectors	accept for test use; re-check if the oracle ever parses untrusted input
+gcc-14	CVE-2026-102010	libstdc++ priority_queue erase_if	M2 binaries are Rust and link no C++ code	not applicable
+gcc-14	CVE-2026-95619	libstdc++ aligned operator new	M2 binaries are Rust and link no C++ code	not applicable
+glibc	CVE-2026-18374	fopen ",ccs=" mode extension	not called by the Rust standard library or cham3 code	not applicable
+glibc	CVE-2026-19499	strfmon/strfmon_l	not called	not applicable
+glibc	CVE-2026-19542	tdelete	not called	not applicable
+glibc	CVE-2026-5435	ns_printrrf/ns_printrr/fp_nquery (deprecated resolver printing)	not called; M2 services perform no DNS	not applicable
+glibc	CVE-2026-6238	ns_printrrf/ns_printrr/fp_nquery	not called	not applicable
+glibc	CVE-2026-6368	wordexp WRDE_APPEND	not called	not applicable
+glibc	CVE-2026-6791	tilde expansion parse_tilde (glob/wordexp)	not called	not applicable
+glibc	CVE-2026-77117	iconv SHIFT_JISX0213	not called (Rust strings are UTF-8; no iconv)	not applicable
+glibc	CVE-2026-80489	iconv EUC_JISX0213	not called	not applicable
+glibc	CVE-2026-8674	DNS stub resolver initialization	no M2 code performs name resolution (planned vaultd unit: PrivateNetwork=yes, ADR 0005 §5)	not applicable today; re-check if any M2 service gains networking
+glibc	CVE-2026-86805	ld.so TOCTOU (local attacker)	dynamic loader of every binary; relevant to the setgid cham3-ctl planned for M2-007	precondition: re-check fix status before packaging the setgid client (M2-007)
+glibc	CVE-2026-89092	nscd	nscd is not installed or used	not applicable
+glibc	CVE-2026-95818	ld.so stack overflow (local attacker)	dynamic loader; relevant to the planned setgid client	precondition: re-check before M2-007 packaging
+glibc	CVE-2026-97399	strncasecmp Power8 variant	architecture-specific (ppc64le); M2 targets amd64 (arm64 development only)	not applicable
+python-cryptography	CVE-2026-34073	X.509 DNS name constraints	test oracle only (independent reviewer tooling); no X.509 in M2	not applicable
+python-cryptography	CVE-2026-69248	X.509 path building	test oracle only; no X.509 in M2	not applicable
+python-cryptography	CVE-2026-69249	X.509 resolution	test oracle only; no X.509 in M2	not applicable
+systemd	CVE-2026-15059	systemd-oomd IPC	host component; M2 ships no units yet	re-check with service packaging (M2-007)
+systemd	CVE-2026-16742	systemd-homed	host component; cham3 does not use homed	re-check with service packaging (M2-007)
+systemd	CVE-2026-40228	journald ForwardToWall escape sequences	host component	re-check with service packaging (M2-007)

@@ -1,0 +1,80 @@
+{
+  "cargo_target_dir": "/work/out/m2/runs/unit_20261012T184254Z_1599/target_debug",
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--frozen"
+  ],
+  "exit_status": 0,
+  "log": "/work/out/m2/runs/unit_20261012T184254Z_1599/cargo_test_debug.log",
+  "result": "PASS",
+  "suites": {
+    "cargo:cham3_contract_format": 1,
+    "cargo:cham3_contractd": 1,
+    "cargo:cham3_identityd": 1,
+    "cargo:cham3_os_adapter": 6,
+    "cargo:cham3_policyd": 1,
+    "cargo:cham3_provider_probe": 14,
+    "cargo:cham3_registryd": 1,
+    "cargo:cham3_secure_memory": 10,
+    "cargo:cham3_vaultd": 1
+  },
+  "tests": {
+    "cargo:cham3_contract_format": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_contractd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_identityd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_os_adapter": [
+      "tests::hardening_runs_in_child_process",
+      "tests::peer_credentials_fail_on_non_socket",
+      "tests::peer_credentials_report_this_process",
+      "tests::random_empty_buffer_is_ok",
+      "tests::random_fills_and_differs",
+      "tests::random_fills_large_buffer"
+    ],
+    "cargo:cham3_policyd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_provider_probe": [
+      "tests::argon2_library_leaves_caller_workspace_populated",
+      "tests::argon2_workspace_is_clear_after_hash_error",
+      "tests::argon2_workspace_is_clear_after_success",
+      "tests::argon2_workspace_rejects_wrong_size_and_clears",
+      "tests::argon2id_rfc9106_vector_passes",
+      "tests::constant_time_equality_passes",
+      "tests::corrupted_vector_is_detected",
+      "tests::hex_decoder_rejects_malformed_input",
+      "tests::rfc8032_vectors_pass",
+      "tests::run_all_reports_every_check",
+      "tests::sha256_vectors_pass",
+      "tests::strict_verification_rejects_noncanonical_s",
+      "tests::vectors_mirror_committed_vector_file",
+      "tests::xchacha_vector_passes"
+    ],
+    "cargo:cham3_registryd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_secure_memory": [
+      "tests::child_entry",
+      "tests::data_pages_are_locked_not_dumpable_and_wiped_on_fork",
+      "tests::drop_zeroizes_entire_data_capacity",
+      "tests::guard_pages_are_inaccessible",
+      "tests::invalid_lengths_are_rejected",
+      "tests::memlock_exhaustion_fails_closed",
+      "tests::overrun_hits_trailing_guard_page",
+      "tests::region_is_zero_filled_and_round_trips",
+      "tests::secret_region_has_no_debug_clone_or_display",
+      "tests::underrun_hits_leading_guard_page"
+    ],
+    "cargo:cham3_vaultd": [
+      "tests::crate_name_matches_package"
+    ]
+  },
+  "total_tests": 36
+}
