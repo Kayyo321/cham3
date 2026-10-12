@@ -1,0 +1,57 @@
+### mode=measure target=rizin extra_allow=librizin0 librizin-common
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=measure target=rizin. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: rizin
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: librizin0
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: librizin-common
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y rizin
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libc-bin libc-gconv-modules-extra libc6 libcapstone5 libmspack0t64
+  libpcre2-16-0 libpcre2-32-0 libpcre2-8-0 librizin-common librizin0 libzip5
+The following NEW packages will be installed:
+  libc-gconv-modules-extra libcapstone5 libmspack0t64 libpcre2-16-0
+  libpcre2-32-0 librizin-common librizin0 libzip5 rizin
+The following packages will be upgraded:
+  libc-bin libc6 libpcre2-8-0
+3 upgraded, 9 newly installed, 0 to remove and 114 not upgraded.
+Inst libc6 [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Conf libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-bin [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64])
+Conf libc6 (2.43-6 kali-rolling [amd64])
+Conf libc-bin (2.43-6 kali-rolling [amd64])
+Inst libpcre2-8-0 [10.46-1~deb13u3] (10.48-3 kali-rolling [amd64])
+Conf libpcre2-8-0 (10.48-3 kali-rolling [amd64])
+Inst libcapstone5 (5.0.9-1 kali-rolling [amd64])
+Inst libmspack0t64 (0.11-1.1+b2 kali-rolling [amd64])
+Inst libpcre2-16-0 (10.48-3 kali-rolling [amd64])
+Inst libpcre2-32-0 (10.48-3 kali-rolling [amd64])
+Inst librizin-common (0.9.1-0kali1 kali-rolling [all])
+Inst libzip5 (1.11.4-2+b1 kali-rolling [amd64])
+Inst librizin0 (0.9.1-0kali1 kali-rolling [amd64])
+Inst rizin (0.9.1-0kali1 kali-rolling [amd64])
+Conf libcapstone5 (5.0.9-1 kali-rolling [amd64])
+Conf libmspack0t64 (0.11-1.1+b2 kali-rolling [amd64])
+Conf libpcre2-16-0 (10.48-3 kali-rolling [amd64])
+Conf libpcre2-32-0 (10.48-3 kali-rolling [amd64])
+Conf librizin-common (0.9.1-0kali1 kali-rolling [all])
+Conf libzip5 (1.11.4-2+b1 kali-rolling [amd64])
+Conf librizin0 (0.9.1-0kali1 kali-rolling [amd64])
+Conf rizin (0.9.1-0kali1 kali-rolling [amd64])
+### exit=0

@@ -1,0 +1,54 @@
+### equivalent searches (names + short descriptions, trixie only)
+--- pattern: intercept
+interception-caps2esc - interception plugin for dual function Esc/Ctrl key at CapsLock
+libgeronimo-interceptor-3.0-spec-java - Geronimo API implementation of the Interceptor 3.0 spec
+golang-github-pion-interceptor-dev - Pluggable RTP/RTCP processors for building real time communication
+interception-tools - minimal composable infrastructure on top of libudev and libevdev
+interception-tools-compat - minimal composable infrastructure on top of libudev and libevdev
+libjakarta-interceptor-api-java - Jakarta Interceptors API
+libapache2-mod-intercept-form-submit - Apache module to intercept login form submission and run PAM authentication
+python3-wsgi-intercept - installs a WSGI application in place of a real URI for testing (python3)
+--- pattern: man-in-the-middle
+--- pattern: mitm
+r-cran-mitml - GNU R tools for multiple imputation in multilevel modeling
+--- pattern: proxy.*web|web.*proxy
+webext-foxyproxy - Advanced proxy management for Firefox
+golang-github-tmc-grpc-websocket-proxy-dev - proxy to upgrade grpc-gateway streaming endpoints to use websockets
+libproxy1-plugin-webkit - transitional package for libproxy Webkit plugin
+webext-proxy-switcher - Modify Proxy Settings for your Browser
+--- pattern: web.*scanner|scanner.*web
+--- pattern: wordpress
+kalkun-plugin-sms-to-wordpress - Kalkun SMS to WordPress plugin
+ruby-omniauth-wordpress - Wordpress strategy for OmniAuth
+wordpress - weblog manager
+wordpress-l10n - weblog manager - language files
+wordpress-theme-twentytwentyfive - weblog manager - twentytwentyfive theme files
+wordpress-theme-twentytwentyfour - weblog manager - twentytwentyfour theme files
+wordpress-theme-twentytwentythree - weblog manager - twentytwentythree theme files
+wordpress-shibboleth - Shibboleth plugin for WordPress
+--- pattern: joomla|cms.*scan
+cmsscanner - scan CMS hosted on a server
+--- pattern: subdomain|dns.*enum|recon
+dh-autoreconf - debhelper add-on to call autoreconf and clean up after the build
+dnsenum - tool to enumerate domain DNS information
+dnsrecon - Powerful DNS enumeration script
+libequinox-p2-reconciler-dropins-java - Equinox Provisioning Drop-in
+libmoosex-blessed-reconstruct-perl - Data::Visitor for creating Moose objects
+licenserecon - Reconcile licenses from debian/copyright against licensecheck
+node-backoff - Precondition checking utilities
+node-react-reconciler - Experimental package for creating custom React renderers
+recon-ng - Web Reconnaissance framework written in Python
+repeatmasker-recon - finds repeat families from biological sequences
+restorecond - SELinux core policy utilities (restorecond utilities)
+cl-dynamic-reconfigure - Robot OS dynamic-reconfigure library - LISP bindings
+libdynamic-reconfigure-config-init-mutex-dev - Robot OS dynamic-reconfigure library - development files
+libdynamic-reconfigure-config-init-mutex0d - Robot OS dynamic-reconfigure library
+python3-dynamic-reconfigure - Robot OS dynamic-reconfigure library - Python 3 bindings
+tophat-recondition - post-processor for TopHat unmapped reads
+--- pattern: exploit
+--- pattern: decompil|disassembl
+procyon-decompiler - Procyon Java Decompiler
+python3-ast-decompiler - Python module to decompile AST to Python code
+--- pattern: reverse engineer
+--- pattern: metasploit|penetration
+--- pattern: searchsploit|exploit-db|exploitdb

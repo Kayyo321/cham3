@@ -1,0 +1,19 @@
+### mode=strict allowlist=exploitdb (simulated installed 20250101-0kali1)
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Calculating upgrade...
+The following NEW packages will be installed:
+  libxml2 libxml2-utils
+The following packages will be upgraded:
+  exploitdb liblzma5
+2 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+Inst liblzma5 [5.8.1-1+deb13u1] (5.8.1-1+deb13u2 Debian-Security:13/stable-security [amd64])
+Conf liblzma5 (5.8.1-1+deb13u2 Debian-Security:13/stable-security [amd64])
+Inst libxml2 (2.12.7+dfsg+really2.9.14-2.1+deb13u3 Debian:13.7/stable [amd64])
+Inst libxml2-utils (2.12.7+dfsg+really2.9.14-2.1+deb13u3 Debian:13.7/stable [amd64])
+Inst exploitdb [20250101-0kali1] (20260904-0kali1 kali-rolling [all])
+Conf libxml2 (2.12.7+dfsg+really2.9.14-2.1+deb13u3 Debian:13.7/stable [amd64])
+Conf libxml2-utils (2.12.7+dfsg+really2.9.14-2.1+deb13u3 Debian:13.7/stable [amd64])
+Conf exploitdb (20260904-0kali1 kali-rolling [all])
+### exit=0

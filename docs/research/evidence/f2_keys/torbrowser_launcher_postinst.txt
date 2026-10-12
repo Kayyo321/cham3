@@ -1,0 +1,54 @@
+#!/bin/sh
+set -e
+# Automatically added by dh_apparmor/4.1.0~beta5-5
+if [ "$1" = "configure" ]; then
+    APP_PROFILE="/etc/apparmor.d/torbrowser.Tor.tor"
+    if [ -f "$APP_PROFILE" ]; then
+        # Add the local/ include
+        LOCAL_APP_PROFILE="/etc/apparmor.d/local/torbrowser.Tor.tor"
+
+        test -e "$LOCAL_APP_PROFILE" || {
+            mkdir -p `dirname "$LOCAL_APP_PROFILE"`
+            install --mode 644 /dev/null "$LOCAL_APP_PROFILE"
+        }
+
+        # Reload the profile, including any abstraction updates
+        if aa-enabled --quiet 2>/dev/null; then
+            apparmor_parser -r -T -W "$APP_PROFILE" || true
+        fi
+    fi
+fi
+# End automatically added section
+# Automatically added by dh_apparmor/4.1.0~beta5-5
+if [ "$1" = "configure" ]; then
+    APP_PROFILE="/etc/apparmor.d/torbrowser.Browser.firefox"
+    if [ -f "$APP_PROFILE" ]; then
+        # Add the local/ include
+        LOCAL_APP_PROFILE="/etc/apparmor.d/local/torbrowser.Browser.firefox"
+
+        test -e "$LOCAL_APP_PROFILE" || {
+            mkdir -p `dirname "$LOCAL_APP_PROFILE"`
+            install --mode 644 /dev/null "$LOCAL_APP_PROFILE"
+        }
+
+        # Reload the profile, including any abstraction updates
+        if aa-enabled --quiet 2>/dev/null; then
+            apparmor_parser -r -T -W "$APP_PROFILE" || true
+        fi
+    fi
+fi
+# End automatically added section
+
+# Automatically added by dh_python3
+if command -v py3compile >/dev/null 2>&1; then
+	py3compile -p torbrowser-launcher:amd64 
+fi
+if command -v pypy3compile >/dev/null 2>&1; then
+	pypy3compile -p torbrowser-launcher:amd64  || true
+fi
+
+# End automatically added section
+# Automatically added by dh_installdeb/13.24.1
+dpkg-maintscript-helper rm_conffile /etc/apparmor.d/local/torbrowser.Browser.plugin-container 0.2.9-5\~ torbrowser-launcher -- "$@"
+dpkg-maintscript-helper rm_conffile /etc/apparmor.d/torbrowser.Browser.plugin-container 0.3.2-1\~ torbrowser-launcher -- "$@"
+# End automatically added section

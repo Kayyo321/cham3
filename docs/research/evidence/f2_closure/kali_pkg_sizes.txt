@@ -1,0 +1,16 @@
+### policy checks
+ghidra-data:
+  Installed: (none)
+  Candidate: 10.5-0kali1
+  Version table:
+     10.5-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+libpostal-data installed-size(KiB)=20
+python3-mitmproxy-rs installed-size(KiB)=26308
+ghidra installed-size(KiB)=843563
+ghidra-data installed-size(KiB)=77670
+oracle-instantclient-basic installed-size(KiB)=210503
+zaproxy installed-size(KiB)=273308
+burpsuite installed-size(KiB)=352962
+radare2 installed-size(KiB)=3673
+amass installed-size(KiB)=51788

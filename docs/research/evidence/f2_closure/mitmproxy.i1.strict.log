@@ -1,0 +1,33 @@
+### mode=strict target=mitmproxy extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=strict target=mitmproxy. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: -1
+
+Package: mitmproxy
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y mitmproxy
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ mitmproxy : Depends: python3-mitmproxy-rs (>= 0.12.3) but it is not installable
+E: Unable to correct problems, you have held broken packages.
+E: The following information from --solver 3.0 may provide additional context:
+   Unable to satisfy dependencies. Reached two conflicting decisions:
+   1. python3-mitmproxy-rs:amd64=0.12.11-0kali1 is not selected for install
+   2. python3-mitmproxy-rs:amd64=0.12.11-0kali1 is selected for install because:
+      1. mitmproxy:amd64=12.2.3-0kali5 is selected for install
+      2. mitmproxy:amd64 Depends python3-mitmproxy-rs (>= 0.12.3)
+      3. python3-mitmproxy-rs:amd64 is available in version 0.12.11-0kali1
+### exit=100

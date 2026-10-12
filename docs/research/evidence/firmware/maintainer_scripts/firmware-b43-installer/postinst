@@ -1,0 +1,244 @@
+#!/bin/sh
+set -e
+
+#########################################################################
+
+make_download_vars()
+{
+if [ -n "$latest" ]; then
+	VERSION="6.30.163.46"
+	BROADCOM_WL="broadcom-wl-${VERSION}"
+	WL_APSTA="${BROADCOM_WL}.wl_apsta.o"
+	SHA512SUM="0144894fbbb5e8ebab6c423d9bd0f3249be94f2f468a50b8bf721a3b17f1f6e57467c79e87abc8d136bfc92e701ed046885fead892e9a73efa5217d710311ae9"
+else
+	VERSION="5.100.138"
+	BROADCOM_WL="broadcom-wl-${VERSION}"
+	WL_APSTA="${BROADCOM_WL}/linux/wl_apsta.o"
+	SHA512SUM="02487e76e3eca7fe97ce2ad7dc9c5d39fac82b8d5f7786cce047f9c85e2426f5b7ea085d84c7d4aae43e0fe348d603e3229211bab601726794ef633441d37a8b"
+fi
+
+DOWNLOAD="${BROADCOM_WL}.tar.bz2"
+
+URL="https://github.com/minios-linux/b43-firmware/releases/download/b43-firmware/${DOWNLOAD}"
+
+FIRMWARE_INSTALL_DIR="/usr/lib/firmware"
+
+B43="b43"
+}
+
+#########################################################################
+# stable sections below, not updated for firmware updates		#
+#########################################################################
+
+. /usr/share/debconf/confmodule
+
+install_firmware ()
+{
+tmp=$(mktemp -q -d)
+
+cd $tmp
+
+# use apt proxy
+APT_PROXIES=$(apt-config shell \
+http_proxy Acquire::http::Proxy \
+https_proxy Acquire::https::Proxy \
+ftp_proxy Acquire::ftp::Proxy \
+)
+
+if [ -n "$APT_PROXIES" ]; then
+	eval export $APT_PROXIES
+fi
+
+if ! wget --timeout=60 "${URL}"; then
+	echo "$0: Some problem occurred during the firmware download. Please check your internet connection." 1>&2
+	exit 1
+fi
+if ! sha512sum -c /dev/stdin << EOF; then
+${SHA512SUM}  ${DOWNLOAD}
+EOF
+	echo "$0: Downloaded firmware did not match known SHA512 checksum, aborting." 1>&2
+	exit 1
+fi
+if [ "${DOWNLOAD}" != "${WL_APSTA}" ]; then
+	if ! tar xvjf "${DOWNLOAD}" "${WL_APSTA}"; then
+		echo "$0: Unpacking firmware file failed, unable to continue (is /tmp full?)." 1>&2
+		exit 1
+	fi
+fi
+catalog="${FIRMWARE_INSTALL_DIR}/${B43}/firmware-${B43}-installer.catalog"
+if [ -f "${catalog}" ]; then
+	echo "$0: Deleting old extracted firmware..." 1>&2
+	LC_ALL=C xargs -r -0 -a "${catalog}" dpkg-query -S 2>&1 1>/dev/null | sed -es',[^/]\+,,' | xargs -r rm -f --
+	rm "${catalog}"
+fi
+mkdir -p "${FIRMWARE_INSTALL_DIR}/${B43}"
+retcode=0
+b43-fwcutter -w "${FIRMWARE_INSTALL_DIR}" "${WL_APSTA}" | while read line
+do	echo "${line}"
+	file="${line#Extracting }"
+	if [ "${file}" != "${line}" ]
+	then	if [ "${retcode}" -ne 0 ]
+		then	rm "${FIRMWARE_INSTALL_DIR}/${file}"
+
+		elif [ -z "${FIRMWARE_INSTALL_DIR}/${file}" ] || \
+		! printf %s/%s\\000 "${FIRMWARE_INSTALL_DIR}" "${file}" >> "${catalog}"
+		then	echo "$0: Failed during extraction of ${file} from ${WL_APSTA}" 1>&2
+			echo "$0: Warning, manual removal/cleaning of ${FIRMWARE_INSTALL_DIR}/${B43} may be needed!" 1>&2
+			rm "${FIRMWARE_INSTALL_DIR}/${file}"
+			retcode=1
+		fi
+	fi
+done
+
+rm -f "${DOWNLOAD}" "${WL_APSTA}"
+rm -rf "${BROADCOM_WL}"
+
+# otherwise can't delete things
+cd /
+
+rmdir $tmp || echo "$0: DEBUG: targeted cleaning failed" 1>&2
+
+rm -rf $tmp
+[ ${retcode} -eq 0 ] || exit ${retcode}
+}
+
+
+unconditional=
+legacy=
+classic=
+latest=
+nottested=
+unsupported=
+unknown=
+
+# check environment
+if [ "$(stat -c %d/%i /)" != "$(stat -Lc %d/%i /proc/1/root 2>/dev/null)" ]; then
+	echo "A chroot environment has been detected."
+	echo "Remember this firmware needs kernel >= 2.6.25."
+	unconditional=1
+else
+	echo "No chroot environment found. Starting normal installation"
+fi
+
+if [ -z "$unconditional" ]; then
+	# check kernel version
+	if dpkg --compare-versions 2.6.25 gt `uname -r | cut -d- -f1`; then
+		echo "Kernel too old. This firmware needs >= 2.6.25!."
+		echo "Aborting!"
+		exit 0
+	fi
+
+	# install firmware unconditional if the corresponding debconf value is true
+	# this is usefull for live-systems or similar systems that should work on
+	# changing hardware
+	db_get b43-fwcutter/install-unconditional
+	if [ "$RET" = "true" ] ; then
+		unconditional=1
+	fi
+fi
+
+# check chip
+pci=`lspci -n -d 14e4: | grep -o "14e4:[1234567890abcdef]\+"` || true
+
+if [ -z "$pci" ]; then
+	echo "No known supported Broadcom 802.11 chips found."
+	if [ -z "$unconditional" ]; then
+		echo "Not installing firmware."
+		echo
+		echo "Aborting."
+	fi
+fi
+
+if [ -n "$pci" ] ; then
+	for device in $pci; do
+		device_id=${device#14e4:}
+		case $device_id in
+		4301 | 4325)
+			legacy=1
+		;;
+		4306)
+			chip=`lspci -n -d ${device}`
+			if [ "${chip}" != "${chip%${device} (rev 03)}" ] ; then
+				classic=1
+			else
+				legacy=1
+			fi
+		;;
+		432[04])
+			chip=`lspci -n -d ${device}`
+			if [ "${chip}" != "${chip%${device} (rev 03)}" ] ; then
+				latest=1
+			else
+				legacy=1
+			fi
+		;;
+		4307 | 431[59] | 432[1289bc] | 4331 | 435[03789] | 43a[9a] | 4716 | a8d8 | a8db | 5354)
+			latest=1
+		;;
+		431[12])
+			classic=1
+		;;
+		4318)
+			chip=`lspci -n -d ${device}`
+			if [ "${chip}" != "${chip%${device} (rev 02)}" ] ; then
+				classic=1
+			else
+				latest=1
+			fi
+		;;
+		4322 | 4358 | 436[05] | 43a0 | 43b1 | 4727)
+			unsupported="$unsupported $device_id"
+		;;
+		4313)
+			# need to distinguish BCM4311 (untested) from BCM4313 (not supported)
+			nottested=1
+		;;
+		0576 | 432[ad] | 435[89a] | a8d6 | a99d)
+			nottested=1
+		;;
+		*)
+			unknown="$unknown $device_id"
+		;;
+		esac
+	done
+fi
+
+if [ -n "$latest$classic" ] ; then
+	echo "A card known to work was found."
+else
+	echo "No supported device found."
+	if [ -n "$unconditional" ]; then
+		# default latest firmware loaded
+		latest=1
+		echo "But firmware is installed unconditionally"
+	fi
+fi
+
+make_download_vars
+
+if [ -n "$unsupported" ]; then
+	echo -n "Unsupported device(s) found: PCI id "
+	for device_id in $unsupported; do echo -n " * 14e4:$device_id "; done
+	echo
+fi
+if [ -n "$unknown" ]; then
+	echo -n "Unknown device(s) found: PCI id "
+	for device_id in $unsupported; do echo -n " * 14e4:$device_id "; done
+	echo
+fi
+if [ -n "$legacy" ]; then
+	echo "An unsupported BCM4301, BCM4306 or BCM4306/2 device was found."
+	echo "Please install b43legacy firmware (firmware-b43legacy-installer package)."
+	echo
+fi
+if [ -n "$latest" ]; then
+	echo "Trying to install latest firmware $VERSION ."
+	install_firmware
+elif [ -n "$classic" ]; then
+	echo "Trying to install classic firmware $VERSION ."
+	install_firmware
+elif [ -n "$nottested" ]; then
+	echo "An untested card was found. Please install the driver manually."
+fi
+
+

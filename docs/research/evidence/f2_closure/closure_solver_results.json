@@ -1,0 +1,349 @@
+[
+  {
+    "target": "mitmproxy",
+    "class": "LEAKY_BASE_SKEW",
+    "allowlist": [
+      "mitmproxy",
+      "python3-mitmproxy-rs",
+      "python3-mitmproxy-linux",
+      "libpython3.14",
+      "libpython3.14-stdlib",
+      "libpython3.14-minimal"
+    ],
+    "kali_only_added": [
+      "python3-mitmproxy-rs",
+      "python3-mitmproxy-linux",
+      "libpython3.14",
+      "libpython3.14-stdlib",
+      "libpython3.14-minimal"
+    ],
+    "reason": "libpython3.14-stdlib needs libc6 (>= 2.42); trixie has 2.41-12+deb13u4; only a Kali version would satisfy it (base replacement)",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "mitmproxy"
+        ],
+        "log": "mitmproxy.i1.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 2,
+        "allowlist": [
+          "mitmproxy",
+          "python3-mitmproxy-rs"
+        ],
+        "log": "mitmproxy.i2.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 3,
+        "allowlist": [
+          "mitmproxy",
+          "python3-mitmproxy-rs",
+          "python3-mitmproxy-linux",
+          "libpython3.14"
+        ],
+        "log": "mitmproxy.i3.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 4,
+        "allowlist": [
+          "mitmproxy",
+          "python3-mitmproxy-rs",
+          "python3-mitmproxy-linux",
+          "libpython3.14",
+          "libpython3.14-stdlib"
+        ],
+        "log": "mitmproxy.i4.strict.log",
+        "exit_ok": false
+      }
+    ]
+  },
+  {
+    "target": "zaproxy",
+    "class": "CLEAN",
+    "allowlist": [
+      "zaproxy"
+    ],
+    "kali_only_added": [],
+    "kali_origin_packages_in_closure": [
+      "zaproxy"
+    ],
+    "reason": "",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "zaproxy"
+        ],
+        "log": "zaproxy.i1.strict.log",
+        "exit_ok": true
+      }
+    ]
+  },
+  {
+    "target": "burpsuite",
+    "class": "CLEAN",
+    "allowlist": [
+      "burpsuite"
+    ],
+    "kali_only_added": [],
+    "kali_origin_packages_in_closure": [
+      "burpsuite"
+    ],
+    "reason": "",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "burpsuite"
+        ],
+        "log": "burpsuite.i1.strict.log",
+        "exit_ok": true
+      }
+    ]
+  },
+  {
+    "target": "wpscan",
+    "class": "LEAKY_BASE_SKEW",
+    "allowlist": [
+      "wpscan",
+      "ruby-cms-scanner"
+    ],
+    "kali_only_added": [
+      "ruby-cms-scanner"
+    ],
+    "reason": "wpscan needs ruby-addressable (>= 2.9); trixie has 2.8.7-2; only a Kali version would satisfy it (base replacement)",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "wpscan"
+        ],
+        "log": "wpscan.i1.strict.log",
+        "exit_ok": false
+      }
+    ]
+  },
+  {
+    "target": "exploitdb",
+    "class": "CLEAN",
+    "allowlist": [
+      "exploitdb"
+    ],
+    "kali_only_added": [],
+    "kali_origin_packages_in_closure": [
+      "exploitdb"
+    ],
+    "reason": "",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "exploitdb"
+        ],
+        "log": "exploitdb.i1.strict.log",
+        "exit_ok": true
+      }
+    ]
+  },
+  {
+    "target": "amass",
+    "class": "CLEAN_WITH_KALI_ONLY_DEPS",
+    "allowlist": [
+      "amass",
+      "libpostal-data"
+    ],
+    "kali_only_added": [
+      "libpostal-data"
+    ],
+    "kali_origin_packages_in_closure": [
+      "amass",
+      "libpostal-data"
+    ],
+    "reason": "",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "amass"
+        ],
+        "log": "amass.i1.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 2,
+        "allowlist": [
+          "amass",
+          "libpostal-data"
+        ],
+        "log": "amass.i2.strict.log",
+        "exit_ok": true
+      }
+    ]
+  },
+  {
+    "target": "rizin",
+    "class": "LEAKY_BASE_SKEW",
+    "allowlist": [
+      "rizin",
+      "librizin0",
+      "librizin-common"
+    ],
+    "kali_only_added": [
+      "librizin0",
+      "librizin-common"
+    ],
+    "reason": "librizin0 needs libc6 (>= 2.42); trixie has 2.41-12+deb13u4; only a Kali version would satisfy it (base replacement)",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "rizin"
+        ],
+        "log": "rizin.i1.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 2,
+        "allowlist": [
+          "rizin",
+          "librizin0"
+        ],
+        "log": "rizin.i2.strict.log",
+        "exit_ok": false
+      }
+    ]
+  },
+  {
+    "target": "radare2",
+    "class": "CLEAN_WITH_KALI_ONLY_DEPS",
+    "allowlist": [
+      "radare2",
+      "libradare2-6.0.0t64",
+      "libradare2-common"
+    ],
+    "kali_only_added": [
+      "libradare2-6.0.0t64",
+      "libradare2-common"
+    ],
+    "kali_origin_packages_in_closure": [
+      "libradare2-6.0.0t64",
+      "libradare2-common",
+      "radare2"
+    ],
+    "reason": "",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "radare2"
+        ],
+        "log": "radare2.i1.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 2,
+        "allowlist": [
+          "radare2",
+          "libradare2-6.0.0t64"
+        ],
+        "log": "radare2.i2.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 3,
+        "allowlist": [
+          "radare2",
+          "libradare2-6.0.0t64",
+          "libradare2-common"
+        ],
+        "log": "radare2.i3.strict.log",
+        "exit_ok": true
+      }
+    ]
+  },
+  {
+    "target": "rizin-cutter",
+    "class": "LEAKY_BASE_SKEW",
+    "allowlist": [
+      "rizin-cutter",
+      "libcgraph8",
+      "libgvc7",
+      "libpyside6-py3-6.10",
+      "libpython3.14"
+    ],
+    "kali_only_added": [
+      "libcgraph8",
+      "libgvc7",
+      "libpyside6-py3-6.10",
+      "libpython3.14"
+    ],
+    "reason": "rizin-cutter needs libqt6core6t64 (>= 6.10.2); trixie has 6.8.2+dfsg-9+deb13u2; only a Kali version would satisfy it (base replacement)",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "rizin-cutter"
+        ],
+        "log": "rizin-cutter.i1.strict.log",
+        "exit_ok": false
+      }
+    ]
+  },
+  {
+    "target": "ghidra",
+    "class": "CLEAN",
+    "allowlist": [
+      "ghidra"
+    ],
+    "kali_only_added": [],
+    "kali_origin_packages_in_closure": [
+      "ghidra"
+    ],
+    "reason": "",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "ghidra"
+        ],
+        "log": "ghidra.i1.strict.log",
+        "exit_ok": true
+      }
+    ]
+  },
+  {
+    "target": "metasploit-framework",
+    "class": "LEAKY_BASE_SKEW",
+    "allowlist": [
+      "metasploit-framework",
+      "oracle-instantclient-basic"
+    ],
+    "kali_only_added": [
+      "oracle-instantclient-basic"
+    ],
+    "reason": "oracle-instantclient-basic needs libaio1t64 (>= 0.3.113-8+kali1); trixie has 0.3.113-8+b1; only a Kali version would satisfy it (base replacement)",
+    "history": [
+      {
+        "iteration": 1,
+        "allowlist": [
+          "metasploit-framework"
+        ],
+        "log": "metasploit-framework.i1.strict.log",
+        "exit_ok": false
+      },
+      {
+        "iteration": 2,
+        "allowlist": [
+          "metasploit-framework",
+          "oracle-instantclient-basic"
+        ],
+        "log": "metasploit-framework.i2.strict.log",
+        "exit_ok": false
+      }
+    ]
+  }
+]

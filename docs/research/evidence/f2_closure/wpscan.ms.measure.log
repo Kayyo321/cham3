@@ -1,0 +1,147 @@
+### mode=measure target=wpscan extra_allow=ruby-cms-scanner
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=measure target=wpscan. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: wpscan
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: ruby-cms-scanner
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y wpscan
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libgcrypt20 libgpg-error0 libproc2-1 libruby libruby3.3 libxml2-16
+  libxslt1.1 libyaml-0-2 procps publicsuffix racc rake ruby ruby-activesupport
+  ruby-addressable ruby-base64 ruby-cms-scanner ruby-concurrent
+  ruby-connection-pool ruby-csv ruby-did-you-mean ruby-ethon ruby-ferrum
+  ruby-ffi ruby-get-process-mem ruby-i18n ruby-mime-types ruby-mime-types-data
+  ruby-mini-portile2 ruby-minitest ruby-net-telnet ruby-nokogiri
+  ruby-opt-parse-validator ruby-pkg-config ruby-progressbar ruby-public-suffix
+  ruby-ruby2-keywords ruby-rubygems ruby-sys-proctable ruby-typhoeus
+  ruby-tzinfo ruby-webrick ruby-websocket-driver ruby-websocket-extensions
+  ruby-xmlrpc ruby-yajl ruby3.3 rubygems-integration
+Suggested packages:
+  ri ruby-dev ruby-test-unit bundler
+Recommended packages:
+  ruby-sdbm psmisc linux-sysctl-defaults zip fonts-lato libjs-jquery
+The following NEW packages will be installed:
+  libproc2-1 libruby libruby3.3 libxml2-16 libxslt1.1 libyaml-0-2 procps
+  publicsuffix racc rake ruby ruby-activesupport ruby-addressable ruby-base64
+  ruby-cms-scanner ruby-concurrent ruby-connection-pool ruby-csv
+  ruby-did-you-mean ruby-ethon ruby-ferrum ruby-ffi ruby-get-process-mem
+  ruby-i18n ruby-mime-types ruby-mime-types-data ruby-mini-portile2
+  ruby-minitest ruby-net-telnet ruby-nokogiri ruby-opt-parse-validator
+  ruby-pkg-config ruby-progressbar ruby-public-suffix ruby-ruby2-keywords
+  ruby-rubygems ruby-sys-proctable ruby-typhoeus ruby-tzinfo ruby-webrick
+  ruby-websocket-driver ruby-websocket-extensions ruby-xmlrpc ruby-yajl
+  ruby3.3 rubygems-integration wpscan
+The following packages will be upgraded:
+  libgcrypt20 libgpg-error0
+2 upgraded, 47 newly installed, 0 to remove and 115 not upgraded.
+Inst libproc2-1 (2:4.0.7-1 kali-rolling [amd64])
+Inst procps (2:4.0.7-1 kali-rolling [amd64])
+Inst libgpg-error0 [1.51-4] (1.61-5 kali-rolling [amd64])
+Inst libgcrypt20 [1.11.0-7+deb13u1] (1.12.2-1 kali-rolling [amd64])
+Inst rubygems-integration (1.20.1 kali-rolling [all])
+Inst ruby3.3 (3.3.8-2.2 kali-rolling [amd64]) []
+Inst ruby-rubygems (4.0.20-1 kali-rolling [all]) []
+Inst ruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64]) []
+Inst rake (13.4.2-1 kali-rolling [all]) []
+Inst ruby-csv (3.3.6-1 kali-rolling [all]) []
+Inst ruby-did-you-mean (2.0.0-1 kali-rolling [all]) []
+Inst ruby-net-telnet (0.2.0-1 Debian:13.7/stable, kali-rolling [all]) []
+Inst ruby-ruby2-keywords (0.0.5-1 Debian:13.7/stable, kali-rolling [all]) []
+Inst ruby-webrick (1.9.2-2 kali-rolling [all]) []
+Inst ruby-xmlrpc (0.3.3-2 Debian:13.7/stable, kali-rolling [all]) []
+Inst libyaml-0-2 (0.2.5-2+b1 kali-rolling [amd64]) []
+Inst libruby3.3 (3.3.8-2.2 kali-rolling [amd64]) []
+Inst libruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64])
+Inst libxml2-16 (2.15.4+dfsg-1 kali-rolling [amd64])
+Inst libxslt1.1 (1.1.45-0.1 kali-rolling [amd64])
+Inst publicsuffix (20260725.1419-1 kali-rolling [all])
+Inst racc (1.8.1-2 kali-rolling [all])
+Inst ruby-concurrent (1.3.8-1 kali-rolling [all])
+Inst ruby-i18n (1.15.2-1 kali-rolling [all])
+Inst ruby-tzinfo (2.0.6-2 kali-rolling [all])
+Inst ruby-connection-pool (3.0.2-2 kali-rolling [all])
+Inst ruby-minitest (6.0.6-2 kali-rolling [all])
+Inst ruby-base64 (0.3.0-1 kali-rolling [all])
+Inst ruby-activesupport (2:7.2.3.2+dfsg-3 kali-rolling [all])
+Inst ruby-public-suffix (7.0.5-1 kali-rolling [all])
+Inst ruby-addressable (2.9.0-1 kali-rolling [all])
+Inst ruby-ffi (1.17.4+dfsg-1 kali-rolling [amd64])
+Inst ruby-get-process-mem (1.0.0-1 kali-rolling [all])
+Inst ruby-pkg-config (1.6.5-1 kali-rolling [all])
+Inst ruby-mini-portile2 (2.8.9-2 kali-rolling [all])
+Inst ruby-nokogiri (1.19.4+dfsg-1 kali-rolling [amd64])
+Inst ruby-opt-parse-validator (1.10.1-0kali2 kali-rolling [all])
+Inst ruby-progressbar (1.13.0-2 kali-rolling [all])
+Inst ruby-mime-types-data (3.2026.0701-1 kali-rolling [all])
+Inst ruby-mime-types (3.7.0-1 kali-rolling [all])
+Inst ruby-ethon (0.18.0-2 kali-rolling [all])
+Inst ruby-typhoeus (1.6.0-1 kali-rolling [all])
+Inst ruby-yajl (1.4.3-2 kali-rolling [amd64])
+Inst ruby-cms-scanner (0.15.0-0kali4 kali-rolling [all])
+Inst ruby-websocket-extensions (0.1.5-2 Debian:13.7/stable, kali-rolling [all])
+Inst ruby-websocket-driver (0.8.2-1 kali-rolling [amd64])
+Inst ruby-ferrum (0.18.0-1 kali-rolling [all])
+Inst ruby-sys-proctable (1.3.0-1 Debian:13.7/stable, kali-rolling [all])
+Inst wpscan (4.1.0-0kali1 kali-rolling [all])
+Conf libproc2-1 (2:4.0.7-1 kali-rolling [amd64])
+Conf procps (2:4.0.7-1 kali-rolling [amd64])
+Conf libgpg-error0 (1.61-5 kali-rolling [amd64])
+Conf libgcrypt20 (1.12.2-1 kali-rolling [amd64])
+Conf rubygems-integration (1.20.1 kali-rolling [all])
+Conf ruby3.3 (3.3.8-2.2 kali-rolling [amd64])
+Conf ruby-rubygems (4.0.20-1 kali-rolling [all])
+Conf ruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64])
+Conf rake (13.4.2-1 kali-rolling [all])
+Conf ruby-csv (3.3.6-1 kali-rolling [all])
+Conf ruby-did-you-mean (2.0.0-1 kali-rolling [all])
+Conf ruby-net-telnet (0.2.0-1 Debian:13.7/stable, kali-rolling [all])
+Conf ruby-ruby2-keywords (0.0.5-1 Debian:13.7/stable, kali-rolling [all])
+Conf ruby-webrick (1.9.2-2 kali-rolling [all])
+Conf ruby-xmlrpc (0.3.3-2 Debian:13.7/stable, kali-rolling [all])
+Conf libyaml-0-2 (0.2.5-2+b1 kali-rolling [amd64])
+Conf libruby3.3 (3.3.8-2.2 kali-rolling [amd64])
+Conf libruby (1:3.3+b1 Debian:13.7/stable, kali-rolling [amd64])
+Conf libxml2-16 (2.15.4+dfsg-1 kali-rolling [amd64])
+Conf libxslt1.1 (1.1.45-0.1 kali-rolling [amd64])
+Conf publicsuffix (20260725.1419-1 kali-rolling [all])
+Conf racc (1.8.1-2 kali-rolling [all])
+Conf ruby-concurrent (1.3.8-1 kali-rolling [all])
+Conf ruby-i18n (1.15.2-1 kali-rolling [all])
+Conf ruby-tzinfo (2.0.6-2 kali-rolling [all])
+Conf ruby-connection-pool (3.0.2-2 kali-rolling [all])
+Conf ruby-minitest (6.0.6-2 kali-rolling [all])
+Conf ruby-base64 (0.3.0-1 kali-rolling [all])
+Conf ruby-activesupport (2:7.2.3.2+dfsg-3 kali-rolling [all])
+Conf ruby-public-suffix (7.0.5-1 kali-rolling [all])
+Conf ruby-addressable (2.9.0-1 kali-rolling [all])
+Conf ruby-ffi (1.17.4+dfsg-1 kali-rolling [amd64])
+Conf ruby-get-process-mem (1.0.0-1 kali-rolling [all])
+Conf ruby-pkg-config (1.6.5-1 kali-rolling [all])
+Conf ruby-mini-portile2 (2.8.9-2 kali-rolling [all])
+Conf ruby-nokogiri (1.19.4+dfsg-1 kali-rolling [amd64])
+Conf ruby-opt-parse-validator (1.10.1-0kali2 kali-rolling [all])
+Conf ruby-progressbar (1.13.0-2 kali-rolling [all])
+Conf ruby-mime-types-data (3.2026.0701-1 kali-rolling [all])
+Conf ruby-mime-types (3.7.0-1 kali-rolling [all])
+Conf ruby-ethon (0.18.0-2 kali-rolling [all])
+Conf ruby-typhoeus (1.6.0-1 kali-rolling [all])
+Conf ruby-yajl (1.4.3-2 kali-rolling [amd64])
+Conf ruby-cms-scanner (0.15.0-0kali4 kali-rolling [all])
+Conf ruby-websocket-extensions (0.1.5-2 Debian:13.7/stable, kali-rolling [all])
+Conf ruby-websocket-driver (0.8.2-1 kali-rolling [amd64])
+Conf ruby-ferrum (0.18.0-1 kali-rolling [all])
+Conf ruby-sys-proctable (1.3.0-1 Debian:13.7/stable, kali-rolling [all])
+Conf wpscan (4.1.0-0kali1 kali-rolling [all])
+### exit=0

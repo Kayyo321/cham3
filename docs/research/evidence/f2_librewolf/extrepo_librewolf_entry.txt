@@ -1,0 +1,16 @@
+# extrepo-offline-data 1.0.6~deb13u1, usr/share/extrepo/offline-data/debian/trixie/index.yaml (lines 966-980)
+librewolf:
+  contact: maltejur@dismail.de
+  description: LibreWolf Browser
+  gpg-key-checksum:
+    sha256: cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad
+  gpg-key-file: librewolf.asc
+  policy: main
+  source:
+    Architectures: amd64 arm64
+    Components: main
+    Suites: librewolf
+    Types: deb
+    URIs: https://repo.librewolf.net
+lihas:
+  contact: tt@lihas.de

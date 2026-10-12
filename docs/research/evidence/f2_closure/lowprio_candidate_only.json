@@ -1,0 +1,98 @@
+{
+  "mitmproxy": {
+    "ok": false,
+    "kali_only_new": [],
+    "kali_only_upgrades": [],
+    "errors": [
+      "Unable to correct problems, you have held broken packages.",
+      "The following information from --solver 3.0 may provide additional context:"
+    ]
+  },
+  "zaproxy": {
+    "ok": true,
+    "kali_only_new": [
+      "zaproxy"
+    ],
+    "kali_only_upgrades": [],
+    "errors": []
+  },
+  "burpsuite": {
+    "ok": true,
+    "kali_only_new": [
+      "burpsuite"
+    ],
+    "kali_only_upgrades": [],
+    "errors": []
+  },
+  "wpscan": {
+    "ok": false,
+    "kali_only_new": [],
+    "kali_only_upgrades": [],
+    "errors": [
+      "Unable to correct problems, you have held broken packages.",
+      "The following information from --solver 3.0 may provide additional context:"
+    ]
+  },
+  "exploitdb": {
+    "ok": true,
+    "kali_only_new": [
+      "exploitdb"
+    ],
+    "kali_only_upgrades": [],
+    "errors": []
+  },
+  "amass": {
+    "ok": true,
+    "kali_only_new": [
+      "amass",
+      "libpostal-data"
+    ],
+    "kali_only_upgrades": [],
+    "errors": []
+  },
+  "rizin": {
+    "ok": false,
+    "kali_only_new": [],
+    "kali_only_upgrades": [],
+    "errors": [
+      "Unable to correct problems, you have held broken packages.",
+      "The following information from --solver 3.0 may provide additional context:"
+    ]
+  },
+  "radare2": {
+    "ok": true,
+    "kali_only_new": [
+      "libradare2-6.0.0t64",
+      "libradare2-common",
+      "radare2"
+    ],
+    "kali_only_upgrades": [],
+    "errors": []
+  },
+  "rizin-cutter": {
+    "ok": false,
+    "kali_only_new": [],
+    "kali_only_upgrades": [],
+    "errors": [
+      "Unable to correct problems, you have held broken packages.",
+      "The following information from --solver 3.0 may provide additional context:"
+    ]
+  },
+  "ghidra": {
+    "ok": true,
+    "kali_only_new": [
+      "ghidra"
+    ],
+    "kali_only_upgrades": [],
+    "errors": []
+  },
+  "metasploit-framework": {
+    "ok": false,
+    "kali_only_new": [],
+    "kali_only_upgrades": [],
+    "errors": [
+      "Unable to correct problems, you have held broken packages.",
+      "The following information from --solver 3.0 may provide additional context:"
+    ]
+  }
+}

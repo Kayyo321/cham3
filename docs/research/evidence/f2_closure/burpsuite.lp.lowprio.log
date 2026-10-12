@@ -1,0 +1,356 @@
+### mode=lowprio target=burpsuite extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=lowprio target=burpsuite. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 50
+
+Package: burpsuite
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y burpsuite
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  adwaita-icon-theme at-spi2-common ca-certificates-java dbus dbus-bin
+  dbus-daemon dbus-session-bus-common dbus-system-bus-common dbus-user-session
+  dconf-gsettings-backend dconf-service default-jre default-jre-headless
+  fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-mono
+  gtk-update-icon-cache hicolor-icon-theme java-common java-wrappers
+  libapparmor1 libasound2-data libasound2t64 libatk-bridge2.0-0t64
+  libatk1.0-0t64 libatomic1 libatspi2.0-0t64 libavahi-client3
+  libavahi-common-data libavahi-common3 libcairo-gobject2 libcairo2
+  libcloudproviders0 libcolord2 libcups2t64 libdatrie1 libdbus-1-3 libdconf1
+  libdeflate0 libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm2 libedit2
+  libelf1t64 libepoxy0 libexpat1 libfontconfig1 libfreetype6 libfribidi0
+  libgbm1 libgdk-pixbuf-2.0-0 libgdk-pixbuf2.0-common libgif7 libgl1
+  libgl1-mesa-dri libglib2.0-0t64 libglvnd0 libglx-mesa0 libglx0
+  libgraphite2-3 libgtk-3-0t64 libgtk-3-common libharfbuzz0b libjbig0
+  libjpeg62-turbo liblcms2-2 liblerc4 libllvm19 libnspr4 libnss3
+  libpam-systemd libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0
+  libpciaccess0 libpcsclite1 libpixman-1-0 libpng16-16t64 libproc2-0
+  libsensors-config libsensors5 libsharpyuv0 libsystemd-shared libthai-data
+  libthai0 libtiff6 libvulkan1 libwayland-client0 libwayland-cursor0
+  libwayland-egl1 libwayland-server0 libwebp7 libx11-6 libx11-data libx11-xcb1
+  libxau6 libxcb-dri3-0 libxcb-glx0 libxcb-present0 libxcb-randr0
+  libxcb-render0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb1
+  libxcomposite1 libxcursor1 libxdamage1 libxdmcp6 libxext6 libxfixes3 libxi6
+  libxinerama1 libxkbcommon0 libxml2 libxrandr2 libxrender1 libxshmfence1
+  libxtst6 libxxf86vm1 libz3-4 mesa-libgallium openjdk-21-jre
+  openjdk-21-jre-headless procps shared-mime-info systemd systemd-sysv unzip
+  x11-common xkb-data
+Suggested packages:
+  adwaita-icon-theme-legacy alsa-utils libasound2-plugins colord cups-common
+  low-memory-monitor gvfs liblcms2-utils libcryptsetup12 libtss2-rc0t64
+  pciutils pcscd lm-sensors libarchive13t64 libbpf1 libdw1t64 libfido2-1
+  libip4tc2 libpwquality1 libqrencode4 libnss-mdns fonts-dejavu-extra
+  fonts-ipafont-gothic fonts-ipafont-mincho fonts-wqy-microhei
+  | fonts-wqy-zenhei fonts-indic systemd-container systemd-homed
+  systemd-userdbd systemd-boot systemd-resolved systemd-repart
+  libtss2-tcti-device0 polkitd zip
+Recommended packages:
+  librsvg2-common alsa-ucm-conf alsa-topology-conf at-spi2-core
+  libgdk-pixbuf2.0-bin libglib2.0-data xdg-user-dirs libgtk-3-bin libkmod2
+  mesa-vulkan-drivers | vulkan-icd libatk-wrapper-java-jni fonts-dejavu-extra
+  psmisc linux-sysctl-defaults systemd-timesyncd | time-daemon
+  systemd-cryptsetup libnss-systemd
+The following NEW packages will be installed:
+  adwaita-icon-theme at-spi2-common burpsuite ca-certificates-java dbus
+  dbus-bin dbus-daemon dbus-session-bus-common dbus-system-bus-common
+  dbus-user-session dconf-gsettings-backend dconf-service default-jre
+  default-jre-headless fontconfig fontconfig-config fonts-dejavu-core
+  fonts-dejavu-mono gtk-update-icon-cache hicolor-icon-theme java-common
+  java-wrappers libapparmor1 libasound2-data libasound2t64
+  libatk-bridge2.0-0t64 libatk1.0-0t64 libatomic1 libatspi2.0-0t64
+  libavahi-client3 libavahi-common-data libavahi-common3 libcairo-gobject2
+  libcairo2 libcloudproviders0 libcolord2 libcups2t64 libdatrie1 libdbus-1-3
+  libdconf1 libdeflate0 libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm2
+  libedit2 libelf1t64 libepoxy0 libexpat1 libfontconfig1 libfreetype6
+  libfribidi0 libgbm1 libgdk-pixbuf-2.0-0 libgdk-pixbuf2.0-common libgif7
+  libgl1 libgl1-mesa-dri libglib2.0-0t64 libglvnd0 libglx-mesa0 libglx0
+  libgraphite2-3 libgtk-3-0t64 libgtk-3-common libharfbuzz0b libjbig0
+  libjpeg62-turbo liblcms2-2 liblerc4 libllvm19 libnspr4 libnss3
+  libpam-systemd libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0
+  libpciaccess0 libpcsclite1 libpixman-1-0 libpng16-16t64 libproc2-0
+  libsensors-config libsensors5 libsharpyuv0 libsystemd-shared libthai-data
+  libthai0 libtiff6 libvulkan1 libwayland-client0 libwayland-cursor0
+  libwayland-egl1 libwayland-server0 libwebp7 libx11-6 libx11-data libx11-xcb1
+  libxau6 libxcb-dri3-0 libxcb-glx0 libxcb-present0 libxcb-randr0
+  libxcb-render0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb1
+  libxcomposite1 libxcursor1 libxdamage1 libxdmcp6 libxext6 libxfixes3 libxi6
+  libxinerama1 libxkbcommon0 libxml2 libxrandr2 libxrender1 libxshmfence1
+  libxtst6 libxxf86vm1 libz3-4 mesa-libgallium openjdk-21-jre
+  openjdk-21-jre-headless procps shared-mime-info systemd systemd-sysv unzip
+  x11-common xkb-data
+0 upgraded, 134 newly installed, 0 to remove and 1 not upgraded.
+Inst libsystemd-shared (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Inst libapparmor1 (4.1.0-1 Debian:13.7/stable [amd64])
+Conf libsystemd-shared (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Inst systemd (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Conf libapparmor1 (4.1.0-1 Debian:13.7/stable [amd64])
+Conf systemd (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Inst systemd-sysv (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Inst libdbus-1-3 (1.16.2-2 Debian:13.7/stable [amd64])
+Inst dbus-bin (1.16.2-2 Debian:13.7/stable [amd64])
+Inst dbus-session-bus-common (1.16.2-2 Debian:13.7/stable [all])
+Inst libexpat1 (2.8.3-1~deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst dbus-daemon (1.16.2-2 Debian:13.7/stable [amd64])
+Inst dbus-system-bus-common (1.16.2-2 Debian:13.7/stable [all])
+Inst dbus (1.16.2-2 Debian:13.7/stable [amd64])
+Inst libproc2-0 (2:4.0.4-9 Debian:13.7/stable [amd64])
+Inst procps (2:4.0.4-9 Debian:13.7/stable [amd64])
+Inst libpam-systemd (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Inst libgdk-pixbuf2.0-common (2.42.12+dfsg-4+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [all])
+Inst libatomic1 (14.2.0-19 Debian:13.7/stable [amd64])
+Inst libglib2.0-0t64 (2.84.4-3~deb13u5 Debian:13.7/stable [amd64])
+Inst libxml2 (2.12.7+dfsg+really2.9.14-2.1+deb13u3 Debian:13.7/stable [amd64])
+Inst shared-mime-info (2.4-5+b2 Debian:13.7/stable [amd64])
+Inst libjpeg62-turbo (1:2.1.5-4 Debian:13.7/stable [amd64])
+Inst libpng16-16t64 (1.6.48-1+deb13u6 Debian-Security:13/stable-security [amd64])
+Inst libdeflate0 (1.23-2 Debian:13.7/stable [amd64])
+Inst libjbig0 (2.1-6.1+b2 Debian:13.7/stable [amd64])
+Inst liblerc4 (4.0.0+ds-5 Debian:13.7/stable [amd64])
+Inst libsharpyuv0 (1.5.0-0.1 Debian:13.7/stable [amd64])
+Inst libwebp7 (1.5.0-0.1 Debian:13.7/stable [amd64])
+Inst libtiff6 (4.7.0-3+deb13u3 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst libgdk-pixbuf-2.0-0 (2.42.12+dfsg-4+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst gtk-update-icon-cache (4.18.6+ds-2 Debian:13.7/stable [amd64])
+Inst hicolor-icon-theme (0.18-2 Debian:13.7/stable, kali-rolling [all])
+Inst adwaita-icon-theme (48.1-1 Debian:13.7/stable [all])
+Inst at-spi2-common (2.56.2-1+deb13u2 Debian:13.7/stable [all])
+Inst ca-certificates-java (20240118 Debian:13.7/stable [all])
+Inst java-common (0.76 Debian:13.7/stable [all])
+Inst liblcms2-2 (2.16-2+deb13u2 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst libnspr4 (2:4.36-1 Debian:13.7/stable [amd64])
+Inst libnss3 (2:3.110-1+deb13u4 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst libpcsclite1 (2.3.3-1 Debian:13.7/stable [amd64])
+Inst openjdk-21-jre-headless (21.0.12.1+1-1~deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst default-jre-headless (2:1.21-76 Debian:13.7/stable [amd64])
+Inst libatk1.0-0t64 (2.56.2-1+deb13u2 Debian:13.7/stable [amd64])
+Inst libxau6 (1:1.0.11-1 Debian:13.7/stable [amd64])
+Inst libxdmcp6 (1:1.1.5-1 Debian:13.7/stable [amd64])
+Inst libxcb1 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libx11-data (2:1.8.12-1 Debian:13.7/stable [all])
+Inst libx11-6 (2:1.8.12-1 Debian:13.7/stable [amd64])
+Inst libxext6 (2:1.3.4-1+b3 Debian:13.7/stable [amd64])
+Inst libxi6 (2:1.8.2-1 Debian:13.7/stable [amd64])
+Inst libatspi2.0-0t64 (2.56.2-1+deb13u2 Debian:13.7/stable [amd64])
+Inst libatk-bridge2.0-0t64 (2.56.2-1+deb13u2 Debian:13.7/stable [amd64])
+Inst libfreetype6 (2.13.3+dfsg-1+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst fonts-dejavu-mono (2.37-8 Debian:13.7/stable [all])
+Inst fonts-dejavu-core (2.37-8 Debian:13.7/stable [all])
+Inst fontconfig-config (2.15.0-2.3 Debian:13.7/stable [amd64])
+Inst libfontconfig1 (2.15.0-2.3 Debian:13.7/stable [amd64])
+Inst libpixman-1-0 (0.44.0-3 Debian:13.7/stable [amd64])
+Inst libxcb-render0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxcb-shm0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxrender1 (1:0.9.12-1 Debian:13.7/stable [amd64])
+Inst libcairo2 (1.18.4-1+b1 Debian:13.7/stable [amd64])
+Inst libcairo-gobject2 (1.18.4-1+b1 Debian:13.7/stable [amd64])
+Inst libcloudproviders0 (0.3.6-2 Debian:13.7/stable [amd64])
+Inst libcolord2 (1.4.7-3 Debian:13.7/stable [amd64])
+Inst libavahi-common-data (0.8-16 Debian:13.7/stable [amd64])
+Inst libavahi-common3 (0.8-16 Debian:13.7/stable [amd64])
+Inst libavahi-client3 (0.8-16 Debian:13.7/stable [amd64])
+Inst libcups2t64 (2.4.10-3+deb13u2 Debian:13.7/stable [amd64])
+Inst libepoxy0 (1.5.10-2 Debian:13.7/stable [amd64])
+Inst libfribidi0 (1.0.16-1 Debian:13.7/stable [amd64])
+Inst libgraphite2-3 (1.3.14-2+deb13u1 Debian:13.7/stable [amd64])
+Inst libharfbuzz0b (10.2.0-1+deb13u1 Debian:13.7/stable [amd64])
+Inst fontconfig (2.15.0-2.3 Debian:13.7/stable [amd64])
+Inst libthai-data (0.1.29-2 Debian:13.7/stable [all])
+Inst libdatrie1 (0.2.13-3+b1 Debian:13.7/stable [amd64])
+Inst libthai0 (0.1.29-2+b1 Debian:13.7/stable [amd64])
+Inst libpango-1.0-0 (1.56.3-1 Debian:13.7/stable [amd64])
+Inst libpangoft2-1.0-0 (1.56.3-1 Debian:13.7/stable [amd64])
+Inst libpangocairo-1.0-0 (1.56.3-1 Debian:13.7/stable [amd64])
+Inst libwayland-client0 (1.23.1-3 Debian:13.7/stable [amd64])
+Inst libwayland-cursor0 (1.23.1-3 Debian:13.7/stable [amd64])
+Inst libwayland-egl1 (1.23.1-3 Debian:13.7/stable [amd64])
+Inst libxcomposite1 (1:0.4.6-1 Debian:13.7/stable [amd64])
+Inst libxfixes3 (1:6.0.0-2+b4 Debian:13.7/stable [amd64])
+Inst libxcursor1 (1:1.2.3-1 Debian:13.7/stable [amd64])
+Inst libxdamage1 (1:1.1.6-1+b2 Debian:13.7/stable [amd64])
+Inst libxinerama1 (2:1.1.4-3+b4 Debian:13.7/stable [amd64])
+Inst xkb-data (2.42-1 Debian:13.7/stable [all])
+Inst libxkbcommon0 (1.7.0-2 Debian:13.7/stable [amd64])
+Inst libxrandr2 (2:1.5.4-1+b3 Debian:13.7/stable [amd64])
+Inst dbus-user-session (1.16.2-2 Debian:13.7/stable [amd64])
+Inst libdconf1 (0.40.0-5 Debian:13.7/stable [amd64])
+Inst dconf-service (0.40.0-5 Debian:13.7/stable [amd64])
+Inst dconf-gsettings-backend (0.40.0-5 Debian:13.7/stable [amd64])
+Inst libgtk-3-common (3.24.49-3 Debian:13.7/stable [all])
+Inst libgtk-3-0t64 (3.24.49-3 Debian:13.7/stable [amd64])
+Inst libglvnd0 (1.7.0-1+b2 Debian:13.7/stable [amd64])
+Inst libdrm-common (2.4.124-2 Debian:13.7/stable [all])
+Inst libdrm2 (2.4.124-2 Debian:13.7/stable [amd64])
+Inst libx11-xcb1 (2:1.8.12-1 Debian:13.7/stable [amd64])
+Inst libxcb-dri3-0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxcb-glx0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxcb-present0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxcb-xfixes0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxxf86vm1 (1:1.1.4-1+b4 Debian:13.7/stable [amd64])
+Inst libdrm-amdgpu1 (2.4.124-2 Debian:13.7/stable [amd64])
+Inst libpciaccess0 (0.17-3+b3 Debian:13.7/stable [amd64])
+Inst libdrm-intel1 (2.4.124-2 Debian:13.7/stable [amd64])
+Inst libelf1t64 (0.192-4 Debian:13.7/stable [amd64])
+Inst libedit2 (3.1-20250104-1 Debian:13.7/stable [amd64])
+Inst libz3-4 (4.13.3-1 Debian:13.7/stable [amd64])
+Inst libllvm19 (1:19.1.7-3+b1 Debian:13.7/stable [amd64])
+Inst libsensors-config (1:3.6.2-2 Debian:13.7/stable, kali-rolling [all])
+Inst libsensors5 (1:3.6.2-2 Debian:13.7/stable [amd64])
+Inst libxcb-randr0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxcb-sync1 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Inst libxshmfence1 (1.3.3-1 Debian:13.7/stable [amd64])
+Inst mesa-libgallium (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Inst libwayland-server0 (1.23.1-3 Debian:13.7/stable [amd64])
+Inst libgbm1 (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Inst libvulkan1 (1.4.309.0-1 Debian:13.7/stable [amd64])
+Inst libgl1-mesa-dri (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Inst libglx-mesa0 (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Inst libglx0 (1.7.0-1+b2 Debian:13.7/stable [amd64])
+Inst libgl1 (1.7.0-1+b2 Debian:13.7/stable [amd64])
+Inst libasound2-data (1.2.14-1+deb13u1 Debian:13.7/stable [all])
+Inst libasound2t64 (1.2.14-1+deb13u1 Debian:13.7/stable [amd64])
+Inst libgif7 (5.2.2-1+deb13u1 Debian:13.7/stable [amd64])
+Inst x11-common (1:7.7+24+deb13u1 Debian:13.7/stable [all])
+Inst libxtst6 (2:1.2.5-1 Debian:13.7/stable [amd64])
+Inst openjdk-21-jre (21.0.12.1+1-1~deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst default-jre (2:1.21-76 Debian:13.7/stable [amd64])
+Inst unzip (6.0-29+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Inst java-wrappers (0.5 Debian:13.7/stable, kali-rolling [all])
+Inst burpsuite (2026.8-0kali1 kali-rolling [amd64])
+Conf systemd-sysv (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Conf libdbus-1-3 (1.16.2-2 Debian:13.7/stable [amd64])
+Conf dbus-bin (1.16.2-2 Debian:13.7/stable [amd64])
+Conf dbus-session-bus-common (1.16.2-2 Debian:13.7/stable [all])
+Conf libexpat1 (2.8.3-1~deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf dbus-daemon (1.16.2-2 Debian:13.7/stable [amd64])
+Conf dbus-system-bus-common (1.16.2-2 Debian:13.7/stable [all])
+Conf dbus (1.16.2-2 Debian:13.7/stable [amd64])
+Conf libproc2-0 (2:4.0.4-9 Debian:13.7/stable [amd64])
+Conf procps (2:4.0.4-9 Debian:13.7/stable [amd64])
+Conf libpam-systemd (257.13-1~deb13u1 Debian:13.7/stable [amd64])
+Conf libgdk-pixbuf2.0-common (2.42.12+dfsg-4+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [all])
+Conf libatomic1 (14.2.0-19 Debian:13.7/stable [amd64])
+Conf libglib2.0-0t64 (2.84.4-3~deb13u5 Debian:13.7/stable [amd64])
+Conf libxml2 (2.12.7+dfsg+really2.9.14-2.1+deb13u3 Debian:13.7/stable [amd64])
+Conf shared-mime-info (2.4-5+b2 Debian:13.7/stable [amd64])
+Conf libjpeg62-turbo (1:2.1.5-4 Debian:13.7/stable [amd64])
+Conf libpng16-16t64 (1.6.48-1+deb13u6 Debian-Security:13/stable-security [amd64])
+Conf libdeflate0 (1.23-2 Debian:13.7/stable [amd64])
+Conf libjbig0 (2.1-6.1+b2 Debian:13.7/stable [amd64])
+Conf liblerc4 (4.0.0+ds-5 Debian:13.7/stable [amd64])
+Conf libsharpyuv0 (1.5.0-0.1 Debian:13.7/stable [amd64])
+Conf libwebp7 (1.5.0-0.1 Debian:13.7/stable [amd64])
+Conf libtiff6 (4.7.0-3+deb13u3 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf libgdk-pixbuf-2.0-0 (2.42.12+dfsg-4+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf gtk-update-icon-cache (4.18.6+ds-2 Debian:13.7/stable [amd64])
+Conf hicolor-icon-theme (0.18-2 Debian:13.7/stable, kali-rolling [all])
+Conf adwaita-icon-theme (48.1-1 Debian:13.7/stable [all])
+Conf at-spi2-common (2.56.2-1+deb13u2 Debian:13.7/stable [all])
+Conf ca-certificates-java (20240118 Debian:13.7/stable [all])
+Conf java-common (0.76 Debian:13.7/stable [all])
+Conf liblcms2-2 (2.16-2+deb13u2 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf libnspr4 (2:4.36-1 Debian:13.7/stable [amd64])
+Conf libnss3 (2:3.110-1+deb13u4 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf libpcsclite1 (2.3.3-1 Debian:13.7/stable [amd64])
+Conf openjdk-21-jre-headless (21.0.12.1+1-1~deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf default-jre-headless (2:1.21-76 Debian:13.7/stable [amd64])
+Conf libatk1.0-0t64 (2.56.2-1+deb13u2 Debian:13.7/stable [amd64])
+Conf libxau6 (1:1.0.11-1 Debian:13.7/stable [amd64])
+Conf libxdmcp6 (1:1.1.5-1 Debian:13.7/stable [amd64])
+Conf libxcb1 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libx11-data (2:1.8.12-1 Debian:13.7/stable [all])
+Conf libx11-6 (2:1.8.12-1 Debian:13.7/stable [amd64])
+Conf libxext6 (2:1.3.4-1+b3 Debian:13.7/stable [amd64])
+Conf libxi6 (2:1.8.2-1 Debian:13.7/stable [amd64])
+Conf libatspi2.0-0t64 (2.56.2-1+deb13u2 Debian:13.7/stable [amd64])
+Conf libatk-bridge2.0-0t64 (2.56.2-1+deb13u2 Debian:13.7/stable [amd64])
+Conf libfreetype6 (2.13.3+dfsg-1+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf fonts-dejavu-mono (2.37-8 Debian:13.7/stable [all])
+Conf fonts-dejavu-core (2.37-8 Debian:13.7/stable [all])
+Conf fontconfig-config (2.15.0-2.3 Debian:13.7/stable [amd64])
+Conf libfontconfig1 (2.15.0-2.3 Debian:13.7/stable [amd64])
+Conf libpixman-1-0 (0.44.0-3 Debian:13.7/stable [amd64])
+Conf libxcb-render0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxcb-shm0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxrender1 (1:0.9.12-1 Debian:13.7/stable [amd64])
+Conf libcairo2 (1.18.4-1+b1 Debian:13.7/stable [amd64])
+Conf libcairo-gobject2 (1.18.4-1+b1 Debian:13.7/stable [amd64])
+Conf libcloudproviders0 (0.3.6-2 Debian:13.7/stable [amd64])
+Conf libcolord2 (1.4.7-3 Debian:13.7/stable [amd64])
+Conf libavahi-common-data (0.8-16 Debian:13.7/stable [amd64])
+Conf libavahi-common3 (0.8-16 Debian:13.7/stable [amd64])
+Conf libavahi-client3 (0.8-16 Debian:13.7/stable [amd64])
+Conf libcups2t64 (2.4.10-3+deb13u2 Debian:13.7/stable [amd64])
+Conf libepoxy0 (1.5.10-2 Debian:13.7/stable [amd64])
+Conf libfribidi0 (1.0.16-1 Debian:13.7/stable [amd64])
+Conf libgraphite2-3 (1.3.14-2+deb13u1 Debian:13.7/stable [amd64])
+Conf libharfbuzz0b (10.2.0-1+deb13u1 Debian:13.7/stable [amd64])
+Conf fontconfig (2.15.0-2.3 Debian:13.7/stable [amd64])
+Conf libthai-data (0.1.29-2 Debian:13.7/stable [all])
+Conf libdatrie1 (0.2.13-3+b1 Debian:13.7/stable [amd64])
+Conf libthai0 (0.1.29-2+b1 Debian:13.7/stable [amd64])
+Conf libpango-1.0-0 (1.56.3-1 Debian:13.7/stable [amd64])
+Conf libpangoft2-1.0-0 (1.56.3-1 Debian:13.7/stable [amd64])
+Conf libpangocairo-1.0-0 (1.56.3-1 Debian:13.7/stable [amd64])
+Conf libwayland-client0 (1.23.1-3 Debian:13.7/stable [amd64])
+Conf libwayland-cursor0 (1.23.1-3 Debian:13.7/stable [amd64])
+Conf libwayland-egl1 (1.23.1-3 Debian:13.7/stable [amd64])
+Conf libxcomposite1 (1:0.4.6-1 Debian:13.7/stable [amd64])
+Conf libxfixes3 (1:6.0.0-2+b4 Debian:13.7/stable [amd64])
+Conf libxcursor1 (1:1.2.3-1 Debian:13.7/stable [amd64])
+Conf libxdamage1 (1:1.1.6-1+b2 Debian:13.7/stable [amd64])
+Conf libxinerama1 (2:1.1.4-3+b4 Debian:13.7/stable [amd64])
+Conf xkb-data (2.42-1 Debian:13.7/stable [all])
+Conf libxkbcommon0 (1.7.0-2 Debian:13.7/stable [amd64])
+Conf libxrandr2 (2:1.5.4-1+b3 Debian:13.7/stable [amd64])
+Conf dbus-user-session (1.16.2-2 Debian:13.7/stable [amd64])
+Conf libdconf1 (0.40.0-5 Debian:13.7/stable [amd64])
+Conf dconf-service (0.40.0-5 Debian:13.7/stable [amd64])
+Conf dconf-gsettings-backend (0.40.0-5 Debian:13.7/stable [amd64])
+Conf libgtk-3-common (3.24.49-3 Debian:13.7/stable [all])
+Conf libgtk-3-0t64 (3.24.49-3 Debian:13.7/stable [amd64])
+Conf libglvnd0 (1.7.0-1+b2 Debian:13.7/stable [amd64])
+Conf libdrm-common (2.4.124-2 Debian:13.7/stable [all])
+Conf libdrm2 (2.4.124-2 Debian:13.7/stable [amd64])
+Conf libx11-xcb1 (2:1.8.12-1 Debian:13.7/stable [amd64])
+Conf libxcb-dri3-0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxcb-glx0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxcb-present0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxcb-xfixes0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxxf86vm1 (1:1.1.4-1+b4 Debian:13.7/stable [amd64])
+Conf libdrm-amdgpu1 (2.4.124-2 Debian:13.7/stable [amd64])
+Conf libpciaccess0 (0.17-3+b3 Debian:13.7/stable [amd64])
+Conf libdrm-intel1 (2.4.124-2 Debian:13.7/stable [amd64])
+Conf libelf1t64 (0.192-4 Debian:13.7/stable [amd64])
+Conf libedit2 (3.1-20250104-1 Debian:13.7/stable [amd64])
+Conf libz3-4 (4.13.3-1 Debian:13.7/stable [amd64])
+Conf libllvm19 (1:19.1.7-3+b1 Debian:13.7/stable [amd64])
+Conf libsensors-config (1:3.6.2-2 Debian:13.7/stable, kali-rolling [all])
+Conf libsensors5 (1:3.6.2-2 Debian:13.7/stable [amd64])
+Conf libxcb-randr0 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxcb-sync1 (1.17.0-2+b1 Debian:13.7/stable [amd64])
+Conf libxshmfence1 (1.3.3-1 Debian:13.7/stable [amd64])
+Conf mesa-libgallium (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Conf libwayland-server0 (1.23.1-3 Debian:13.7/stable [amd64])
+Conf libgbm1 (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Conf libvulkan1 (1.4.309.0-1 Debian:13.7/stable [amd64])
+Conf libgl1-mesa-dri (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Conf libglx-mesa0 (25.0.7-2+deb13u1 Debian:13.7/stable [amd64])
+Conf libglx0 (1.7.0-1+b2 Debian:13.7/stable [amd64])
+Conf libgl1 (1.7.0-1+b2 Debian:13.7/stable [amd64])
+Conf libasound2-data (1.2.14-1+deb13u1 Debian:13.7/stable [all])
+Conf libasound2t64 (1.2.14-1+deb13u1 Debian:13.7/stable [amd64])
+Conf libgif7 (5.2.2-1+deb13u1 Debian:13.7/stable [amd64])
+Conf x11-common (1:7.7+24+deb13u1 Debian:13.7/stable [all])
+Conf libxtst6 (2:1.2.5-1 Debian:13.7/stable [amd64])
+Conf openjdk-21-jre (21.0.12.1+1-1~deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf default-jre (2:1.21-76 Debian:13.7/stable [amd64])
+Conf unzip (6.0-29+deb13u1 Debian:13.7/stable, Debian-Security:13/stable-security [amd64])
+Conf java-wrappers (0.5 Debian:13.7/stable, kali-rolling [all])
+Conf burpsuite (2026.8-0kali1 kali-rolling [amd64])
+### exit=0

@@ -1,0 +1,128 @@
+### apt-cache depends (trixie) firmware metapackages
+--- depends firmware-linux
+firmware-linux
+  Depends: firmware-linux-free
+  Depends: firmware-linux-nonfree
+--- depends firmware-linux-nonfree
+firmware-linux-nonfree
+  Depends: firmware-misc-nonfree
+  Depends: firmware-amd-graphics
+--- depends firmware-linux-free
+firmware-linux-free
+### reverse dependencies of the two b43 installers
+--- rdepends firmware-b43-installer
+firmware-b43-installer
+Reverse Depends:
+--- rdepends firmware-b43legacy-installer
+firmware-b43legacy-installer
+Reverse Depends:
+--- rdepends b43-fwcutter
+b43-fwcutter
+Reverse Depends:
+  firmware-b43-installer
+  firmware-b43legacy-installer
+### policy/version of key packages
+--- firmware-b43-installer
+firmware-b43-installer:
+  Installed: (none)
+  Candidate: 1:019-14
+  Version table:
+Version: 1:019-14
+Filename: pool/contrib/b/b43-fwcutter/firmware-b43-installer_019-14_all.deb
+SHA256: 4f1c3ff18d09382f6e1c36c5fc9f498f9ac5b111ce8af7616b792f722c729bd8
+Size: 8620
+Depends: b43-fwcutter (>= 1:019-14), bzip2, ca-certificates, pciutils, wget
+
+--- firmware-b43legacy-installer
+firmware-b43legacy-installer:
+  Installed: (none)
+  Candidate: 1:019-14
+  Version table:
+Version: 1:019-14
+Filename: pool/contrib/b/b43-fwcutter/firmware-b43legacy-installer_019-14_all.deb
+SHA256: 86ed887108aad8ec47fbbf5e30646597d1387a607c305cbd470bf22ab825a998
+Size: 7660
+Depends: b43-fwcutter (>= 1:019-14), ca-certificates, pciutils, wget
+
+--- b43-fwcutter
+b43-fwcutter:
+  Installed: (none)
+  Candidate: 1:019-14
+  Version table:
+Version: 1:019-14
+Filename: pool/contrib/b/b43-fwcutter/b43-fwcutter_019-14_amd64.deb
+SHA256: 0a0b3667a6de85a850ba1a0778aec334e0970dcaab2a03b31d0630f1978933c7
+Size: 26304
+Depends: debconf (>= 0.5) | debconf-2.0, libc6 (>= 2.34)
+
+--- firmware-brcm80211
+firmware-brcm80211:
+  Installed: (none)
+  Candidate: 20250410-2
+  Version table:
+Version: 20250410-2
+Filename: pool/non-free-firmware/f/firmware-nonfree/firmware-brcm80211_20250410-2_all.deb
+SHA256: 266cc703e2299f5253fd1ff9a1fd625d85a2c8e5a88b1a65fcc190ac384ce3d7
+Size: 5379304
+
+
+--- firmware-linux-nonfree
+firmware-linux-nonfree:
+  Installed: (none)
+  Candidate: 20250410-2
+  Version table:
+Version: 20250410-2
+Filename: pool/non-free-firmware/f/firmware-nonfree/firmware-linux-nonfree_20250410-2_all.deb
+SHA256: 835deb69d19910f7d82fd99d1fa8cf55edb4993631bedcb228fc104e0e13e0b6
+Size: 71776
+Depends: firmware-misc-nonfree (= 20250410-2), firmware-amd-graphics (= 20250410-2)
+Recommends: intel-microcode, amd64-microcode
+--- wireshark-common
+wireshark-common:
+  Installed: (none)
+  Candidate: 4.4.19-0+deb13u1
+  Version table:
+Version: 4.4.18-0+deb13u1
+Filename: pool/main/w/wireshark/wireshark-common_4.4.18-0+deb13u1_amd64.deb
+SHA256: b95ab65ae1e20b36d8fffbe88dac1c632a2b576e4f8c6ffa53cabd2f81033978
+Size: 604648
+Depends: libc6 (>= 2.34), libcap2 (>= 1:2.10), libgcrypt20 (>= 1.11.0), libglib2.0-0t64 (>= 2.76.0), libmaxminddb0 (>= 1.0.2), libnl-3-200 (>= 3.2.21), libnl-genl-3-200 (>= 3.2.21), libnl-route-3-200 (>= 3.2.7), libpcap0.8t64 (>= 1.5.1), libpcre2-8-0 (>= 10.22), libspeexdsp1 (>= 1.2.1), libssh-4 (>= 0.8.0), libsystemd0 (>= 246), libwireshark18 (>= 4.4.18-0+deb13u1), libwiretap15 (>= 4.4.18-0+deb13
+Recommends: wireshark (>= 4.4.18-0+deb13u1) | tshark (>= 4.4.18-0+deb13u1)
+--- libcap2-bin
+libcap2-bin:
+  Installed: (none)
+  Candidate: 1:2.75-10+deb13u1+b3
+  Version table:
+Version: 1:2.75-10+deb13u1+b3
+Filename: pool/main/libc/libcap2/libcap2-bin_2.75-10+deb13u1+b3_amd64.deb
+SHA256: 6404b8ee315ce3eb8e273981650e419ff0e91aed5213d4975a6895f98944ea80
+Size: 36456
+Depends: libc6 (>= 2.38), libcap2 (>= 1:2.63)
+Recommends: libpam-cap
+--- torbrowser-launcher
+torbrowser-launcher:
+  Installed: (none)
+  Candidate: 0.3.7-3
+  Version table:
+Version: 0.3.7-3
+Filename: pool/contrib/t/torbrowser-launcher/torbrowser-launcher_0.3.7-3_amd64.deb
+SHA256: a70a9da89b4ea3adf4542de27595ab3d8e6914c5efd66ecbded627157f3b5274
+Size: 54872
+Depends: python3-gpg, python3-packaging, python3-pyqt5, python3-requests, python3-socks, python3:any, ca-certificates, gnupg, libasound2, libdbus-glib-1-2, libgtk-3-0
+Recommends: tor
+--- tor
+tor:
+  Installed: (none)
+  Candidate: 0.4.9.14-0+deb13u1
+  Version table:
+Version: 0.4.9.11-0+deb13u1
+Filename: pool/main/t/tor/tor_0.4.9.11-0+deb13u1_amd64.deb
+SHA256: 2381888dc083316fa59a675434decdf94e3869c34eb1e17a6b54fc9d5a041b98
+Size: 2087008
+Depends: libc6 (>= 2.38), libcap2 (>= 1:2.10), libevent-2.1-7t64 (>= 2.1.8-stable), liblzma5 (>= 5.1.1alpha+20120614), libseccomp2 (>= 0.0.0~20120605), libssl3t64 (>= 3.0.0), libsystemd0, libzstd1 (>= 1.5.5), zlib1g (>= 1:1.1.4), adduser, runit-helper (>= 2.14.0~), lsb-base
+Recommends: logrotate, tor-geoipdb, torsocks
+### wireshark-common relations (setcap provider)
+Depends: libc6 (>= 2.34), libcap2 (>= 1:2.10), libgcrypt20 (>= 1.11.0), libglib2.0-0t64 (>= 2.76.0), libmaxminddb0 (>= 1.0.2), libnl-3-200 (>= 3.2.21), libnl-genl-3-200 (>= 3.2.21), libnl-route-3-200 (>= 3.2.7), libpcap0.8t64 (>= 1.5.1), libpcre2-8-0 (>= 10.22), libspeexdsp1 (>= 1.2.1), libssh-4 (>= 0.8.0), libsystemd0 (>= 246), libwireshark18 (>= 4.4.19-0+deb13u1), libwiretap15 (>= 4.4.19-0+deb13u1), libwsutil16 (>= 4.4.15), zlib1g (>= 1:1.1.4), debconf (>= 0.5) | debconf-2.0, debconf, libcap2-
+Recommends: wireshark (>= 4.4.19-0+deb13u1) | tshark (>= 4.4.19-0+deb13u1)
+Depends: libc6 (>= 2.34), libcap2 (>= 1:2.10), libgcrypt20 (>= 1.11.0), libglib2.0-0t64 (>= 2.76.0), libmaxminddb0 (>= 1.0.2), libnl-3-200 (>= 3.2.21), libnl-genl-3-200 (>= 3.2.21), libnl-route-3-200 (>= 3.2.7), libpcap0.8t64 (>= 1.5.1), libpcre2-8-0 (>= 10.22), libspeexdsp1 (>= 1.2.1), libssh-4 (>= 0.8.0), libsystemd0 (>= 246), libwireshark18 (>= 4.4.18-0+deb13u1), libwiretap15 (>= 4.4.18-0+deb13u1), libwsutil16 (>= 4.4.15), zlib1g (>= 1:1.1.4), debconf (>= 0.5) | debconf-2.0, debconf, libcap2-
+Recommends: wireshark (>= 4.4.18-0+deb13u1) | tshark (>= 4.4.18-0+deb13u1)

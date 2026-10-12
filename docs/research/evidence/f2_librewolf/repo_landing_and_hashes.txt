@@ -1,0 +1,10 @@
+# LibreWolf repository: published fingerprint statement (https://repo.librewolf.net/)
+ You should accept any prompts wanting to import the GPG key with the
+ fingerprint 662E3CDD6FE329002D0CA5BB40339DD82B12EF16 .
+ 
+# sha256 of files as fetched 2026-10-11
+cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad  /private/tmp/claude-501/-Users-jessicabruce-cham3/6c3e128a-a646-49f5-b4aa-b8783fc4a5de/scratchpad/lwr_pubkey.gpg
+8398142ed02480bfa19192308016c0cc8b4a87d0ec821c4e23decf6f11ce4560  /private/tmp/claude-501/-Users-jessicabruce-cham3/6c3e128a-a646-49f5-b4aa-b8783fc4a5de/scratchpad/lwr_keyring.gpg
+72f2cf264b49fca9a3f53d53e1431b09c1d0c8bade998dcbce3d3b2c814c79ca  /private/tmp/claude-501/-Users-jessicabruce-cham3/6c3e128a-a646-49f5-b4aa-b8783fc4a5de/scratchpad/lw_Release
+4ba01e8e032d3babb22cb09e655d22fb1c2990d5bb4717d016793f384db52a20  /private/tmp/claude-501/-Users-jessicabruce-cham3/6c3e128a-a646-49f5-b4aa-b8783fc4a5de/scratchpad/lw_InRelease
+b7d303ae74eba29bc499c7d177644040db8aee51bb0da08d587220a65da18b7d  /private/tmp/claude-501/-Users-jessicabruce-cham3/6c3e128a-a646-49f5-b4aa-b8783fc4a5de/scratchpad/lw_Release.gpg

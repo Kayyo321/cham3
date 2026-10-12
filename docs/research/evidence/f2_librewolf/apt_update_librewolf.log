@@ -1,0 +1,7 @@
+Hit:1 http://deb.debian.org/debian trixie InRelease
+Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Hit:3 http://deb.debian.org/debian-security trixie-security InRelease
+Get:4 https://repo.librewolf.net librewolf InRelease [5649 B]
+Get:5 https://repo.librewolf.net librewolf/main amd64 Packages [993 B]
+Fetched 6642 B in 1s (8712 B/s)
+Reading package lists...

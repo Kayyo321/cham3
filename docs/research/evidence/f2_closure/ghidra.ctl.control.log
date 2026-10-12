@@ -1,0 +1,17 @@
+### mode=control target=ghidra extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=control target=ghidra. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: -1
+
+### command: apt-get -s install --no-install-recommends -y ghidra
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Package ghidra is not available, but is referred to by another package.
+This may mean that the package is missing, has been obsoleted, or
+is only available from another source
+
+E: Package 'ghidra' has no installation candidate
+### exit=100
