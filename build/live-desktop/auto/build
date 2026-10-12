@@ -30,7 +30,44 @@
 # (Calamares). cham3 uses the image's debian-installer, which copies the live root and
 # reaches the pool through its own /cdrom entry, so the unsigned entry is not needed
 # and the final image keeps no trusted=yes source (first image built at 6685841 had it).
+#
+# Installer network mirror. live-build's default udeb exclusion list (its copy of
+# debian-cd's udeb_exclude) removes apt-mirror-setup from the ISO, so the image's
+# debian-installer queued it but never found it: apt-setup wrote only the (then
+# disabled) cdrom entry, its security generator failed, and installed systems had no
+# Debian sources at all (VM gate, scratch run 38206602622, installer syslog). Local
+# udebs in config/packages.binary are added to the ISO whatever the exclusion list
+# says, so the udeb is downloaded here, before the installer stage, from the signed
+# Debian archive with a private apt configuration (Signed-By the Debian archive
+# keyring; nothing is marked trusted). Its dependencies (choose-mirror-bin,
+# base-installer) are in the ISO's udeb pool and cdebconf-udeb is in the initrd.
 set -eu
+
+fetch_installer_udebs() {
+    udeb_root=$(mktemp -d)
+    mkdir -p "${udeb_root}/etc/apt.conf.d" "${udeb_root}/etc/sources.list.d" "${udeb_root}/etc/preferences.d" \
+        "${udeb_root}/etc/trusted.gpg.d" "${udeb_root}/state/lists/partial" "${udeb_root}/cache/archives/partial" \
+        "${udeb_root}/download"
+    printf '%s\n' "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie main/debian-installer" \
+        > "${udeb_root}/etc/sources.list"
+    {
+        printf 'Dir::Etc "%s/etc";\n' "${udeb_root}"
+        printf 'Dir::State "%s/state";\n' "${udeb_root}"
+        printf 'Dir::Cache "%s/cache";\n' "${udeb_root}"
+        printf 'Dir::State::status "/dev/null";\n'
+        printf 'APT::Sandbox::User "root";\n'
+        printf 'APT::Architecture "amd64";\nAPT::Architectures { "amd64"; };\nAcquire::Languages "none";\n'
+    } > "${udeb_root}/apt.conf"
+    APT_CONFIG="${udeb_root}/apt.conf" apt-get -q -o APT::Update::Error-Mode=any update
+    (cd "${udeb_root}/download" && APT_CONFIG="${udeb_root}/apt.conf" apt-get -q download apt-mirror-setup)
+    mkdir -p config/packages.binary
+    for udeb in "${udeb_root}"/download/apt-mirror-setup_*_all.udeb; do
+        [ -f "${udeb}" ] || { echo "auto/build: apt-mirror-setup was not downloaded" >&2; exit 1; }
+        cp "${udeb}" config/packages.binary/
+        echo "auto/build: added $(basename "${udeb}") to the installer udebs"
+    done
+    rm -rf "${udeb_root}"
+}
 
 foreign_names="zzz_cham3_kali.list zzz_cham3_librewolf.list cham3_kali.pref cham3_librewolf.pref"
 stash_dir=.cham3_installer_stash
@@ -48,6 +85,7 @@ restore_foreign() {
 
 lb bootstrap "${@}"
 lb chroot "${@}"
+fetch_installer_udebs
 
 [ ! -e "${stash_dir}" ] || { echo "auto/build: ${stash_dir} already exists" >&2; exit 1; }
 mkdir "${stash_dir}"

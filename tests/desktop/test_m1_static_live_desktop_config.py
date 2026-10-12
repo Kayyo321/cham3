@@ -243,6 +243,12 @@ def auto_build_problems(text):
         problems.append("the foreign files are not moved out before lb installer and restored before lb binary")
     if "trap restore_foreign EXIT" not in code:
         problems.append("auto/build does not restore the foreign files when the installer stage fails")
+    fetch = code.find("\nfetch_installer_udebs\n")
+    if not (0 <= fetch < installer) or "apt-get -q download apt-mirror-setup" not in code \
+            or "signed-by=/usr/share/keyrings/debian-archive-keyring.pgp" not in code \
+            or 'cp "${udeb}" config/packages.binary/' not in code:
+        problems.append("auto/build does not add the signed apt-mirror-setup udeb to config/packages.binary "
+                        "before lb installer (installed systems would have no Debian sources)")
     removal = code.find("file:/run/live/medium |d' chroot/etc/apt/sources.list")
     if not (installer < removal < binary) or "rm -f chroot/var/lib/apt/lists/_run_live_medium_*" not in code:
         problems.append("auto/build does not remove the installer stage's trusted=yes live-medium entry "
@@ -251,19 +257,31 @@ def auto_build_problems(text):
 
 
 LiveSessionList = m1_support.LiveDesktopDir + "/config/package-lists/cham3_live.list.chroot_live"
-LiveSessionRequired = ("user-setup",)
+LiveBuildDefaultList = m1_support.LiveDesktopDir + "/config/package-lists/live.list.chroot"
+LiveSessionRequired = ("live-boot", "live-config", "live-config-systemd", "user-setup")
 
 
-def live_session_list_problems(text):
-    """The live pass installs user-setup, without which live-config creates no live account."""
+def live_session_list_problems(text, default_list_text):
+    """The live session's packages are installed in the live pass only, so the installer removes them.
+
+    user-setup is required: without it live-config creates no live account. The live-build
+    default list (live.list.chroot, install pass) must exist and list nothing, or lb config
+    installs live-boot and live-config where the installer keeps them.
+    """
     names = package_list_names(text)
-    return ["live-session package list lacks %s (no live user, no SDDM autologin)" % name
-            for name in LiveSessionRequired if name not in names]
+    problems = ["live-session package list lacks %s" % name for name in LiveSessionRequired if name not in names]
+    if default_list_text is None:
+        problems.append("live.list.chroot is absent: lb config would install live-boot/live-config in the "
+                        "install pass, and installed systems would keep them")
+    elif package_list_names(default_list_text):
+        problems.append("live.list.chroot lists packages (install pass): %s" % package_list_names(default_list_text))
+    return problems
 
 
 class live_desktop_config_real_t(unittest.TestCase):
-    def test_live_session_creates_the_live_account(self):
-        self.assertEqual(live_session_list_problems(m1_support.read_repo(LiveSessionList)), [])
+    def test_live_session_packages_are_live_pass_only(self):
+        self.assertEqual(live_session_list_problems(m1_support.read_repo(LiveSessionList),
+                                                    m1_support.read_repo(LiveBuildDefaultList)), [])
 
     def test_auto_build_hides_foreign_sources_only_for_the_installer_stage(self):
         self.assertEqual(auto_build_problems(m1_support.read_repo(AutoBuildPath)), [])
@@ -355,10 +373,22 @@ class live_desktop_config_fixture_t(unittest.TestCase):
 
 
 class live_session_fixture_t(unittest.TestCase):
+    Good = "live-boot\nlive-config\nlive-config-systemd\nuser-setup\n"
+
+    def test_positive_control_accepted(self):
+        self.assertEqual(live_session_list_problems(self.Good, "# lists nothing\n"), [])
+
     def test_missing_user_setup_is_rejected(self):
         # Negative control: the first native M1 image had no live user (VM gate).
-        self.assertTrue(live_session_list_problems("# empty\n"))
-        self.assertEqual(live_session_list_problems("user-setup\n"), [])
+        problems = live_session_list_problems(self.Good.replace("user-setup\n", ""), "")
+        self.assertTrue(any("user-setup" in p for p in problems), problems)
+
+    def test_live_build_default_install_pass_list_is_rejected(self):
+        # Negative control: the 11d49f8 image kept live-boot/live-config on installed disks.
+        problems = live_session_list_problems("user-setup\n", None)
+        self.assertTrue(any("live.list.chroot is absent" in p for p in problems), problems)
+        problems = live_session_list_problems(self.Good, "live-boot\nlive-config\n")
+        self.assertTrue(any("install pass" in p for p in problems), problems)
 
 
 class auto_build_fixture_t(unittest.TestCase):
@@ -372,6 +402,13 @@ class auto_build_fixture_t(unittest.TestCase):
         broken = re.sub(r"(?m)^sed -i .*live/medium.*\n", "", text)
         self.assertNotEqual(broken, text)
         self.assertTrue(any("live-medium" in p for p in auto_build_problems(broken)))
+
+    def test_missing_apt_mirror_setup_is_rejected(self):
+        # Negative control: the 11d49f8 image's installer wrote no Debian sources.
+        text = m1_support.read_repo(AutoBuildPath)
+        broken = text.replace("\nfetch_installer_udebs\n", "\n")
+        self.assertNotEqual(broken, text)
+        self.assertTrue(any("apt-mirror-setup" in p for p in auto_build_problems(broken)))
 
     def test_restoring_after_binary_is_rejected(self):
         text = m1_support.read_repo(AutoBuildPath)

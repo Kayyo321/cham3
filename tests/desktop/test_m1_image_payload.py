@@ -157,6 +157,17 @@ class image_payload_t(unittest.TestCase):
         self.assertTrue(pool, "the ISO has no package pool")
         self.assertEqual(payload_problems(pool, firmware, contents), [])
 
+    def test_installer_has_the_network_mirror_udeb(self):
+        # live-build excludes apt-mirror-setup by default; without it installed systems get no
+        # Debian sources. auto/build adds it as a local udeb.
+        udebs = set()
+        for path in iso_find(iso_path(), "/pool-udeb"):
+            match = re.search(r"([^/_]+)_[^/_]+_[^/_]+\.udeb$", path)
+            if match:
+                udebs.add(match.group(1))
+        self.assertIn("apt-mirror-setup", udebs, sorted(udebs)[:20])
+        self.assertIn("choose-mirror-bin", udebs)
+
     def test_live_root_manifest_firmware(self):
         path = m1_support.image_manifest_path()
         m0_support.require_file(path, "build_image.sh M1 output")

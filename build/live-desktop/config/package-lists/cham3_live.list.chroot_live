@@ -1,11 +1,18 @@
-# Live-session-only packages of the cham3 M1 image (installed in live-build's "live"
-# pass; the image's debian-installer removes them from an installed system).
+# Live-session-only packages of the cham3 M1 image. They are installed in live-build's
+# "live" pass, so live-build lists them in live/filesystem.packages-remove and the
+# image's debian-installer removes them from an installed system. (live.list.chroot,
+# which lists nothing, stops lb config from installing live-boot and live-config in the
+# "install" pass, where the installer would keep them.)
 #
+# live-boot, live-config, live-config-systemd: the live system's boot and configuration.
 # user-setup: live-config creates the live account ("user", live-config's public
 # default password "live") only when this package is installed (its 0030-user-setup
 # component exits early otherwise), and SDDM's live autologin into the Plasma Wayland
 # session (live-config 0085-sddm plus cham3's 0086-cham3-sddm-wayland) needs that
 # account. It is only a Recommends of live-config, and the image is built with
-# --apt-recommends false, so without this list the first native M1 image booted to
-# the SDDM greeter with no live user (VM gate, m1_image run 38203029813).
+# --apt-recommends false, so without it the first native M1 image booted to the SDDM
+# greeter with no live user (VM gate, m1_image run 38203029813).
+live-boot
+live-config
+live-config-systemd
 user-setup
