@@ -1,0 +1,70 @@
+== tests/desktop (image-m1, repo: /workspace/M1-review, out: /workspace/M1-review/out) ==
+test_kali_apt_source_is_caught (test_m1_image_contents.image_contents_fixture_t.test_kali_apt_source_is_caught) ... ok
+test_missing_metapackage_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_metapackage_is_caught) ... ok
+test_missing_plasmoid_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_plasmoid_is_caught) ... ok
+test_positive_control_accepted (test_m1_image_contents.image_contents_fixture_t.test_positive_control_accepted) ... ok
+test_shipped_backend_binary_is_caught (test_m1_image_contents.image_contents_fixture_t.test_shipped_backend_binary_is_caught) ... ok
+test_shipped_systemd_unit_is_caught (test_m1_image_contents.image_contents_fixture_t.test_shipped_systemd_unit_is_caught) ... ok
+test_contents_match_m1_contract (test_m1_image_contents.image_contents_t.test_contents_match_m1_contract) ... FAIL
+test_manifest_name_parsing_strips_versions (test_m1_image_manifest.image_manifest_fixture_t.test_manifest_name_parsing_strips_versions) ... ok
+test_missing_cham3_full_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_missing_cham3_full_is_caught) ... ok
+test_positive_control_clean_manifest_accepted (test_m1_image_manifest.image_manifest_fixture_t.test_positive_control_clean_manifest_accepted) ... ok
+test_transitive_librewolf_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_transitive_librewolf_is_caught) ... ok
+test_transitive_thunar_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_transitive_thunar_is_caught) ... ok
+test_image_checksums_verify (test_m1_image_manifest.image_manifest_t.test_image_checksums_verify) ... FAIL
+test_manifest_has_required_and_no_forbidden_packages (test_m1_image_manifest.image_manifest_t.test_manifest_has_required_and_no_forbidden_packages) ... FAIL
+test_provenance_records_m1_profile (test_m1_image_manifest.image_manifest_t.test_provenance_records_m1_profile) ... FAIL
+
+======================================================================
+FAIL: test_contents_match_m1_contract (test_m1_image_contents.image_contents_t.test_contents_match_m1_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-review/tests/desktop/test_m1_image_contents.py", line 120, in test_contents_match_m1_contract
+    paths = rootfs_listing()
+            ^^^^^^^^^^^^^^^^
+  File "/workspace/M1-review/tests/desktop/test_m1_image_contents.py", line 57, in rootfs_listing
+    completed = m0_support.run_tool(["unsquashfs", "-l", image_root()])
+                                                         ^^^^^^^^^^^^
+  File "/workspace/M1-review/tests/desktop/test_m1_image_contents.py", line 40, in image_root
+    m0_support.require_file(iso, "run build/scripts/build_image.sh with the M1 profile first")
+  File "/workspace/M1-review/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-review/out/image/cham3-m1-desktop-amd64.iso (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_image_checksums_verify (test_m1_image_manifest.image_manifest_t.test_image_checksums_verify)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-review/tests/desktop/test_m1_image_manifest.py", line 58, in test_image_checksums_verify
+    m0_support.require_file(os.path.join(image_dir, "SHA256SUMS"), "build_image.sh output")
+  File "/workspace/M1-review/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-review/out/image/SHA256SUMS (build_image.sh output)
+
+======================================================================
+FAIL: test_manifest_has_required_and_no_forbidden_packages (test_m1_image_manifest.image_manifest_t.test_manifest_has_required_and_no_forbidden_packages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-review/tests/desktop/test_m1_image_manifest.py", line 54, in test_manifest_has_required_and_no_forbidden_packages
+    self.assertEqual(manifest_problems(manifest_names()), [])
+                                       ^^^^^^^^^^^^^^^^
+  File "/workspace/M1-review/tests/desktop/test_m1_image_manifest.py", line 25, in manifest_names
+    m0_support.require_file(path, "run build/scripts/build_image.sh with the M1 profile first")
+  File "/workspace/M1-review/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-review/out/image/cham3-m1-desktop-amd64.packages (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_provenance_records_m1_profile (test_m1_image_manifest.image_manifest_t.test_provenance_records_m1_profile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-review/tests/desktop/test_m1_image_manifest.py", line 63, in test_provenance_records_m1_profile
+    m0_support.require_file(path, "build_image.sh output")
+  File "/workspace/M1-review/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-review/out/image/provenance.json (build_image.sh output)
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.002s
+
+FAILED (failures=4)

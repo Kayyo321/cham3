@@ -1,0 +1,14 @@
+== tests/packaging (packages, repo: /workspace/M1-review, out: /workspace/M1-review/out) ==
+test_defective_package_is_rejected (test_cham3_base_package.cham3_base_package_t.test_defective_package_is_rejected) ... ok
+test_real_package_passes_checker (test_cham3_base_package.cham3_base_package_t.test_real_package_passes_checker) ... ok
+test_well_formed_fixture_is_accepted (test_cham3_base_package.cham3_base_package_t.test_well_formed_fixture_is_accepted) ... ok
+test_wrong_expected_version_is_rejected (test_cham3_base_package.cham3_base_package_t.test_wrong_expected_version_is_rejected) ... ok
+test_deb_version_matches_changelog_version (test_packages_output.packages_output_t.test_deb_version_matches_changelog_version) ... ok
+test_exactly_the_expected_debs_are_built (test_packages_output.packages_output_t.test_exactly_the_expected_debs_are_built) ... ok
+test_lintian_report_has_no_errors (test_packages_output.packages_output_t.test_lintian_report_has_no_errors) ... ok
+test_sha256sums_verify_and_cover_build_outputs (test_packages_output.packages_output_t.test_sha256sums_verify_and_cover_build_outputs) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.133s
+
+OK

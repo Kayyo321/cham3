@@ -1,0 +1,13 @@
+debhelper	13.24.2
+dpkg-dev	1.22.22
+lintian	2.122.0
+live-build	1:20250505+deb13u1
+python3	3.13.5-1
+qemu-system-x86	1:10.0.13+ds-0+deb13u1
+shellcheck	0.10.0-1
+yamllint	1.37.1-1
+x86_64
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"

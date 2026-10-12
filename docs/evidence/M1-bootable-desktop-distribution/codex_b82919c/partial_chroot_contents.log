@@ -1,0 +1,4 @@
+PARTIAL FAILED-BUILD CHROOT ONLY; not an ISO or installation.
+content check: ['required file missing from image: usr/share/wayland-sessions/plasmawayland.desktop', 'required file missing from image: usr/share/wallpapers/Cham3/contents/images/cham3_minimal_charcoal.png']
+manifest requirements (partial dpkg status): []
+installed package count: 1323
