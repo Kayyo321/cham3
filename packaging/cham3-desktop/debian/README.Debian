@@ -29,3 +29,53 @@ Panel layout
   user profile. An existing profile keeps its own panel configuration; apply
   the layout to an existing profile from System Settings, Appearance, Global
   Theme, choosing "cham3" with the option to reset the desktop layout.
+
+Packet capture (dumpcap)
+  Wireshark's capture helper /usr/bin/dumpcap (package wireshark-common, pulled
+  in by cham3-full) must never run as set-user-id root. Debian's
+  wireshark-common gives non-root capture through the "wireshark" group plus
+  the file capabilities cap_net_admin and cap_net_raw, but falls back to a
+  set-user-id root dumpcap when setcap is missing or fails. cham3-desktop
+  removes that fallback:
+    - debian/postinst pins a dpkg-statoverride (owner root, group root, mode
+      0750) on dumpcap.
+      While an override exists, wireshark-common's postinst changes nothing on
+      the file, so the fallback cannot run on an upgrade, on dpkg-reconfigure
+      wireshark-common, or when wireshark-common is installed after
+      cham3-desktop. dpkg applies the override on every unpack, so a new
+      dumpcap is never set-user-id either.
+    - the same script runs when cham3-desktop is configured and, through a dpkg
+      file trigger on /usr/bin/dumpcap, after any package installs, upgrades or
+      removes that file. It clears the set-user-id and set-group-id bits, makes
+      the file root:wireshark mode 0750 (no access for others) and sets
+      cap_net_admin,cap_net_raw=eip.
+    - if the capabilities cannot be set, for example on a file system without
+      capability support, dumpcap is left without any set-id bit and without
+      capabilities: capture by non-root users is unavailable until they can be
+      set (fix the cause, then run: dpkg-reconfigure cham3-desktop). The
+      failure is reported on standard error.
+  The override names group root, not "wireshark", because wireshark-common
+  deletes the wireshark group when it is purged and dpkg aborts on an override
+  naming an unknown group. The postrm removes the override when cham3-desktop
+  is purged, but only if it is exactly this one; removing the package without
+  purging it keeps the override, so a reinstalled or upgraded wireshark-common
+  still cannot create a set-user-id dumpcap (capture stays unavailable until
+  cham3-desktop is installed again). An override set by the administrator is
+  respected: only the set-id bits are cleared, and capabilities are set only if
+  the file is root:wireshark with no access for others.
+  Membership of the "wireshark" group is NOT granted by installation. Adding a
+  user to the group is a deliberate administrative step that lets that user
+  capture the network traffic visible to the host, so treat it as a privilege.
+  Once the override exists, the wireshark-common debconf answer install-setuid
+  (preseeded true in the image) no longer affects dumpcap, and
+  dpkg-reconfigure wireshark-common leaves the file as it is, including any
+  capabilities that were set earlier. Run dpkg-reconfigure cham3-desktop to
+  apply the policy again.
+  Limits: this covers the file /usr/bin/dumpcap only. In the one dpkg run that
+  installs wireshark-common and cham3-desktop together for the first time,
+  Debian's own postinst can still set the bit if dpkg configures
+  wireshark-common first; cham3-desktop clears it when it is configured later
+  in the same run, so the end state is safe but the interval is not zero.
+  Whether file capabilities survive the squashfs image and the installer's
+  copy to disk is a property of that tooling and has to be checked on the
+  built image; the package tests do not cover it.

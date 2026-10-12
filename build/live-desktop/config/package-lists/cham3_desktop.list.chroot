@@ -1,7 +1,8 @@
 # M1 package list: the cham3-full metapackage only. It depends on cham3-desktop
 # (Plasma 6 Wayland session, KDE core utilities, cham3 panel) and on the curated
 # Debian 13 suite. cham3-desktop and cham3-full are supplied from
-# config/packages.chroot at build time (build_image.sh copies out/packages/*.deb).
-# cham3-base is also in packages.chroot but is not listed: the M1 image does not
-# need the M0 skeleton.
+# config/packages.chroot at build time: build_image.sh stages only the built
+# packages named in ../../cham3-local-packages (this profile's manifest).
+# cham3-base, the M0 skeleton, is neither staged nor listed: the M1 image does
+# not need it.
 cham3-full

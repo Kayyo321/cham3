@@ -30,22 +30,40 @@ Depends: ${misc:Depends},
  hashcat,
  john,
  hydra,
- torbrowser-launcher
-Description: cham3 desktop plus the curated Debian 13 application suite (M1)
+ torbrowser-launcher,
+ librewolf,
+ zaproxy,
+ amass,
+ exploitdb,
+ ghidra,
+ radare2
+Description: cham3 desktop plus the curated application suite (M1)
  Metapackage for the cham3 M1 desktop image. It installs cham3-desktop and the
- curated suite that is available from Debian 13 (trixie): nmap with Zenmap,
- masscan, bind9-dnsutils, whois, Wireshark and tshark, tcpdump, nethogs,
- iftop, sqlmap, nikto, ffuf, gobuster, aircrack-ng, binwalk, exiftool,
- hashcat, john, hydra and the Tor Browser launcher. nikto comes from the
- Debian non-free archive area and torbrowser-launcher from contrib.
+ curated suite: from Debian 13 (trixie) nmap with Zenmap, masscan,
+ bind9-dnsutils, whois, Wireshark and tshark, tcpdump, nethogs, iftop, sqlmap,
+ nikto, ffuf, gobuster, aircrack-ng, binwalk, exiftool, hashcat, john, hydra
+ and the Tor Browser launcher; and, from two separately authenticated and
+ pinned sources, LibreWolf, OWASP ZAP (zaproxy), amass, exploitdb
+ (searchsploit), ghidra and radare2. nikto comes from the Debian non-free
+ archive area and torbrowser-launcher from contrib.
  .
- Planned, pending source review (documented gaps, NOT installed by this
- package). The following requested tools are not available in Debian 13
- (trixie), or need a separately reviewed source, and are not dependencies:
- LibreWolf, ghidra, metasploit-framework, exploitdb (searchsploit), zaproxy
- (OWASP ZAP), wpscan, cutter, radare2, rizin, mitmproxy, amass; no
- external package source is configured. Until they are resolved the image has
- no disassembler or decompiler and no mitmproxy.
+ Non-Debian members (owner-approved). librewolf comes from the official
+ LibreWolf repository. zaproxy, amass, exploitdb, ghidra and radare2 come from
+ the Kali archive through a per-package allowlist: those five plus the
+ Kali-only libraries libpostal-data, libradare2-6.0.0t64 and
+ libradare2-common, and nothing else. Each source has its own pinned key and
+ its own apt preferences; every other package of these two repositories has
+ priority -1, so they can neither add to nor replace Debian packages. The
+ sources, keys and pins belong to the cham3 image definition (build/live-desktop
+ in the source tree), not to this package: installing cham3-full on another
+ system needs the same sources and pins. Recommends are not installed (for
+ example the Kali-only ghidra-data).
+ .
+ Deferred, pending separate review and NOT dependencies of this package:
+ mitmproxy, wpscan and metasploit-framework. The alternatives cutter and
+ rizin are omitted in favour of radare2, and burpsuite in favour of zaproxy
+ (OWASP ZAP). Until the deferred tools are resolved the image has no
+ mitmproxy, no WordPress scanner and no exploitation framework.
  .
  Package presence is not a safety or isolation claim. Installing this
  metapackage does not sandbox any tool, apply a permission contract or enforce

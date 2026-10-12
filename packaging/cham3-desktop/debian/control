@@ -40,7 +40,9 @@ Depends: ${misc:Depends},
  fonts-noto-color-emoji,
  qt6-image-formats-plugins,
  unzip,
- zip
+ zip,
+ libcap2-bin,
+ adduser
 Recommends: fonts-noto,
  kinfocenter,
  qml6-module-org-kde-desktop
@@ -59,3 +61,12 @@ Description: cham3 KDE Plasma 6 Wayland desktop defaults (M1 visual foundation)
  not provide application isolation, permission contracts, network mode
  enforcement or a kill switch, and a widget on screen is not evidence that any
  security policy is active.
+ .
+ Packet capture: cham3-desktop keeps /usr/bin/dumpcap, which wireshark-common
+ ships, out of set-user-id root. Its maintainer script pins a dpkg-statoverride
+ on the file and, through a dpkg file trigger, keeps it root:wireshark, mode
+ 0750, with only the cap_net_admin and cap_net_raw file capabilities. If those
+ capabilities cannot be set, capture by non-root users is unavailable; the
+ set-user-id fallback of wireshark-common is never used. Installing the
+ package adds no user to the wireshark group: membership is a deliberate
+ per-user administrative step that lets that user capture packets.

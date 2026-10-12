@@ -1,0 +1,157 @@
+#!/bin/sh
+# Purpose: verify the pinned apt archive keys shipped in keys/ and build the
+# keyring package that live-build installs before its first "apt-get update".
+# Invoked by auto/config in the live-build work directory (the current directory
+# must contain keys/ and config/). Fails closed: a missing tool, a hash or
+# fingerprint mismatch, an unexpected extra key, secret key material or an expired
+# key stops "lb config", and so the build, before anything is installed.
+#
+# Why a local keyring package. The two non-Debian sources in config/archives
+# (zzz_cham3_kali.list, zzz_cham3_librewolf.list) name their key with signed-by, so the
+# key is used only for that source. live-build gives exactly two ways to have a
+# key in the chroot before the first apt-get update: config/archives/*.key, which
+# copies it into /etc/apt/trusted.gpg.d where apt trusts it for every repository,
+# and a local keyring package config/archives/*.deb, which dpkg installs before
+# the update. This script uses the second. The package installs the dearmored
+# keys under /usr/share/keyrings and nowhere else; it stays installed in the
+# image so the same sources keep working on the installed system.
+#
+# Pinned values (provenance: keys/README and docs/research/M1_package_disposition.md):
+#   Kali archive key     SHA-256 bbaef4b3...71b1  fingerprint 827C8569F2518CC677FECA1AED65462EC8D5E4C5
+#   LibreWolf repository SHA-256 cd1c45eb...70ad  fingerprint 662E3CDD6FE329002D0CA5BB40339DD82B12EF16
+# The legacy Kali key 44C6513A8E4FB3D30875F758ED444FF07D8D0BF6 is not shipped; a
+# keyring holding any primary key other than the pinned one is refused.
+set -eu
+
+keys_dir=keys
+archives_dir=config/archives
+package_name=cham3-archive-keyring
+package_version='0.0.0~m1'
+
+kali_armored="${keys_dir}/kali_archive_key.asc"
+kali_sha256=bbaef4b375fdae6d361d648355c9a003b081d421a40f39440f296cbd458071b1
+kali_fingerprint=827C8569F2518CC677FECA1AED65462EC8D5E4C5
+kali_keyring_name=cham3_kali_archive.gpg
+
+librewolf_armored="${keys_dir}/librewolf_key.asc"
+librewolf_sha256=cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad
+librewolf_fingerprint=662E3CDD6FE329002D0CA5BB40339DD82B12EF16
+librewolf_keyring_name=cham3_librewolf.gpg
+
+die() {
+    echo "build_archive_keyring: $*" >&2
+    exit 1
+}
+
+for tool in gpg sha256sum dpkg-deb awk date mktemp; do
+    command -v "${tool}" > /dev/null 2>&1 \
+        || die "missing tool: ${tool} (gpg is provided by the gnupg package; see build/host_packages.txt)"
+done
+
+work_dir=$(mktemp -d) || die "cannot create a temporary directory"
+trap 'rm -rf "${work_dir}"' EXIT INT TERM
+# A private, empty gpg home: nothing is read from or written to the caller's keyrings.
+GNUPGHOME="${work_dir}/gnupg"
+export GNUPGHOME
+mkdir -m 700 "${GNUPGHOME}"
+
+# Machine-readable listing of the keys in a file (armored or binary); no keyring is involved.
+key_listing() {
+    gpg --batch --no-tty --with-colons --fingerprint --show-keys -- "$1"
+}
+
+# Fail unless the file holds exactly one primary key, with the expected
+# fingerprint, no secret key material and no expiry or revocation.
+check_key_file() { # label file fingerprint
+    check_listing=$(key_listing "$2") || die "$1: gpg cannot read $2"
+    check_secret=$(printf '%s\n' "${check_listing}" | awk -F: '$1 == "sec" || $1 == "ssb" { n++ } END { print n + 0 }')
+    [ "${check_secret}" = "0" ] || die "$1: $2 contains secret key material"
+    check_count=$(printf '%s\n' "${check_listing}" | awk -F: '$1 == "pub" { n++ } END { print n + 0 }')
+    [ "${check_count}" = "1" ] || die "$1: $2 holds ${check_count} primary keys, expected exactly 1"
+    # The fingerprint record that follows a pub record is the primary key's; those
+    # that follow sub records belong to subkeys.
+    check_primary=$(printf '%s\n' "${check_listing}" | awk -F: '
+        $1 == "pub" { expect = 1; next }
+        $1 == "sub" || $1 == "sec" || $1 == "ssb" { expect = 0; next }
+        $1 == "fpr" && expect == 1 { print $10; expect = 0 }
+    ')
+    [ "${check_primary}" = "$3" ] \
+        || die "$1: primary key fingerprint in $2 is '${check_primary}', expected '$3'"
+    check_now=$(date +%s)
+    printf '%s\n' "${check_listing}" | awk -F: -v now="${check_now}" '
+        $1 == "pub" { if ($2 == "e" || $2 == "r" || ($7 != "" && $7 + 0 <= now + 0)) bad = 1 }
+        END { exit bad }
+    ' || die "$1: the key in $2 is expired or revoked"
+    check_uid=$(printf '%s\n' "${check_listing}" | awk -F: '$1 == "uid" { print $10; exit }')
+    echo "build_archive_keyring: $1 key ok: fingerprint $3 (${check_uid}) in $2"
+}
+
+# Verify one armored key and write its dearmored keyring into the package staging tree.
+prepare_key() { # label armored sha256 fingerprint keyring_name
+    [ -f "$2" ] || die "$1: key file $2 is missing"
+    prepare_have=$(sha256sum "$2" | awk '{ print $1 }')
+    [ "${prepare_have}" = "$3" ] || die "$1: SHA-256 of $2 is ${prepare_have}, expected $3"
+    check_key_file "$1" "$2" "$4"
+    gpg --batch --no-tty --dearmor < "$2" > "${stage_dir}/usr/share/keyrings/$5" \
+        || die "$1: gpg --dearmor failed for $2"
+    # The shipped keyring is checked again: it must hold exactly the pinned key.
+    check_key_file "$1 keyring" "${stage_dir}/usr/share/keyrings/$5" "$4"
+    chmod 0644 "${stage_dir}/usr/share/keyrings/$5"
+    echo "build_archive_keyring: $1 armored SHA-256 $3"
+}
+
+stage_dir="${work_dir}/stage"
+mkdir -p "${stage_dir}/DEBIAN" "${stage_dir}/usr/share/keyrings" "${stage_dir}/usr/share/doc/${package_name}"
+chmod 0755 "${stage_dir}" "${stage_dir}/DEBIAN" "${stage_dir}/usr" "${stage_dir}/usr/share" \
+    "${stage_dir}/usr/share/keyrings" "${stage_dir}/usr/share/doc" "${stage_dir}/usr/share/doc/${package_name}"
+
+prepare_key kali "${kali_armored}" "${kali_sha256}" "${kali_fingerprint}" "${kali_keyring_name}"
+prepare_key librewolf "${librewolf_armored}" "${librewolf_sha256}" "${librewolf_fingerprint}" "${librewolf_keyring_name}"
+
+cat > "${stage_dir}/usr/share/doc/${package_name}/README" << EOF
+${package_name}: pinned apt archive keys for the cham3 M1 desktop image.
+
+/usr/share/keyrings/${kali_keyring_name}
+  Kali archive key, fingerprint ${kali_fingerprint}.
+  Armored source SHA-256 ${kali_sha256}.
+  Used only by /etc/apt/sources.list.d/zzz_cham3_kali.list (signed-by).
+/usr/share/keyrings/${librewolf_keyring_name}
+  LibreWolf repository key, fingerprint ${librewolf_fingerprint}.
+  Armored source SHA-256 ${librewolf_sha256}.
+  Used only by /etc/apt/sources.list.d/zzz_cham3_librewolf.list (signed-by).
+
+Each keyring holds exactly that one primary key; neither is in the global apt
+trust store. Provenance: build/live-desktop/keys/README in the cham3 source tree.
+EOF
+chmod 0644 "${stage_dir}/usr/share/doc/${package_name}/README"
+
+cat > "${stage_dir}/usr/share/doc/${package_name}/copyright" << EOF
+These files are the public keys published by the Kali Linux project and by the
+LibreWolf project for their package archives. They are redistributed unmodified
+(only converted from the armored to the binary OpenPGP format) so that apt can
+verify those archives; no licence to the keys or to the packages they sign is
+granted or implied here.
+EOF
+chmod 0644 "${stage_dir}/usr/share/doc/${package_name}/copyright"
+
+cat > "${stage_dir}/DEBIAN/control" << EOF
+Package: ${package_name}
+Version: ${package_version}
+Architecture: all
+Section: misc
+Priority: optional
+Maintainer: cham3 developers <maintainers@cham3.invalid>
+Description: pinned apt archive keys for the cham3 M1 desktop image
+ Two single-key keyrings under /usr/share/keyrings, one for the Kali archive and
+ one for the LibreWolf repository, each used only through signed-by by the
+ matching cham3 apt source. Built from keys whose SHA-256 and fingerprint were
+ verified at image build time.
+EOF
+chmod 0644 "${stage_dir}/DEBIAN/control"
+
+mkdir -p "${archives_dir}"
+package_file="${archives_dir}/${package_name}_${package_version}_all.deb"
+rm -f "${package_file}"
+dpkg-deb --root-owner-group --build "${stage_dir}" "${package_file}" > /dev/null \
+    || die "dpkg-deb failed to build ${package_file}"
+echo "build_archive_keyring: built ${package_file}"

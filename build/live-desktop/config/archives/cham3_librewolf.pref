@@ -1,0 +1,12 @@
+# cham3 LibreWolf pin (F2, owner-approved). Every package of the LibreWolf
+# repository has priority -1 except librewolf, so the repository can never
+# supply or replace any other package. Packages that exist in Debian keep coming
+# from Debian.
+
+Package: *
+Pin: release n=librewolf
+Pin-Priority: -1
+
+Package: librewolf
+Pin: release n=librewolf
+Pin-Priority: 500

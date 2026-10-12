@@ -1,0 +1,22 @@
+# cham3 narrow Kali source (F2, owner-approved). This is NOT a general Kali
+# repository: cham3_kali.pref gives every Kali package priority -1 except the
+# eight names it lists, so apt can install only those. Authentication: signed-by
+# names the single pinned key (fingerprint 827C8569F2518CC677FECA1AED65462EC8D5E4C5)
+# shipped by the cham3-archive-keyring package; the source is never marked trusted
+# without a key and no key is added to the global apt trust store.
+# live-build copies this file (no .chroot suffix) into the build chroot and into
+# the final image, so installed Kali-origin packages keep receiving updates from
+# the same authenticated source and pin.
+#
+# The file name starts with zzz_ on purpose. A package version that exists in both
+# Debian and this archive (a version string Debian also has, which a priority
+# cannot separate) is downloaded from the FIRST source apt knows for that version,
+# not from the one with the best priority. apt reads /etc/apt/sources.list first and
+# then sources.list.d in file name order, and during the image build live-build moves
+# the Debian sources to sources.list.d/zz-sources.list. A name that sorts after
+# zz-sources.list keeps every Debian entry ahead of this one, so such a package comes
+# from Debian and this archive supplies only the allowlisted names. (In a test with a
+# name that sorts earlier, packages of the cham3-full closure that exist in both
+# archives were downloaded from the Kali mirror.) On the installed system
+# sources.list is read first.
+deb [arch=amd64 signed-by=/usr/share/keyrings/cham3_kali_archive.gpg] http://http.kali.org/kali/ kali-rolling main
