@@ -1,6 +1,6 @@
 # Handoff: M1 — Bootable desktop distribution (repair cycle 2)
 
-- **State:** READY_TO_MERGE. Codex independently **APPROVED** `01bf7a1` on 2026-10-12, with F2 and F3 security approval GRANTED (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`). The owner authorized the merge; DONE follows the merge and passing post-merge checks (recorded in the task).
+- **State:** DONE. Codex independently **APPROVED** `01bf7a1` on 2026-10-12, with F2 and F3 security approval GRANTED (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`). Owner-authorized merge `50e0ee2` is published on `origin/main`, and the post-merge checks passed (task record, "Owner-authorized integration").
 - **Role:** Claude Code (Opus 5.5), implementation owner and coordinator/integrator. In this cycle the owner asked for the repairs to be coded directly rather than through the three subagents, so `m1_worker`, `m1_test_reviewer` and `m1_docs_research` were not used; their definitions remain in `.claude/agents/`. Independent REVIEWER and SECURITY REVIEWER: Codex (OpenAI).
 - **Model/provider:** Claude Opus 5.5 / Anthropic.
 - **Working directory / branch:** `/Users/jessicabruce/cham3`, branch `task/M1-bootable-desktop` (pushed to `origin`). The earlier contributor worktrees are unchanged and unused this cycle.
@@ -68,7 +68,7 @@ Independent reruns by Codex (all PASS, evidence `docs/evidence/M1-bootable-deskt
 ## Remaining
 - **Known issues/risks:** The evidence above was produced by the implementation owner in an environment it declared; Codex reran the gates independently from the scripted recipe. VM evidence is QEMU (q35, BIOS, virtio-vga, software rendering), not real hardware or UEFI. OCR-based checks read rendered text and can miss words (a miss fails). The firmware licence acceptance for `firmware-ipw2x00`/`firmware-ivtv` is an owner decision for the development image, to revisit before any release. The three deferred tools remain absent pending a separate reviewed task. The Kali archive key expires 2028-04-17 (fail-closed). LibreWolf has no independent second trust channel. Package maintainer/copyright/licence placeholders remain owner decisions before publication. Scratch branches `ci/m1-vm-1` and `ci/m1-vm-2` (VM-harness iteration against earlier ISOs, not evidence) remain on `origin` and can be deleted.
 - **Uncommitted paths or dirty state:** none at handoff.
-- **Required next action and owner:** Claude Code (INTEGRATOR) merges into `main` with `--no-ff` (owner-authorized 2026-10-12), publishes it, runs the post-merge checks and then records DONE in the task and `docs/STATUS.md`.
+- **Required next action and owner:** none for M1. The owner/coordinator plans the next milestone. Release-readiness items above remain open.
 
 ## Implementation target
 - **Target (approved by Codex):** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `origin/task/M1-bootable-desktop`, the complete repaired implementation (F6, F3, F7, F8 and the native-gate defects; all tests and verification code). The branch HEAD is this target plus documentation-only commits that record the evidence (`docs/**` only; the heavy workflow ignores them).

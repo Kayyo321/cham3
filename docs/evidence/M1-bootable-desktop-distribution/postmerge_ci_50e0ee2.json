@@ -1,0 +1,1391 @@
+{
+ "runs": [
+  {
+   "run": {
+    "conclusion": "success",
+    "createdAt": "2026-10-12T13:36:48Z",
+    "databaseId": 38256907579,
+    "event": "push",
+    "headBranch": "main",
+    "headSha": "50e0ee2c16b2db619d106f969df90c84b88e67ae",
+    "jobs": [
+     {
+      "completedAt": "2026-10-12T13:38:40Z",
+      "conclusion": "success",
+      "databaseId": 114837206586,
+      "name": "static_and_desktop",
+      "startedAt": "2026-10-12T13:36:51Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:53Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:52Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:59Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:53Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:08Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:36:59Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:10Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:08Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:10Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:10Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:40Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:10Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:40Z",
+        "conclusion": "success",
+        "name": "Create unprivileged user",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:40Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:47Z",
+        "conclusion": "success",
+        "name": "Static checks",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:40Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:31Z",
+        "conclusion": "success",
+        "name": "Static check tests",
+        "number": 9,
+        "startedAt": "2026-10-12T13:37:47Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:32Z",
+        "conclusion": "success",
+        "name": "Desktop (M1) static tests",
+        "number": 10,
+        "startedAt": "2026-10-12T13:38:31Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:33Z",
+        "conclusion": "success",
+        "name": "Staging (F1 per-profile package selection) tests",
+        "number": 11,
+        "startedAt": "2026-10-12T13:38:32Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:35Z",
+        "conclusion": "success",
+        "name": "Native apt pin identity tests (F6)",
+        "number": 12,
+        "startedAt": "2026-10-12T13:38:33Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:35Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 23,
+        "startedAt": "2026-10-12T13:38:35Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:37Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 24,
+        "startedAt": "2026-10-12T13:38:35Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:37Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 25,
+        "startedAt": "2026-10-12T13:38:37Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907579/job/114837206586"
+     },
+     {
+      "completedAt": "2026-10-12T13:39:32Z",
+      "conclusion": "success",
+      "databaseId": 114837206863,
+      "name": "privileged_capture",
+      "startedAt": "2026-10-12T13:36:51Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:53Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:52Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:58Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:53Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:05Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:36:58Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:06Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:05Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:06Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:06Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:30Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:06Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:38Z",
+        "conclusion": "success",
+        "name": "Build packages",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:30Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:39:25Z",
+        "conclusion": "success",
+        "name": "Privileged capture and maintainer-script suites (F3, F8)",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:38Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:39:27Z",
+        "conclusion": "success",
+        "name": "Upload privileged suite log",
+        "number": 9,
+        "startedAt": "2026-10-12T13:39:25Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:39:27Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 17,
+        "startedAt": "2026-10-12T13:39:27Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:39:29Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 18,
+        "startedAt": "2026-10-12T13:39:27Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:39:30Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 19,
+        "startedAt": "2026-10-12T13:39:29Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907579/job/114837206863"
+     },
+     {
+      "completedAt": "2026-10-12T13:37:42Z",
+      "conclusion": "success",
+      "databaseId": 114837206938,
+      "name": "package_build",
+      "startedAt": "2026-10-12T13:36:50Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:52Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:51Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:56Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:52Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:03Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:36:56Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:04Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:03Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:04Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:04Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:28Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:04Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:36Z",
+        "conclusion": "success",
+        "name": "Build packages (cham3-base, cham3-desktop, cham3-full) and run lintian",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:28Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:36Z",
+        "conclusion": "success",
+        "name": "Package tests",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:36Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:37Z",
+        "conclusion": "success",
+        "name": "Upload package results",
+        "number": 9,
+        "startedAt": "2026-10-12T13:37:36Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:38Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 17,
+        "startedAt": "2026-10-12T13:37:37Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:41Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 18,
+        "startedAt": "2026-10-12T13:37:38Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:41Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 19,
+        "startedAt": "2026-10-12T13:37:41Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907579/job/114837206938"
+     }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-10-12T13:39:32Z",
+    "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907579",
+    "workflowName": "m1_checks"
+   },
+   "artifacts": [
+    {
+     "id": 11750663129,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc1MDY2MzEyOQ==",
+     "name": "m1_privileged_capture",
+     "size_in_bytes": 1793,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11750663129",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11750663129/zip",
+     "expired": false,
+     "digest": "sha256:7a6b8d541c09c0db35896452d987210bf9ad3e5345efc53f5978b2de6823f1e7",
+     "created_at": "2026-10-12T13:39:27Z",
+     "updated_at": "2026-10-12T13:39:27Z",
+     "expires_at": "2026-10-26T13:39:26Z"
+    },
+    {
+     "id": 11749929222,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc0OTkyOTIyMg==",
+     "name": "m1_packages",
+     "size_in_bytes": 2032143,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11749929222",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11749929222/zip",
+     "expired": false,
+     "digest": "sha256:7bd9593edf91a05e672c5dc9e7b7b7823ce8f4f4c55dd20cd49fff768c681ecf",
+     "created_at": "2026-10-12T13:37:37Z",
+     "updated_at": "2026-10-12T13:37:37Z",
+     "expires_at": "2026-10-19T13:37:37Z"
+    }
+   ],
+   "log_summaries": {
+    "static_and_desktop": [
+     "Static checks | 2026-10-12T13:37:47.0445308Z scan_secrets: PASS (no matches for the configured patterns)",
+     "Static checks | 2026-10-12T13:37:47.0461118Z PASS shellcheck",
+     "Static checks | 2026-10-12T13:37:47.0461718Z PASS py_compile",
+     "Static checks | 2026-10-12T13:37:47.0462393Z PASS yamllint",
+     "Static checks | 2026-10-12T13:37:47.0462725Z PASS scan_secrets",
+     "Static checks | 2026-10-12T13:37:47.0463068Z static checks: PASS",
+     "Static check tests | 2026-10-12T13:38:31.2429309Z Ran 82 tests in 44.041s",
+     "Static check tests | 2026-10-12T13:38:31.2429811Z OK",
+     "Desktop (M1) static tests | 2026-10-12T13:38:32.6201196Z Ran 261 tests in 1.162s",
+     "Desktop (M1) static tests | 2026-10-12T13:38:32.6201525Z OK",
+     "Staging (F1 per-profile package selection) tests | 2026-10-12T13:38:33.2900563Z Ran 16 tests in 0.520s",
+     "Staging (F1 per-profile package selection) tests | 2026-10-12T13:38:33.2900968Z OK",
+     "Native apt pin identity tests (F6) | 2026-10-12T13:38:35.1432754Z Ran 22 tests in 1.684s",
+     "Native apt pin identity tests (F6) | 2026-10-12T13:38:35.1433627Z OK"
+    ],
+    "privileged_capture": [
+     "Build packages | 2026-10-12T13:37:38.4223799Z # lintian exit status: 0",
+     "Build packages | 2026-10-12T13:37:38.4224308Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+     "Privileged capture and maintainer-script suites (F3, F8) | 2026-10-12T13:39:25.9402897Z Ran 77 tests in 102.639s",
+     "Privileged capture and maintainer-script suites (F3, F8) | 2026-10-12T13:39:25.9403161Z OK"
+    ],
+    "package_build": [
+     "Build packages (cham3-base, cham3-desktop, cham3-full) and run lintian | 2026-10-12T13:37:36.5930251Z # lintian exit status: 0",
+     "Build packages (cham3-base, cham3-desktop, cham3-full) and run lintian | 2026-10-12T13:37:36.5931184Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+     "Package tests | 2026-10-12T13:37:36.8152108Z Ran 8 tests in 0.095s",
+     "Package tests | 2026-10-12T13:37:36.8152474Z OK"
+    ]
+   },
+   "commands": [
+    "gh run view 38256907579 --repo Kayyo321/cham3 --json databaseId,workflowName,event,headBranch,headSha,status,conclusion,url,createdAt,updatedAt,jobs",
+    "gh api repos/Kayyo321/cham3/actions/runs/38256907579/artifacts",
+    "gh run view 38256907579 --repo Kayyo321/cham3 --log (summary lines only)"
+   ]
+  },
+  {
+   "run": {
+    "conclusion": "success",
+    "createdAt": "2026-10-12T13:36:48Z",
+    "databaseId": 38256907472,
+    "event": "push",
+    "headBranch": "main",
+    "headSha": "50e0ee2c16b2db619d106f969df90c84b88e67ae",
+    "jobs": [
+     {
+      "completedAt": "2026-10-12T13:38:09Z",
+      "conclusion": "success",
+      "databaseId": 114837205942,
+      "name": "static_checks",
+      "startedAt": "2026-10-12T13:36:50Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:51Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:51Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:02Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:51Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:08Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:37:02Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:09Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:08Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:09Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:09Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:31Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:09Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:31Z",
+        "conclusion": "success",
+        "name": "Create unprivileged user",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:31Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:35Z",
+        "conclusion": "success",
+        "name": "Static checks",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:31Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:04Z",
+        "conclusion": "success",
+        "name": "Static check tests",
+        "number": 9,
+        "startedAt": "2026-10-12T13:37:35Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:04Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 17,
+        "startedAt": "2026-10-12T13:38:04Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:07Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 18,
+        "startedAt": "2026-10-12T13:38:04Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:38:07Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 19,
+        "startedAt": "2026-10-12T13:38:07Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907472/job/114837205942"
+     },
+     {
+      "completedAt": "2026-10-12T13:37:47Z",
+      "conclusion": "success",
+      "databaseId": 114837206333,
+      "name": "package_build",
+      "startedAt": "2026-10-12T13:36:51Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:52Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:51Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:58Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:52Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:05Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:36:58Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:07Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:05Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:07Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:07Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:31Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:07Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:39Z",
+        "conclusion": "success",
+        "name": "Build packages (unsigned) and run lintian",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:31Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:40Z",
+        "conclusion": "success",
+        "name": "Package tests",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:39Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:41Z",
+        "conclusion": "success",
+        "name": "Upload package results",
+        "number": 9,
+        "startedAt": "2026-10-12T13:37:40Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:42Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 17,
+        "startedAt": "2026-10-12T13:37:41Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:45Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 18,
+        "startedAt": "2026-10-12T13:37:42Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:45Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 19,
+        "startedAt": "2026-10-12T13:37:45Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907472/job/114837206333"
+     },
+     {
+      "completedAt": "2026-10-12T13:41:43Z",
+      "conclusion": "success",
+      "databaseId": 114837206494,
+      "name": "image_build",
+      "startedAt": "2026-10-12T13:36:51Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:52Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:52Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:58Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:52Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:05Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:36:58Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:07Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:05Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:07Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:07Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:32Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:07Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:40Z",
+        "conclusion": "success",
+        "name": "Build packages",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:32Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:54Z",
+        "conclusion": "success",
+        "name": "Build live image",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:40Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:55Z",
+        "conclusion": "success",
+        "name": "Image tests",
+        "number": 9,
+        "startedAt": "2026-10-12T13:40:54Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:41:27Z",
+        "conclusion": "success",
+        "name": "Boot test in a throwaway VM",
+        "number": 10,
+        "startedAt": "2026-10-12T13:40:55Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:41:27Z",
+        "conclusion": "success",
+        "name": "Boot result tests",
+        "number": 11,
+        "startedAt": "2026-10-12T13:41:27Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:41:39Z",
+        "conclusion": "success",
+        "name": "Upload image results",
+        "number": 12,
+        "startedAt": "2026-10-12T13:41:27Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:41:39Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 23,
+        "startedAt": "2026-10-12T13:41:39Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:41:41Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 24,
+        "startedAt": "2026-10-12T13:41:39Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:41:41Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 25,
+        "startedAt": "2026-10-12T13:41:41Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907472/job/114837206494"
+     }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-10-12T13:41:44Z",
+    "url": "https://github.com/Kayyo321/cham3/actions/runs/38256907472",
+    "workflowName": "m0_checks"
+   },
+   "artifacts": [
+    {
+     "id": 11750817674,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc1MDgxNzY3NA==",
+     "name": "m0_packages",
+     "size_in_bytes": 2032143,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11750817674",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11750817674/zip",
+     "expired": false,
+     "digest": "sha256:6c415ccbe09d31554404d3e6da6e47eefd86a0577d8d0816419cf7e92eacf9da",
+     "created_at": "2026-10-12T13:37:41Z",
+     "updated_at": "2026-10-12T13:37:41Z",
+     "expires_at": "2026-10-19T13:37:40Z"
+    },
+    {
+     "id": 11749809796,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc0OTgwOTc5Ng==",
+     "name": "m0_image",
+     "size_in_bytes": 304909793,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11749809796",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11749809796/zip",
+     "expired": false,
+     "digest": "sha256:74b2779960dd609eef38b3dbb14f134d278b6ce1b1161ce39835347f8e2e9449",
+     "created_at": "2026-10-12T13:41:39Z",
+     "updated_at": "2026-10-12T13:41:39Z",
+     "expires_at": "2026-10-15T13:41:27Z"
+    }
+   ],
+   "log_summaries": {
+    "static_checks": [
+     "Static checks | 2026-10-12T13:37:35.7083608Z scan_secrets: PASS (no matches for the configured patterns)",
+     "Static checks | 2026-10-12T13:37:35.7095010Z PASS shellcheck",
+     "Static checks | 2026-10-12T13:37:35.7095318Z PASS py_compile",
+     "Static checks | 2026-10-12T13:37:35.7095726Z PASS yamllint",
+     "Static checks | 2026-10-12T13:37:35.7095955Z PASS scan_secrets",
+     "Static checks | 2026-10-12T13:37:35.7096133Z static checks: PASS",
+     "Static check tests | 2026-10-12T13:38:04.0203507Z Ran 82 tests in 28.089s",
+     "Static check tests | 2026-10-12T13:38:04.0203641Z OK"
+    ],
+    "package_build": [
+     "Build packages (unsigned) and run lintian | 2026-10-12T13:37:39.9641436Z # lintian exit status: 0",
+     "Build packages (unsigned) and run lintian | 2026-10-12T13:37:39.9642715Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+     "Package tests | 2026-10-12T13:37:40.1860357Z Ran 8 tests in 0.096s",
+     "Package tests | 2026-10-12T13:37:40.1861080Z OK"
+    ],
+    "image_build": [
+     "Build packages | 2026-10-12T13:37:40.8044236Z # lintian exit status: 0",
+     "Build packages | 2026-10-12T13:37:40.8044899Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+     "Build live image | 2026-10-12T13:37:40.9037571Z build_image: started 2026-10-12T13:37:40Z",
+     "Build live image | 2026-10-12T13:37:40.9038298Z build_image: SOURCE_DATE_EPOCH=1791812199 unverified_host_override=0",
+     "Build live image | 2026-10-12T13:37:40.9038801Z build_image: profile=build/live staged local packages: cham3-base",
+     "Build live image | 2026-10-12T13:37:40.9083163Z build_image: live-build 1:20250505+deb13u1",
+     "Build live image | 2026-10-12T13:40:54.3451620Z build_image: PASS (artifacts in /__w/cham3/cham3/out/image)",
+     "Image tests | 2026-10-12T13:40:55.1554309Z Ran 17 tests in 0.712s",
+     "Image tests | 2026-10-12T13:40:55.1554728Z OK",
+     "Boot test in a throwaway VM | 2026-10-12T13:41:27.3419777Z boot_test: PASS - login prompt reached on serial console",
+     "Boot result tests | 2026-10-12T13:41:27.6986803Z Ran 18 tests in 0.256s",
+     "Boot result tests | 2026-10-12T13:41:27.6987143Z OK"
+    ]
+   },
+   "commands": [
+    "gh run view 38256907472 --repo Kayyo321/cham3 --json databaseId,workflowName,event,headBranch,headSha,status,conclusion,url,createdAt,updatedAt,jobs",
+    "gh api repos/Kayyo321/cham3/actions/runs/38256907472/artifacts",
+    "gh run view 38256907472 --repo Kayyo321/cham3 --log (summary lines only)"
+   ]
+  },
+  {
+   "run": {
+    "conclusion": "success",
+    "createdAt": "2026-10-12T13:36:52Z",
+    "databaseId": 38256914419,
+    "event": "workflow_dispatch",
+    "headBranch": "main",
+    "headSha": "50e0ee2c16b2db619d106f969df90c84b88e67ae",
+    "jobs": [
+     {
+      "completedAt": "2026-10-12T13:36:58Z",
+      "conclusion": "success",
+      "databaseId": 114837237429,
+      "name": "plan",
+      "startedAt": "2026-10-12T13:36:55Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:36:56Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:36:55Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:57Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 2,
+        "startedAt": "2026-10-12T13:36:56Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:57Z",
+        "conclusion": "success",
+        "name": "Decide whether this run builds the ISO or reuses one",
+        "number": 3,
+        "startedAt": "2026-10-12T13:36:57Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:57Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 6,
+        "startedAt": "2026-10-12T13:36:57Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:36:57Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 7,
+        "startedAt": "2026-10-12T13:36:57Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256914419/job/114837237429"
+     },
+     {
+      "completedAt": "2026-10-12T13:57:11Z",
+      "conclusion": "success",
+      "databaseId": 114837275391,
+      "name": "m1_iso",
+      "startedAt": "2026-10-12T13:37:00Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:37:03Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:37:01Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:04Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 2,
+        "startedAt": "2026-10-12T13:37:03Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:42:04Z",
+        "conclusion": "success",
+        "name": "Free runner disk space for the image build",
+        "number": 3,
+        "startedAt": "2026-10-12T13:37:04Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:56:50Z",
+        "conclusion": "success",
+        "name": "Build the M1 ISO and run image-m1 (privileged Debian 13 container)",
+        "number": 4,
+        "startedAt": "2026-10-12T13:42:04Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:57:09Z",
+        "conclusion": "success",
+        "name": "Upload ISO",
+        "number": 5,
+        "startedAt": "2026-10-12T13:56:50Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:57:10Z",
+        "conclusion": "success",
+        "name": "Upload image evidence",
+        "number": 6,
+        "startedAt": "2026-10-12T13:57:09Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:57:10Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 12,
+        "startedAt": "2026-10-12T13:57:10Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:57:10Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 13,
+        "startedAt": "2026-10-12T13:57:10Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256914419/job/114837275391"
+     },
+     {
+      "completedAt": "2026-10-12T13:40:22Z",
+      "conclusion": "success",
+      "databaseId": 114837275468,
+      "name": "f2_native",
+      "startedAt": "2026-10-12T13:37:01Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:37:02Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:37:01Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:10Z",
+        "conclusion": "success",
+        "name": "Initialize containers",
+        "number": 2,
+        "startedAt": "2026-10-12T13:37:02Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:17Z",
+        "conclusion": "success",
+        "name": "Install git",
+        "number": 3,
+        "startedAt": "2026-10-12T13:37:10Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:19Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 4,
+        "startedAt": "2026-10-12T13:37:17Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:19Z",
+        "conclusion": "success",
+        "name": "Mark workspace safe for git",
+        "number": 5,
+        "startedAt": "2026-10-12T13:37:19Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:46Z",
+        "conclusion": "success",
+        "name": "Install build host packages",
+        "number": 6,
+        "startedAt": "2026-10-12T13:37:19Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:37:53Z",
+        "conclusion": "success",
+        "name": "Build packages",
+        "number": 7,
+        "startedAt": "2026-10-12T13:37:46Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:10Z",
+        "conclusion": "success",
+        "name": "Native F2 source gates",
+        "number": 8,
+        "startedAt": "2026-10-12T13:37:53Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:12Z",
+        "conclusion": "success",
+        "name": "Upload F2 evidence",
+        "number": 9,
+        "startedAt": "2026-10-12T13:40:10Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:12Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 17,
+        "startedAt": "2026-10-12T13:40:12Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:19Z",
+        "conclusion": "success",
+        "name": "Stop containers",
+        "number": 18,
+        "startedAt": "2026-10-12T13:40:12Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:40:19Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 19,
+        "startedAt": "2026-10-12T13:40:19Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256914419/job/114837275468"
+     },
+     {
+      "completedAt": "2026-10-12T14:13:10Z",
+      "conclusion": "success",
+      "databaseId": 114845552443,
+      "name": "m1_vm",
+      "startedAt": "2026-10-12T13:57:14Z",
+      "status": "completed",
+      "steps": [
+       {
+        "completedAt": "2026-10-12T13:57:16Z",
+        "conclusion": "success",
+        "name": "Set up job",
+        "number": 1,
+        "startedAt": "2026-10-12T13:57:14Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:57:18Z",
+        "conclusion": "success",
+        "name": "Check out repository",
+        "number": 2,
+        "startedAt": "2026-10-12T13:57:16Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:59:29Z",
+        "conclusion": "success",
+        "name": "Free runner disk space for the VM disk",
+        "number": 3,
+        "startedAt": "2026-10-12T13:57:18Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T13:59:29Z",
+        "conclusion": "success",
+        "name": "Allow KVM for the container when the runner offers it",
+        "number": 4,
+        "startedAt": "2026-10-12T13:59:29Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T14:01:18Z",
+        "conclusion": "success",
+        "name": "Download the ISO built in this run",
+        "number": 5,
+        "startedAt": "2026-10-12T13:59:29Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T14:01:18Z",
+        "conclusion": "skipped",
+        "name": "Download the ISO of an earlier run",
+        "number": 6,
+        "startedAt": "2026-10-12T14:01:18Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T14:13:06Z",
+        "conclusion": "success",
+        "name": "VM gates (privileged Debian 13 container)",
+        "number": 7,
+        "startedAt": "2026-10-12T14:01:18Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T14:13:08Z",
+        "conclusion": "success",
+        "name": "Upload VM evidence",
+        "number": 8,
+        "startedAt": "2026-10-12T14:13:06Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T14:13:08Z",
+        "conclusion": "success",
+        "name": "Post Check out repository",
+        "number": 16,
+        "startedAt": "2026-10-12T14:13:08Z",
+        "status": "completed"
+       },
+       {
+        "completedAt": "2026-10-12T14:13:08Z",
+        "conclusion": "success",
+        "name": "Complete job",
+        "number": 17,
+        "startedAt": "2026-10-12T14:13:08Z",
+        "status": "completed"
+       }
+      ],
+      "url": "https://github.com/Kayyo321/cham3/actions/runs/38256914419/job/114845552443"
+     }
+    ],
+    "status": "completed",
+    "updatedAt": "2026-10-12T14:13:10Z",
+    "url": "https://github.com/Kayyo321/cham3/actions/runs/38256914419",
+    "workflowName": "m1_image"
+   },
+   "artifacts": [
+    {
+     "id": 11753290042,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc1MzI5MDA0Mg==",
+     "name": "m1_vm_evidence",
+     "size_in_bytes": 2922703,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11753290042",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11753290042/zip",
+     "expired": false,
+     "digest": "sha256:ff8b13c67fd46616eaf1cdc0c7b78d5d72117986daa934ca4af334c5501c9377",
+     "created_at": "2026-10-12T14:13:08Z",
+     "updated_at": "2026-10-12T14:13:08Z",
+     "expires_at": "2026-11-11T14:13:07Z"
+    },
+    {
+     "id": 11751122691,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc1MTEyMjY5MQ==",
+     "name": "m1_iso_evidence",
+     "size_in_bytes": 274681,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11751122691",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11751122691/zip",
+     "expired": false,
+     "digest": "sha256:4a1c6786c6d9614134391540ad40a4e3c717a675609713a53b5998882d4e073c",
+     "created_at": "2026-10-12T13:57:10Z",
+     "updated_at": "2026-10-12T13:57:10Z",
+     "expires_at": "2026-11-11T13:57:09Z"
+    },
+    {
+     "id": 11751013373,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc1MTAxMzM3Mw==",
+     "name": "m1_iso",
+     "size_in_bytes": 3607101606,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11751013373",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11751013373/zip",
+     "expired": false,
+     "digest": "sha256:579d33b13ecc4a67e6ef2003f51a525ef97bd5ac32f9b19c07297b95dadc56db",
+     "created_at": "2026-10-12T13:57:09Z",
+     "updated_at": "2026-10-12T13:57:09Z",
+     "expires_at": "2026-10-26T13:56:51Z"
+    },
+    {
+     "id": 11749869587,
+     "node_id": "MDg6QXJ0aWZhY3QxMTc0OTg2OTU4Nw==",
+     "name": "m1_f2_native",
+     "size_in_bytes": 344982,
+     "url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11749869587",
+     "archive_download_url": "https://api.github.com/repos/Kayyo321/cham3/actions/artifacts/11749869587/zip",
+     "expired": false,
+     "digest": "sha256:2e43688d40bbd6d72ba2c20f9f31eefd90c8cefbd12db174377c93bb3970f396",
+     "created_at": "2026-10-12T13:40:11Z",
+     "updated_at": "2026-10-12T13:40:11Z",
+     "expires_at": "2026-11-11T13:40:10Z"
+    }
+   ],
+   "log_summaries": {
+    "m1_iso": [
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | \ufeff2026-10-12T13:42:04.0475662Z ##[group]Run docker run --rm --privileged --volume \"$GITHUB_WORKSPACE:/work\" --workdir /work debian:trixie bash build/scripts/ci_m1_heavy.sh iso",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:04.0476607Z ^[[36;1mdocker run --rm --privileged --volume \"$GITHUB_WORKSPACE:/work\" --workdir /work debian:trixie bash build/scripts/ci_m1_heavy.sh iso^[[0m",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:46.1875078Z # lintian exit status: 0",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:46.1876299Z build_packages: PASS (packages in /work/out/packages)",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:46.2412362Z build_image: started 2026-10-12T13:42:46Z",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:46.2412925Z build_image: SOURCE_DATE_EPOCH=1791812199 unverified_host_override=0",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:46.2413627Z build_image: profile=build/live-desktop staged local packages: cham3-desktop cham3-full",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:42:46.2445109Z build_image: live-build 1:20250505+deb13u1",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:56:22.7246456Z build_image: PASS (artifacts in /work/out/image)",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:56:44.8062152Z Ran 54 tests in 21.919s",
+     "Build the M1 ISO and run image-m1 (privileged Debian 13 container) | 2026-10-12T13:56:44.8062346Z OK"
+    ],
+    "f2_native": [
+     "Build packages | 2026-10-12T13:37:53.5184471Z # lintian exit status: 0",
+     "Build packages | 2026-10-12T13:37:53.5184962Z build_packages: PASS (packages in /__w/cham3/cham3/out/packages)",
+     "Native F2 source gates | 2026-10-12T13:37:53.5329597Z ^[[36;1mpython3 tests/native/f2_source_gates.py --repo . --packages out/packages --out out/f2_native \\^[[0m",
+     "Native F2 source gates | 2026-10-12T13:38:03.8049916Z PASS signatures: {\"update_rc\": 0, \"signature_errors\": [], \"global_trust_entries\": [], \"keyrings\": [\"cham3_kali_archive.gpg\", \"cham3_librewolf.gpg\"]}",
+     "Native F2 source gates | 2026-10-12T13:38:03.8056671Z PASS identity: {\"http.kali.org_kali_dists_kali-rolling_InRelease\": {\"Origin\": \"Kali\", \"Label\": null, \"Suite\": \"kali-rolling\", \"Codename\": \"kali-rolling\"}, \"repo.librewolf.net_dists_librewolf_InRelease\": {\"Origin\": \"LibreWolf Software Repository\", \"Label\": \"LibreWolf Software Repository\", \"Suite\": \"librewolf\", \"Codename\": \"librewolf\"}}",
+     "Native F2 source gates | 2026-10-12T13:38:42.9076100Z PASS policy: {\"foreign_only_packages\": 9947, \"denied_foreign_only_packages\": 9938, \"escaped\": [], \"escaped_count\": 0, \"allowlisted\": {\"zaproxy\": {\"version\": \"2.17.0-0kali1\", \"sites\": [\"http.kali.org\"]}, \"exploitdb\": {\"version\": \"20260904-0kali1\", \"sites\": [\"http.kali.org\"]}, \"ghidra\": {\"version\": \"12.1.4+ds-0kali1\", \"sites\": [\"http.kali.org\"]}, \"amass\": {\"version\": \"5.1.1-0kali3\", \"sites\": [\"http.kali.org\"]}, \"libpostal-data\": {\"version\": \"1.1.4-0kali1\", \"sites\": [\"http.kali.org\"]}, \"radare2\": {\"version\": \"6.0.4+dfsg-1\", \"sites\": [\"http.kali.org\"]}, \"libradare2-6.0.0t64\": {\"version\": \"6.0.4+dfsg-1\", \"sites\": [\"http.kali.org\"]}, \"libradare2-common\": {\"version\": \"6.0.4+dfsg-1\", \"sites\": [\"http.kali.org\"]}, \"librewolf\": {\"version\": \"157.0.1-1\", \"sites\": [\"repo.librewolf.net\"]}}, \"missing_allowlisted\": [], \"unlisted_probes\": {\"ghidra-data\": null, \"kali-defaults\": null, \"kali-linux-core\": null, \"burpsuite\": null, \"metasploit-framework\": null}}",
+     "Native F2 source gates | 2026-10-12T13:39:02.8687959Z PASS closure_uri: {\"rc\": 0, \"downloads\": 1045, \"hosts\": {\"deb.debian.org\": 1002, \"http.kali.org\": 8, \"repo.librewolf.net\": 1, \"security.debian.org\": 34}, \"kali_packages\": [\"amass\", \"exploitdb\", \"ghidra\", \"libpostal-data\", \"libradare2-6.0.0t64\", \"libradare2-common\", \"radare2\", \"zaproxy\"], \"librewolf_packages\": [\"librewolf\"], \"roles\": {\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}, \"absent_roles\": [], \"problems\": []}",
+     "Native F2 source gates | 2026-10-12T13:39:11.3220880Z PASS control_deny: {\"simulate_rc\": {\"zaproxy\": 100, \"exploitdb\": 100, \"ghidra\": 100, \"amass\": 100, \"radare2\": 100, \"librewolf\": 100}}",
+     "Native F2 source gates | 2026-10-12T13:39:42.1529321Z PASS control_leak: {\"unallowlisted_kali_downloads_without_pins\": 1159, \"examples\": [\"un-allowlisted package downloaded from Kali: libc-gconv-modules-extra_2.43-6_amd64.deb\", \"un-allowlisted package downloaded from Kali: libc6_2.43-6_amd64.deb\", \"un-allowlisted package downloaded from Kali: libc-bin_2.43-6_amd64.deb\", \"un-allowlisted package downloaded from Kali: libc-dev-bin_2.43-6_amd64.deb\", \"un-allowlisted package downloaded from Kali: libc6-dev_2.43-6_amd64.deb\", \"un-allowlisted package downloaded from Kali: gcc-16-base_16.2.0-3_amd64.deb\", \"un-allowlisted package downloaded from Kali: libgcc-s1_16.2.0-3_amd64.deb\", \"un-allowlisted package downloaded from Kali: libncursesw6_6.6+20260608-2_amd64.deb\", \"un-allowlisted package downloaded from Kali: libtinfo6_6.6+20260608-2_amd64.deb\", \"un-allowlisted package downloaded from Kali: ncurses-bin_6.6+20260608-2_amd64.deb\", \"un-allowlisted package downloaded from Kali: libxml2-16_2.15.4+dfsg-1_amd64.deb\", \"un-allowlisted package downloaded from Kali: libxml-libxml-perl_2.0207+dfsg+really+2.0134-8+b1_amd64.deb\", \"un-allowlisted package downloaded from Kali: libunicode-utf8-perl_0.75-1+b1_amd64.deb\", \"un-allowlisted package downloaded from Kali: libnet-ssleay-perl_1.96-2_amd64.deb\", \"un-allowlisted package downloaded from Kali: libhtml-parser-perl_3.83-2+b2_amd64.deb\", \"un-allowlisted package downloaded from Kali: libdevel-callchecker-perl_0.009-3+b1_amd64.deb\", \"un-allowlisted package downloaded from Kali: libdata-messagepack-perl_1.02-3+b1_amd64.deb\", \"un-allowlisted package downloaded from Kali: libcpanel-json-xs-perl_4.51-1_amd64.deb\", \"un-allowlisted package downloaded from Kali: libclass-xsaccessor-perl_1.19-4+b7_amd64.deb\", \"un-allowlisted package downloaded from Kali: libapt-pkg-perl_0.1.43+b1_amd64.deb\"]}",
+     "Native F2 source gates | 2026-10-12T13:40:10.5633169Z PASS upgrade: {\"install_rc\": 0, \"installed\": {\"radare2\": {\"version\": \"6.0.4+dfsg-1\", \"sites\": [\"\", \"http.kali.org\"]}, \"libradare2-6.0.0t64\": {\"version\": \"6.0.4+dfsg-1\", \"sites\": [\"\", \"http.kali.org\"]}, \"libradare2-common\": {\"version\": \"6.0.4+dfsg-1\", \"sites\": [\"\", \"http.kali.org\"]}, \"librewolf\": {\"version\": \"157.0.1-1\", \"sites\": [\"\", \"repo.librewolf.net\"]}}, \"dist_upgrade_problems\": [], \"unlisted_after_install_rc\": 100}",
+     "Native F2 source gates | 2026-10-12T13:40:10.5696387Z F2 native gates: PASS"
+    ],
+    "m1_vm": [
+     "VM gates (privileged Debian 13 container) | \ufeff2026-10-12T14:01:18.3546232Z ##[group]Run docker run --rm --privileged ${CHAM3_KVM_DEVICE:-} --env CHAM3_VM_PHASES --volume \"$GITHUB_WORKSPACE:/work\" --workdir /work debian:trixie bash build/scripts/ci_m1_heavy.sh vm",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:01:18.3547429Z ^[[36;1mdocker run --rm --privileged ${CHAM3_KVM_DEVICE:-} --env CHAM3_VM_PHASES --volume \"$GITHUB_WORKSPACE:/work\" --workdir /work debian:trixie bash build/scripts/ci_m1_heavy.sh vm^[[0m",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:18.6279914Z PASS live_boot_menu_to_kernel ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:31.6874484Z PASS live_serial_login ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:32.5892305Z PASS live_suite_installed []",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:32.8897055Z PASS live_no_b43_installer []",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:32.8897733Z PASS live_firmware_set_installed 43 installed firmware packages",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:33.1900565Z PASS live_no_trusted_yes ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:33.1902383Z PASS live_keys_only_signed_by ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.4950186Z PASS live_unlisted_kali_denied {}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.4951962Z PASS live_foreign_roles_have_candidates {\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.4954181Z PASS live_debian_base_from_debian [\"deb.debian.org\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.7971309Z PASS live_dumpcap_no_setuid stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.7972494Z PASS live_dumpcap_group_restricted stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.7973423Z PASS live_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:39.7974442Z PASS live_dumpcap_override [\"override=root root 750 /usr/bin/dumpcap\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:43.1052680Z PASS live_capture_harness_output_path_ok Capturing on 'Loopback: lo' File: /tmp/cham3-capture-GruJbn/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:43.1055164Z PASS live_member_captures rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-GruJbn/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:43.1057251Z PASS live_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:43.4055552Z PASS live_plasma_session_running {\"sessions\": [{\"Name\": \"user\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}, {\"Name\": \"user\", \"Desktop\": \"\", \"Type\": \"tty\", \"Class\": \"user\", \"Active\": \"yes\"}], \"plasmashell\": true, \"graphical\": [{\"Name\": \"user\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}]}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:43.4057401Z PASS live_session_is_wayland [\"wayland\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:43.7058955Z PASS live_kwin_wayland_compositor 1134 /usr/bin/kwin_wayland_wrapper --xwayland",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:02:44.0064452Z PASS live_cham3_look_and_feel ColorScheme=Cham3Dark",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:16.1094877Z PASS live_panel_state_read ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:16.1095354Z PASS live_panel_on_right_edge [\"right\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:16.1095669Z PASS live_panel_vertical vertical",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:16.1095959Z PASS live_panel_thickness 60",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:16.1097187Z PASS live_panel_component_order [\"org.cham3.user_launcher\", \"org.cham3.alias_wheel\", \"org.cham3.tag_pager\", \"org.cham3.contract_dock\", \"org.cham3.netproto_launcher\", \"org.cham3.killswitch\", \"org.cham3.settings_launcher\", \"org.cham3.task_manager\", \"org.kde.plasma.systemtray\", \"org.kde.plasma.digitalclock\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:16.1098809Z PASS live_cham3_wallpaper [\"file:///usr/share/wallpapers/Cham3\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:21.4493506Z PASS live_launcher_categories_rendered [\"All Applications\", \"Development\", \"Graphics\", \"Internet\", \"Office\", \"System\", \"Utilities\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:21.4494901Z PASS live_launcher_key_id_unavailable ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:27.4593005Z PASS live_launcher_search_result ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:41.2454837Z PASS live_launcher_real_launch wireshark process started from the launcher search",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:45.8544615Z PASS live_panel_captions_unavailable 4 state captions read in the panel strip",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:03:53.3634254Z PASS live_inert_alias_wheel {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:04:00.7983647Z PASS live_inert_tag_pager {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:04:08.0938093Z PASS live_inert_contract_dock {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:04:15.5223116Z PASS live_inert_netproto_launcher {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:04:22.9696353Z PASS live_inert_killswitch {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:04:37.4799895Z M1 VM live: PASS",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:16.0288277Z PASS install_completed_and_powered_off {\"seconds\": 335, \"qemu_rc\": 0}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:16.0289102Z M1 VM install: PASS",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:31.6383273Z PASS installed_boot_serial_login ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:32.2402349Z PASS installed_live_packages_removed ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:34.0443196Z PASS installed_debian_main_sources {\"sources_list_deb_lines\": [\"deb http://deb.debian.org/debian trixie main non-free non-free-firmware\", \"deb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware\", \"deb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware\"]}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:34.6448067Z PASS installed_suite_installed []",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:34.9452493Z PASS installed_no_b43_installer []",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:34.9452976Z PASS installed_firmware_set_installed 43 installed firmware packages",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.2459019Z PASS installed_no_trusted_yes ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.2459619Z PASS installed_keys_only_signed_by ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.5468599Z PASS installed_unlisted_kali_denied {}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.5469623Z PASS installed_foreign_roles_have_candidates {\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.5470480Z PASS installed_debian_base_from_debian [\"deb.debian.org\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.8471916Z PASS installed_dumpcap_no_setuid stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.8472669Z PASS installed_dumpcap_group_restricted stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.8473367Z PASS installed_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:35.8474394Z PASS installed_dumpcap_override [\"override=root root 750 /usr/bin/dumpcap\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:38.8515529Z PASS installed_capture_harness_output_path_ok Capturing on 'Loopback: lo' File: /tmp/cham3-capture-3u4Tvg/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:38.8518334Z PASS installed_member_captures rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-3u4Tvg/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:38.8520288Z PASS installed_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:40.6531233Z PASS installed_apt_update_authenticated e lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 51%Reading package lists... 51%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 68%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... Done",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:40.9532226Z PASS installed_after_update_unlisted_kali_denied {}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:40.9533691Z PASS installed_after_update_foreign_roles_have_candidates {\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:40.9535334Z PASS installed_after_update_debian_base_from_debian [\"deb.debian.org\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:41.8539934Z PASS installed_upgrade_origin_by_host []",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:43.3558598Z PASS installed_unlisted_kali_not_installable 0%Building dependency tree... 50%Building dependency tree... Done",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:44.8575977Z PASS installed_lifecycle_reconfigure_upstream_ran ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:45.1578509Z PASS installed_reconfigure_upstream_dumpcap_no_setuid stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:45.1579477Z PASS installed_reconfigure_upstream_dumpcap_group_restricted stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:45.1580108Z PASS installed_reconfigure_upstream_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:45.1581301Z PASS installed_reconfigure_upstream_dumpcap_override [\"override=root root 750 /usr/bin/dumpcap\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:49.3602907Z PASS installed_lifecycle_setcap_missing_ran dpkg unpacked wireshark-common: True",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:49.6606357Z PASS installed_setcap_missing_dumpcap_no_setuid stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:49.6607225Z PASS installed_setcap_missing_dumpcap_group_restricted stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:49.6608156Z PASS installed_setcap_missing_dumpcap_override [\"override=root root 750 /usr/bin/dumpcap\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:49.6608704Z PASS installed_setcap_missing_fails_closed capabilities removed: True",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.3647944Z PASS installed_setcap_missing_capture_harness_output_path_ok Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied.",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.3649898Z PASS installed_setcap_missing_member_cannot_capture_fail_closed rc=1 bytes=0 log=Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied.",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.3652064Z PASS installed_setcap_missing_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.6651680Z PASS installed_lifecycle_recovery_ran ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.9655938Z PASS installed_recovered_dumpcap_no_setuid stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.9656962Z PASS installed_recovered_dumpcap_group_restricted stat: '750 root wireshark'",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.9658158Z PASS installed_recovered_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:52.9659241Z PASS installed_recovered_dumpcap_override [\"override=root root 750 /usr/bin/dumpcap\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:55.9692266Z PASS installed_recovered_capture_harness_output_path_ok Capturing on 'Loopback: lo' File: /tmp/cham3-capture-Ty9UiO/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:55.9695226Z PASS installed_recovered_member_captures rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-Ty9UiO/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:10:55.9696855Z PASS installed_recovered_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:09.4679920Z PASS installed_plasma_session_running {\"sessions\": [{\"Name\": \"cham3test\", \"Desktop\": \"\", \"Type\": \"tty\", \"Class\": \"user\", \"Active\": \"yes\"}, {\"Name\": \"cham3test\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}], \"plasmashell\": true, \"graphical\": [{\"Name\": \"cham3test\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}]}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:09.4682207Z PASS installed_session_is_wayland [\"wayland\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:09.7683320Z PASS installed_kwin_wayland_compositor 1306 /usr/bin/kwin_wayland_wrapper --xwayland",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:10.0689332Z PASS installed_cham3_look_and_feel ColorScheme=Cham3Dark",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:42.1725658Z PASS installed_panel_state_read ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:42.1726129Z PASS installed_panel_on_right_edge [\"right\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:42.1726566Z PASS installed_panel_vertical vertical",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:42.1726870Z PASS installed_panel_thickness 60",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:42.1728235Z PASS installed_panel_component_order [\"org.cham3.user_launcher\", \"org.cham3.alias_wheel\", \"org.cham3.tag_pager\", \"org.cham3.contract_dock\", \"org.cham3.netproto_launcher\", \"org.cham3.killswitch\", \"org.cham3.settings_launcher\", \"org.cham3.task_manager\", \"org.kde.plasma.systemtray\", \"org.kde.plasma.digitalclock\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:42.1729798Z PASS installed_cham3_wallpaper [\"file:///usr/share/wallpapers/Cham3\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:47.5189324Z PASS installed_launcher_categories_rendered [\"All Applications\", \"Development\", \"Graphics\", \"Internet\", \"Office\", \"System\", \"Utilities\"]",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:47.5190036Z PASS installed_launcher_key_id_unavailable ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:11:53.5024055Z PASS installed_launcher_search_result ",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:07.2876492Z PASS installed_launcher_real_launch wireshark process started from the launcher search",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:11.9005009Z PASS installed_panel_captions_unavailable 4 state captions read in the panel strip",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:19.4233797Z PASS installed_inert_alias_wheel {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:26.8572581Z PASS installed_inert_tag_pager {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:34.1572870Z PASS installed_inert_contract_dock {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:41.5912118Z PASS installed_inert_netproto_launcher {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:12:49.0491493Z PASS installed_inert_killswitch {\"baseline_clean\": true, \"state_word_after_click\": true}",
+     "VM gates (privileged Debian 13 container) | 2026-10-12T14:13:03.5702214Z M1 VM installed: PASS"
+    ]
+   },
+   "commands": [
+    "gh run view 38256914419 --repo Kayyo321/cham3 --json databaseId,workflowName,event,headBranch,headSha,status,conclusion,url,createdAt,updatedAt,jobs",
+    "gh api repos/Kayyo321/cham3/actions/runs/38256914419/artifacts",
+    "gh run view 38256914419 --repo Kayyo321/cham3 --log (summary lines only)"
+   ]
+  }
+ ]
+}
