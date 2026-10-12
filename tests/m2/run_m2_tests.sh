@@ -6,8 +6,10 @@
 # Suites:
 #   unit       cargo test (debug and release, overflow checks on in both), each
 #              validated against tests/m2/test_inventory.txt, then the provider
-#              probe compared with the independent oracle, and the published ECR v1
-#              vectors regenerated and re-verified by the independent ECR oracle.
+#              probe compared with the independent oracle, the published ECR v1
+#              vectors regenerated and re-verified by the independent ECR oracle,
+#              and the M2-003 format verifier compared with that oracle over a
+#              seeded hostile corpus (format_differential).
 #   harness    harness sensitivity, safe-core lint controls, naming checker and
 #              deployed-profile (panic=abort, overflow trap, hardening) probes.
 #   integration, recovery, packaging
@@ -119,6 +121,10 @@ case "$suite" in
         step provider_oracle python3 -I "$harness" provider-oracle \
             --probe "$run_dir/target_debug/debug/cham3_provider_probe" --run-dir "$run_dir"
         step ecr_vector_oracle run_ecr_oracle
+        step build_format_probe env CARGO_TARGET_DIR="$run_dir/target_debug" \
+            cargo build --frozen -p cham3_contract_format --bin cham3_format_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
+        step format_differential python3 -I "$harness" format-differential \
+            --probe "$run_dir/target_debug/debug/cham3_format_probe" --run-dir "$run_dir"
         ;;
     harness)
         profile_dir=$run_dir/profile_target

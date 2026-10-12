@@ -16,6 +16,7 @@ Usage (run with python3 -I):
   m2_harness.py cargo-suite --profile debug|release --run-dir DIR
   m2_harness.py python-suite --name NAME --start-dir DIR --run-dir DIR
   m2_harness.py provider-oracle --probe BINARY --run-dir DIR
+  m2_harness.py format-differential --probe BINARY --run-dir DIR [--seed N] [--cases-per-object N]
   m2_harness.py environment --run-dir DIR
 """
 
@@ -422,6 +423,78 @@ def run_provider_oracle(probe, run_dir):
     return record
 
 
+# M2-003 differential check: every case of the seeded hostile corpus must give the
+# oracle's outcome in the Rust probe, and the corpus must reach every local layer.
+FormatCoverageFloor = {"ok": 18, "envelope_decode": 20, "envelope": 20, "signature": 20, "payload_decode": 20,
+                       "schema": 20, "intrinsic": 20}
+FormatDistinctOutcomeFloor = 40
+
+
+def format_differential_module():
+    oracle_dir = os.path.join(RepoRoot, "tests", "m2", "oracle")
+    if oracle_dir not in sys.path:
+        sys.path.insert(0, oracle_dir)
+    import format_differential
+    return format_differential
+
+
+def compare_format_outcomes(cases, probe_lines):
+    """Returns mismatch records (case index, family, kind, input digest, expected, actual)."""
+    mismatches = []
+    if len(probe_lines) != len(cases):
+        mismatches.append({"index": None, "expected": "%d result lines" % len(cases), "actual": "%d result lines" % len(probe_lines)})
+    for index, (case, actual) in enumerate(zip(cases, probe_lines)):
+        if actual != case["expected"]:
+            mismatches.append({"index": index, "family": case["family"], "kind": case["kind"],
+                               "input_sha256": hashlib.sha256(case["data"]).hexdigest(), "expected": case["expected"],
+                               "actual": actual})
+    return mismatches
+
+
+def format_coverage_errors(cases):
+    module = format_differential_module()
+    counts = module.coverage(cases)
+    errors = ["%s outcomes %d < %d" % (label, counts.get(label, 0), floor)
+              for label, floor in sorted(FormatCoverageFloor.items()) if counts.get(label, 0) < floor]
+    distinct = len({case["expected"] if case["expected"].startswith("err") else "ok" for case in cases})
+    if distinct < FormatDistinctOutcomeFloor:
+        errors.append("%d distinct outcomes < %d" % (distinct, FormatDistinctOutcomeFloor))
+    return counts, distinct, errors
+
+
+def run_format_differential(probe, run_dir, seed, cases_per_object):
+    module = format_differential_module()
+    vectors = os.path.join(RepoRoot, "tests", "m2", "vectors", "ecr_v1", "vectors.json")
+    cases, keys = module.build_corpus(vectors, seed=seed, cases_per_object=cases_per_object)
+    probe_text = module.probe_input(cases, keys)
+    completed = subprocess.run([probe], input=probe_text, capture_output=True, text=True, check=False)
+    probe_lines = completed.stdout.splitlines()
+    counts, distinct, errors = format_coverage_errors(cases)
+    mismatches = compare_format_outcomes(cases, probe_lines)
+    if completed.returncode != 0:
+        errors.append("probe exit status %d: %s" % (completed.returncode, completed.stderr.strip()[:200]))
+    if mismatches:
+        errors.append("%d outcome mismatches" % len(mismatches))
+    record = {
+        "probe": probe,
+        "probe_sha256": sha256_file(probe),
+        "seed": seed,
+        "cases_per_object": cases_per_object,
+        "cases": len(cases),
+        "corpus_sha256": hashlib.sha256(probe_text.encode("ascii")).hexdigest(),
+        "coverage": counts,
+        "distinct_outcomes": distinct,
+        "mismatches": mismatches[:25],
+        "mismatch_count": len(mismatches),
+        "result": "FAIL" if errors else "PASS",
+        "total_tests": len(cases),
+    }
+    if errors:
+        record["error"] = "; ".join(errors)
+    write_json(os.path.join(run_dir, "format_differential.json"), record)
+    return record
+
+
 def main(arguments):
     parser = argparse.ArgumentParser(prog="m2_harness.py")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -435,6 +508,11 @@ def main(arguments):
     oracle = commands.add_parser("provider-oracle")
     oracle.add_argument("--probe", required=True)
     oracle.add_argument("--run-dir", required=True)
+    differential = commands.add_parser("format-differential")
+    differential.add_argument("--probe", required=True)
+    differential.add_argument("--run-dir", required=True)
+    differential.add_argument("--seed", type=int, default=None)
+    differential.add_argument("--cases-per-object", type=int, default=None)
     environment = commands.add_parser("environment")
     environment.add_argument("--run-dir", required=True)
     options = parser.parse_args(arguments)
@@ -447,6 +525,11 @@ def main(arguments):
             record = run_python_suite(options.name, os.path.join(RepoRoot, options.start_dir), options.run_dir)
         elif options.command == "provider-oracle":
             record = run_provider_oracle(options.probe, options.run_dir)
+        elif options.command == "format-differential":
+            module = format_differential_module()
+            seed = module.DefaultSeed if options.seed is None else options.seed
+            per_object = module.DefaultCasesPerObject if options.cases_per_object is None else options.cases_per_object
+            record = run_format_differential(options.probe, options.run_dir, seed, per_object)
         else:
             environment, problems = environment_record()
             record = {"result": "FAIL" if problems else "PASS", "environment": environment}
