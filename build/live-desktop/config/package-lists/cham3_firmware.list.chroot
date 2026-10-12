@@ -21,8 +21,11 @@
 #
 # Source: docs/research/M1_package_disposition.md section 6 and
 # docs/research/evidence/firmware/proposed_set_without_b43_installers_42.txt.
-# --firmware-binary stays true (installer-side firmware); that it contains no b43
-# installer package is checked on the built image, not here.
+# --firmware-binary stays true (installer-side firmware). Its selection covers the
+# --archive-areas of auto/config; contrib, the only area holding the b43 installers, is
+# supplied through config/archives/cham3_debian_contrib.list instead, so the installer
+# payload holds the same 42 names (F7). tests/run_tests.sh image-m1 checks the ISO pool
+# and /firmware of the built image for the b43 installers and for these names.
 alsa-topology-conf
 amd64-microcode
 atmel-firmware

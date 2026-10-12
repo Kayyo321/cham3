@@ -63,9 +63,10 @@ Description: cham3 KDE Plasma 6 Wayland desktop defaults (M1 visual foundation)
  security policy is active.
  .
  Packet capture: cham3-desktop keeps /usr/bin/dumpcap, which wireshark-common
- ships, out of set-user-id root. Its maintainer script pins a dpkg-statoverride
- on the file and, through a dpkg file trigger, keeps it root:wireshark, mode
- 0750, with only the cap_net_admin and cap_net_raw file capabilities. If those
+ ships, out of set-user-id root. Its preinst registers a dpkg-statoverride on
+ the file before wireshark-common can be configured, and its postinst and a
+ dpkg file trigger keep it root:wireshark, mode 0750, with only the
+ cap_net_admin and cap_net_raw file capabilities. If those
  capabilities cannot be set, capture by non-root users is unavailable; the
  set-user-id fallback of wireshark-common is never used. Installing the
  package adds no user to the wireshark group: membership is a deliberate

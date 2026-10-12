@@ -3,6 +3,8 @@
 # root. Invoked by tests/container/run_container_checks.sh; it can also be run
 # directly inside a throwaway Debian 13 amd64 system. Do not run it on a host you
 # care about: the capture suite changes users, groups and /usr/bin/dumpcap.
+# CHAM3_REQUIRE_PRIVILEGED_CAPTURE=1 (set by the privileged gate) makes a missing
+# capture capability a FAIL instead of a skip.
 set -eu
 export DEBIAN_FRONTEND=noninteractive
 export PYTHONDONTWRITEBYTECODE=1

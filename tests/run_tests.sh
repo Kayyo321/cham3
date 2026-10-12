@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run the cham3 M0 unittest suites.
 #
-# Usage: tests/run_tests.sh static|packages|image|boot|desktop|image-m1|staging|container|all
+# Usage: tests/run_tests.sh static|packages|image|boot|desktop|image-m1|staging|container|apt|all
 #
 # Environment:
 #   CHAM3_REPO_ROOT  repository root (default: parent of this tests/ directory)
@@ -17,7 +17,7 @@ CHAM3_OUT_DIR=${CHAM3_OUT_DIR:-$CHAM3_REPO_ROOT/out}
 export CHAM3_REPO_ROOT CHAM3_OUT_DIR
 
 usage() {
-    echo "usage: $0 static|packages|image|boot|desktop|image-m1|staging|container|all" >&2
+    echo "usage: $0 static|packages|image|boot|desktop|image-m1|staging|container|apt|all" >&2
 }
 
 run_suite() {
@@ -25,6 +25,8 @@ run_suite() {
     # image-m1: M1 image-artifact checks (need the M1 image in $CHAM3_OUT_DIR).
     # staging: M1 per-profile staging dry run (needs dpkg-deb, no Docker; not in "all").
     # container: M1 container-stage checks (Docker; see tests/container/). Not in "all".
+    # apt: native apt pin checks with signed synthetic repositories (needs Debian apt-get,
+    # apt-cache and gpg; no root, no network). Not in "all".
     if [ "$1" = "container" ]; then
         echo "== tests/container (container, repo: $CHAM3_REPO_ROOT, out: $CHAM3_OUT_DIR) =="
         sh "$script_dir/container/run_container_checks.sh"
@@ -48,7 +50,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 case "$1" in
-    static|packages|image|boot|desktop|image-m1|staging|container)
+    static|packages|image|boot|desktop|image-m1|staging|container|apt)
         suites=$1
         ;;
     all)

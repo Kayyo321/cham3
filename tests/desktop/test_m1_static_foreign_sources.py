@@ -1,9 +1,13 @@
 """Static checks for the owner-approved foreign sources: pinned Kali and LibreWolf (F2, SECURITY-CRITICAL).
 
 The owner decision includes Kali packages (zaproxy, exploitdb, ghidra, amass, radare2)
-and librewolf. Each comes from a narrowly pinned source: the origin is denied by default
-(Pin-Priority -1) and only an allowlist is raised to 500. Each source names a Signed-By
-keyring that the build ships, and no source is trusted=yes.
+and librewolf. Each comes from a narrowly pinned source: the source is denied by default
+(Pin-Priority -1) and only an allowlist is raised to 500. Every pin is bound to the
+configured source host ("Pin: origin http.kali.org" / "repo.librewolf.net"), never to a
+field of the signed Release file (Codex F6), and every source of the repository uses that
+host. Each source names a Signed-By keyring that the build ships, and no source is
+trusted=yes. The behaviour against signed repositories with changed Release identity is
+checked natively by tests/apt/test_m1_apt_pin_identity.py.
 
 Discovery (file names and layout are not the contract; file CONTENT is):
   - sources: build/live-desktop/config/archives/zzz_cham3_kali.list and
@@ -22,7 +26,8 @@ state (no key in trusted.gpg.d, Signed-By honored, no trusted=yes in any install
 is asserted on the real ISO by test_m1_image_contents.py (Codex Remote), not here.
 
 Negative controls: an un-pinned Kali source, a non-allowlisted package pinned at or above
-100, a source that sorts before zz-sources.list, a key installed through apt-key or
+100, a default deny bound to a Release field (o=Kali, n=librewolf), a source whose host is
+not the pinned host, a pin naming another host, a source that sorts before zz-sources.list, a key installed through apt-key or
 trusted.gpg.d, trusted=yes, a missing keyring, an extra or secret key, a revocation,
 and a build script that does not check the pinned hash, fingerprint, or key set.
 Positive controls show the accepted configuration passes.
@@ -43,7 +48,7 @@ import m0_support  # noqa: E402
 import m1_support  # noqa: E402
 import m1_apt_support as apt  # noqa: E402
 
-ForeignMarkers = ("kali.org", "kali-rolling", "librewolf.net", "o=kali", "n=librewolf")
+ForeignMarkers = ("kali.org", "kali-rolling", "librewolf.net", "o=kali", "n=librewolf", "o=librewolf")
 KeyFilePattern = re.compile(r"\.(key|asc|gpg)(\.chroot)?$")
 PgpKeyBlock = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
 ReviewedKeyEntries = frozenset(m1_support.ArchiveKeyFiles.values()) | {"README"}
@@ -273,15 +278,19 @@ class foreign_sources_fixture_t(unittest.TestCase):
     )
     Keys = {"cham3_kali_archive.gpg", "cham3_librewolf.gpg"}
 
-    def kali_pref(self, allow=None, default="-1"):
-        text = "Package: *\nPin: release o=Kali\nPin-Priority: %s\n" % default
+    KaliPin = 'Pin: origin "http.kali.org"'
+    LibreWolfPin = 'Pin: origin "repo.librewolf.net"'
+
+    def kali_pref(self, allow=None, default="-1", pin=None):
+        pin = self.KaliPin if pin is None else pin
+        text = "Package: *\n%s\nPin-Priority: %s\n" % (pin, default)
         for package in (m1_support.KaliAllowlist if allow is None else allow):
-            text += "\nPackage: %s\nPin: release o=Kali\nPin-Priority: 500\n" % package
+            text += "\nPackage: %s\n%s\nPin-Priority: 500\n" % (package, pin)
         return text
 
     LibreWolfPref = (
-        "Package: *\nPin: release n=librewolf\nPin-Priority: -1\n\n"
-        "Package: librewolf\nPin: release n=librewolf\nPin-Priority: 500\n"
+        "Package: *\nPin: origin \"repo.librewolf.net\"\nPin-Priority: -1\n\n"
+        "Package: librewolf\nPin: origin \"repo.librewolf.net\"\nPin-Priority: 500\n"
     )
 
     def policy(self, kali_source=None, librewolf_source=None, kali_pref=None, librewolf_pref=None,
@@ -310,20 +319,59 @@ class foreign_sources_fixture_t(unittest.TestCase):
         self.assertTrue(any("no default deny" in p for p in problems), problems)
 
     def test_global_kali_priority_is_rejected(self):
-        problems = self.policy(kali_pref="Package: *\nPin: release o=Kali\nPin-Priority: 500\n")
+        problems = self.policy(kali_pref="Package: *\n%s\nPin-Priority: 500\n" % self.KaliPin)
         self.assertTrue(any("default priority must be -1" in p for p in problems), problems)
 
+    def test_unquoted_origin_pin_is_accepted(self):
+        self.assertEqual(self.policy(kali_pref=self.kali_pref(pin="Pin: origin http.kali.org")), [])
+
+    def test_kali_deny_bound_to_release_origin_is_rejected(self):
+        # Codex F6: the 0fec3a0 form. A signed Release with another Origin escapes it.
+        problems = self.policy(kali_pref=self.kali_pref(pin="Pin: release o=Kali"))
+        self.assertTrue(any("bound to a field of the signed Release file" in p for p in problems), problems)
+        self.assertTrue(any("no default deny" in p for p in problems), problems)
+
+    def test_kali_deny_bound_to_release_suite_or_label_is_rejected(self):
+        for pin in ("Pin: release a=kali-rolling", "Pin: release n=kali-rolling", "Pin: release l=Kali",
+                    "Pin: release o=Kali,a=kali-rolling"):
+            problems = self.policy(kali_pref=self.kali_pref(pin=pin))
+            self.assertTrue(any("bound to a field of the signed Release file" in p for p in problems), (pin, problems))
+
+    def test_librewolf_deny_bound_to_release_codename_is_rejected(self):
+        # Codex F6: the 0fec3a0 LibreWolf form.
+        pref = self.LibreWolfPref.replace('Pin: origin "repo.librewolf.net"', "Pin: release n=librewolf")
+        problems = self.policy(librewolf_pref=pref)
+        self.assertTrue(any("librewolf pin is bound to a field of the signed Release file" in p for p in problems),
+                        problems)
+
+    def test_pin_naming_another_kali_host_is_rejected(self):
+        problems = self.policy(kali_pref=self.kali_pref(pin='Pin: origin "kali.download"'))
+        self.assertTrue(any("unexpected kali pin form" in p for p in problems), problems)
+        self.assertTrue(any("no default deny" in p for p in problems), problems)
+
+    def test_source_host_other_than_the_pinned_host_is_rejected(self):
+        source = self.KaliSource.replace("http://http.kali.org/kali/", "http://kali.download/kali/")
+        problems = self.policy(kali_source=source)
+        self.assertTrue(any("source host kali.download is not the pinned host http.kali.org" in p
+                            for p in problems), problems)
+
+    def test_second_librewolf_source_under_another_host_is_rejected(self):
+        source = self.LibreWolfSource + self.LibreWolfSource.replace("repo.librewolf.net", "mirror.librewolf.net")
+        problems = self.policy(librewolf_source=source)
+        self.assertTrue(any("source host mirror.librewolf.net is not the pinned host repo.librewolf.net" in p
+                            for p in problems), problems)
+
     def test_non_allowlisted_package_at_500_is_rejected(self):
-        problems = self.policy(kali_pref=self.kali_pref() + "\nPackage: kali-linux-large\nPin: release o=Kali\nPin-Priority: 500\n")
+        problems = self.policy(kali_pref=self.kali_pref() + "\nPackage: kali-linux-large\n%s\nPin-Priority: 500\n" % self.KaliPin)
         self.assertTrue(any("non-allowlisted kali package kali-linux-large" in p for p in problems), problems)
 
     def test_non_allowlisted_package_at_100_is_rejected(self):
-        problems = self.policy(kali_pref=self.kali_pref() + "\nPackage: wpscan-extra\nPin: release o=Kali\nPin-Priority: 100\n")
+        problems = self.policy(kali_pref=self.kali_pref() + "\nPackage: wpscan-extra\n%s\nPin-Priority: 100\n" % self.KaliPin)
         self.assertTrue(any("non-allowlisted kali package" in p for p in problems), problems)
 
     def test_allowlisted_package_below_500_is_rejected(self):
-        text = self.kali_pref().replace("Package: amass\nPin: release o=Kali\nPin-Priority: 500",
-                                        "Package: amass\nPin: release o=Kali\nPin-Priority: 100")
+        text = self.kali_pref().replace("Package: amass\n%s\nPin-Priority: 500" % self.KaliPin,
+                                        "Package: amass\n%s\nPin-Priority: 100" % self.KaliPin)
         problems = self.policy(kali_pref=text)
         self.assertTrue(any("amass is pinned at 100" in p for p in problems), problems)
 
@@ -332,7 +380,7 @@ class foreign_sources_fixture_t(unittest.TestCase):
         self.assertTrue(any("ghidra has no pin" in p for p in problems), problems)
 
     def test_wildcard_pin_is_rejected(self):
-        problems = self.policy(kali_pref=self.kali_pref() + "\nPackage: kali-*\nPin: release o=Kali\nPin-Priority: 500\n")
+        problems = self.policy(kali_pref=self.kali_pref() + "\nPackage: kali-*\n%s\nPin-Priority: 500\n" % self.KaliPin)
         self.assertTrue(any("wildcard kali pin" in p for p in problems), problems)
 
     def test_trusted_yes_kali_source_is_rejected(self):
@@ -368,7 +416,7 @@ class foreign_sources_fixture_t(unittest.TestCase):
         self.assertTrue(any("no default deny" in p and "librewolf" in p for p in problems), problems)
 
     def test_librewolf_non_allowlisted_at_500_is_rejected(self):
-        problems = self.policy(librewolf_pref=self.LibreWolfPref + "\nPackage: firefox-extra\nPin: release n=librewolf\nPin-Priority: 500\n")
+        problems = self.policy(librewolf_pref=self.LibreWolfPref + "\nPackage: firefox-extra\n%s\nPin-Priority: 500\n" % self.LibreWolfPin)
         self.assertTrue(any("non-allowlisted librewolf package firefox-extra" in p for p in problems), problems)
 
     def test_librewolf_trusted_yes_is_rejected(self):

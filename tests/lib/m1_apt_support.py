@@ -6,9 +6,14 @@ Two foreign repositories are included by the owner decision (SECURITY-CRITICAL):
   - LibreWolf (suite librewolf): librewolf.
 
 Policy for each repository:
-  - the origin is denied by default (Package: * with Pin-Priority -1);
+  - the repository is denied by default (Package: * with Pin-Priority -1);
   - only its allowlist is raised to Pin-Priority 500; no other package may be pinned
-    for the origin;
+    for the repository;
+  - every pin is bound to the configured source host ("Pin: origin <host>"), never to
+    a field of the repository's signed Release file (o=, l=, n=, a=, c=): a validly
+    signed Release with another Origin or Codename would match neither the deny nor
+    the allow rules and leave every package at priority 500 (Codex F6);
+  - every source of the repository uses exactly that host, so the pin covers it;
   - every source names a Signed-By keyring under /usr/share/keyrings that is shipped,
     is not trusted=yes, and uses binary deb entries over http(s);
   - no key is installed through apt-key or trusted.gpg.d.
@@ -34,11 +39,13 @@ WildcardCharacters = frozenset("*?[")
 AllowedSourceTypes = ("deb",)
 OneLineSource = re.compile(r"^(deb|deb-src)\s+(?:\[([^\]]*)\]\s+)?(\S+)\s+(\S+)(?:\s+(.*))?$")
 
+# "host" finds the repository's sources and pins by substring; "site" is the exact host
+# name every source must use and every pin must name.
 KaliSpec = {
     "name": "kali",
     "host": "kali.org",
-    "pin_token": "o=kali",
-    "origin_pin": "release o=Kali",
+    "site": "http.kali.org",
+    "release_word": "kali",
     "suite": "kali-rolling",
     "components": ("main",),
     "allowlist": m1_support.KaliAllowlist,
@@ -46,13 +53,14 @@ KaliSpec = {
 LibreWolfSpec = {
     "name": "librewolf",
     "host": "librewolf.net",
-    "pin_token": "n=librewolf",
-    "origin_pin": "release n=librewolf",
+    "site": "repo.librewolf.net",
+    "release_word": "librewolf",
     "suite": None,
     "components": None,
     "allowlist": m1_support.LibreWolfAllowlist,
 }
 RepoSpecs = (KaliSpec, LibreWolfSpec)
+ReleaseFieldPin = re.compile(r"^release\b.*\b([olnac])=")
 
 
 def split_stanzas(text):
@@ -120,6 +128,16 @@ def parse_sources(text):
     return entries
 
 
+def normalized_pin(pin):
+    """Pin text compared case-insensitively and without quotes ('origin "a.b"' == 'origin a.b')."""
+    return " ".join(pin.replace('"', " ").lower().split())
+
+
+def uri_host(uri):
+    match = re.match(r"^[a-z][a-z0-9+.-]*://([^/:\s]+)", uri)
+    return match.group(1).lower() if match else ""
+
+
 def parse_preferences(text):
     """apt preference stanzas: packages, pin text (whitespace-normalized), and priority."""
     stanzas = []
@@ -156,6 +174,19 @@ def installed_pairs(status_text):
     return pairs
 
 
+def source_belongs_to(spec, entry):
+    """True when a source entry serves this repository: by host, by its keyring, or by its suite.
+
+    Matching on the keyring and suite as well as the host means a source of the repository
+    that is moved to another host is still found, and then rejected for not using the pinned
+    host, instead of escaping the policy unnoticed.
+    """
+    keyring = os.path.basename(entry["signed_by"] or "").lower()
+    return (any(spec["host"] in uri for uri in entry["uris"])
+            or spec["release_word"] in keyring
+            or (spec["suite"] is not None and spec["suite"] in entry["suites"]))
+
+
 def repo_policy_problems(spec, source_files, pref_files, keyring_names):
     """Problems with one foreign repository's sources and pins (empty means accepted).
 
@@ -169,7 +200,7 @@ def repo_policy_problems(spec, source_files, pref_files, keyring_names):
         (fname, entry)
         for fname, entries in sorted(source_files.items())
         for entry in entries
-        if any(spec["host"] in uri for uri in entry["uris"])
+        if source_belongs_to(spec, entry)
     ]
     if not sources:
         problems.append("no %s source is configured" % name)
@@ -191,6 +222,9 @@ def repo_policy_problems(spec, source_files, pref_files, keyring_names):
         for uri in entry["uris"]:
             if not re.match(r"^https?://", uri):
                 problems.append("%s: URI is not http(s): %s" % (where, uri))
+            elif uri_host(uri) != spec["site"]:
+                problems.append("%s: source host %s is not the pinned host %s, so the default deny does not cover it"
+                                % (where, uri_host(uri), spec["site"]))
         if spec["suite"] is not None and entry["suites"] != [spec["suite"]]:
             problems.append("%s: suite must be %s, found %s"
                             % (where, spec["suite"], " ".join(entry["suites"]) or "none"))
@@ -198,18 +232,24 @@ def repo_policy_problems(spec, source_files, pref_files, keyring_names):
             problems.append("%s: components must be %s" % (where, " ".join(spec["components"])))
 
     origin = []
+    expected_pin = "origin " + spec["site"]
     for fname, stanzas in sorted(pref_files.items()):
         for stanza in stanzas:
-            if spec["pin_token"] in stanza["pin"].lower() and stanza["pin"] != spec["origin_pin"]:
-                problems.append("%s: unexpected %s pin form: %r" % (fname, name, stanza["pin"]))
-            if stanza["pin"] == spec["origin_pin"]:
+            pin = normalized_pin(stanza["pin"])
+            if pin == expected_pin:
                 origin.append((fname, stanza))
+            elif ReleaseFieldPin.match(pin) and spec["release_word"] in pin:
+                problems.append("%s: %s pin is bound to a field of the signed Release file (%r); it must be "
+                                "bound to the configured source host (Pin: origin \"%s\")"
+                                % (fname, name, stanza["pin"], spec["site"]))
+            elif spec["host"] in pin or spec["release_word"] in pin:
+                problems.append("%s: unexpected %s pin form: %r" % (fname, name, stanza["pin"]))
     defaults = [stanza for _, stanza in origin if stanza["packages"] == ["*"]]
     if not any(stanza["priority"] == DefaultDenyPriority for stanza in defaults):
-        problems.append("no default deny (Package: *, Pin-Priority -1) for the %s origin" % name)
+        problems.append("no default deny (Package: *, Pin-Priority -1) for the %s source host" % name)
     for stanza in defaults:
         if stanza["priority"] != DefaultDenyPriority:
-            problems.append("the %s origin default priority must be -1, found %s" % (name, stanza["priority"]))
+            problems.append("the %s default priority must be -1, found %s" % (name, stanza["priority"]))
     raised = {}
     for fname, stanza in origin:
         if stanza["packages"] == ["*"]:

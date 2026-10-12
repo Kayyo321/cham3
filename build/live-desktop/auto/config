@@ -38,19 +38,28 @@ sh auto/build_archive_keyring
 # before its first apt-get update, so debootstrap installs ca-certificates (from
 # the signed Debian archive) with --debootstrap-options.
 #
-# Archive areas: contrib and non-free are needed for torbrowser-launcher (contrib)
-# and nikto (non-free); non-free-firmware serves the explicit firmware list
-# (config/package-lists/cham3_firmware.list.chroot) so real hardware and VM graphics
-# and network work on the live and installed system.
+# Archive areas: main, non-free (nikto) and non-free-firmware (the explicit firmware
+# list config/package-lists/cham3_firmware.list.chroot, so real hardware and VM graphics
+# and network work on the live and installed system). contrib, needed only by
+# torbrowser-launcher, is NOT an archive area here: config/archives/cham3_debian_contrib.list
+# supplies it from the same signed Debian mirrors (see F7 below).
 #
-# Firmware (F2): --firmware-chroot false. With true, live-build installs every package
-# whose Contents entry lists a firmware path, which includes firmware-b43-installer and
-# firmware-b43legacy-installer; their postinst scripts download blobs from GitHub and
+# Firmware, live root (F2): --firmware-chroot false. With true, live-build installs every
+# package whose Contents entry lists a firmware path, which includes firmware-b43-installer
+# and firmware-b43legacy-installer; their postinst scripts download blobs from GitHub and
 # OpenWrt inside the chroot and fail the build when those hosts are unreachable. The
 # explicit list replaces that selection (the same set minus those two installers and the
 # ARM-only packages), so the build contacts no firmware host. The b43 and b43legacy
-# adapters are therefore not supported out of the box. --firmware-binary stays true
-# (installer-side firmware).
+# adapters are therefore not supported out of the box.
+#
+# Firmware, installer payload (F7): --firmware-binary true. live-build's installer stage
+# runs its own selection: every package of the --archive-areas whose Contents index lists
+# a lib/firmware path is downloaded into the ISO pool and linked under /firmware for the
+# installer's hardware detection; --firmware-chroot and the explicit list do not limit it.
+# In Debian 13 the only such packages in contrib are the two b43 installers, so leaving
+# contrib out of --archive-areas removes exactly those two and keeps the other 42 (the
+# same names as the explicit list, including firmware-brcm80211). The image gate checks
+# the ISO pool and /firmware as well as the root file system manifest.
 #
 # Apt indices (F2): --apt-indices true keeps /var/lib/apt/lists in the final image. That
 # is live-build's default; it is stated here so that a changed default or an accidental
@@ -83,7 +92,7 @@ lb config noauto \
     --mode debian \
     --distribution trixie \
     --architecture amd64 \
-    --archive-areas "main contrib non-free non-free-firmware" \
+    --archive-areas "main non-free non-free-firmware" \
     --debian-installer live \
     --binary-image iso-hybrid \
     --bootloaders syslinux,grub-efi \

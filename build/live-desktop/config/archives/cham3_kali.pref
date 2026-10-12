@@ -12,39 +12,51 @@
 # Debian packages keep their normal priority, so every package that exists in
 # Debian is installed and updated from Debian. If Kali renames an allowlisted
 # library the install or upgrade of the tool that needs it fails closed.
+#
+# Binding (F6). Every stanza matches with "Pin: origin", which apt compares with
+# the host name of the source URI configured in zzz_cham3_kali.list
+# (http://http.kali.org/kali/), not with any field of the repository's signed
+# Release file. A "Pin: release o=Kali" rule depended on the Origin text the
+# repository itself signs: a Release file with a different Origin, still validly
+# signed by the pinned key, matched neither the deny nor the allow rules and left
+# every Kali package at apt's ordinary priority 500. The host is fixed by cham3's
+# own configuration, so the deny holds whatever the Release identity says. The
+# same host must appear in the source file; tests/desktop/test_m1_static_foreign_sources.py
+# checks that, and tests/apt/test_m1_apt_pin_identity.py checks the behaviour
+# with signed repositories whose Origin, Label, Suite and Codename are changed.
 
 Package: *
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: -1
 
 Package: zaproxy
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: exploitdb
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: ghidra
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: amass
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: libpostal-data
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: radare2
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: libradare2-6.0.0t64
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500
 
 Package: libradare2-common
-Pin: release o=Kali
+Pin: origin "http.kali.org"
 Pin-Priority: 500

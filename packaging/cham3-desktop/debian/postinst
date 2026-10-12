@@ -7,18 +7,23 @@
 # missing or fails it falls back to a set-user-id root dumpcap. cham3 does not
 # accept that fallback, and dumpcap is not left set-user-id on any path:
 #
-#   1. A dpkg-statoverride (root root 0750) is pinned on dumpcap. While an
-#      override exists, wireshark-common's postinst changes nothing on the file
-#      (it only lists the override), so its set-user-id fallback cannot run
-#      during an upgrade, during dpkg-reconfigure wireshark-common, or when
-#      wireshark-common is installed after cham3-desktop. dpkg applies the
-#      override on every unpack, so a new dumpcap is never set-user-id either.
-#      The one gap is the dpkg run that installs both packages for the first
-#      time and configures wireshark-common first: its postinst can set the bit
-#      before the override exists, and step 2 clears it later in the same run.
+#   1. A dpkg-statoverride (root root 0750) is pinned on dumpcap. The preinst
+#      registers it when cham3-desktop is unpacked, before dpkg can configure
+#      wireshark-common in the same run, and this script checks it again. While
+#      an override exists, wireshark-common's postinst changes nothing on the
+#      file (it only lists the override), so its set-user-id fallback cannot run
+#      on a first installation in either configuration order, on an upgrade, on
+#      dpkg-reconfigure wireshark-common, or when wireshark-common is installed
+#      after cham3-desktop. dpkg applies the override on every unpack, so a new
+#      dumpcap is never set-user-id either. In the image the debconf answer
+#      wireshark-common/install-setuid is preseeded false as well, so
+#      wireshark-common does not choose the set-user-id layout at all.
 #      The override uses group root so that it never names the wireshark group:
 #      wireshark-common deletes that group when it is purged, and dpkg aborts
-#      when an override names an unknown group.
+#      when an override names an unknown group. If the override cannot be
+#      registered, or an existing override gives dumpcap a set-id mode, this
+#      script clears the set-id bits and then fails: the package is reported as
+#      not configured instead of reporting a policy that is not in place.
 #   2. This script runs when cham3-desktop is configured and, through the file
 #      trigger in debian/triggers, whenever a package installs, upgrades or
 #      removes /usr/bin/dumpcap. If dumpcap is installed it
@@ -29,7 +34,7 @@
 #      If the capabilities cannot be set, dumpcap is left with no set-id bit and
 #      no file capabilities: capture is unavailable (fail closed), never root.
 #
-# When dumpcap is not installed it changes no file (it only registers the
+# When dumpcap is not installed it changes no file (it only checks the
 # override, which dpkg applies if wireshark-common is installed later). It never
 # adds a user to the "wireshark" group: membership is a deliberate per-user
 # administrative step.
@@ -87,32 +92,64 @@ ensure_capture_group() {
     getent group "${capture_group}" > /dev/null 2>&1
 }
 
-# Pin the dpkg-statoverride and set foreign_override=yes when the administrator
-# already has a different override for the file, which is then left alone.
+# True when a dpkg-statoverride listing ("owner group mode path") has a
+# set-user-id or set-group-id mode.
+override_has_set_id_mode() {
+    listed_mode=$(printf '%s\n' "$1" | awk '{ print $3 }')
+    case "${listed_mode}" in
+        [2-7][0-7][0-7][0-7]) return 0 ;;
+    esac
+    return 1
+}
+
+# Make sure the dpkg-statoverride is in place (normally the preinst registered
+# it). Sets foreign_override=yes when the administrator already has a different
+# override without a set-id mode, which is then left alone. Returns 1 when the
+# override cannot be registered or an existing override has a set-id mode.
 pin_dumpcap_override() {
     foreign_override=no
     current_override=$(dpkg-statoverride --list "$1" 2> /dev/null) || current_override=
     if [ -z "${current_override}" ]; then
         if ! dpkg-statoverride --add "${pin_owner}" "${pin_group}" "${pin_mode_argument}" "$1"; then
-            report "WARNING: could not add the dpkg-statoverride for $1; the set-user-id fallback of wireshark-common is not blocked"
+            report "ERROR: could not register the dpkg-statoverride for $1; the set-user-id fallback of wireshark-common would not be blocked"
+            return 1
         fi
+        current_override=$(dpkg-statoverride --list "$1" 2> /dev/null) || current_override=
+        if [ "${current_override}" != "${pin_owner} ${pin_group} ${pin_mode_listed} $1" ]; then
+            report "ERROR: the dpkg-statoverride for $1 is not in place after registering it (found '${current_override}')"
+            return 1
+        fi
+    elif override_has_set_id_mode "${current_override}"; then
+        report "ERROR: an existing dpkg-statoverride gives $1 a set-id mode (${current_override}); cham3 does not allow a set-user-id or set-group-id dumpcap."
+        report "Remove it (dpkg-statoverride --remove $1) and run: dpkg-reconfigure cham3-desktop"
+        return 1
     elif [ "${current_override}" != "${pin_owner} ${pin_group} ${pin_mode_listed} $1" ]; then
         foreign_override=yes
         report "dpkg-statoverride for $1 was set by the administrator (${current_override}); ownership and mode are left unchanged"
     fi
+    return 0
 }
 
 enforce_dumpcap_policy() {
-    program=$(dpkg-divert --truename "${dumpcap_default_path}" 2> /dev/null) || program=${dumpcap_default_path}
-    pin_dumpcap_override "${program}"
+    override_path=$(dpkg-divert --truename "${dumpcap_default_path}" 2> /dev/null) || override_path=${dumpcap_default_path}
+    program=$(readlink -f -- "${override_path}" 2> /dev/null) || program=${override_path}
 
-    program=$(readlink -f -- "${program}" 2> /dev/null) || program=${dumpcap_default_path}
+    # Remove the set-id bits first, so that no later failure can leave them.
+    if [ -f "${program}" ]; then
+        chmod u-s,g-s -- "${program}"
+    fi
+
+    if ! pin_dumpcap_override "${override_path}"; then
+        report "Refusing to continue: the no-set-user-id policy for dumpcap is not in place."
+        if [ -f "${program}" ] && has_set_id_bit "${program}"; then
+            report "ERROR: ${program} is still set-user-id or set-group-id."
+        fi
+        return 1
+    fi
+
     if [ ! -f "${program}" ]; then
         return 0
     fi
-
-    # Remove the set-id bits first, so that a later failure cannot leave them.
-    chmod u-s,g-s -- "${program}"
 
     if [ "${foreign_override}" = "no" ]; then
         if ensure_capture_group; then
