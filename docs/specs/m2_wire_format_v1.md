@@ -1,6 +1,6 @@
 # cham3 ECR wire format, version 1
 
-- **Status:** PROPOSED under G2 ([ADR 0004](../decisions/0004_m2_wire_schema_hash.md)). Not approved. M2-003 implementation is gated on independent review and owner approval.
+- **Status:** PROPOSED under G2 ([ADR 0004](../decisions/0004_m2_wire_schema_hash.md)), revised after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (findings R06–R08; resolutions in [docs/reviews/M2-001-002-finding-resolutions.md](../reviews/M2-001-002-finding-resolutions.md)). Not approved. M2-003 implementation is gated on independent re-review and owner approval.
 - **Schema:** [m2_ecr_v1.cddl](m2_ecr_v1.cddl). This document is normative where the CDDL cannot express a rule (ordering, limits, text restrictions, semantics, validation order and error codes).
 - **Vectors:** [tests/m2/vectors/ecr_v1/](../../tests/m2/vectors/ecr_v1/vectors_readme.md), generated and checked by the independent oracle [tests/m2/oracle/ecr_oracle.py](../../tests/m2/oracle/ecr_oracle.py).
 - **Authority:** PROJECT.md §§4.2, 5, 5.7; ADR 0001. Required primitives are unchanged: Ed25519 (RFC 8032), COSE_Sign1 (RFC 9052), deterministic CBOR (RFC 8949 §4.2), SHA-256.
@@ -52,13 +52,15 @@ A strict subset of RFC 8949 core deterministic encoding (§4.2.1).
 
 | Limit | Value | Error |
 |---|---|---|
-| Total input (envelope) | 65 536 bytes | `input_too_large` |
+| Complete signed object (envelope) | 61 440 bytes | `input_too_large` |
 | Nesting depth (array/map/tag levels, per decode) | 8 | `depth_exceeded` |
 | Items in one array or pairs in one map | 256 | `container_too_large` |
 | Text string length | 1 024 bytes | `text_too_long` |
-| Byte string length | 65 536 bytes | `input_too_large` |
+| Byte string length | 61 440 bytes | `input_too_large` |
 
-Schema limits (§5) are stricter for specific fields. Payload and protected-header byte strings are decoded as separate top-level items, each with its own depth count.
+Schema limits (§5) are stricter for specific fields. Payload and protected-header byte strings are decoded as separate top-level items, each with its own depth count; both lie inside the envelope and so inherit its size bound. A producer (contractd) must refuse to propose an object whose envelope would exceed 61 440 bytes; the schema's list limits alone do not guarantee that.
+
+**Container budget (R08).** Every IPC message and every journal record is a separate `cham3_dcbor_v1` item of at most 65 536 bytes. A message or record may embed at most one signed object, and its other content is at most 4 096 bytes, so the largest valid object always fits: the published maximum vector (exactly 61 440 bytes) wrapped as a minimal `submit_signed` request is 61 533 bytes and as a worst-case `commit_admitted` record is 61 619 bytes (`limits` in the vectors). Responses that could exceed a container (history, export) are paginated ([IPC §2](m2_service_ipc_v1.md)).
 
 ### 2.4 Decode order and first error
 
@@ -128,7 +130,7 @@ Two independent mechanisms separate cham3 contract signatures from every other u
 - `key_id = domain_hash("cham3/key-id/ed25519/v1", public_key)`; `user_id` is the `key_id` of the identity key.
 - `lineage_id = domain_hash("cham3/lineage/v1", dcbor([owner_user_id, app_id, installation_id]))`.
 - `state_hash = domain_hash("cham3/state/v1", dcbor(contract_state))`.
-- `empty_state = {"grants": [], "network_mode": "offline"}`; `empty_state_hash` is its `state_hash` (PROJECT §3.2: no approved network policy means Offline).
+- `empty_state = {"grants": []}`; `empty_state_hash` is its `state_hash`. A state without a network grant is Offline (PROJECT §3.2).
 
 ## 6. Commit payload semantics
 
@@ -143,15 +145,17 @@ Two independent mechanisms separate cham3 contract signatures from every other u
 
 | Type | Parents | Authority class | Adds | Removes | Network change | Extra fields |
 |---|---|---|---|---|---|---|
-| `genesis` | 0 | persistent | persistent only | none | allowed | `base_state_hash == empty_state_hash` |
-| `revision` | 1 | persistent | persistent only | allowed | allowed | at least one change |
-| `revocation` | 1 | persistent | none | ≥1 | none | — |
-| `temporary_grant` | 1 | persistent or temporary | ≥1, each `timed`, `session` or `one_shot` | none | none | — |
-| `merge` | 2–8 | persistent | persistent only | allowed | allowed | `merge_base` ∈ `parents` |
-| `restore` | 1 | persistent | persistent only, ≥0 | allowed | allowed | `restore_reference` |
-| `identity_transition` | 1 | persistent | none | none | none | admission: `(package_identity, executable_sha256)` differs from the parent's subject (`identity_transition_rule`) |
+| `genesis` | 0 | persistent | persistent only | none | — | `base_state_hash == empty_state_hash` |
+| `revision` | 1 | persistent | persistent only | allowed | — | at least one add or remove |
+| `revocation` | 1 | persistent | none | ≥1 | — | — |
+| `temporary_grant` | 1 | persistent or temporary | ≥1, each `timed`, `session` or `one_shot` | none | — | — |
+| `merge` | 2–8 | persistent | persistent only | allowed | — | `merge_base` ∈ `parents` |
+| `restore` | 1 | persistent | persistent only, ≥0 | allowed | — | `restore_reference` |
+| `identity_transition` | 1 | persistent | none | none | required | `identity_change` (§6.9) |
 
-`merge_base` appears only on merges and `restore_reference` only on restores (`commit_type_rule`). `identity_transition` is the explicit, user-approved rebinding of an existing lineage to an updated package or executable (PROJECT §6.1); its state is unchanged and the new subject applies to the lineage's grants from that commit onward. Temporary authority can never add a persistent grant, and no commit type copies a temporary grant into persistent state: making a temporary permission persistent requires a new `grant_id` with a persistent lifetime under persistent authority (ADR 0001: no promotion).
+The column "Identity change" is the `delta.identity_change` field; it is required on `identity_transition` and forbidden on every other type (`commit_type_rule`). Network changes are ordinary adds/removes of the network grant (§6.10).
+
+`merge_base` appears only on merges and `restore_reference` only on restores (`commit_type_rule`). `identity_transition` is the explicit, user-approved rebinding of an existing lineage to an updated package or executable (PROJECT §6.1); its state is unchanged, the change is carried and displayed as `delta.identity_change`, and the new subject applies to the lineage's grants from that commit onward. Temporary authority can never add a persistent grant, and no commit type copies a temporary grant into persistent state: making a temporary permission persistent requires a new `grant_id` with a persistent lifetime under persistent authority (ADR 0001: no promotion).
 
 ### 6.3 Lifetimes (intrinsic layer, `lifetime_rule`)
 
@@ -174,10 +178,9 @@ Given the base state (the `empty_state` for genesis; the parent's `result_state`
 
 1. `state_hash(base) == base_state_hash`.
 2. Every `remove_grant_ids` entry exists in `base.grants`; every `add_grants` id exists in neither `base.grants` nor `remove_grant_ids`.
-3. If `network_mode` is present, `from == base.network_mode` and `to != from`; otherwise the mode is unchanged.
-4. `result_state` equals, byte for byte after deterministic encoding, `{"grants": (base.grants − removed) ∪ added sorted by grant_id, "network_mode": mode}`.
+3. `result_state` equals, byte for byte after deterministic encoding, `{"grants": (base.grants − removed) ∪ added sorted by grant_id}`.
 
-Intrinsically (without the base) a verifier checks: added grants appear unchanged in `result_state`; removed ids do not; network `to` equals `result_state.network_mode`. Items 1, 2 and 4 in full require the parent and are admission checks. A merge's other parents contribute nothing implicitly: their grants are absent unless explicitly added with fresh ids; their revocations stay effective because revoked ids can never be re-added (§6.6).
+Intrinsically (without the base) a verifier checks: added grants appear unchanged in `result_state` and removed ids do not. Items 1–3 in full require the parent and are admission checks. A merge's other parents contribute nothing implicitly: their grants are absent unless explicitly added with fresh ids; their revocations stay effective because revoked ids can never be re-added (§6.6).
 
 ### 6.6 Lineage-wide uniqueness (admission)
 
@@ -185,11 +188,22 @@ Within a lineage, a `grant_id` may be added at most once, ever; a removed, revok
 
 ### 6.7 Restore
 
-`restore_reference` names a historical commit in the same lineage that is an ancestor of the parent. Each added grant must match a grant of the referenced commit's `result_state` in `contract_type`, `resource` and `delegation`, with a new `grant_id`, a persistent lifetime and a fresh `effective_start` (no expansion beyond the historical snapshot). Temporary grants, ended sessions and consumed one-shots are never restored. Current policy, identity and key authority apply, and fresh approval is required (ADR 0005).
+`restore_reference` names a historical commit in the same lineage that is an ancestor of the parent. The restore target is the parent's state minus `remove_grant_ids` plus `add_grants`; every added grant — **including a network grant** — must match a grant of the referenced commit's `result_state` in `contract_type`, `resource` and `delegation`, with a new `grant_id`, a persistent lifetime, a fresh `effective_start` and, when the historical grant had an `expiration`, an expiration no later than it (no expansion beyond the historical snapshot: `restore_rule`). Removals only narrow. Temporary grants, ended sessions and consumed one-shots are never restored. Current policy, identity and key authority apply, and fresh approval of the complete displayed target is required (ADR 0005).
 
 ### 6.8 Contract-to-commit relationship
 
 PROJECT §5.1's contract fields are carried by the commit that admits a grant: identification (`schema_version`, `grant_id`, `contract_type`, `policy.version`, `timestamp`), issuer (`actor`, `key_id`, `authority_class`, `authorization.session_id`), subject (`subject`), resource, validity (`lifetime`), delegation and authorization (`authorization.request_id`, `policy.epoch`, `policy.security_profile`, `policy.mandatory_constraints`). The signed contract for a grant is the commit envelope that added it; later commits that keep the grant in `result_state` restate but do not re-issue it.
+
+### 6.9 Subject binding and identity transitions (R06)
+
+The **authoritative subject** of a lineage is the `subject` of its genesis, replaced only by each admitted `identity_transition`. At admission:
+
+- every commit other than `genesis` and `identity_transition` (revision, revocation, temporary grant, merge, restore) must carry a `subject` byte-identical to the authoritative subject (`subject_binding_mismatch`); merges, temporary branches and restores therefore cannot rebind identity;
+- an `identity_transition` must keep every subject field except `package_identity` and `executable_sha256` identical, and its `identity_change.from` must equal the authoritative subject's values (`subject_binding_mismatch`); intrinsically, `identity_change.to` must equal the commit's own subject values and differ from `from` (`identity_transition_rule`).
+
+### 6.10 Network authority (R07)
+
+Network access is an ordinary grant with category `network`, `resource_id` `"network_mode"`, `resource_owner_uid` equal to the subject owner, exactly one operation (`direct` or `tor`), no delegation and any lifetime except `one_shot`; a state holds at most one network grant (`network_grant_rule`). A lineage with no eligible network grant is Offline. Network authority therefore has a grant id, lifetime, session/expiry bounds, explicit revocation, restriction, key/policy invalidation and restore matching exactly like other grants. A temporary network grant is only admissible on a branch whose base has no network grant (the one-network-grant rule); changing a persistent mode is a revision that removes one network grant and adds another. Mandatory policy can still forbid a mode (PROJECT §3.3); policyd then reports the lineage Offline.
 
 ## 7. Errors
 
@@ -199,8 +213,8 @@ Implementations report exactly one stable error code per rejected object: the fi
 - Envelope: `not_signed_object` (not a 4-element array under tag 18, or an element of the wrong major type), `protected_header_invalid`, `unsupported_algorithm`, `wrong_object_type`, `unprotected_not_empty`, `signature_length`.
 - Schema: `unknown_field`, `missing_field`, `wrong_type`, `value_out_of_range`, `invalid_text`, `invalid_time`, `invalid_enum`, `list_too_long`, `list_not_strictly_ascending`, `subject_actor_mismatch`, `lineage_mismatch`, `key_id_mismatch`.
 - Signature: `unknown_key`, `signature_invalid`.
-- Intrinsic semantics: `commit_type_rule`, `lifetime_rule`, `delegation_rule`, `delta_rule`, `network_change_rule`, `result_state_mismatch`, `base_state_mismatch` (genesis only; for other types it is an admission check).
-- Admission-only codes are defined in ADR 0006/0007 (`parent_unknown`, `stale_head`, `stale_epoch`, `duplicate_identifier`, `restore_rule`, `identity_transition_rule`, …).
+- Intrinsic semantics: `commit_type_rule`, `lifetime_rule`, `delegation_rule`, `network_grant_rule`, `identity_transition_rule`, `delta_rule`, `result_state_mismatch`, `base_state_mismatch` (genesis only; for other types it is an admission check).
+- Admission codes (ADR 0006/0007): `parent_unknown`, `base_state_mismatch`, `delta_rule`, `result_state_mismatch`, `duplicate_identifier`, `restore_rule`, `subject_binding_mismatch`, `stale_head`, `stale_epoch`, … The published admission vectors use the first seven.
 
 Within the schema layer, fields are checked in ascending key order; within a field, type, then format/limits, then ordering.
 
@@ -212,4 +226,4 @@ Within the schema layer, fields are checked in ascending key order; within a fie
 
 ## 9. Published vectors
 
-`tests/m2/vectors/ecr_v1/` holds valid objects (identity enrollments, key certificates, a key invalidation and one commit of every type for two synthetic users) and invalid objects, each labeled with the expected error code and layer. All keys are synthetic, derived from public labels, and must never be used outside tests. The vectors are produced by an implementation independent of the Rust code and re-verified by it; the Rust verifier (M2-003) must reproduce every byte and error code.
+`tests/m2/vectors/ecr_v1/` holds valid objects (identity enrollments, key certificates, a key invalidation, one commit of every type for two synthetic users and a maximum-size 61 440-byte commit), invalid objects each labeled with the expected error code and layer (including the 61 441-byte boundary), lineage-admission failures (including identity substitution by every non-transition commit type and restore scope/network/expiration violations), and the `limits` block with worst-case wrapper sizes. All keys are synthetic, derived from public labels, and must never be used outside tests. The vectors are produced by an implementation independent of the Rust code and re-verified by it; the Rust verifier (M2-003) must reproduce every byte and error code.

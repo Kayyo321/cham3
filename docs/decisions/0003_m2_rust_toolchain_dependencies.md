@@ -1,7 +1,7 @@
 # ADR 0003: M2 Rust toolchain, dependencies and unsafe boundary (G1)
 
-- **Status:** PROPOSED — awaiting independent review and owner approval. Nothing here is approved.
-- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer) / cham3 project owner.
+- **Status:** PROPOSED (revision 2) — awaiting independent re-review and owner approval. Nothing here is approved.
+- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R01, R02, R03; I02) / cham3 project owner. Finding resolutions: [M2-001-002-finding-resolutions.md](../reviews/M2-001-002-finding-resolutions.md).
 - **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G1, M2-001, A01, A02; PROJECT.md §§4.2, 4.5, 12, 13; [Rust research](../research/M2_rust_readiness.md); SEC-05, SEC-17.
 
 `PROJECT.md` is the canonical product specification. This ADR records a scoped decision or proposal and does not silently replace that document.
@@ -10,7 +10,7 @@
 
 M2 must be implemented as safe, compiled Rust with exactly pinned, offline, reviewable build inputs, isolated unsafe/FFI, and harness evidence that tests really execute. The owner selected a memory-safe compiled language; Rust was selected under that instruction. G1 must freeze the compiler/std/target/linker, edition and MSRV, the workspace and lockfile, dependency sources/features/build scripts/macros, the transitive unsafe/native inventory, secret ownership, panic policy and the Debian build recipe.
 
-M2-001 qualification evidence (commit `5d07ee1` plus this package's changes) was produced natively on arm64 Debian 13.7 in the pinned container: development evidence, not target qualification. amd64 target qualification is NOT_RUN and is assigned to the independent reviewer's cloud run (owner instruction 2026-10-12: no x86 emulation on the development Mac).
+Revision 1 evidence (`f1437f0`) was produced natively on arm64 Debian 13.7 (development evidence) and reproduced natively on amd64 by the independent reviewer and by GitHub Actions run 38276640049: every check passed except the two then-uncommitted amd64 locks. Revision 2 commits the reviewed amd64 locks and is qualified natively on amd64 in disposable CI infrastructure (never x86 emulation on the development Mac, owner instruction 2026-10-12).
 
 ## Decision (proposed)
 
@@ -29,7 +29,7 @@ Rationale: 1.85 is the first release with edition 2024; Debian's package is APT-
 ### 2. Reproducible environment
 
 - [build/m2/dev_container.dockerfile](../../build/m2/dev_container.dockerfile): base `debian@sha256:913f6706…c2d5` (multi-arch index), exact versions from [build/m2/debian_packages.txt](../../build/m2/debian_packages.txt); a version Debian has superseded fails the build instead of upgrading.
-- Per-architecture locks of the full installed set and of every downloaded `.deb` SHA-256: `build/m2/debian_lock_<arch>.txt`, `build/m2/debian_debs_<arch>.sha256`. arm64 is committed. **amd64 must be recorded on amd64 (`qualify_m2_rust.sh --record`), reviewed and committed before G1 can be approved.**
+- Per-architecture locks of the full installed set and of every downloaded `.deb` SHA-256: `build/m2/debian_lock_<arch>.txt`, `build/m2/debian_debs_<arch>.sha256`. arm64 (development) is committed from the author's native run. **amd64 (target)** is committed from the independent reviewer's native reproduction, accepted by that review: `debian_lock_amd64.txt` (612 lines, SHA-256 `6cd45590bdebd08f53c95a56112a97030b844959983284db44232b59baa11d3c`) and `debian_debs_amd64.sha256` (535 lines, `6ce06e450a8b91cd2c91c1d3aaffc360dfed7276f6622ac03dbd05fd35f0f43a`). The reviewer could not retrieve the earlier CI artifact (HTTP 403) and made no comparison with it; the author separately downloaded that artifact (run 38276640049, clean `3c35aac`, amd64) and found its two proposal files have the same SHA-256 digests — author evidence, not reviewed.
 - Debian security updates to any pinned package are expected; each requires a recorded re-qualification (new locks, source-manifest diff review), independent review and, for toolchain/provider changes, owner approval. snapshot.debian.org is the fallback for reacquiring exact superseded versions.
 
 ### 3. Dependency source and provenance
@@ -74,7 +74,10 @@ Deliberately not used: the `getrandom` crate (rustix `getrandom(2)` with no fall
 ### 7. Secret handling (G1 part; vault protocol is G3)
 
 - Secret types implement no `Debug`, `Display`, `Clone`, `Copy` or serialization (compile-time trait-absence assertions); secrets are held in `secret_region_t` (guard pages, `mlock`, `MADV_DONTDUMP`, `MADV_WIPEONFORK`, volatile zeroization; allocation fails closed when locking fails).
-- The vault process additionally calls `mlockall(MCL_CURRENT|MCL_FUTURE)`, `PR_SET_DUMPABLE=0`, `RLIMIT_CORE=0` at start and refuses to run if any fails, because ed25519-dalek and argon2 make transient copies (stack expansion, Argon2 blocks) outside guarded regions. Those copies are zeroized by the libraries where they implement `ZeroizeOnDrop`, and residual stack copies are a documented limitation (PROJECT §4.5: no claim that keys never enter RAM).
+- The vault process additionally calls `mlockall(MCL_CURRENT|MCL_FUTURE)`, `PR_SET_DUMPABLE=0`, `RLIMIT_CORE=0` at start and refuses to run if any fails, because ed25519-dalek and argon2 make transient copies outside guarded regions. `mlockall` prevents swapping; it does **not** erase freed memory, so every secret-bearing buffer has a named clearing owner (R03):
+  - ed25519-dalek 2.1.1 `SigningKey` and `ExpandedSecretKey` zeroize their secret fields on drop (`zeroize` feature; verified in the pinned source).
+  - argon2 0.5.3 clears its internal hashes but **not** the caller-supplied `Block` workspace (confirmed by the independent review and by the regression test `argon2_library_leaves_caller_workspace_populated`). cham3 owns that workspace: allocated once at its exact block count, explicitly zeroized after every derivation on success and every error path and again on drop (`argon2_workspace_t` in the probe demonstrates the pattern with tests; the vault implementation is gated, ADR 0005 §4).
+  - Unnamed stack temporaries inside the libraries are not erased; they are covered only by process locking, non-dumpable state and core limits, and abort/death bypasses every destructor. This is a documented limitation (PROJECT §4.5: no claim that keys never enter RAM).
 
 ### 8. Lints and naming
 
@@ -82,17 +85,28 @@ Deliberately not used: the `getrandom` crate (rustix `getrandom(2)` with no fall
 
 ### 9. Verification tooling and limits
 
+Source identity is evidence, not decoration (R01): `build/scripts/m2_source_identity.sh` records commit, tree, tracked-dirty count, Debian version and the Cargo.lock digest, and **fails** when any identity command fails or yields a malformed value; the harness environment collector fails likewise. Qualification and every suite record `source_identity` as PASS/FAIL; `CHAM3_M2_REQUIRE_CLEAN=1` additionally fails dirty trees. Missing identity is never reported as a clean or dirty state (canaries in `tests/m2/harness/test_m2_source_identity.py`).
+
+
 | Tool | Status on the pinned toolchain |
 |---|---|
 | `cargo test` debug and release, inventory-exact, no ignored/filtered/zero suites | available, required |
 | Harness sensitivity canaries (assertion, compile, link, panic, zero, ignored, filtered, `--no-run`) | available, required |
-| valgrind 3.24 memcheck on release binaries | available, required for native adapter paths |
+| valgrind 3.24 memcheck | available, required: the release provider probe (`valgrind_memcheck_probe`) **and** the actual `cham3_secure_memory` release test executable, all 10 tests in process (`valgrind_memcheck_secure_memory`, I02). Limit: the guard-page and memlock child processes are not instrumented (no `--trace-children`); their parents and the in-process tests are |
 | Bounded property and mutation tests (proptest 1.6.0, deterministic mutators) | available; used for parser/DAG/IPC fuzzing |
 | Miri, `-Zsanitizer`, cargo-fuzz/libFuzzer | NOT_AVAILABLE (nightly-only / not packaged); never counted as PASS. An optional supplementary Miri run of `core/native` on a separately recorded nightly is non-qualifying evidence |
 
 ### 10. Debian build and deployment recipe (frame for M2-007)
 
 Packages are built with `dpkg-buildpackage` in the same pinned environment; `debian/rules` runs `cargo build --release --frozen` with the repository `.cargo/config.toml`, Build-Depends pin the toolchain and `librust-*-dev` versions above, and produced binaries are recorded by SHA-256. Package contents, users, units and confinement are G3/M2-007 decisions.
+
+### 11. Dependency security status (advisory review requested by the review)
+
+Author-run, against the pinned inputs; the independent reviewer's own advisory check was BLOCKED (HTTP 403) and remains to be repeated before approval. Evidence: `docs/evidence/M2-cryptographic-contract-core/advisory_review_20261012/`.
+
+- **Debian security tracker** (`tracker/data/json` fetched 2026-10-12 17:07 UTC, SHA-256 `52d2faea…5dc6`): for the sources of every compiled crate, the toolchain (rustc, gcc-14, binutils, glibc) and the oracle libraries, **no** resolved trixie fix is newer than a pinned version (0 behind), and **no** open trixie issue exists for `rustc` or any `rust-*` source of the 33 compiled crates. Open, not-yet-triaged trixie issues exist in glibc (`ld.so` and libc functions), gcc-14 libstdc++, systemd and the test-only oracles (cbor2, python-cryptography). None is in code the M2 Rust binaries call today; the `ld.so` items are recorded as a precondition for the setgid client in M2-007 (re-check before packaging).
+- **RustSec advisory-db** (commit `25a288f6…2569`, 2026-10-12): 37 crate versions (33 compiled + 4 test-only) checked against affected/patched ranges: 6 advisories exist for these crates (blake2 RUSTSEC-2019-0019, chacha20 RUSTSEC-2019-0029, curve25519-dalek RUSTSEC-2024-0344, ed25519-dalek RUSTSEC-2022-0093, generic-array RUSTSEC-2020-0146, sha2 RUSTSEC-2021-0100); **all are patched** in the pinned versions; **0 affected**.
+- Debian point/security updates will change these results; each requires re-qualification (§2).
 
 ## Alternatives considered
 
@@ -117,11 +131,12 @@ Packages are built with `dpkg-buildpackage` in the same pinned environment; `deb
 
 | Check | Environment / command | Result | Evidence / limits |
 |---|---|---|---|
-| Qualification (pins, locks, source manifest, inventory, rustfmt, clippy, naming, debug/release builds, backend selection, valgrind, unit + harness suites) | arm64 Debian 13.7 container, `bash build/scripts/qualify_m2_rust.sh` | PASS (development) | `docs/evidence/M2-cryptographic-contract-core/m2_001_arm64/`; not target qualification |
-| Same on amd64 | amd64 Debian 13 (`--record`, review, commit locks, rerun) | NOT_RUN | Assigned to the independent reviewer's cloud run; required before approval |
+| Revision 1 qualification | arm64 (author) at `f1437f0`; amd64 (independent reviewer, GitHub Actions 38276640049) at `3c35aac` | PASS except the two uncommitted amd64 locks on amd64 | Review 9cf8825; `docs/evidence/M2-cryptographic-contract-core/m2_001_arm64_f1437f0/` |
+| Revision 2 qualification with committed amd64 locks, source identity, secure-memory valgrind | amd64 GitHub Actions (disposable, unprivileged container) and arm64 author run at the revision-2 commit | see the [revision-2 handoff](../handoffs/M2-001-002-rereview.md) | Must PASS fully on amd64 before approval |
 | Miri / sanitizers / coverage-guided fuzzing | — | NOT_AVAILABLE | Toolchain limit, recorded, not PASS |
 
 ## Approval and supersession
 
-- **Owner approval evidence:** none yet. Requires independent review of this exact proposal and the amd64 qualification evidence, then an explicit owner decision.
-- **Supersedes / is superseded by:** none. The historical Stasha research and receipts do not qualify this toolchain.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R01–R03; I02). Revision 2 requires re-review, including the reviewer's own advisory check.
+- **Owner approval evidence:** none. Requires independent re-review of this exact proposal and full amd64 qualification, then an explicit owner decision.
+- **Supersedes / is superseded by:** revision 2 supersedes revision 1 of this proposal (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd). The historical Stasha research and receipts do not qualify this toolchain.

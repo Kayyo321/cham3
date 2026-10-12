@@ -4,9 +4,10 @@
 # image pinned by digest, exact package versions) and runs, unprivileged inside it:
 # build/scripts/qualify_m2_rust.sh --record (toolchain/package pins and locks, crate
 # source manifest, dependency inventory, rustfmt/clippy/naming, debug and release
-# builds, backend selection, valgrind, unit and harness suites). --record keeps the
-# observed amd64 package locks as artifacts for review when no committed amd64 lock
-# exists yet; the run still FAILs until the reviewed locks are committed.
+# builds, backend selection, valgrind of the probe and of the secure-memory tests,
+# unit and harness suites) with CHAM3_M2_REQUIRE_CLEAN=1, so source identity must be
+# complete and clean. --record only writes lock proposals when the observed package
+# set differs from the committed amd64 locks; the run then FAILs.
 # No secrets, no production keys, read-only repository permissions. Results are
 # development evidence for the exact commit only and establish no M3-M6 enforcement.
 name: m2_checks
@@ -35,6 +36,7 @@ jobs:
           docker run --rm \
             --user "$(id -u):$(id -g)" \
             -e HOME=/tmp/cham3_home \
+            -e CHAM3_M2_REQUIRE_CLEAN=1 \
             -e GIT_CONFIG_COUNT=1 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0=/work \
@@ -47,9 +49,15 @@ jobs:
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
         with:
           name: m2_qualification_amd64
+          # Text evidence only; build targets are excluded (the revision-1 artifact
+          # included them and was 167 MB).
           path: |
-            out/m2/qualification/
-            out/m2/runs/*/summary.txt
+            out/m2/qualification/*/*.txt
+            out/m2/qualification/*/*.log
+            out/m2/qualification/*/*.json
+            out/m2/qualification/*/*.md
+            out/m2/qualification/*/*.sha256
+            out/m2/runs/*/*.txt
             out/m2/runs/*/*.json
             out/m2/runs/*/*.log
           retention-days: 14

@@ -265,11 +265,22 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+HexObjectPattern = re.compile(r"^[0-9a-f]{40}$")
+
+
 def environment_record():
+    """Collects the run identity. Returns (record, problems).
+
+    Required evidence: commit and tree ids, tracked-file status, rustc/cargo identity,
+    Debian version, dpkg architecture and the Cargo.lock digest. A failed or malformed
+    collection is a problem, never a dirty or clean state: missing identity cannot be
+    repaired by later test success (review finding R01).
+    """
     record = {}
+    problems = []
     for name, command in (
-        ("git_head", ["git", "-C", RepoRoot, "rev-parse", "HEAD"]),
-        ("git_tree", ["git", "-C", RepoRoot, "rev-parse", "HEAD^{tree}"]),
+        ("git_head", ["git", "-C", RepoRoot, "rev-parse", "--verify", "HEAD"]),
+        ("git_tree", ["git", "-C", RepoRoot, "rev-parse", "--verify", "HEAD^{tree}"]),
         ("git_status", ["git", "-C", RepoRoot, "status", "--porcelain", "--untracked-files=no"]),
         ("rustc", ["rustc", "-Vv"]),
         ("cargo", ["cargo", "-V"]),
@@ -277,13 +288,30 @@ def environment_record():
         ("debian_version", ["cat", "/etc/debian_version"]),
         ("dpkg_architecture", ["dpkg", "--print-architecture"]),
     ):
-        status, output = command_output(command)
+        try:
+            status, output = command_output(command)
+        except OSError as error:
+            status, output = None, "cannot execute: %s" % error
         record[name] = {"status": status, "output": output.strip()}
-    record["git_dirty"] = bool(record["git_status"]["output"])
+        if status != 0:
+            problems.append("%s: command failed (status %r)" % (name, status))
+    for name in ("git_head", "git_tree"):
+        if record[name]["status"] == 0 and not HexObjectPattern.match(record[name]["output"]):
+            problems.append("%s: not a 40-hex object id" % name)
+    if record["rustc"]["status"] == 0 and not re.search(r"(?m)^release: \S+$", record["rustc"]["output"]):
+        problems.append("rustc: no release line")
+    if record["cargo"]["status"] == 0 and not record["cargo"]["output"].startswith("cargo "):
+        problems.append("cargo: unexpected version output")
+    # Dirty state is only meaningful when the status command itself succeeded.
+    record["git_dirty"] = bool(record["git_status"]["output"]) if record["git_status"]["status"] == 0 else None
     lock = os.path.join(RepoRoot, "Cargo.lock")
-    record["cargo_lock_sha256"] = sha256_file(lock) if os.path.exists(lock) else None
+    if os.path.isfile(lock):
+        record["cargo_lock_sha256"] = sha256_file(lock)
+    else:
+        record["cargo_lock_sha256"] = None
+        problems.append("Cargo.lock missing")
     record["euid"] = os.geteuid()
-    return record
+    return record, problems
 
 
 def fresh_run_dir(path):
@@ -407,7 +435,10 @@ def main(arguments):
         elif options.command == "provider-oracle":
             record = run_provider_oracle(options.probe, options.run_dir)
         else:
-            record = {"result": "PASS", "environment": environment_record()}
+            environment, problems = environment_record()
+            record = {"result": "FAIL" if problems else "PASS", "environment": environment}
+            if problems:
+                record["error"] = "; ".join(problems)
             write_json(os.path.join(options.run_dir, "environment.json"), record)
     except harness_error_t as error:
         record = {"result": "FAIL", "error": str(error)}

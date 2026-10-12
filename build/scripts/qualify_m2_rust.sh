@@ -70,17 +70,23 @@ check() { # name command... (output to <run>/<name>.log)
     fi
 }
 
-{
-    echo "commit $(git -c safe.directory="${repo_root}" rev-parse HEAD)"
-    echo "tree $(git -c safe.directory="${repo_root}" rev-parse 'HEAD^{tree}')"
-    echo "dirty_tracked $(git -c safe.directory="${repo_root}" status --porcelain --untracked-files=no | wc -l)"
-    echo "architecture ${arch}"
-    echo "debian_version $(cat /etc/debian_version 2> /dev/null || echo missing)"
-    echo "uname $(uname -srmo)"
-    echo "euid $(id -u)"
-    echo "cargo_lock_sha256 $(sha256sum Cargo.lock | cut -d' ' -f1)"
-} > "${run_dir}/identity.txt"
+# Source identity (review finding R01): failures are FAIL, never clean/dirty states.
+identity_args=()
+if [ "${CHAM3_M2_REQUIRE_CLEAN:-0}" = "1" ]; then
+    identity_args=(--require-clean)
+fi
+if bash "${script_dir}/m2_source_identity.sh" "${run_dir}/identity.txt" "${identity_args[@]}"; then
+    identity_ok=1
+else
+    identity_ok=0
+fi
 cat "${run_dir}/identity.txt"
+
+if [ "${identity_ok}" -eq 1 ]; then
+    record PASS source_identity "$(head -n 1 "${run_dir}/identity.txt")"
+else
+    record FAIL source_identity "$(tail -n 1 "${run_dir}/identity.txt")"
+fi
 
 # Platform.
 case "$(cat /etc/debian_version 2> /dev/null || true)" in
@@ -218,6 +224,31 @@ if command -v valgrind > /dev/null 2>&1; then
 else
     record FAIL valgrind_memcheck_probe "valgrind missing"
 fi
+# Valgrind of the actual unsafe adapter (review note I02). The test executable is built
+# here (build only) and then executed in full under memcheck; the run must report all
+# 10 tests passed and zero errors. Limit: the guard-page and memlock tests re-execute
+# the binary as child processes, which valgrind does not instrument (no
+# --trace-children); their parents and the in-process tests are instrumented.
+sm_build_json=${run_dir}/secure_memory_test_build.json
+sm_log=${run_dir}/valgrind_memcheck_secure_memory.log
+sm_exe=""
+if env CARGO_TARGET_DIR="${build_dir}" cargo test --release --frozen -p cham3_secure_memory --no-run \
+    --message-format=json > "${sm_build_json}" 2> "${run_dir}/secure_memory_test_build.log"; then
+    sm_exe=$(python3 -I -c 'import json, sys
+for line in open(sys.argv[1], encoding="utf-8"):
+    message = json.loads(line)
+    if message.get("reason") == "compiler-artifact" and message.get("executable") and message["target"]["name"] == "cham3_secure_memory":
+        print(message["executable"])' "${sm_build_json}")
+fi
+if [ -n "${sm_exe}" ] && [ -x "${sm_exe}" ] \
+    && valgrind --error-exitcode=99 --track-origins=yes "${sm_exe}" --test-threads=1 > "${sm_log}" 2>&1 \
+    && grep -q '^test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out' "${sm_log}" \
+    && grep -q 'ERROR SUMMARY: 0 errors' "${sm_log}"; then
+    record PASS valgrind_memcheck_secure_memory "10 tests, 0 errors; child fault processes not instrumented"
+else
+    record FAIL valgrind_memcheck_secure_memory "see valgrind_memcheck_secure_memory.log"
+fi
+
 if cargo miri --version > /dev/null 2>&1; then
     record INFO miri "available: $(cargo miri --version 2>&1)"
 else

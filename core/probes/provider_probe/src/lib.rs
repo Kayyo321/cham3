@@ -23,6 +23,7 @@ use chacha20poly1305::aead::AeadInPlace;
 use chacha20poly1305::{Key, KeyInit, Tag, XChaCha20Poly1305, XNonce};
 use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use sha2::{Digest, Sha256};
+use zeroize::Zeroize;
 
 /// Committed vector file; both this probe and the Python oracle check it.
 pub const VectorFile: &str = include_str!("../../../../tests/m2/vectors/provider_kat.json");
@@ -360,39 +361,114 @@ pub struct argon2_case_t<'case> {
     pub lanes: u32,
 }
 
-/// Runs Argon2id with explicit memory provided by the caller.
-pub fn argon2id(case: &argon2_case_t<'_>, output: &mut [u8]) -> Result<(), probe_failure_t> {
-    let argon2_case_t {
-        password,
-        salt,
-        secret,
-        associated_data,
-        memory_kib,
-        passes,
-        lanes,
-    } = *case;
+/// Caller-owned Argon2id workspace with explicit clearing (review finding R03).
+///
+/// The pinned argon2 0.5.3 clears its own intermediate hashes but leaves the
+/// caller-supplied `Block` memory populated after `hash_password_into_with_memory`
+/// returns. This owner allocates the workspace once at its exact block count (never
+/// reallocated, so no stale copies from growth), zeroizes every block after each
+/// derivation on success and on every error path, and again on drop. Zeroization does
+/// not survive abort or process death; in the vault the process-wide `mlockall`,
+/// non-dumpable state and `RLIMIT_CORE=0` cover that case (ADR 0003 §7, ADR 0005 §5).
+/// This probe derives only public synthetic data; it demonstrates the required pattern.
+pub struct argon2_workspace_t {
+    blocks: Vec<Block>,
+}
+
+impl argon2_workspace_t {
+    /// Allocates a zeroed workspace of exactly `block_count` blocks.
+    pub fn new(block_count: usize) -> Self {
+        Self {
+            blocks: vec![Block::default(); block_count],
+        }
+    }
+
+    /// Number of blocks owned.
+    pub fn block_count(&self) -> usize {
+        self.blocks.len()
+    }
+
+    /// Derives into `output`, then clears the workspace whatever the outcome.
+    pub fn derive(
+        &mut self,
+        case: &argon2_case_t<'_>,
+        output: &mut [u8],
+    ) -> Result<(), probe_failure_t> {
+        let result = argon2id_into(case, output, &mut self.blocks);
+        self.clear();
+        result
+    }
+
+    /// Zeroizes every block (volatile writes via `Zeroize`).
+    pub fn clear(&mut self) {
+        for block in &mut self.blocks {
+            block.zeroize();
+        }
+    }
+
+    /// True when every word of every block is zero.
+    pub fn is_clear(&self) -> bool {
+        self.blocks
+            .iter()
+            .all(|block| block.as_ref().iter().all(|word| *word == 0))
+    }
+}
+
+impl Drop for argon2_workspace_t {
+    fn drop(&mut self) {
+        self.clear();
+    }
+}
+
+/// Block count Argon2id needs for `case`.
+pub fn argon2_block_count(
+    case: &argon2_case_t<'_>,
+    output_length: usize,
+) -> Result<usize, probe_failure_t> {
+    Ok(argon2_params(case, output_length)?.block_count())
+}
+
+fn argon2_params(
+    case: &argon2_case_t<'_>,
+    output_length: usize,
+) -> Result<argon2::Params, probe_failure_t> {
     let mut builder = ParamsBuilder::new();
     builder
-        .m_cost(memory_kib)
-        .t_cost(passes)
-        .p_cost(lanes)
-        .output_len(output.len());
-    if let Some(data) = associated_data {
+        .m_cost(case.memory_kib)
+        .t_cost(case.passes)
+        .p_cost(case.lanes)
+        .output_len(output_length);
+    if let Some(data) = case.associated_data {
         builder.data(AssociatedData::new(data).map_err(|_| fail("argon2.associated_data"))?);
     }
-    let params = builder.build().map_err(|_| fail("argon2.params"))?;
-    let block_count = params.block_count();
-    let hasher = match secret {
+    builder.build().map_err(|_| fail("argon2.params"))
+}
+
+fn argon2id_into(
+    case: &argon2_case_t<'_>,
+    output: &mut [u8],
+    blocks: &mut [Block],
+) -> Result<(), probe_failure_t> {
+    let params = argon2_params(case, output.len())?;
+    if blocks.len() != params.block_count() {
+        return Err(fail("argon2.workspace_size"));
+    }
+    let hasher = match case.secret {
         Some(secret) => {
             Argon2::new_with_secret(secret, Algorithm::Argon2id, Version::V0x13, params)
                 .map_err(|_| fail("argon2.secret"))?
         }
         None => Argon2::new(Algorithm::Argon2id, Version::V0x13, params),
     };
-    let mut blocks = vec![Block::default(); block_count];
     hasher
-        .hash_password_into_with_memory(password, salt, output, &mut blocks)
+        .hash_password_into_with_memory(case.password, case.salt, output, blocks)
         .map_err(|_| fail("argon2.hash"))
+}
+
+/// Runs Argon2id in a freshly allocated, explicitly cleared workspace.
+pub fn argon2id(case: &argon2_case_t<'_>, output: &mut [u8]) -> Result<(), probe_failure_t> {
+    let mut workspace = argon2_workspace_t::new(argon2_block_count(case, output.len())?);
+    workspace.derive(case, output)
 }
 
 /// RFC 9106 §5.3 Argon2id vector.
@@ -583,6 +659,74 @@ mod tests {
     #[test]
     fn argon2id_rfc9106_vector_passes() {
         check_argon2id_rfc9106().unwrap();
+    }
+
+    fn small_case() -> argon2_case_t<'static> {
+        argon2_case_t {
+            password: b"public synthetic password",
+            salt: b"public-synthetic-salt",
+            secret: None,
+            associated_data: None,
+            memory_kib: 64,
+            passes: 1,
+            lanes: 1,
+        }
+    }
+
+    #[test]
+    fn argon2_library_leaves_caller_workspace_populated() {
+        // Regression control for review finding R03: documents that the pinned argon2
+        // does not clear caller memory, so cham3 must. If this starts failing, the
+        // library changed and the cleanup ownership decision must be re-reviewed.
+        let case = small_case();
+        let params = argon2_params(&case, 32).unwrap();
+        let mut blocks = vec![Block::default(); params.block_count()];
+        let mut output = [0u8; 32];
+        Argon2::new(Algorithm::Argon2id, Version::V0x13, params)
+            .hash_password_into_with_memory(case.password, case.salt, &mut output, &mut blocks)
+            .unwrap();
+        assert!(
+            blocks
+                .iter()
+                .any(|block| block.as_ref().iter().any(|word| *word != 0))
+        );
+    }
+
+    #[test]
+    fn argon2_workspace_is_clear_after_success() {
+        let case = small_case();
+        let mut workspace = argon2_workspace_t::new(argon2_block_count(&case, 32).unwrap());
+        let mut output = [0u8; 32];
+        workspace.derive(&case, &mut output).unwrap();
+        assert_ne!(output, [0u8; 32]);
+        assert!(workspace.is_clear());
+    }
+
+    #[test]
+    fn argon2_workspace_is_clear_after_hash_error() {
+        // A 2-byte output is below Argon2's 4-byte minimum: parameter construction
+        // fails inside derive; the workspace must still end clear.
+        let case = small_case();
+        let mut workspace = argon2_workspace_t::new(argon2_block_count(&case, 32).unwrap());
+        workspace.blocks[0] = Block::default();
+        workspace.blocks[0].as_mut()[0] = 0xA5A5_A5A5;
+        let mut output = [0u8; 2];
+        assert!(workspace.derive(&case, &mut output).is_err());
+        assert!(workspace.is_clear());
+    }
+
+    #[test]
+    fn argon2_workspace_rejects_wrong_size_and_clears() {
+        let case = small_case();
+        let mut workspace = argon2_workspace_t::new(argon2_block_count(&case, 32).unwrap() + 1);
+        workspace.blocks[1].as_mut()[3] = 7;
+        let mut output = [0u8; 32];
+        assert_eq!(
+            workspace.derive(&case, &mut output),
+            Err(fail("argon2.workspace_size"))
+        );
+        assert!(workspace.is_clear());
+        assert_eq!(output, [0u8; 32]);
     }
 
     #[test]

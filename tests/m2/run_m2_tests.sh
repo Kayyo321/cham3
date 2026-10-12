@@ -19,6 +19,7 @@
 #   CHAM3_OUT_DIR            output root (default: <repo>/out); runs go to
 #                            $CHAM3_OUT_DIR/m2/runs/<suite>_<UTC time>_<pid>
 #   CHAM3_M2_REQUIRE_CLEAN   if 1, fail when tracked files differ from HEAD
+#                            (identity failures always fail; review finding R01)
 #
 # Exit status: 0 only if every step of the suite passed; 1 on any failure, missing
 # prerequisite, stale output or unimplemented suite; 2 on usage error. Run
@@ -69,12 +70,9 @@ if [ "$(id -u)" = "0" ]; then
     exit 1
 fi
 
+identity_args=""
 if [ "${CHAM3_M2_REQUIRE_CLEAN:-0}" = "1" ]; then
-    if [ -n "$(git -C "$CHAM3_REPO_ROOT" status --porcelain --untracked-files=no)" ]; then
-        echo "tracked files differ from HEAD; evidence must come from an exact commit" >&2
-        echo "m2 $suite: FAIL"
-        exit 1
-    fi
+    identity_args=--require-clean
 fi
 
 run_dir=$CHAM3_OUT_DIR/m2/runs/${suite}_$(date -u +%Y%m%dT%H%M%SZ)_$$
@@ -106,6 +104,9 @@ run_ecr_oracle() {
         "$CHAM3_REPO_ROOT/tests/m2/vectors/ecr_v1/vectors.json" > "$run_dir/ecr_vector_oracle.log" 2>&1
 }
 
+# Source identity must be complete (and clean when required); a failure is FAIL.
+# shellcheck disable=SC2086
+step source_identity sh "$CHAM3_REPO_ROOT/build/scripts/m2_source_identity.sh" "$run_dir/identity.txt" $identity_args
 step environment python3 -I "$harness" environment --run-dir "$run_dir"
 
 case "$suite" in

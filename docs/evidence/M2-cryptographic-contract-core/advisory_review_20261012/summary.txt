@@ -1,0 +1,5 @@
+sources checked: 57
+debian open trixie issues: 108 (not marked unimportant: 23)
+debian open issues in rustc/rust-* sources: 0
+debian resolved fixes newer than installed: 0
+rustsec advisories considered: 6, affected crate versions: 0

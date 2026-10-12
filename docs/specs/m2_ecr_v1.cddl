@@ -1,13 +1,15 @@
 ; cham3 ECR wire schema, version 1 (CDDL, RFC 8610).
 ;
-; Status: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md). Not approved;
-; implementation (M2-003) is gated on independent review and owner approval.
+; Status: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md), revised after
+; the independent review at 9cf8825 (findings R06-R08). Not approved; implementation
+; (M2-003) is gated on independent re-review and owner approval.
 ; Normative prose, limits and validation order: docs/specs/m2_wire_format_v1.md.
 ; Every item is encoded with the cham3_dcbor_v1 deterministic profile; maps are closed
 ; (unknown keys rejected) and optional keys are omitted, never null.
 
 ; ---------------------------------------------------------------- envelope
-; COSE_Sign1 (RFC 9052 section 4.2), tagged, attached payload.
+; COSE_Sign1 (RFC 9052 section 4.2), tagged, attached payload. The complete encoded
+; signed_object is at most 61,440 bytes (wire format section 2.3).
 signed_object = #6.18([
     protected: bstr .cbor protected_header,
     unprotected: {},                      ; must be exactly the empty map (0xa0)
@@ -106,18 +108,23 @@ subject = {
 delta = {
     "add_grants" => [* grant],            ; ascending grant_id, 0..64
     "remove_grant_ids" => [* random_id],  ; strictly ascending, 0..64
-    ? "network_mode" => network_change,
+    ? "identity_change" => identity_change,   ; identity_transition only, and required there
 }
 
-network_change = {
-    "from" => network_mode,
-    "to" => network_mode,                 ; must differ from "from"
+identity_change = {
+    "from" => identity_reference,         ; must equal the lineage's authoritative subject
+    "to" => identity_reference,           ; must equal this commit's subject; differs from "from"
 }
 
-network_mode = "offline" / "tor" / "direct"
+identity_reference = {
+    "package_identity" => tstr .size (1..255),
+    "executable_sha256" => sha256_digest,
+}
 
+; Network authority is an ordinary grant (category "network", resource_id
+; "network_mode", exactly one operation "direct" or "tor", not delegable, not one-shot);
+; at most one network grant per state. No network grant means Offline (PROJECT 3.2).
 contract_state = {
-    "network_mode" => network_mode,
     "grants" => [* grant],                ; strictly ascending grant_id, 0..256
 }
 
@@ -145,7 +152,7 @@ resource = {
 }
 
 resource_category = "filesystem" / "device" / "audio_input" / "camera" / "screen_capture"
-                  / "clipboard" / "portal" / "ipc" / "notification"
+                  / "clipboard" / "portal" / "ipc" / "notification" / "network"
 
 delegation = {
     "permitted" => bool,

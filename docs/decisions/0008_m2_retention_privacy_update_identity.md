@@ -1,7 +1,7 @@
 # ADR 0008: M2 retention, privacy and update identity (G6)
 
-- **Status:** PROPOSED — awaiting independent review and owner approval. Nothing here is approved. Contains one explicit owner choice (§3).
-- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer) / cham3 project owner.
+- **Status:** PROPOSED (revision 2) — awaiting independent re-review and owner approval. Nothing here is approved. Contains one explicit owner choice (§3).
+- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R05, R06, R11) / cham3 project owner. Finding resolutions: [M2-001-002-finding-resolutions.md](../reviews/M2-001-002-finding-resolutions.md).
 - **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G6, M2-004, M2-006, A14; PROJECT.md §§4.3, 4.7, 6.1, 10, 12.4; [ADR 0001](0001_eternal_contract_repository.md) retention and privacy gate; SEC-15, SEC-18.
 
 `PROJECT.md` is the canonical product specification. This ADR records a scoped decision or proposal and does not silently replace that document.
@@ -25,19 +25,21 @@ Per-user quota 64 MiB (configurable 16 MiB–1 GiB) and the 1 MiB restrictive re
 ### 3. Owner choice: deletion granularity
 
 - **Option A (recommended): whole-account deletion only.** No per-entry redaction or erasure; append-only history stays verifiable. Deleting the account removes it all.
-- **Option B: per-lineage deletion** (all history of one application installation) with a tombstone record; history of the remaining lineages stays verifiable. More privacy control, more recovery complexity.
+- **Option B: per-lineage deletion** (all history of one application installation); history of the remaining lineages stays verifiable. More privacy control, more recovery complexity: it needs a per-lineage variant of the tombstone-first ceremony (§4) and lineage tombstones in the anchor so that a deleted lineage's restored records are never replayed, and its grant ids stay reserved.
 
 Per-commit erasure is rejected in both options because it breaks lineage verification and could hide revocations.
 
-### 4. Account and key deletion
+### 4. Account and key deletion (R11)
 
-- `admin` `delete_user`: deletes the user's vault key objects (overwrite then unlink; SSD/journaling filesystems may retain copies — stated limit), registry store and reserve, and identityd records; writes a tombstone (`user_id`, UID, time) to the global anchor so a restored copy of that store is quarantined, never resurrected. A later account reusing the UID gets a new identity and new lineages; tombstoned `user_id`s never become valid again.
-- Invalidated or rotated keys: the encrypted private key object is deleted once no longer needed for signing; public keys, certificates and invalidations stay in identityd so retained history remains verifiable.
+- `admin` `delete_user` follows the **tombstone-first** ceremony of [ADR 0006 §7](0006_m2_storage_anchor_recovery.md): immediate in-memory denial of all the user's grants and keys plus a restriction-ledger entry; a durable `deletion_pending` journal record **and** a durable anchor tombstone `pending` before anything is destroyed (if either write fails, deletion fails, nothing is destroyed and the denial stays); idempotent per-service cleanup (vaultd erases key objects — overwrite then unlink, with the stated SSD/journaling-filesystem limit — and registryd removes the journal, which also holds the identity records); then the tombstone becomes `deleted` durably and only then is success reported.
+- Crash or failure at any step leaves the user denied with a `pending` tombstone; startup resumes cleanup. A store, vault file or backup of a tombstoned `user_id` is never loaded again (quarantined and removed). Tombstones are kept permanently (one small entry per deleted user). A later account reusing the UID enrolls a new `user_id`; tombstoned identities never become valid again. Restoring an old full system **including** a same-volume anchor defeats tombstones (degraded-mode limit, ADR 0006 §2).
+- Invalidated or rotated keys: the encrypted private key object is deleted once no longer needed for signing; public keys, certificates and invalidations stay in the journal so retained history remains verifiable.
 
-### 5. Backup and export
+### 5. Backup, restore and export (R05)
 
-- **Export** (owner `trusted_client`): envelopes, lifecycle records and gaps as `cham3_dcbor_v1`, with the public keys needed to verify them, for inspection or archival. Exports grant nothing and cannot be imported as authority.
-- **Backup/restore** (admin): full-store backups are not authority; restore triggers stale/lost-store detection and the conservative recovery ceremony (ADR 0006). Vault key backups are encrypted key objects only; restoring them never revives invalidated keys (identityd state wins).
+- **One coordinated rule:** all authority state — identity enrollments, certificates, invalidations, replacements, commits, restrictions, lifecycle and deletion records — lives in the per-user journals under one global anchor (ADR 0006 §1, §5). There is no separately restorable identity store, so a restore of older identity or key state is detected exactly like any other stale journal.
+- **Backup/restore** (admin): a restored registry store is never authority. With an independent anchor, restore is detected as stale or lost and quarantined; when the anchor is restored too, the recovery ceremony of ADR 0006 §4 is mandatory. Vault key-object backups are encrypted keys only; restoring them never revives a key whose invalidation, replacement or deletion is in the journal, because vaultd checks key status with identityd before every signature.
+- **Export** (owner `trusted_client`): envelopes, lifecycle records and gaps as `cham3_dcbor_v1`, with the public keys needed to verify them, delivered in pages of at most 65 536 bytes. Exports grant nothing and cannot be imported as authority.
 
 ### 6. Migrations
 
@@ -46,7 +48,7 @@ Per-commit erasure is rejected in both options because it breaks lineage verific
 
 ### 7. Executable and package updates
 
-- Commits bind `package_identity` and `executable_sha256`. After an update that changes either, policyd reports `unknown_identity` (denied) for that lineage until the user approves an `identity_transition` commit rebinding the existing state to the new identity (ADR 0004). M2 supplies these values from fixtures; M3 supplies verified attribution.
+- Commits bind `package_identity` and `executable_sha256`. The lineage's authoritative subject changes **only** through an `identity_transition` commit whose `delta.identity_change {from, to}` is displayed and approved; every other commit type must restate the authoritative subject exactly (ADR 0004 §7a, R06). After an update that changes either value, policyd reports `unknown_identity` (denied) until such a transition is admitted. M2 supplies these values from fixtures; M3 supplies verified attribution.
 - Automatic continuity for updates from the same authenticated package origin (for example the signed cham3/Debian archive) is a possible later policy; it requires trusted package-origin attribution and its own owner decision.
 
 ### 8. Restore when resources or keys are gone
@@ -72,9 +74,10 @@ Per-commit erasure is rejected in both options because it breaks lineage verific
 
 ## Verification plan (M2-004, M2-006, A14)
 
-Quota and full-disk denial with reserve-backed restrictions; history access by owner, other user, ordinary same-UID process and admin; message restrictions and hostile text escaping; account deletion followed by restore of the deleted store (quarantine) and UID reuse (new identity); export verification with public keys only; migration forward/refusal of newer formats; identity mismatch after an executable hash change and its `identity_transition` positive control; restore with forbidden resources.
+Deletion crash at every ceremony step including tombstone/journal write failure, restore of a deleted user's store and vault files, UID reuse; independent restore of identity-bearing journals versus vault files; ordinary revision/merge/restore/temporary grant attempting an identity substitution; quota and full-disk denial with reserve-backed restrictions; history access by owner, other user, ordinary same-UID process and admin; message restrictions and hostile text escaping; account deletion followed by restore of the deleted store (quarantine) and UID reuse (new identity); export verification with public keys only; migration forward/refusal of newer formats; identity mismatch after an executable hash change and its `identity_transition` positive control; restore with forbidden resources.
 
 ## Approval and supersession
 
-- **Owner approval evidence:** none yet. Requires independent review, then an explicit owner decision including §3.
-- **Supersedes / is superseded by:** none.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R05, R06, R11). Revision 2 requires re-review.
+- **Owner approval evidence:** none. Requires independent re-review, then an explicit owner decision including §3.
+- **Supersedes / is superseded by:** revision 2 supersedes revision 1 of this proposal (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd).

@@ -1,107 +1,145 @@
 # ADR 0006: M2 ECR storage, anchors and recovery (G4)
 
-- **Status:** PROPOSED — awaiting independent review and owner approval. Nothing here is approved. Contains one explicit owner choice (§5).
-- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer) / cham3 project owner.
-- **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G4, M2-005, M2-006, A07, A08, A10; PROJECT.md §§5.4, 5.7, Phase 2; [ADR 0001](0001_eternal_contract_repository.md) registry storage and recovery; SEC-04, SEC-14.
+- **Status:** PROPOSED (revision 2) — awaiting independent re-review and owner approval. Nothing here is approved. Contains two explicit owner choices (§9).
+- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R04, R05, R08, R10, I01; R11 shared with ADR 0008) / cham3 project owner.
+- **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G4, M2-005, M2-006, A07, A08, A10; PROJECT.md §§5.4, 5.7, Phase 2; [ADR 0001](0001_eternal_contract_repository.md) registry storage and recovery; SEC-04, SEC-14. Finding resolutions: [M2-001-002-finding-resolutions.md](../reviews/M2-001-002-finding-resolutions.md).
 
 `PROJECT.md` is the canonical product specification. This ADR records a scoped decision or proposal and does not silently replace that document.
 
 ## Problem and context
 
-ADR 0001 requires immutable objects, transactional current-state indexes (heads, epochs, revocations, one-shot state, request ids), atomic admission of objects plus pending state before any activation, serialized writers, separate pending/confirmed outcomes, crash recovery that never grants from incomplete writes, and a rollback-resistant mechanism for authoritative state: hash-valid old history is not freshness. The task adds: another file on the same restorable disk is not independent freshness proof, and TPM or external hardware must not become an accidental foundational requirement.
+ADR 0001 requires immutable objects, transactional current-state indexes (heads, epochs, revocations, one-shot state, request ids, signing keys), atomic admission before any activation, serialized writers, separate pending/confirmed outcomes, crash recovery that never grants from incomplete writes, and a rollback-resistant mechanism for authoritative state: hash-valid old history is not freshness. Mandatory denial must not be undone by restarts, failed writes or missing lifecycle evidence. Another file on the same restorable disk is not independent freshness proof, and TPM or external hardware must not become an accidental foundational requirement.
+
+Revision 2 closes the review's gaps: a restriction lost to failed writes plus restart (R04), identity/key state outside the anchored store (R05), records too small for the largest valid object (R08), a shared anchor updated under per-user locks (R10) and an unprotected deletion sequence (R11). Nothing described here is implemented; every mechanism is an M2-005/M2-006 obligation (I01).
 
 ## Decision (proposed)
 
-### 1. Backend: per-user append-only journal (safe Rust)
+### 1. One authoritative store: per-user append-only journal
 
-- One journal per user: `/var/lib/cham3/registry/users/<uid>/journal.c3j`, owned by `_cham3-registryd`, directory `0700`, file `0600`. No other process writes it (DAC; ProtectSystem; dedicated user).
-- Record frame: `"C3JR"` (4 bytes) ‖ length (u32 big-endian) ‖ record (`cham3_dcbor_v1` map) ‖ `chain` (32 bytes) where `chain_n = domain_hash("cham3/journal-chain/v1", chain_{n−1} ‖ u64_be(n) ‖ record)`, and `chain_0` is computed over the header record with `chain_{−1} = domain_hash("cham3/journal-genesis/v1", user_id ‖ u32_be(uid))`.
-- Record kinds (closed set, all carry `seq` and trusted `time`): `header`, `commit_admitted` (envelope bytes, commit id, lineage, branch role, admitted as pending), `enforcement_outcome`, `restriction`, `lifecycle`, `use_reserved`, `use_completed`, `session_event`, `policy_epoch`, `audit_gap`, `startup`, `clean_shutdown`, `recovery`. Semantics of lifecycle kinds are in ADR 0007.
-- **Atomicity:** one admission = one record. The record is durable once its bytes and `fdatasync` complete (plus directory `fsync` when the file is created). An incomplete trailing frame is, by construction, unacknowledged and is truncated during recovery only if it lies beyond the anchored sequence (§3).
-- **Indexes are derived, not stored:** on start, registryd replays and re-verifies every record (chain, envelope byte layers, admission rules) into in-memory indexes: trunk head and live temporary heads per lineage, every grant id ever added per lineage, per-user request ids, revocations/restrictions, one-shot reservations and outcomes, ended sessions, pending/confirmed/failed outcomes per commit and domain, policy epochs, time floor. No persisted index file exists, so a stale index file cannot be restored; history search indexes for M5 may be rebuilt the same way.
-- **Serialization:** one writer lock per user. Expected head, expected policy epoch, base state, uniqueness and delegation checks run under the lock immediately before the append; a conflicting second writer gets `stale_head`/`stale_epoch` and must obtain fresh approval.
-- **Pending → confirmed:** commits are admitted `pending`. `enforcement_outcome` records (from authenticated consumer roles; fixture in M2) move a commit to `confirmed` or `failed` per domain, bound to `commit_id`, runtime id, domain and the current epoch; wrong, stale or reused confirmations are rejected. Signed history is never mutated.
-- **Capacity:** per-user journal quota 64 MiB (configurable 16 MiB–1 GiB), record ≤ 65 536 bytes, ≤ 4 096 lineages per user. Admission beyond quota or free space fails (`quota_exhausted`). A 1 MiB per-user reserve file (`reserve.bin`, preallocated) is released only to write restrictive records (restriction, lifecycle, use reservation/outcome, audit gap, recovery), never admissions.
+- One journal per enrolled user: `/var/lib/cham3/registry/users/<uid>/journal.c3j`, owned by `_cham3-registryd`, directory `0700`, file `0600`; only registryd writes it.
+- **It holds all authority state for that user** (R05): identity enrollment, key certificates, key invalidations and identity replacement records (the signed objects of ADR 0004, validated by identityd and persisted by registryd), ECR commits, enforcement outcomes, restrictions, lifecycle records, one-shot reservations/outcomes, session events, policy epochs, time-floor records and deletion records. identityd keeps no store of its own (ADR 0005 §6).
+- Frame: `"C3JR"` ‖ length (u32 BE) ‖ record (`cham3_dcbor_v1` map) ‖ `chain` (32 bytes), `chain_n = domain_hash("cham3/journal-chain/v1", chain_{n−1} ‖ u64_be(n) ‖ record)`, `chain_{−1} = domain_hash("cham3/journal-genesis/v1", user_id ‖ u32_be(uid))`.
+- **Record size (R08):** the record map is at most 65 536 bytes and embeds at most one signed object (≤ 61 440 bytes, ADR 0004) plus at most 4 096 bytes of other fields. The published maximum object yields a 61 619-byte worst-case `commit_admitted` record.
+- **Atomicity:** one logical change = one record, durable after `fdatasync` (plus directory `fsync` at creation). Key invalidation is a single record, so key status and authorization are always read from the same snapshot: no cross-service crash window exists between identity and registry state.
+- **Indexes are derived, not stored:** startup replays and re-verifies every record (chain, byte layers, key authority, admission rules) into in-memory indexes. No persisted index file exists.
+- **Serialization:** one writer lock per user; checks of expected head/epoch/base/uniqueness/delegation/subject binding run under it immediately before the append; conflicts return `stale_head`/`stale_epoch`.
+- **Pending → confirmed:** commits are admitted `pending`; `enforcement_outcome` records bound to commit, runtime id, domain and epoch move them to confirmed/failed per domain. Signed history is never mutated. An admission reported to the caller as failed (for example, anchor write failure after a durable record) may be found admitted after recovery; it remains pending and clients reconcile by `request_id`.
+- **Capacity:** per-user quota 64 MiB (configurable 16 MiB–1 GiB); ≤ 4 096 lineages; a preallocated 1 MiB reserve is released only for restrictive records (restriction, lifecycle, use reservation/outcome, audit gap, key invalidation, deletion, recovery), never for admissions.
 
-### 2. Durability boundaries and write order
+### 2. Global anchor and its serialization (R10)
 
-1. Validate under the user lock (admission) or decide the restrictive change.
-2. For restrictive changes, apply the in-memory denial **first** (ADR 0007).
-3. Append the frame; `fdatasync`.
-4. Update the anchor (§3) to `(seq, chain)`; make it durable.
-5. Reply.
+- The anchor is one map: per user `(seq, chain, state)`, plus deleted-user tombstones and the registryd **run marker** (§3). It is written as two alternating slots (`"C3AN"` ‖ slot counter ‖ map ‖ SHA-256 checksum); startup takes the valid slot with the higher counter.
+- registryd holds the authoritative anchor map **in memory** and never re-reads disk during operation. One global anchor lock protects it. **Lock order: user lock → anchor lock**; no code acquires a user lock while holding the anchor lock.
+- Update protocol: under the anchor lock, apply the caller's change to the in-memory map, increment the slot counter, serialize the whole map, write it to the older slot, `fdatasync`, release. Callers reply only after the slot containing their change is durable. Concurrent updates may be coalesced (group commit) but each caller waits for a durable slot that contains its change; no snapshot taken outside the lock is ever written, so one user's update cannot overwrite another's.
+- A failed slot write leaves the change non-durable: restrictive changes stay enforced in memory and in the restriction ledger (§3) and are retried; admissions are reported failed.
 
-Fault-injection points (A08/A10): before 3; partial frame (torn write at every byte boundary class: inside magic, length, record, chain); after 3 before 4; partial anchor write; after 4 before 5; process death at each point; `ENOSPC`/`EIO` at 3 and 4.
+Anchor backends behind one interface (all **planned**, none implemented or tested yet — I01):
 
-### 3. Anchor
-
-The anchor records, per user, `(seq, chain)` of the last durable record, plus a global record of known users and deleted-user tombstones. It is written as two alternating slots, each `"C3AN"` ‖ slot counter ‖ map ‖ SHA-256 checksum; recovery takes the valid slot with the higher counter.
-
-Anchor backends behind one interface:
-
-| Backend | Rollback domain | Status in M2 |
+| Backend | Rollback domain | Planned status |
 |---|---|---|
-| `separate_volume` | A configured path on a **different filesystem** from the registry store (checked: different `st_dev`); intended for a separate disk/partition or removable medium declared by the administrator as not restored together with `/var/lib/cham3`. | Implemented and tested (A10) with a distinct filesystem in a disposable environment. |
-| `tpm2_nv` | TPM 2.0 NV monotonic counter plus NV index holding the anchor hash; survives disk replacement/restore. | Interface only; not implemented in M2 (requires a reviewed TSS FFI adapter and owner decision). |
-| `same_volume` | Same filesystem as the store. | Implemented as **degraded mode**: detects partial restores, torn tails and in-place substitution of the journal alone; **cannot** detect restoration of the whole volume. Status `rollback_protection: degraded` is reported by policyd and must be shown, never described as rollback-resistant. |
+| `separate_volume` | A configured path on a different filesystem (`st_dev` must differ from the store), intended for a separate disk/partition/removable medium the administrator declares is not restored with `/var/lib/cham3` | To be implemented and tested in M2-006 (A10) with a distinct filesystem in a disposable environment |
+| `same_volume` | Same filesystem as the store | Degraded mode: detects partial restores, torn tails and journal-only substitution; **cannot** detect whole-volume restoration; reported as `rollback_protection: degraded` |
+| `tpm2_nv` | TPM 2.0 NV counter + NV index | Interface reserved; not in M2 (needs a reviewed TSS adapter and owner decision) |
 
-Assumption stated precisely: rollback resistance holds only if the anchor's storage is not rolled back together with the registry store. No software-only design can detect an offline restore of every storage domain the machine has; that is a physical/privileged attack outside PROJECT §3.4's baseline unless hardware (`tpm2_nv`) is configured.
+Rollback resistance holds only if the anchor's storage is not rolled back together with the store. No software-only design detects an offline restore of every storage domain; that is outside PROJECT §3.4's baseline unless hardware is configured.
 
-### 4. Recovery decision table (per user, at start)
+### 3. Restart safety for restrictions (R04)
+
+A restriction must survive any write failure followed by a restart. Three mechanisms make every unclean run either precisely recoverable or conservatively contained:
+
+1. **Run marker** (anchor): `{run_id, boot_id, state}` with `state = running` written durably after replay and **before** any `eligible` decision is served, and `state = clean` written only by an orderly shutdown after every restrictive change is durable. If the marker cannot be written at startup, registryd serves no `eligible` decisions.
+2. **Restriction ledger** (memory-backed, outlives the process, not the boot): `/run/cham3/registryd/restriction_ledger` on tmpfs (`RuntimeDirectory`, `RuntimeDirectoryPreserve=yes`, `0700`, size-capped). Every restrictive change (restriction, revocation intent, key invalidation, expiry observation, consumption reservation, deletion intent, emergency restriction) appends `{run_id, user, targets, kind, time}` here **before** any disk write is attempted; disk failures cannot prevent it. If the ledger itself cannot be written, registryd removes the ledger's validity file and stops serving `eligible` decisions (the next start then sees an unverifiable run).
+3. **Restrictive write path:** in-memory denial → ledger entry → journal record (reserve-backed) → anchor update → reply. If the journal or anchor write fails, denial continues in memory, status reports `restriction_not_durable`, and registryd retries; it does not need to exit.
+
+Restart decisions (before serving anything):
+
+| Previous run marker | Restriction ledger | Decision |
+|---|---|---|
+| `clean` | any | Resume; clear ledger |
+| `running`, same `boot_id` | valid for that `run_id` | Re-journal every ledger entry not yet in the journal (restrictive records first, durable), then resume |
+| `running`, same `boot_id` | missing or invalid | **Unverifiable run → containment** |
+| `running`, different `boot_id` (reboot, power loss, kernel crash) | gone with the boot | **Unverifiable run → containment** |
+| unreadable | — | Quarantine (§4) |
+
+**Containment** (unverifiable unclean run): every user's grants admitted before the restart are `suspended` (denied), live temporary grants end, and one-shots without a recorded success are consumed. Suspension is lifted only by fresh authorization (owner choice §9.2). This includes the review's case — journal and anchor both unwritable, restart after storage recovers — which is either same-boot (ledger re-applies the restriction precisely) or cross-boot (containment); in no case does access resume from missing evidence. The cost is that a power loss or kernel crash requires users to reconfirm their permissions.
+
+### 4. Recovery decision table (per user, after the run-marker decision)
 
 | Observation (journal last valid seq `m`, anchor `a`) | Decision |
 |---|---|
 | `m == a`, chain at `a` matches | Resume |
-| `m == a + 1`, chain extends anchored chain, last frame complete | Roll anchor forward (unacknowledged durable tail), resume |
+| `m == a + 1`, chain extends the anchored chain, frame complete | Roll the anchor forward (durable but unacknowledged tail), resume |
 | Torn frame after the last complete frame, beyond `a` | Truncate the torn bytes, then apply the rows above |
-| `m < a` (journal older than anchor) | **Stale**: quarantine user |
+| `m < a` | **Stale journal**: quarantine |
 | `m > a + 1` | **Unexplained records**: quarantine |
-| Chain mismatch at `a` (substituted history) | Quarantine |
-| Anchor slots both invalid/missing while journal exists | Quarantine |
-| Journal missing while anchor has `a > 0` or global anchor knows the user | **Lost store**: quarantine |
-| Both absent and user unknown to global anchor | Genesis: create header + anchor |
-| Tombstoned user reappears (restored deleted store) | Quarantine; never resurrect |
+| Chain mismatch at `a` | Quarantine |
+| Anchor slots both invalid/missing while journals exist | Quarantine every user |
+| Journal missing while the anchor knows the user | **Lost store**: quarantine |
+| Both absent and user unknown | Genesis at enrollment: header + enrollment record + anchor |
+| Tombstone `pending` | Keep the user denied; resume idempotent deletion (§7) |
+| Tombstone `deleted` and files for that `user_id` exist | Never load them; quarantine and remove |
 | Any record fails replay verification | Quarantine |
 
-**Quarantine** denies every grant of that user (policyd reports `quarantined`); mandatory denial and lifecycle restriction continue. Exit only through the `admin` `recover_user` ceremony, which appends a `recovery` record and re-anchors after making state conservative: all live temporary grants terminated, every one-shot without a recorded success treated as consumed, every persistent grant admitted before the recovery point marked `requires_reauthorization` (denied until the user approves a fresh current-parented restore/revision with new grant ids), and the user's minimum valid policy epoch raised. Recovery never infers continuing validity, undoes consumption or claims complete history.
+**Quarantine** denies every grant and key of that user (`quarantined`). Exit only through the `admin` `recover_user` ceremony: append a `recovery` record, end temporary grants, consume unconfirmed one-shots, mark every persistent grant admitted before the recovery point `requires_reauthorization`, raise the user's minimum valid policy epoch and re-anchor. Re-authorization follows §9.2. Recovery never infers validity, undoes consumption or claims complete history.
 
-### 5. Owner choice: default anchor mode
+### 5. Identity and key freshness (R05)
 
-- **Option A (recommended):** ship `same_volume` degraded mode by default with visible status; administrators may configure `separate_volume`; `tpm2_nv` later. Does not make extra hardware foundational; honest about limits.
-- **Option B:** refuse new or expanded grants unless `separate_volume` or `tpm2_nv` is configured. Stronger, but makes a second volume or TPM a de facto requirement for usable authorization, which the task warns against.
+- Identity records live in the anchored journal (§1), so restoring older identity state is a stale-journal/lost-store detection like any other rollback; no separate identityd store exists to restore.
+- identityd rebuilds its index from registryd at start and answers `resolve_key` with the journal sequence of its snapshot; if registryd is unavailable, the user is contained/quarantined, or the snapshot is older than a restrictive change it knows of, the answer is `unknown` (deny).
+- Key invalidation, identity replacement and deletion are restrictive: in-memory denial and ledger entry first, then one durable journal record, then reply. Until durable, the key is denied everywhere (vaultd checks key status with identityd before every signature).
+- Vault key files are not authority: restoring an older encrypted key object cannot revive a key whose invalidation or replacement is in the journal. The vault's failed-attempt counter is not rollback-protected (an offline restore resets delays; Argon2 cost and the passphrase remain) — stated limit.
 
-Either option keeps mandatory denial, quarantine and the recovery rules identical.
+### 6. Durability boundaries and fault points
 
-### 6. Backup and restore
+Admission: validate under the user lock → append → `fdatasync` → anchor update → reply. Restrictive change: §3 order. Fault injection (A08/A10) at every boundary: before append; torn frame (inside magic, length, record, chain); after append before anchor; torn/failed anchor slot write; after anchor before reply; ledger write; run-marker write at start and at clean shutdown; process death (release binaries, panic=abort) at each point; `ENOSPC`/`EIO` on journal and anchor; concurrent users updating the anchor; deletion steps (§7).
 
-Backups of `/var/lib/cham3/registry` must not be treated as authority. Restoring a backup produces a stale or lost-store detection (if the anchor is independent) and requires the recovery ceremony with the conservative semantics above. Exports for history inspection are separate (ADR 0008).
+### 7. Account deletion: tombstone first (R11, shared with ADR 0008)
+
+1. `admin` `delete_user(uid)`: deny all of the user's grants and keys in memory; ledger entry.
+2. Under the user lock and anchor lock: append a durable `deletion_pending` record to the user's journal and set the anchor tombstone `(user_id, uid, pending)` durably. If either fails, deletion is reported failed, **nothing is destroyed**, and the denial stays (ledger, §3).
+3. Idempotent cleanup, each step retried until done: vaultd erases the user's key objects (it refuses to sign for a pending/deleted user from step 1); registryd removes the user's journal and reserve (identity records go with it).
+4. Set the tombstone to `deleted` durably; only then report success.
+
+At startup a `pending` tombstone keeps the user denied and resumes step 3; a `deleted` tombstone causes any surviving or restored file of that `user_id` to be quarantined and removed, never loaded. Tombstones are retained permanently (one small entry per deleted user). A later account with the same UID enrolls a new `user_id`. Restoring an old full system **including** the anchor defeats tombstones only in `same_volume` degraded mode (§2 limit).
+
+### 8. Backup and restore (coordinated)
+
+All authority state is in the journals plus the anchor, so there is one coordinated rule: a restored registry store is never authority. Restore triggers stale/lost-store detection (independent anchor) or must be followed by the recovery ceremony (§4) when the anchor was restored with it. Vault key-object backups are encrypted keys only and confer nothing (§5). Exports for inspection are separate (ADR 0008).
+
+### 9. Owner choices
+
+1. **Default anchor mode.** **Option A (recommended):** `same_volume` degraded mode by default with visible status; administrators may configure `separate_volume`; `tpm2_nv` later. **Option B:** refuse new or expanded grants unless an independent anchor is configured (makes a second volume or TPM a de facto requirement).
+2. **Lifting containment/quarantine.** **Option C1 (recommended):** the user re-authorizes with freshly approved, signed restore commits that remove the suspended grant ids and re-add the grants they still want with new ids (bulk-offered by the trusted client, one approval per lineage); quarantine additionally needs the admin ceremony first. **Option C2:** containment is lifted only by the admin ceremony followed by the same signed re-authorization.
+
+Mandatory denial, quarantine, ledger and recovery rules are identical under every option.
 
 ## Alternatives considered
 
-- **SQLite (WAL, synchronous=FULL):** mature transactional engine and indexes; rejected for M2 because it adds a large C FFI dependency to the most security-critical store, and fault injection at its internal durability boundaries is coarser than at a single append/fsync boundary we control. Could be revisited for history search indexes, which are derivable.
-- **Persisted index files with checkpoints:** faster startup; rejected for v1 because stale index files become a restorable rollback vector; replay is cheap at the quota sizes.
-- **One global journal for all users:** simpler anchoring; rejected to keep per-user deletion, quotas and failure containment.
-- **Anchor in an EFI variable:** independent of disk restore on UEFI systems, but flash wear and firmware fragility at per-commit write rates and absence on BIOS VMs make it unsuitable as a default.
-- **Same-disk duplicate anchor file presented as rollback-resistant:** rejected as misleading; kept only as explicitly degraded mode.
-- **Service-signed anchors:** a signature by a key stored on the same disk does not establish freshness.
+- **SQLite (WAL, synchronous=FULL):** mature engine; rejected for M2 because it adds a large C FFI dependency to the most security-critical store and coarser fault injection.
+- **Separate identityd store with its own anchor entry:** keeps storage with the owning service; rejected because a cross-service write ordering would be needed for every invalidation and restore, which is exactly the gap R05 found. identityd keeps ownership of validation and policy, not of bytes.
+- **Accepting the double-failure residual (revision 1):** rejected by review R04; contradicts ADR 0001's rule that a failed revocation never justifies continuing access.
+- **Containment after every unclean shutdown without a ledger:** simpler, but makes every service crash within a boot cost a user reconfirmation; the tmpfs ledger limits containment to reboots and genuinely unverifiable runs.
+- **Persisted index files, one global journal, EFI-variable anchors, same-disk duplicates presented as rollback-resistant, service-signed anchors:** rejected as in revision 1 (stale index restoration, failure containment, flash wear, misleading claims, no freshness from a same-disk key).
 
 ## Tradeoffs and consequences
 
-- Startup replay cost grows with history; bounded by quota. Verification on replay re-checks signatures (Ed25519 verify per commit).
-- Recovery ceremonies cost the user re-approval of persistent grants; this is the price of fail-closed recovery.
-- Degraded mode is the default under Option A; status reporting must make that visible in M5.
+- Reboots after an unclean run require users to reconfirm grants (§3, §9.2). A clean shutdown avoids it.
+- Startup replay re-verifies signatures; bounded by quota.
+- Degraded mode is the default under Option A and must be visible in M5.
 
 ## Security implications
 
-- Admission and activation stay separate; nothing becomes active without confirmation and current authorization.
-- Torn or unacknowledged writes never grant: only complete, chained, anchored (or exactly-one-ahead) records are replayed.
-- Rollback detection depends on the anchor's independence, stated as an explicit assumption; there is no claim beyond it (SEC-18).
+- Mandatory restrictions survive write failures and restarts: same-boot precisely, cross-boot conservatively. Missing evidence never resumes access.
+- Identity, key and authorization freshness share one anchored store; there is no restore of one without detection by the other.
+- Concurrent anchor updates are serialized; acknowledged changes cannot be lost to another user's write.
+- Rollback detection depends on the anchor's independence, stated as an explicit assumption (SEC-18).
 
-## Verification plan (M2-005, M2-006, A07, A08, A10)
+## Verification plan (M2-005, M2-006, A07, A08, A10, A14)
 
-Atomic admission under concurrent writers; kill and torn-write injection at every boundary in §2; replay determinism; stale journal, stale anchor, swapped anchor slots, corrupted checksum, missing anchor, missing journal, substituted record with valid signature, extra injected record, deleted-user restore; `separate_volume` on a distinct filesystem detecting full-store rollback; `same_volume` reporting degraded and not claiming detection; `ENOSPC` with reserve; recovery ceremony semantics. Process death uses real release binaries (panic=abort) in subprocesses.
+All planned; nothing has run. Atomic admission under concurrent writers; every fault point in §6; the review's case (journal and anchor unwritable, restart after recovery) in both same-boot and new-boot variants; ledger missing/invalid; run marker unwritable; concurrent users and tombstones racing the anchor; independent restore of each storage domain (journal only, anchor only, vault files only, all but the independent anchor); key invalidation crash points; deletion crash at every step including tombstone write failure; `separate_volume` detection on a distinct filesystem; `same_volume` reporting degraded; quota/reserve. Release binaries under subprocess fault injection.
 
 ## Approval and supersession
 
-- **Owner approval evidence:** none yet. Requires independent review, then an explicit owner decision including §5.
-- **Supersedes / is superseded by:** none.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R04, R05, R08, R10, R11 via G6, I01). Revision 2 requires re-review.
+- **Owner approval evidence:** none. Requires independent re-review, then an explicit owner decision including §9.
+- **Supersedes / is superseded by:** revision 2 supersedes revision 1 of this proposal (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd).

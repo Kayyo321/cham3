@@ -25,7 +25,12 @@ import cbor2
 import nacl.exceptions
 import nacl.signing
 
-MaxInputBytes = 65536
+# R08: signed objects are at most 61,440 bytes so that the largest valid object plus
+# bounded wrapper metadata (<= 4,096 bytes) fits a 65,536-byte IPC message or journal
+# record. Envelope, protected-header and payload decodes all use this limit.
+MaxEnvelopeBytes = 61440
+MaxWrapperBytes = 65536
+MaxWrapperMetadataBytes = 4096
 MaxDepth = 8
 MaxContainerItems = 256
 MaxTextBytes = 1024
@@ -116,7 +121,7 @@ class decoder_t:
         return chunk
 
     def decode_top(self, allow_root_tag=False):
-        if len(self.data) > MaxInputBytes:
+        if len(self.data) > MaxEnvelopeBytes:
             self.fail("input_too_large")
         value = self.item(0, allow_root_tag)
         if self.position != len(self.data):
@@ -162,7 +167,7 @@ class decoder_t:
         if major in (2, 3):
             if major == 3 and argument > MaxTextBytes:
                 self.fail("text_too_long")
-            if argument > MaxInputBytes:
+            if argument > MaxEnvelopeBytes:
                 self.fail("input_too_large")
             raw = self.take(argument)
             if major == 2:
@@ -221,7 +226,8 @@ def state_hash(state):
     return domain_hash("cham3/state/v1", encode(state))
 
 
-EmptyState = {"grants": [], "network_mode": "offline"}
+# R07: network authority is a grant; no network grant means Offline (PROJECT §3.2).
+EmptyState = {"grants": []}
 
 
 class key_t:
@@ -468,7 +474,7 @@ LifetimeFields = {
     "usage_limit": (False, lambda value, path: check_fixed(value, path, 1)),
 }
 ResourceFields = {
-    "category": (True, lambda value, path: check_enum(value, path, {"filesystem", "device", "audio_input", "camera", "screen_capture", "clipboard", "portal", "ipc", "notification"})),
+    "category": (True, lambda value, path: check_enum(value, path, {"filesystem", "device", "audio_input", "camera", "screen_capture", "clipboard", "portal", "ipc", "notification", "network"})),
     "resource_id": (True, lambda value, path: check_restricted_text(value, path, 1, 512, False)),
     "resource_owner_uid": (True, uid_check),
     "operations": (True, lambda value, path: check_list(value, path, 1, 32, operation_check)),
@@ -496,17 +502,20 @@ def grant_list_check(maximum):
     return lambda value, path: check_list(value, path, 0, maximum, grant_check, sort_key=lambda grant: grant["grant_id"])
 
 
-NetworkModes = {"offline", "tor", "direct"}
+NetworkOperations = {"direct", "tor"}
 StateFields = {
-    "network_mode": (True, lambda value, path: check_enum(value, path, NetworkModes)),
     "grants": (True, grant_list_check(256)),
+}
+IdentityReferenceFields = {
+    "package_identity": (True, lambda value, path: check_package_identity(value, path)),
+    "executable_sha256": (True, lambda value, path: digest_check(value, path)),
 }
 DeltaFields = {
     "add_grants": (True, grant_list_check(64)),
     "remove_grant_ids": (True, lambda value, path: check_list(value, path, 0, 64, random_id_check)),
-    "network_mode": (False, lambda value, path: check_map(value, path, {
-        "from": (True, lambda item, item_path: check_enum(item, item_path, NetworkModes)),
-        "to": (True, lambda item, item_path: check_enum(item, item_path, NetworkModes)),
+    "identity_change": (False, lambda value, path: check_map(value, path, {
+        "from": (True, lambda item, item_path: check_map(item, item_path, IdentityReferenceFields)),
+        "to": (True, lambda item, item_path: check_map(item, item_path, IdentityReferenceFields)),
     })),
 }
 CommitFields = {
@@ -641,6 +650,25 @@ def check_delegation(grant):
             intrinsic_error("delegation_rule", "max_operations exceeds operations")
 
 
+def is_network_grant(grant):
+    return grant["resource"]["category"] == "network"
+
+
+def check_network_grant(grant, owner_uid):
+    """R07: network authority is a grant with full lifetime and revocation semantics."""
+    resource = grant["resource"]
+    if resource["resource_id"] != "network_mode":
+        intrinsic_error("network_grant_rule", "network resource_id must be network_mode")
+    if len(resource["operations"]) != 1 or resource["operations"][0] not in NetworkOperations:
+        intrinsic_error("network_grant_rule", "exactly one of direct/tor")
+    if resource["resource_owner_uid"] != owner_uid:
+        intrinsic_error("network_grant_rule", "network grant owner")
+    if grant["delegation"]["permitted"]:
+        intrinsic_error("network_grant_rule", "network grants are not delegable")
+    if grant["lifetime"]["kind"] == "one_shot":
+        intrinsic_error("network_grant_rule", "one-shot network grant")
+
+
 def check_intrinsic(payload):
     """Layer 5 for commits."""
     commit_type = payload["commit_type"]
@@ -648,30 +676,39 @@ def check_intrinsic(payload):
     delta = payload["delta"]
     adds = delta["add_grants"]
     removes = delta["remove_grant_ids"]
-    network = delta.get("network_mode")
+    identity_change = delta.get("identity_change")
     authority = payload["authority_class"]
     add_kinds = {grant["lifetime"]["kind"] for grant in adds}
     rules = {
         "genesis": (len(parents) == 0, authority == "persistent", add_kinds <= {"persistent"} and not removes),
-        "revision": (len(parents) == 1, authority == "persistent", add_kinds <= {"persistent"} and bool(adds or removes or network)),
-        "revocation": (len(parents) == 1, authority == "persistent", not adds and bool(removes) and network is None),
-        "temporary_grant": (len(parents) == 1, True, bool(adds) and add_kinds <= TemporaryKinds and not removes and network is None),
+        "revision": (len(parents) == 1, authority == "persistent", add_kinds <= {"persistent"} and bool(adds or removes)),
+        "revocation": (len(parents) == 1, authority == "persistent", not adds and bool(removes)),
+        "temporary_grant": (len(parents) == 1, True, bool(adds) and add_kinds <= TemporaryKinds and not removes),
         "merge": (2 <= len(parents) <= 8, authority == "persistent", add_kinds <= {"persistent"} and payload.get("merge_base") in parents),
         "restore": (len(parents) == 1, authority == "persistent", add_kinds <= {"persistent"}),
-        "identity_transition": (len(parents) == 1, authority == "persistent", not adds and not removes and network is None),
+        "identity_transition": (len(parents) == 1, authority == "persistent", not adds and not removes),
     }
     if not all(rules[commit_type]):
         intrinsic_error("commit_type_rule", commit_type)
     if ("merge_base" in payload) != (commit_type == "merge") or ("restore_reference" in payload) != (commit_type == "restore"):
         intrinsic_error("commit_type_rule", "merge_base/restore_reference placement")
+    if (identity_change is not None) != (commit_type == "identity_transition"):
+        intrinsic_error("commit_type_rule", "identity_change only and always on identity_transition")
     for grant in adds + payload["result_state"]["grants"]:
         check_lifetime(grant)
     for grant in adds + payload["result_state"]["grants"]:
         check_delegation(grant)
     result = payload["result_state"]
-    if network is not None:
-        if network["from"] == network["to"] or network["to"] != result["network_mode"]:
-            intrinsic_error("network_change_rule")
+    owner_uid = payload["subject"]["owner_uid"]
+    for grant in adds + result["grants"]:
+        if is_network_grant(grant):
+            check_network_grant(grant, owner_uid)
+    if sum(1 for grant in result["grants"] if is_network_grant(grant)) > 1:
+        intrinsic_error("network_grant_rule", "more than one network grant in state")
+    if identity_change is not None:
+        new_identity = subject_identity(payload["subject"])
+        if encode(identity_change["to"]) != encode(new_identity) or encode(identity_change["from"]) == encode(identity_change["to"]):
+            intrinsic_error("identity_transition_rule", "identity_change must end at the new subject and differ from its start")
     add_ids = {grant["grant_id"] for grant in adds}
     if add_ids & set(removes):
         intrinsic_error("delta_rule", "grant both added and removed")
@@ -683,6 +720,10 @@ def check_intrinsic(payload):
         intrinsic_error("result_state_mismatch", "removed grant still present")
     if commit_type == "genesis" and payload["base_state_hash"] != state_hash(EmptyState):
         intrinsic_error("base_state_mismatch")
+
+
+def subject_identity(subject):
+    return {"package_identity": subject["package_identity"], "executable_sha256": subject["executable_sha256"]}
 
 
 def verify(data, expected_kind, resolver):
@@ -710,12 +751,7 @@ def apply_delta(base, delta):
         if grant["grant_id"] in grants:
             admission_error("delta_rule", "added grant already in base")
         grants[grant["grant_id"]] = grant
-    mode = base["network_mode"]
-    if "network_mode" in delta:
-        if delta["network_mode"]["from"] != mode:
-            admission_error("network_change_rule", "from differs from base")
-        mode = delta["network_mode"]["to"]
-    return {"grants": [grants[key] for key in sorted(grants)], "network_mode": mode}
+    return {"grants": [grants[key] for key in sorted(grants)]}
 
 
 def admit_chain(envelopes, resolver):
@@ -723,6 +759,7 @@ def admit_chain(envelopes, resolver):
     admitted = {}
     seen_grants = set()
     seen_requests = set()
+    authoritative_subject = None
     for data in envelopes:
         payload = verify(data, "commit", resolver)
         commit_id = hashlib.sha256(data).digest()
@@ -749,16 +786,30 @@ def admit_chain(envelopes, resolver):
             reference = admitted.get(payload["restore_reference"])
             if reference is None or reference["lineage_id"] != payload["lineage_id"]:
                 admission_error("restore_rule", "reference not in lineage")
-            historical = [(encode(grant["resource"]), encode(grant["delegation"]), grant["contract_type"]) for grant in reference["result_state"]["grants"]]
+            historical = reference["result_state"]["grants"]
             for grant in payload["delta"]["add_grants"]:
-                if (encode(grant["resource"]), encode(grant["delegation"]), grant["contract_type"]) not in historical:
+                matches = [old for old in historical
+                           if (encode(old["resource"]), encode(old["delegation"]), old["contract_type"])
+                           == (encode(grant["resource"]), encode(grant["delegation"]), grant["contract_type"])]
+                if not matches:
                     admission_error("restore_rule", "restored grant not in referenced state")
-        if payload["commit_type"] == "identity_transition":
-            parent_subject = admitted[payload["parents"][0]]["subject"]
-            old = (parent_subject["package_identity"], parent_subject["executable_sha256"])
-            new = (payload["subject"]["package_identity"], payload["subject"]["executable_sha256"])
-            if old == new:
-                admission_error("identity_transition_rule", "package/executable identity unchanged")
+                if not any("expiration" not in old["lifetime"]
+                           or ("expiration" in grant["lifetime"] and parse_time(grant["lifetime"]["expiration"]) <= parse_time(old["lifetime"]["expiration"]))
+                           for old in matches):
+                    admission_error("restore_rule", "restored grant outlives the referenced grant")
+        # R06: the subject changes only through identity_transition; every other commit
+        # must restate the lineage's authoritative subject exactly.
+        if payload["commit_type"] == "genesis":
+            authoritative_subject = payload["subject"]
+        elif payload["commit_type"] == "identity_transition":
+            unchanged = dict(payload["subject"], package_identity=None, executable_sha256=None)
+            previous = dict(authoritative_subject, package_identity=None, executable_sha256=None)
+            if encode({k: v for k, v in unchanged.items() if v is not None}) != encode({k: v for k, v in previous.items() if v is not None}) \
+                    or encode(payload["delta"]["identity_change"]["from"]) != encode(subject_identity(authoritative_subject)):
+                admission_error("subject_binding_mismatch", "identity transition does not start at the authoritative subject")
+            authoritative_subject = payload["subject"]
+        elif encode(payload["subject"]) != encode(authoritative_subject):
+            admission_error("subject_binding_mismatch", "subject differs from the lineage's authoritative subject")
         seen_grants.update(grant["grant_id"] for grant in payload["delta"]["add_grants"])
         seen_requests.add(payload["authorization"]["request_id"])
         admitted[commit_id] = payload
@@ -792,12 +843,13 @@ def make_grant(label, category, resource_id, operations, kind="persistent", star
         lifetime["session_id"] = session
     if kind == "one_shot":
         lifetime["usage_limit"] = 1
-    delegation = {"permitted": delegable, "max_depth": 1 if delegable else 0, "max_operations": sorted(operations)[:1] if delegable else []}
+    operations = sorted(operations, key=encode)  # deterministic (encoded-byte) order
+    delegation = {"permitted": delegable, "max_depth": 1 if delegable else 0, "max_operations": operations[:1] if delegable else []}
     return {
         "grant_id": synthetic_id("grant " + label),
         "contract_type": "resource_access",
         "lifetime": lifetime,
-        "resource": {"category": category, "resource_id": resource_id, "resource_owner_uid": owner_uid, "operations": sorted(operations)},
+        "resource": {"category": category, "resource_id": resource_id, "resource_owner_uid": owner_uid, "operations": operations},
         "delegation": delegation,
     }
 
@@ -895,12 +947,15 @@ def build_vectors():
     persistent = keys["user_1001_persistent"]
     temporary = keys["user_1001_temporary"]
     documents = make_grant("documents_read", "filesystem", "home:Documents/notes", ["read"], delegable=True)
-    clipboard = make_grant("clipboard", "clipboard", "session_clipboard", ["read", "write"], start=Times[1])
+    clipboard = make_grant("clipboard", "clipboard", "session_clipboard", ["read", "write"], start=Times[1],
+                           expiration="2027-10-12T12:05:00Z")
+    network_direct = make_grant("network_direct", "network", "network_mode", ["direct"], start=Times[1])
     microphone_session = make_grant("microphone_session", "audio_input", "default_source", ["capture"], kind="session",
                                     start=Times[2], session=synthetic_id("desktop session 1001"))
     screenshot_once = make_grant("screenshot_once", "screen_capture", "focused_output", ["capture_once"], kind="one_shot", start=Times[3])
     microphone_persistent = make_grant("microphone_persistent", "audio_input", "default_source", ["capture"], start=Times[4])
-    clipboard_restored = make_grant("clipboard_restored", "clipboard", "session_clipboard", ["read", "write"], start=Times[6])
+    clipboard_restored = make_grant("clipboard_restored", "clipboard", "session_clipboard", ["read", "write"], start=Times[6],
+                                    expiration="2027-10-12T12:05:00Z")
 
     chain = []
     genesis = kate.payload("genesis", "genesis", persistent, [], EmptyState,
@@ -908,7 +963,7 @@ def build_vectors():
     genesis_data, genesis_id = sign_commit(persistent, genesis)
     chain.append(("commit_genesis", genesis_data))
     revision = kate.payload("revision", "revision", persistent, [genesis_id], genesis["result_state"],
-                            {"add_grants": [clipboard], "remove_grant_ids": [], "network_mode": {"from": "offline", "to": "direct"}},
+                            {"add_grants": sorted([clipboard, network_direct], key=lambda grant: grant["grant_id"]), "remove_grant_ids": []},
                             Times[1], "Change network mode from Offline to Direct\nAllow clipboard access")
     revision_data, revision_id = sign_commit(persistent, revision)
     chain.append(("commit_revision", revision_data))
@@ -936,23 +991,76 @@ def build_vectors():
                            "Restore clipboard access from the revision of 12:05", extra={"restore_reference": revision_id})
     restore_data, restore_id = sign_commit(persistent, restore)
     chain.append(("commit_restore", restore_data))
+    previous_identity = subject_identity(restore["subject"])
     kate.executable = hashlib.sha256(b"synthetic executable org.kde.kate updated").digest()
     transition = kate.payload("identity_transition", "identity_transition", persistent, [restore_id], restore["result_state"],
-                              {"add_grants": [], "remove_grant_ids": []}, Times[7],
+                              {"add_grants": [], "remove_grant_ids": [],
+                               "identity_change": {"from": previous_identity,
+                                                   "to": {"package_identity": kate.package_identity, "executable_sha256": kate.executable}}},
+                              Times[7],
                               "Kate was updated: bind the existing grants to the new executable")
-    transition_data, _ = sign_commit(persistent, transition)
+    transition_data, transition_id = sign_commit(persistent, transition)
     chain.append(("commit_identity_transition", transition_data))
 
     firefox = lineage_builder_t(keys, 1002, "user_1002_identity", "org.mozilla.firefox_esr", "deb:firefox-esr:amd64")
     firefox_genesis = firefox.payload("firefox_genesis", "genesis", keys["user_1002_persistent"], [], EmptyState,
-                                      {"add_grants": [], "remove_grant_ids": [], "network_mode": {"from": "offline", "to": "tor"}},
+                                      {"add_grants": [make_grant("network_tor_1002", "network", "network_mode", ["tor"], owner_uid=1002)],
+                                       "remove_grant_ids": []},
                                       Times[0], "Change network mode from Offline to Tor")
     firefox_data, _ = sign_commit(keys["user_1002_persistent"], firefox_genesis)
 
-    invalid = build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_id, merge, persistent, temporary)
+    boundary, boundary_over, limits = build_boundary_vectors(keys)
+    invalid = build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_id, merge, persistent, temporary, transition)
+    invalid.append({"name": "boundary_one_byte_over", "kind": "commit", "envelope": boundary_over, "layer": "envelope_decode",
+                    "error": "input_too_large", "description": "maximum-size commit with one more message byte (61,441 bytes)"})
     admission_invalid = build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, revision_id, revocation, revocation_id, persistent,
-                                                restore, restore_id)
-    return keys, resolver_keys, identity, chain, ("commit_user_1002_genesis", firefox_data), invalid, admission_invalid
+                                                restore, restore_id, temporary, temporary_session, merge, transition)
+    extra_valid = [("commit_user_1002_genesis", firefox_data), ("commit_boundary_max_size", boundary)]
+    return keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits
+
+
+def build_boundary_vectors(keys):
+    """R08: a valid commit of exactly MaxEnvelopeBytes, the same plus one byte, and the
+    worst-case IPC/journal wrapper sizes for the maximum object."""
+    signer = keys["user_1001_persistent"]
+    builder = lineage_builder_t(keys, 1001, "user_1001_identity", "org.example.boundary", "deb:boundary:amd64")
+
+    def payload_for(grant_count, last_length, message_length):
+        grants = sorted((make_grant("boundary %d" % index, "filesystem", "r" * 512, ["read"]) for index in range(grant_count)),
+                        key=lambda grant: grant["grant_id"])
+        grants[-1]["resource"]["resource_id"] = "r" * last_length
+        return builder.payload("boundary", "genesis", signer, [], EmptyState, {"add_grants": grants, "remove_grant_ids": []},
+                               Times[0], "m" * message_length)
+
+    def size(payload):
+        return len(build_envelope("commit", signer, encode(payload), signature=b"\x00" * 64))
+
+    for grant_count in range(1, 65):
+        if size(payload_for(grant_count, 512, 1024)) < MaxEnvelopeBytes:
+            continue
+        for last_length in range(512, 0, -1):
+            probe = size(payload_for(grant_count, last_length, 300))
+            message_length = MaxEnvelopeBytes - probe + 300
+            if 256 <= message_length <= 1023:
+                exact = payload_for(grant_count, last_length, message_length)
+                over = payload_for(grant_count, last_length, message_length + 1)
+                if size(exact) == MaxEnvelopeBytes and size(over) == MaxEnvelopeBytes + 1:
+                    exact_data, _ = sign_commit(signer, exact)
+                    over_data, _ = sign_commit(signer, over)
+                    ipc = encode({"op": "submit_signed", "request_id": b"\x00" * 16,
+                                  "args": {"proposal_id": b"\x00" * 16, "envelope": exact_data}})
+                    record = encode({"kind": "commit_admitted", "seq": 2**64 - 1, "time": Times[0], "commit_id": b"\x00" * 32,
+                                     "lineage_id": b"\x00" * 32, "branch": "temporary", "envelope": exact_data})
+                    limits = {
+                        "max_envelope_bytes": MaxEnvelopeBytes,
+                        "max_wrapper_bytes": MaxWrapperBytes,
+                        "max_wrapper_metadata_bytes": MaxWrapperMetadataBytes,
+                        "max_envelope_submit_signed_message_bytes": len(ipc),
+                        "max_envelope_commit_admitted_record_bytes": len(record),
+                    }
+                    return exact_data, over_data, limits
+        break
+    raise SystemExit("could not construct the boundary vector")
 
 
 def resign(signer, payload):
@@ -982,7 +1090,31 @@ def splice_payload(signer, raw_payload, sign=True):
     return build_envelope("commit", signer, raw_payload)
 
 
-def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_id, merge, persistent, temporary):
+def network_variant(revision, transform, extra_tor=False):
+    """Revision copy whose network grant is transformed in both delta and result."""
+    payload = mutate(revision, ["message"], revision["message"])
+    for grants in (payload["delta"]["add_grants"], payload["result_state"]["grants"]):
+        for grant in grants:
+            if grant["resource"]["category"] == "network" and transform is not None:
+                transform(grant)
+        if extra_tor:
+            grants.append(make_grant("network_extra_tor", "network", "network_mode", ["tor"], start=Times[1]))
+            grants.sort(key=lambda grant: grant["grant_id"])
+    return payload
+
+
+def one_shot_network(genesis, parent_id):
+    payload = mutate(genesis, ["commit_type"], "temporary_grant")
+    payload["authority_class"] = "temporary"
+    payload["key_id"] = key_t("user_1001_temporary").key_id
+    payload["parents"] = [parent_id]
+    once = make_grant("network_once", "network", "network_mode", ["direct"], kind="one_shot", start=Times[3])
+    payload["delta"] = {"add_grants": [once], "remove_grant_ids": []}
+    payload["result_state"] = apply_delta(genesis["result_state"], payload["delta"])
+    return payload
+
+
+def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_id, merge, persistent, temporary, transition):
     vectors = []
 
     def add(name, data, layer, code, description, kind="commit"):
@@ -997,7 +1129,7 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
     # Layer 1: envelope decode.
     add("trailing_byte", genesis_data + b"\x00", "envelope_decode", "trailing_bytes", "one byte after the envelope")
     add("truncated_envelope", genesis_data[:-1], "envelope_decode", "truncated", "last signature byte missing")
-    add("oversized_envelope", encode(tag_t(18, [protected, {}, b"\x00" * 65600, signature])), "envelope_decode", "input_too_large", "envelope larger than 65536 bytes")
+    add("oversized_envelope", encode(tag_t(18, [protected, {}, b"\x00" * 61500, signature])), "envelope_decode", "input_too_large", "envelope larger than 61440 bytes")
     add("indefinite_array", b"\xd2\x9f" + encode(protected) + b"\xa0" + encode(payload_bytes) + encode(signature) + b"\xff",
         "envelope_decode", "indefinite_length", "COSE array with indefinite length")
     add("non_minimal_tag", b"\xd8\x12" + genesis_data[1:], "envelope_decode", "non_minimal_encoding", "tag 18 encoded in two bytes")
@@ -1090,18 +1222,27 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
         ("genesis_with_parent", mutate(genesis, ["parents"], [revision_id]), persistent, "commit_type_rule", "genesis with a parent"),
         ("temporary_adds_persistent", temporary_persistent, persistent, "commit_type_rule", "temporary_grant adding a persistent grant"),
         ("temporary_key_revision", mutate(mutate(revision, ["authority_class"], "temporary"), ["key_id"], temporary.key_id), temporary, "commit_type_rule", "temporary authority signs a revision"),
-        ("revocation_with_add", mutate(mutate(revision, ["commit_type"], "revocation"), ["delta", "network_mode"], delete=True), persistent, "commit_type_rule", "revocation that adds a grant"),
+        ("revocation_with_add", mutate(revision, ["commit_type"], "revocation"), persistent, "commit_type_rule", "revocation that adds a grant"),
         ("merge_without_merge_base", mutate(merge, ["merge_base"], delete=True), persistent, "commit_type_rule", "merge without merge_base"),
         ("restore_reference_on_revision", mutate(revision, ["restore_reference"], revision_id), persistent, "commit_type_rule", "restore_reference on a revision"),
-        ("empty_revision", mutate(mutate(mutate(revision, ["delta", "add_grants"], []), ["delta", "network_mode"], delete=True), ["result_state"], revision["result_state"]), persistent, "commit_type_rule", "revision without any change"),
+        ("empty_revision", mutate(mutate(revision, ["delta", "add_grants"], []), ["result_state"], genesis["result_state"]), persistent, "commit_type_rule", "revision without any change"),
         ("timed_without_expiration", None, persistent, "lifetime_rule", "timed grant without expiration"),
         ("expiration_before_start", mutate(mutate(genesis, ["delta", "add_grants", 0, "lifetime", "expiration"], "2026-10-12T11:00:00Z"), ["result_state", "grants", 0, "lifetime", "expiration"], "2026-10-12T11:00:00Z"), persistent, "lifetime_rule", "expiration before effective start"),
         ("delegation_scope_not_permitted", mutate(mutate(genesis, ["delta", "add_grants", 0, "delegation", "permitted"], False), ["result_state", "grants", 0, "delegation", "permitted"], False), persistent, "delegation_rule", "non-delegable grant with delegation depth"),
         ("delegation_exceeds_operations", mutate(mutate(genesis, ["delta", "add_grants", 0, "delegation", "max_operations"], ["write"]), ["result_state", "grants", 0, "delegation", "max_operations"], ["write"]), persistent, "delegation_rule", "delegable operations not in the grant"),
-        ("network_from_equals_to", mutate(revision, ["delta", "network_mode", "to"], "offline"), persistent, "network_change_rule", "network change from offline to offline"),
+        ("network_two_grants", network_variant(revision, None, extra_tor=True), persistent, "network_grant_rule", "two network grants in one state"),
+        ("network_both_modes", network_variant(revision, lambda grant: grant["resource"].update(operations=sorted(["direct", "tor"], key=encode))), persistent, "network_grant_rule", "network grant naming both direct and tor"),
+        ("network_delegable", network_variant(revision, lambda grant: grant["delegation"].update(permitted=True, max_depth=1, max_operations=["direct"])), persistent, "network_grant_rule", "delegable network grant"),
+        ("network_wrong_resource", network_variant(revision, lambda grant: grant["resource"].update(resource_id="network")), persistent, "network_grant_rule", "network grant with a resource id other than network_mode"),
+        ("network_foreign_owner", network_variant(revision, lambda grant: grant["resource"].update(resource_owner_uid=1002)), persistent, "network_grant_rule", "network grant owned by another user"),
+        ("network_one_shot", one_shot_network(genesis, revision_id), temporary, "network_grant_rule", "one-shot network grant on a temporary branch"),
+        ("identity_change_on_revision", mutate(revision, ["delta", "identity_change"], transition["delta"]["identity_change"]), persistent, "commit_type_rule", "identity_change on an ordinary revision"),
+        ("identity_transition_without_change", mutate(transition, ["delta", "identity_change"], delete=True), persistent, "commit_type_rule", "identity_transition without identity_change"),
+        ("identity_change_not_subject", mutate(transition, ["delta", "identity_change", "to", "executable_sha256"], b"\x09" * 32), persistent, "identity_transition_rule", "identity_change.to differs from the signed subject"),
+        ("identity_change_noop", mutate(transition, ["delta", "identity_change", "from"], transition["delta"]["identity_change"]["to"]), persistent, "identity_transition_rule", "identity_change from equals to"),
         ("added_grant_missing_from_result", mutate(genesis, ["result_state", "grants"], []), persistent, "result_state_mismatch", "added grant absent from result state"),
         ("genesis_base_not_empty", mutate(genesis, ["base_state_hash"], b"\x00" * 32), persistent, "base_state_mismatch", "genesis base is not the empty state"),
-        ("identity_transition_with_add", mutate(mutate(revision, ["commit_type"], "identity_transition"), ["delta", "network_mode"], delete=True), persistent, "commit_type_rule", "identity transition that also adds a grant"),
+        ("identity_transition_with_add", mutate(revision, ["commit_type"], "identity_transition"), persistent, "commit_type_rule", "identity transition that also adds a grant"),
     ]
     timed = make_grant("timed_bad", "camera", "front_camera", ["capture"], kind="timed", start=Times[3])
     timed_payload = mutate(revision, ["commit_type"], "temporary_grant")
@@ -1129,48 +1270,77 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
 
 
 def build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, revision_id, revocation, revocation_id, persistent,
-                            restore, restore_id):
+                            restore, restore_id, temporary, temporary_session, merge, transition):
     """Lineage-context failures: each entry is a prefix of the valid chain plus one bad commit."""
     vectors = []
-    prefix = [data for _, data in chain]
 
-    def add(name, prefix_length, payload, code, description):
-        vectors.append({"name": name, "prefix": prefix_length, "envelope": resign(persistent, payload), "layer": "admission", "error": code, "description": description})
+    def add(name, prefix_length, payload, code, description, signer=persistent):
+        vectors.append({"name": name, "prefix": prefix_length, "envelope": resign(signer, payload), "layer": "admission", "error": code, "description": description})
 
-    stale_base = mutate(revision, ["base_state_hash"], state_hash(EmptyState))
-    add("stale_base_state", 1, stale_base, "base_state_mismatch", "revision claims the empty state as its base")
+    def successor(template, parents, base_state, delta, label, commit_type=None, extra=None):
+        payload = mutate(template, ["parents"], sorted(parents))
+        if commit_type:
+            payload["commit_type"] = commit_type
+        for key in ("merge_base", "restore_reference"):
+            payload.pop(key, None)
+        payload.update(extra or {})
+        payload["delta"] = delta
+        payload["base_state_hash"] = state_hash(base_state)
+        payload["result_state"] = apply_delta(base_state, delta)
+        payload["authorization"]["request_id"] = synthetic_id("request " + label)
+        return payload
+
+    def substituted(payload):
+        payload = mutate(payload, ["subject", "package_identity"], "deb:attacker:amd64")
+        payload["subject"]["executable_sha256"] = b"\x42" * 32
+        return payload
+
+    clipboard = next(grant for grant in revision["delta"]["add_grants"] if grant["resource"]["category"] == "clipboard")
+    network_direct = next(grant for grant in revision["delta"]["add_grants"] if grant["resource"]["category"] == "network")
+
+    add("stale_base_state", 1, mutate(revision, ["base_state_hash"], state_hash(EmptyState)), "base_state_mismatch",
+        "revision claims the empty state as its base")
     phantom = make_grant("phantom", "camera", "front_camera", ["capture"], start=Times[1])
     wrong_result = mutate(revision, ["result_state", "grants"], sorted(revision["result_state"]["grants"] + [phantom], key=lambda grant: grant["grant_id"]))
     add("result_not_base_plus_delta", 1, wrong_result, "result_state_mismatch", "result state contains a camera grant the delta does not add")
-    unknown_parent = mutate(revision, ["parents"], [b"\x07" * 32])
-    add("unknown_parent", 1, unknown_parent, "parent_unknown", "parent not in the lineage")
-    replayed_grant = mutate(revocation, ["commit_type"], "revision")
-    replayed_grant["delta"] = {"add_grants": [g for g in revision["result_state"]["grants"] if g["grant_id"] == revision["delta"]["add_grants"][0]["grant_id"]], "remove_grant_ids": []}
-    replayed_grant["parents"] = [revocation_id]
-    replayed_grant["base_state_hash"] = state_hash(revocation["result_state"])
-    replayed_grant["result_state"] = apply_delta(revocation["result_state"], replayed_grant["delta"])
-    replayed_grant["authorization"]["request_id"] = synthetic_id("request replayed clipboard")
-    add("revoked_grant_id_re_added", 6, replayed_grant, "duplicate_identifier", "revoked clipboard grant re-added with its old grant_id")
+    add("unknown_parent", 1, mutate(revision, ["parents"], [b"\x07" * 32]), "parent_unknown", "parent not in the lineage")
+    add("revoked_grant_id_re_added", 6,
+        successor(revocation, [revocation_id], revocation["result_state"], {"add_grants": [clipboard], "remove_grant_ids": []},
+                  "replayed clipboard", commit_type="revision"),
+        "duplicate_identifier", "revoked clipboard grant re-added with its old grant_id")
     replayed_request = mutate(revision, ["message"], "Same request identifier as genesis")
     replayed_request["authorization"]["request_id"] = genesis["authorization"]["request_id"]
     add("request_id_replayed", 1, replayed_request, "duplicate_identifier", "authorization request_id reused")
-    expanded_restore = mutate(revocation, ["commit_type"], "restore")
-    expanded_restore["restore_reference"] = revision_id
-    clipboard_wide = make_grant("clipboard_wide", "clipboard", "session_clipboard", ["read", "write", "write_primary"], start=Times[6])
-    expanded_restore["delta"] = {"add_grants": [clipboard_wide], "remove_grant_ids": []}
-    expanded_restore["parents"] = [revocation_id]
-    expanded_restore["base_state_hash"] = state_hash(revocation["result_state"])
-    expanded_restore["result_state"] = apply_delta(revocation["result_state"], expanded_restore["delta"])
-    expanded_restore["authorization"]["request_id"] = synthetic_id("request expanded restore")
-    add("restore_expands_history", 6, expanded_restore, "restore_rule", "restore adds an operation absent from the referenced state")
-    unchanged = mutate(restore, ["commit_type"], "identity_transition")
-    del unchanged["restore_reference"]
-    unchanged["delta"] = {"add_grants": [], "remove_grant_ids": []}
-    unchanged["parents"] = [restore_id]
-    unchanged["base_state_hash"] = state_hash(restore["result_state"])
-    unchanged["result_state"] = restore["result_state"]
-    unchanged["authorization"]["request_id"] = synthetic_id("request unchanged transition")
-    add("identity_transition_unchanged", 7, unchanged, "identity_transition_rule", "identity transition that changes neither package nor executable")
+    clipboard_wide = make_grant("clipboard_wide", "clipboard", "session_clipboard", ["read", "write", "write_primary"], start=Times[6],
+                                expiration="2027-10-12T12:05:00Z")
+    add("restore_expands_history", 6,
+        successor(revocation, [revocation_id], revocation["result_state"], {"add_grants": [clipboard_wide], "remove_grant_ids": []},
+                  "expanded restore", commit_type="restore", extra={"restore_reference": revision_id}),
+        "restore_rule", "restore adds an operation absent from the referenced state")
+    clipboard_forever = make_grant("clipboard_forever", "clipboard", "session_clipboard", ["read", "write"], start=Times[6])
+    add("restore_outlives_history", 6,
+        successor(revocation, [revocation_id], revocation["result_state"], {"add_grants": [clipboard_forever], "remove_grant_ids": []},
+                  "restore without expiration", commit_type="restore", extra={"restore_reference": revision_id}),
+        "restore_rule", "restored clipboard grant drops the historical expiration")
+    tor = make_grant("restore_tor", "network", "network_mode", ["tor"], start=Times[6])
+    add("restore_network_not_in_snapshot", 6,
+        successor(revocation, [revocation_id], revocation["result_state"],
+                  {"add_grants": [tor], "remove_grant_ids": [network_direct["grant_id"]]},
+                  "restore tor", commit_type="restore", extra={"restore_reference": genesis_id}),
+        "restore_rule", "restore referencing the Offline genesis introduces a Tor network grant")
+    add("revision_substitutes_identity", 1, substituted(revision), "subject_binding_mismatch",
+        "ordinary revision restates the lineage under another package and executable")
+    add("temporary_grant_substitutes_identity", 2, substituted(temporary_session), "subject_binding_mismatch",
+        "temporary grant under another package and executable", signer=temporary)
+    add("merge_substitutes_identity", 4, substituted(merge), "subject_binding_mismatch",
+        "merge under another package and executable")
+    add("restore_substitutes_identity", 6, substituted(restore), "subject_binding_mismatch",
+        "restore under another package and executable")
+    add("identity_transition_wrong_start", 7,
+        mutate(transition, ["delta", "identity_change", "from", "executable_sha256"], b"\x05" * 32),
+        "subject_binding_mismatch", "identity transition whose from does not match the authoritative subject")
+    add("identity_transition_changes_runtime_scope", 7, mutate(transition, ["subject", "runtime_scope"], "flatpak"),
+        "subject_binding_mismatch", "identity transition that also changes a non-identity subject field")
     return vectors
 
 
@@ -1178,7 +1348,7 @@ def build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, re
 
 
 def vector_document():
-    keys, resolver_keys, identity, chain, cross_user, invalid, admission_invalid = build_vectors()
+    keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits = build_vectors()
     resolver = resolver_t(resolver_keys)
     document = {
         "format": "cham3 ECR v1 vectors",
@@ -1195,13 +1365,14 @@ def vector_document():
         ],
         "valid": [],
         "lineage": {"name": "user_1001_kate", "commits": [name for name, _ in chain]},
+        "limits": limits,
         "invalid": [],
         "admission_invalid": [],
     }
     for item in identity:
         document["valid"].append({"name": item["name"], "kind": item["kind"], "envelope": item["envelope"].hex(),
                                   "object_id": hashlib.sha256(item["envelope"]).hexdigest()})
-    for name, data in chain + [cross_user]:
+    for name, data in chain + extra_valid:
         payload = verify(data, "commit", resolver)
         document["valid"].append({"name": name, "kind": "commit", "envelope": data.hex(), "object_id": hashlib.sha256(data).hexdigest(),
                                   "result_state_hash": state_hash(payload["result_state"]).hex()})
@@ -1247,6 +1418,19 @@ def check_document(path):
         except oracle_error_t as error:
             if (error.layer, error.code) != (item["layer"], item["error"]):
                 failures.append("invalid %s: expected %s/%s got %s/%s" % (item["name"], item["layer"], item["error"], error.layer, error.code))
+    limits = stored.get("limits", {})
+    wrapper = limits.get("max_wrapper_bytes", 0)
+    if not (0 < limits.get("max_envelope_submit_signed_message_bytes", wrapper + 1) <= wrapper
+            and 0 < limits.get("max_envelope_commit_admitted_record_bytes", wrapper + 1) <= wrapper):
+        failures.append("maximum envelope does not fit its IPC message or journal record wrapper")
+    boundary = by_name.get("commit_boundary_max_size")
+    if boundary is None or len(boundary) != limits.get("max_envelope_bytes"):
+        failures.append("boundary vector is not exactly max_envelope_bytes")
+    else:
+        try:
+            admit_chain([boundary], resolver)
+        except oracle_error_t as error:
+            failures.append("boundary vector not admissible: %s" % error)
     chain = [by_name[name] for name in stored["lineage"]["commits"]]
     for item in stored["admission_invalid"]:
         try:

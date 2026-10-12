@@ -1,6 +1,6 @@
 # cham3 M2 service interfaces and IPC, version 1
 
-- **Status:** PROPOSED under G3 ([ADR 0005](../decisions/0005_m2_identity_vault_ipc.md)), with storage/lifecycle operations from [ADR 0006](../decisions/0006_m2_storage_anchor_recovery.md) and [ADR 0007](../decisions/0007_m2_lifecycle_time_consumption.md). Not approved; M2-004..M2-007 are gated.
+- **Status:** PROPOSED under G3 ([ADR 0005](../decisions/0005_m2_identity_vault_ipc.md)), with storage/lifecycle operations from [ADR 0006](../decisions/0006_m2_storage_anchor_recovery.md) and [ADR 0007](../decisions/0007_m2_lifecycle_time_consumption.md); revision 2 after the independent review at 9cf882503848f8c6cc4938a588cc9fc062a9392d (R05 identity persistence, R08 size contract, R04/R11 restrictive and deletion operations). Not approved; M2-004..M2-007 are gated.
 - Wire encoding of every message: `cham3_dcbor_v1` ([wire format §2](m2_wire_format_v1.md)). Canonical service names keep PROJECT §14's hyphenated spelling at the process/package boundary.
 
 ## 1. Transport and peer authentication
@@ -22,6 +22,7 @@ A caller-supplied UID, user id, key id, program name or role field is never auth
 ## 2. Framing and limits
 
 - One request per datagram, one response per datagram, at most 65 536 bytes; larger, malformed or non-canonical messages close the connection.
+- **Size contract (R08):** a message embeds at most one signed object (≤ 61 440 bytes, [wire format §2.3](m2_wire_format_v1.md)) and at most 4 096 bytes of other content. Every operation that can return more (`history`, `export`, `identity_state`) is paginated: each response carries at most one page (≤ 16 records or one signed object) and an opaque `next` cursor (journal sequence); callers repeat with the cursor. No response ever needs to exceed the limit.
 - Request: `{"op": tstr, "request_id": bstr .size 16, "args": {…}}`. Response: `{"request_id": …, "status": "ok" / "denied" / "error", ? "result": {…}, ? "error": tstr}`. `denied` is a policy/authorization outcome; `error` is a malformed or failed operation. Both are final; nothing is retried implicitly.
 - Per service: at most 64 connections, 8 per peer UID, 30 s idle timeout, 10 s per-request deadline (vault signing: 60 s), bounded worker pool. Excess connections are refused (flooding denial).
 - The vault receives datagrams into a locked secret region; passphrase bytes are never copied into ordinary buffers and are zeroized after use.
@@ -34,9 +35,9 @@ Arguments are closed maps; unknown arguments are errors. "Owner" means the reque
 
 | Operation | Allowed roles | Behavior |
 |---|---|---|
-| `register_enrollment` | `service:vaultd` | Register a self-signed identity enrollment, its persistent and temporary key certificates for `owner_uid`. First enrollment for a UID only; a UID with a live identity is refused (identity replacement is `admin` `replace_identity`). |
-| `register_certificate` / `register_invalidation` | `service:vaultd` | Rotation/invalidation signed by the user's current identity key. |
-| `resolve_key` | `service:*`, `fixture_consumer` | `key_id` → public key, owner `user_id`/UID, authority class, certificate validity window, key epoch, invalidation state. Unknown → `denied`. |
+| `register_enrollment` | `service:vaultd` | Validate a self-signed identity enrollment and its persistent and temporary key certificates for `owner_uid`, then persist them through registryd `append_identity` (identityd keeps no store, R05). First enrollment for a UID only; a UID with a live identity is refused (identity replacement is `admin` `replace_identity`). |
+| `register_certificate` / `register_invalidation` | `service:vaultd` | Rotation/invalidation signed by the user's current identity key, persisted through registryd; invalidation is restrictive (denied before durable, ADR 0006 §3, §5). |
+| `resolve_key` | `service:*`, `fixture_consumer` | `key_id` → public key, owner `user_id`/UID, authority class, certificate validity window, key epoch, invalidation state and the journal sequence of the snapshot answered from. Unknown, contained, quarantined or registry-unavailable → `denied`. |
 | `user_identity` | `service:*`, `trusted_client` (own UID) | UID → `user_id`, current key ids, identity epoch. |
 | `replace_identity` | `admin` | Marks the old identity replaced; a new enrollment creates a new `user_id`. Old grants are not carried over. |
 
@@ -65,7 +66,8 @@ There is no operation that signs caller-chosen bytes, exports a private key or k
 
 | Operation | Allowed roles | Behavior |
 |---|---|---|
-| `evaluate` | `service:*`, `fixture_consumer` | Runtime identity (owner UID, `app_id`, installation, package identity, executable hash, session), resource category/id/operation. Returns `eligible` (with grant id and commit id), `denied` (with reason) or `unknown` (treated as denied). Never reports enforcement. Missing network policy evaluates Offline eligibility only. |
+| `evaluate` | `service:*`, `fixture_consumer` | Runtime identity (owner UID, `app_id`, installation, package identity, executable hash, session), resource category/id/operation. Returns `eligible` (with grant id and commit id), `denied` (with reason) or `unknown` (treated as denied). Never reports enforcement. |
+| `network_mode` | `service:*`, `fixture_consumer` | Effective mode of a lineage from its single eligible network grant (ADR 0007 §1): `direct`, `tor` or `offline` (no eligible grant, or mandatory policy forbids the mode). Eligibility only, never enforcement. |
 | `check_proposal` | `service:contractd` | Mandatory-policy check of a proposed state/delta before approval. |
 | `policy_status` | `service:*`, `trusted_client` | Current epoch, minimum valid epoch, emergency restriction state, rollback-protection mode. |
 | `set_policy_epoch` / `set_emergency_restriction` | `admin` | Raise epoch / minimum valid epoch; set emergency restriction. Releasing an emergency restriction restores no grant by itself. |
@@ -74,15 +76,18 @@ There is no operation that signs caller-chosen bytes, exports a private key or k
 
 | Operation | Allowed roles | Behavior |
 |---|---|---|
-| `lineage_head` | `service:contractd`, `service:policyd` | Current trunk head, live temporary heads, states, epoch. |
+| `lineage_head` | `service:contractd`, `service:policyd` | Current trunk head, live temporary heads, states, epoch, authoritative subject. |
+| `append_identity` / `identity_state` | `service:identityd` | Persist a validated identity record (enrollment, certificate, invalidation, replacement) in the user's journal; page through a user's identity records for identityd's index rebuild. |
 | `admit` | `service:contractd` | Atomic admission (ADR 0006): expected head/epoch, parents, base state, delta, uniqueness, delegation; durable before reply; admitted as `pending`. |
-| `restrict` | `service:contractd`, `service:policyd`, `admin` | Durable restrictive lifecycle record before reply (ADR 0007); denies immediately in memory first. |
+| `restrict` | `service:contractd`, `service:policyd`, `service:identityd`, `admin` | Restrictive change (ADR 0006 §3): in-memory denial, restriction-ledger entry, durable record, anchor update, reply. Reports `restriction_not_durable` while denial is held only in memory and ledger. |
 | `reserve_use` / `complete_use` | `fixture_consumer` (M2), later brokers | One-shot reservation and outcome (ADR 0007). |
 | `confirm_enforcement` | `fixture_consumer` (M2), later launcherd/netd/brokers | Pending → confirmed/failed for one domain, bound to `commit_id`, runtime id, domain and epoch. |
 | `session_event` | `fixture_consumer` (M2), later sessiond | Session start/end. |
 | `history` | `trusted_client` (own UID only), `admin` | Read-only lineage history, lifecycle records and audit gaps. |
-| `recover_user` | `admin` | Explicit recovery ceremony after quarantine (ADR 0006). |
+| `recover_user` | `admin` | Explicit recovery ceremony after quarantine (ADR 0006 §4). |
+| `delete_user` | `admin` | Tombstone-first deletion (ADR 0006 §7): reports `deletion_pending` until the tombstone is `deleted`; never reports success earlier. |
+| `rollback_status` | `service:*`, `trusted_client` | Anchor mode (`independent`/`degraded`), run-marker decision of this start (`resumed`/`ledger_replayed`/`contained`), quarantined/contained users. |
 
 ## 4. Error vocabulary
 
-Byte-layer verification errors are the codes of [wire format §7](m2_wire_format_v1.md). IPC/service errors: `malformed_request`, `unknown_operation`, `role_denied`, `owner_mismatch`, `proposal_unknown`, `proposal_expired`, `proposal_used`, `approval_mismatch`, `authentication_failed`, `attempts_exhausted`, `protection_unavailable`, `stale_head`, `stale_epoch`, `duplicate_identifier`, `quota_exhausted`, `storage_unavailable`, `quarantined`, `deadline_exceeded`.
+Byte-layer verification errors are the codes of [wire format §7](m2_wire_format_v1.md). IPC/service errors: `malformed_request`, `unknown_operation`, `role_denied`, `owner_mismatch`, `proposal_unknown`, `proposal_expired`, `proposal_used`, `approval_mismatch`, `authentication_failed`, `attempts_exhausted`, `protection_unavailable`, `stale_head`, `stale_epoch`, `duplicate_identifier`, `subject_binding_mismatch`, `object_too_large`, `quota_exhausted`, `storage_unavailable`, `restriction_not_durable`, `contained`, `quarantined`, `deletion_pending`, `deadline_exceeded`.
