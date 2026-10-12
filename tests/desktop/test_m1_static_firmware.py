@@ -110,7 +110,33 @@ def installer_selection_problems(selected):
     return problems
 
 
+# Firmware packages whose preinst refuses to install without a debconf licence answer
+# (live-build's chroot_firmware preseeded these itself under --firmware-chroot true).
+LicensedFirmware = {
+    "firmware-ipw2x00": "firmware-ipw2x00/license/accepted",
+    "firmware-ivtv": "firmware-ivtv/license/accepted",
+}
+LicensePreseedPath = m1_support.LiveDesktopDir + "/config/preseed/cham3_firmware_licenses.cfg.chroot"
+
+
+def license_preseed_problems(list_text, preseed_text):
+    """Every licensed firmware package in the list has its acceptance preseeded (owner decision 2026-10-12)."""
+    names = set(m1_support.local_manifest_names(list_text))
+    answers = {" ".join(line.split()) for line in preseed_text.splitlines()
+               if line.strip() and not line.lstrip().startswith("#")}
+    problems = []
+    for package, question in sorted(LicensedFirmware.items()):
+        if package in names and "%s %s boolean true" % (package, question) not in answers:
+            problems.append("%s is listed but its licence answer %s is not preseeded; the build fails" % (package, question))
+    return problems
+
+
 class firmware_list_real_t(unittest.TestCase):
+    def test_licensed_firmware_has_its_acceptance_preseeded(self):
+        problems = license_preseed_problems(m1_support.read_repo(m1_support.FirmwareListPath),
+                                            m1_support.read_repo(LicensePreseedPath))
+        self.assertEqual(problems, [])
+
     def test_firmware_list_is_exactly_the_self_contained_set(self):
         text = m1_support.read_repo(m1_support.FirmwareListPath)
         self.assertEqual(firmware_list_problems(text), [])
@@ -153,6 +179,17 @@ class installer_firmware_payload_t(unittest.TestCase):
 
 class firmware_list_fixture_t(unittest.TestCase):
     """Positive and negative controls for firmware_list_problems()."""
+
+    def test_missing_license_answer_is_rejected(self):
+        # Negative control: the 2ed1da5 build failed in the firmware-ipw2x00/ivtv preinst.
+        problems = license_preseed_problems("firmware-ipw2x00\nfirmware-ivtv\n",
+                                            "firmware-ivtv firmware-ivtv/license/accepted boolean true\n")
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("firmware-ipw2x00", problems[0])
+
+    def test_license_answers_present_are_accepted(self):
+        preseed = "".join("%s %s boolean true\n" % item for item in LicensedFirmware.items())
+        self.assertEqual(license_preseed_problems("firmware-ipw2x00\nfirmware-ivtv\n", preseed), [])
 
     def good(self):
         return "# explicit firmware set (M1)\n" + "\n".join(m1_support.FirmwareSelfContainedSet) + "\n"

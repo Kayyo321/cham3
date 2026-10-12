@@ -1,0 +1,16 @@
+# Applied by live-build with debconf-set-selections BEFORE package installation.
+#
+# Two packages of the explicit firmware list (config/package-lists/
+# cham3_firmware.list.chroot) ask for acceptance of their vendor licence in
+# their preinst and refuse to install without it:
+#   firmware-ipw2x00  Intel PRO/Wireless 2100/2200/2915 firmware
+#   firmware-ivtv     Conexant/Hauppauge ivtv TV-capture firmware
+# Under the earlier --firmware-chroot true design, live-build's chroot_firmware
+# stage preseeded exactly these two answers itself. With the explicit list it no
+# longer does, so they are stated here.
+#
+# Owner decision recorded 2026-10-12 (M1 repair cycle): accept both licences for
+# the development image, keeping all 42 approved firmware packages; to be revisited
+# before any public release (docs/tasks/M1-bootable-desktop-distribution.md).
+firmware-ipw2x00 firmware-ipw2x00/license/accepted boolean true
+firmware-ivtv firmware-ivtv/license/accepted boolean true

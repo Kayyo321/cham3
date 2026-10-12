@@ -53,8 +53,9 @@ run_iso() {
         2>&1 | tee "${evidence}/build_image_console.log"
     local status=0
     tests/run_tests.sh image-m1 2>&1 | tee "${evidence}/image_m1_tests.log" || status=1
-    # No firmware host may be contacted during the build (b43 installers, F2/F7).
-    if grep -E -n 'github\.com/|downloads\.openwrt\.org|problem occurred during the firmware download' \
+    # No firmware host may be contacted during the build (b43 installers, F2/F7). The
+    # markers are those of the b43 installers' download step (readiness packet 6.3).
+    if grep -E -n 'Resolving github\.com|downloads\.openwrt\.org|Some problem occurred during the firmware download' \
         out/image/build.log > "${evidence}/firmware_fetch_matches.txt"; then
         echo "FAIL: the build log shows a firmware download attempt" | tee -a "${evidence}/firmware_fetch_matches.txt"
         status=1
