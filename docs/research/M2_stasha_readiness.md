@@ -1,5 +1,7 @@
 # M2 Stasha readiness research
 
+Historical, superseded for implementation on 2026-10-12: the owner requested a memory-safe compiled language and removal of Stasha. Use the [Rust research](M2_rust_readiness.md) and current M2 task; the findings/receipts below describe the earlier assignment only.
+
 Research date: 2026-10-12. Research/task-preparation baseline: `aa843f7ac19398f580f3577ba047300971ba6095`. Product authority: `PROJECT.md` and approved ADR 0001. This is a feasibility assessment and implementation input, not M2 verification or approval of unresolved designs.
 
 ## Recommendation and owner constraint

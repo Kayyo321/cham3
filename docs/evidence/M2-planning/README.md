@@ -1,5 +1,7 @@
 # M2 planning evidence
 
+Historical Stasha receipts retained for provenance. The owner subsequently removed Stasha from the assignment; these receipts do not qualify the [Rust implementation](../../research/M2_rust_readiness.md).
+
 Selected **upstream-produced** evidence inspected on 2026-10-12, retained from [Stasha Linux qualification run 38219130719](https://github.com/Kayyo321/stasha/actions/runs/38219130719), exact source `5ada5de229df1255cd9b64ab0e28e94ae3d754b1`. Artifact: `linux-compiler-qualification-5ada5de229df1255cd9b64ab0e28e94ae3d754b1`, ID `11734852747` (downloaded before expiry).
 
 - `upstream_run.json`, `upstream_jobs.json`: GitHub API snapshots; completed success at the exact source.

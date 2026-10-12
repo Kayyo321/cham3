@@ -17,6 +17,8 @@ This is a dependency-oriented plan derived from `PROJECT.md` and scoped owner-ap
 - **Verification/exit:** Build an installable ISO from declared Debian 13 x86-64 inputs; boot and install it in a declared disposable VM; verify Plasma Wayland, branding, panel layout, categorized launchers, package sourcing, and duplicate-utility absence. Record exact evidence and limitations. This exit does not establish M2–M4 enforcement.
 
 ## M2 — Cryptographic contract core and Eternal Contract Repository
+
+- **Implementation assignment:** The [M2 task](../tasks/M2-cryptographic-contract-core.md) now selects safe Rust domain crates under the owner's memory-safe compiled-language requirement. Stasha is removed as a submodule for now. Toolchain/dependency and unsafe adapter qualification remain detailed design gates.
 - **Objective:** Verify signed, deterministic, versioned contracts and current authorization, with ECR as the durable contract and change-history foundation.
 - **Key pillar — ECR (APPROVED architecture):** [ADR 0001](../decisions/0001_eternal_contract_repository.md) makes an append-only signed contract DAG, canonical authorization transactions, protected current-state indexes, and rollback-resistant recovery required M2 deliverables. ECR is part of the milestone's core acceptance, not an optional later history feature.
 - **Dependencies / design gates:** M0; approved ADR 0001 and `PROJECT.md` §5.7 / Phase 2; independently reviewed, owner-approved wire/schema/hash profile, registry/vault and lifecycle-evidence interfaces, storage/atomicity/concurrency, rollback-resistant anchors and backup/recovery, retention/privacy, and authentication/identity-transition decisions. Gate affected implementation tasks until these are settled.

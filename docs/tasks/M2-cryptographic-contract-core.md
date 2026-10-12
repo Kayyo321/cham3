@@ -5,12 +5,13 @@
 - **Created / updated:** 2026-10-12.
 - **Base commit:** aa843f7ac19398f580f3577ba047300971ba6095, clean local main including approved ADR 0001 and locally merged M1.
 - **Branch / checkout:** codex/m2-cryptographic-contract-core, /Users/jessicabruce/cham3. One writer at a time; preparation hands this branch to Claude after its own commit/review. Do not use an old M1 worktree.
-- **Preparation target / review:** Exact preparation commits/verdict are in the [preparation handoff](../handoffs/M2-task-preparation.md). They are not product implementation commits.
-- **Owner language decision:** On 2026-10-12 the owner requested M2's core in the in-house Stasha language and then requested “add stasha as a submodule”. This approves the language constraint/dependency addition, not the unresolved detailed designs below.
+- **Original preparation target / review:** Earlier preparation commits/verdict are in the [historical preparation handoff](../handoffs/M2-task-preparation.md). They do not approve this language revision and are not product implementation commits.
+- **Owner scope change, 2026-10-12:** The owner subsequently requested a memory-safe compiled implementation language and removal of the Stasha submodule for now. Rust is the selected implementation language under that instruction, superseding the earlier Stasha constraint/dependency request. This changes the implementation assignment, not PROJECT/ADR 0001 architecture or unresolved detailed design gates.
+- **Language-change baseline:** c84de12d280454cba680d731f907355134a91e30, clean existing M2 branch after unrelated main updates. Current preparation evidence is in the [Rust transition handoff](../handoffs/M2-rust-transition.md); earlier preparation/review evidence is historical.
 
 ## Objective
 
-Deliver PROJECT Phase 2 / engineering M2: authenticated per-user key authorities, encrypted signing vault, canonical signed contracts, current-authorization evaluation, and ECR as the foundational signed contract DAG and durable grant-state system. Implement cham3 domain logic in Stasha. Demonstrate correctness, denial behavior, native boundaries and durable recovery on Debian 13 amd64, then obtain independent security review.
+Deliver PROJECT Phase 2 / engineering M2: authenticated per-user key authorities, encrypted signing vault, canonical signed contracts, current-authorization evaluation, and ECR as the foundational signed contract DAG and durable grant-state system. Implement cham3 domain logic in safe, compiled Rust. Demonstrate correctness, denial behavior, native boundaries and durable recovery on Debian 13 amd64, then obtain independent security review.
 
 Signature validity, current authorization, durable ECR admission and confirmed runtime enforcement are separate facts. M2 supplies tested core/services/interfaces to future consumers. Its harness cannot establish M3 application isolation, M4 networking, M5 trusted KDE or M6 active-resource revocation.
 
@@ -21,13 +22,13 @@ Signature validity, current authorization, durable ECR admission and confirmed r
 - [Security invariants](../engineering/SECURITY_INVARIANTS.md): SEC-01–06, SEC-10–16, SEC-18. Preserve default-deny, mandatory-policy precedence, immutable revisions, appropriate user/key authority and narrow trusted IPC.
 - Required primitives: Ed25519; COSE_Sign1; deterministic CBOR; XChaCha20-Poly1305; Argon2id; SHA-256; Linux cryptographic randomness. Use maintained established libraries; no custom signing, encryption, KDF or hash primitive.
 - Internal naming: snake_case; PascalCase only constants/macros; snake_case_t types. Required external C/COSE/service spellings stay at documented boundaries.
-- [Stasha research](../research/M2_stasha_readiness.md) is evidence/recommendations, not approval of a wire format, backend, library or security guarantee.
+- [Rust research](../research/M2_rust_readiness.md) is evidence/recommendations, not approval of a wire format, backend, library or security guarantee. The earlier Stasha research and receipts are historical and cannot qualify the Rust implementation.
 
 ## Scope and exclusions
 
 In scope:
 
-- Pinned Stasha compiler/runtime/FFI qualification, build integration and language/binding inventory.
+- Pinned Rust/Cargo/dependency qualification, build integration and unsafe/native boundary inventory.
 - Reviewed detailed design records, interface specifications and vectors for all gates below.
 - Strict schema/envelope verification, identity/key-class validation, current-authorization and mandatory-policy evaluation.
 - Encrypted key objects, restricted vault operations, independently validated approval binding, enrollment/invalidation/rotation primitives and only approved recovery transitions.
@@ -40,20 +41,22 @@ Out of scope:
 
 - Launcher/application sandbox, real window/runtime attribution, network/Tor/firewalls, portals, trusted KDE workflow/history UI, global kill implementation, production resource enforcement/release/keys or host administration.
 - Full recovery UX, hardware/FIDO2/biometric support and multi-user desktop hardening before later designs/tests. M2 still enforces user separation internally and rejects unauthenticated key transitions.
-- Replacing the Stasha core with C/Python/Rust; broad compiler redesign; unrelated M0/M1 edits; changing the separate dirty language checkout.
+- Replacing the safe Rust core with an unsafe/native policy implementation; compiler redesign; unrelated M0/M1 edits; changing the separate Stasha checkout or reintroducing its submodule.
 - Calling OS UID separation, mock approval, fixture acknowledgements or configuration checks full-system isolation or real human-presence proof.
 
-## Stasha implementation contract
+## Rust implementation contract
 
-Pin toolchains/stasha to 5ada5de229df1255cd9b64ab0e28e94ae3d754b1 from https://github.com/Kayyo321/stasha.git. Source reports 0.2.0-dev, ABI 11; LLVM gitlink is 348061d58dfe5e59027a0d6d51f916197cdd8d68. Do not use a floating installer, submodule update --remote, or a similarly named PATH binary. Pin changes require recorded scope, regression reproduction, repeated qualification and independent review.
+Implement the core as a Cargo workspace of substantive .rs crates/modules under core/. Rust owns schema/contract semantics, COSE/profile validation, identity/key-class and mandatory-policy checks, exact proposal/approval binding, graph/delta/result-state checks, transaction state machines, lifecycle/recovery decisions and service orchestration. Use safe Rust and crate-level #![forbid(unsafe_code)] for these domain crates. Do not wrap a second C or unsafe Rust cham3 policy/ECR core.
 
-Stasha owns schema/contract semantics, COSE/profile validation, identity/key-class and mandatory-policy checks, exact proposal/approval binding, graph/delta/result-state checks, transaction state machines, lifecycle/recovery decisions and service orchestration. These must be substantive .sts modules, not wrappers around a second native cham3 core.
+Use stable Rust, edition 2024, with an exact compiler/Cargo/standard-library and target baseline qualified on disposable Debian 13 amd64. Debian's Rust 1.85.1 package is the initial compatibility candidate, not an already qualified pin. G1 freezes actual package versions/hashes, linker/native inputs, features and minimum supported Rust version. No floating stable/nightly installation or compiler-source submodule; any toolchain change needs recorded justification, repeated affected qualification and independent review.
 
-Maintained native libraries may supply primitives/codecs/storage/OS APIs under reviewed bindings. Adapters are limited to ABI/ownership/error translation, binary buffers, opaque handles and OS operations. Native code cannot make cham3 policy/admission decisions. A guarded secret handle may encapsulate provider memory; Stasha vault logic owns validated workflow/lifetime. Keep private bytes out of generic strings, ordinary allocations, tracing and serialization except the approved encrypted representation.
+Commit Cargo.lock for the complete workspace and pin/check transitive dependency sources and checksums. Review crate provenance, supported compiler versions, default/optional features, build.rs scripts, procedural macros, native link inputs, maintenance/security status and actual unsafe code. Freeze dependencies before offline/frozen builds; lockfiles alone do not prove soundness, provenance or reproducibility. Prefer maintained safe Rust APIs where they meet PROJECT requirements; established native providers remain possible through reviewed adapters. No custom signing, encryption, KDF or hash primitive.
 
-At the pinned revision, cheader imports carry C ABI; manual/exported C functions require @[[abi: c]]. ext alone is visibility. Document widths, lengths, permissions, ownership, allocator/deallocator, nil/overflow/error cleanup, callbacks and secret handling. Prefer scalar/pointer signatures over aggregate-by-value/varargs. Audit linked runtimes, crash handlers and cleanup before deployment.
+Keep unavoidable unsafe/FFI only in small separately reviewed adapter crates under core/native/, exposing safe checked APIs. Enable #![deny(unsafe_op_in_unsafe_fn)] there; document each safety invariant, lifetimes, null/length/overflow validation, thread safety, allocator pairing and all error paths. Audit unsafe and native internals in dependencies even when the local API is safe. Rust's memory-safety claim depends on those boundaries being sound; it does not prove cryptographic correctness, authorization, durable storage or secret erasure.
 
-Use a small explicit sequential subset while qualifying needed features; this is a recommendation, not a compiler safety guarantee. All cham3 cryptographic primitives, including SHA-256, use approved maintained providers. The built-in standalone SHA-256 shim is not approved by its module name. Avoid unrelated HTTP/JSON/random stdlib dependencies.
+Secret types must not expose generic Debug/Display/Clone, logging or unrestricted serialization. Use reviewed zeroization and guarded/locked memory mechanisms, minimize copies/lifetimes, and test protection failures and cleanup. Ordinary Vec or String storage, Drop alone, and a Rust implementation do not satisfy PROJECT §4.5. Freeze panic/unwind/abort behavior and recovery: abort or process death can bypass destructors, and no authority or consumption guarantee may depend solely on Drop.
+
+Preserve repository snake_case_t types and PascalCase constants with narrow documented allowances for Rust naming lints (non_camel_case_types and non_upper_case_globals). Keep required upstream trait/type/interface spelling at documented boundaries; do not globally suppress warnings or weaken unsafe restrictions to satisfy naming checks.
 
 ## Dependencies and mandatory design gates
 
@@ -63,7 +66,7 @@ Gate IDs describe required design packages, not approved decisions. Allocate uni
 
 | Gate | Required reviewed, owner-approved design before affected implementation |
 |---|---|
-| G1 — toolchain/runtime/FFI | Compiler/LLVM/runtime pin, minimum qualified language subset, binding inventory, secret ownership/cleanup, reproducible inputs and Debian build/deployment recipe; compatibility/threat limits. Missing features need bounded upstream work or approved scope/pin change. |
+| G1 — toolchain/dependencies/unsafe | Exact stable Rust/Cargo/std/target/linker pins, edition/MSRV, workspace/lockfile and offline input recipe, dependency features/provenance/build scripts/macros, transitive unsafe/native inventory and sound safe adapter contracts; secret ownership/cleanup, panic/abort policy, reproducible inputs and Debian build/deployment recipe. Missing support needs bounded dependency/toolchain proposals, qualification and review. |
 | G2 — wire/schema/hash | Exact versioned contract/commit fields/types; deterministic CBOR ordering, numbers, text, tags, lengths and resource limits; duplicate/unknown/malformed rejection; COSE_Sign1 header/tag/algorithm/key ID/external-AAD/domain separation; signing structure, hash preimage, parent order, genesis, merge/base-state and linked state; evolution/migrations and published valid/invalid vectors. |
 | G3 — identity/auth/vault/IPC | Trusted user/app/install/executable/session identity source; authenticated key IDs/certificates/enrollment/rotation/recovery; available fresh authenticated approval before M5; exact bytes/head/epoch/request binding, approval expiration/replay/one-use signing; service credentials/roles/protocol; encrypted key format, KDF limits/calibration, memory/core/ptrace/lock policy. No arbitrary signing or trust in bare UID/display names. |
 | G4 — storage/anchors/recovery | Backend, atomic objects/index boundaries, heads/epochs/revocations/one-shot reservations, serialized writers, pending/confirmed freshness, crash points/integrity; actual rollback-resistant anchor and assumptions; genesis, lost/corrupt anchor, stale backup/tail/index restoration and safe recovery. Another file on the same restorable disk is not independent freshness proof. Do not accidentally require TPM/external hardware foundationally. |
@@ -92,10 +95,10 @@ Peer UID alone does not establish trusted role or human approval. Validate servi
 Follow PROJECT §13 ownership; freeze practical module composition under G1.
 
 - core/contract_format/: schema/profile/envelope and vectors (snake_case directory; canonical external service names remain hyphenated).
-- core/identityd/, core/vaultd/, core/contractd/, core/policyd/, core/registryd/: substantive Stasha logic and approved process boundaries.
-- core/native/: narrow provider/OS headers/adapters with an inventory and no policy duplication.
-- toolchains/stasha/: pinned source dependency, not generated binaries or unreviewed upstream edits.
-- build/scripts/qualify_m2_stasha.sh, build/scripts/build_m2_core.sh, tests/m2/run_m2_tests.sh: proposed new entry points Claude must implement/document.
+- core/identityd/, core/vaultd/, core/contractd/, core/policyd/, core/registryd/: substantive safe Rust logic and approved process boundaries.
+- core/native/: narrow safe provider/OS adapter APIs, isolated reviewed unsafe/FFI and no policy duplication.
+- Cargo.toml, Cargo.lock and qualified toolchain/package manifests: workspace and fixed inputs; generated binaries/target directories remain outside tracked source. Stasha is no longer a submodule.
+- build/scripts/qualify_m2_rust.sh, build/scripts/build_m2_core.sh, tests/m2/run_m2_tests.sh: proposed new entry points Claude must implement/document.
 - tests/m2/: unit/vector, independent native/encoding oracle, IPC/process, fault-injection and harness-sensitivity tests.
 - packaging/ and security/: core package definitions, approved users/roles and confined service deployment inside disposable environments only.
 - .github/workflows/m2_checks.yml: pinned inputs/actions, Debian amd64 checks, strict missing-tool/test/evidence failures, bounded caches and no production secrets.
@@ -109,9 +112,9 @@ Record state, owner, base/target, gates, evidence and reviewer for each package.
 
 | ID / initial state | Dependencies | Output and exit |
 |---|---|---|
-| M2-001 / READY | Language/submodule request, branch/research | Pinned compiler/runtime qualification on disposable Debian 13 amd64; real candidate-provider FFI probes and test-oracle controls; hashes, subset and gaps. Probes are unprivileged feasibility work, not service deployment or schema approval. |
+| M2-001 / READY | Memory-safe compiled-language request, branch/Rust research | Pinned Rust/Cargo/workspace/dependency qualification on disposable Debian 13 amd64; safe-core lint controls, real candidate-provider/adapter probes, unsafe/native inventory and test-oracle controls; hashes, supported features and gaps. Probes are unprivileged feasibility work, not service deployment or schema approval. |
 | M2-002 / READY | ADR 0001; M2-001 informs G1 | Concrete G1–G6 ADR/interface/vector/verification packages, alternatives, independent review and owner decisions. Can start while qualification proceeds. Exit only after required approvals; staged approval cannot waive another gate. |
-| M2-003 / DRAFT | G1/G2 and relevant G3 | Stasha strict schema/COSE verifier, deterministic bytes/hash/signature vectors, provider integration and hostile parser evidence; signature validity is separate from current authorization. |
+| M2-003 / DRAFT | G1/G2 and relevant G3 | Safe Rust strict schema/COSE verifier, deterministic bytes/hash/signature vectors, provider integration and hostile parser evidence; signature validity is separate from current authorization. |
 | M2-004 / DRAFT | G1/G3 and key retention under G6 | Identity/authority registry, encrypted vault and exact-proposal signing. Real-provider protection, error, user separation, temporary-authority and approval-replay tests through an approved trusted development auth path. |
 | M2-005 / DRAFT | G2–G5, M2-003/004 interfaces | Current authorization and ECR genesis/successor/temporary/explicit-merge admission, immutable objects, exact delta/state, atomic pending indexes and expected head/epoch serialization. |
 | M2-006 / DRAFT | G4–G6, M2-005 | Lifetime/one-shot/delegation/revocation, lifecycle gaps, clock/key invalidation, crash/tail/index/anchor rollback recovery, locked/unavailable/full/unknown denial, core fresh forward-restore. |
@@ -126,8 +129,8 @@ All criteria require exact source/compiler/runtime/dependency identities, enviro
 
 | ID | Positive / negative controls and exit evidence |
 |---|---|
-| A01 — pin/build/language | Fresh pinned checkout builds/runs on Debian 13 amd64, hashes recorded, representative core executes at O0/O2. Core responsibilities are substantive .sts; native inventory contains no shadow policy/ECR core. |
-| A02 — test oracle | Fresh unique image executed, nonzero expected test count, all statuses checked. Syntax/link/assertion failure, zero tests and stale output fail. Compilation alone is no PASS; unsupported FFI observation flags are no general coverage evidence. |
+| A01 — pin/build/language | Fresh locked workspace builds/runs on Debian 13 amd64 with exact Rust/Cargo/std/dependency/native hashes. Representative core executes in debug/release profiles, both with overflow checks enabled; record actual optimization/panic settings. Domain crates contain substantive .rs with forbid(unsafe_code); controlled unsafe insertion must fail compilation. Reviewed dependency/adapter inventory contains no shadow policy/ECR core. |
+| A02 — test oracle | Fresh isolated Cargo target directory; tests actually executed with nonzero expected counts and no required ignored/filtered/skipped tests. Syntax/link/assertion failure, zero tests, compile-only (--no-run) and stale evidence fail. Independent provider/vector controls, malformed-input fuzzing and unsafe adapter tooling have exact versions and limits; tooling absence cannot count as a safety PASS. |
 | A03 — canonical envelope | Published valid contract/COSE/signature/hash bytes match independent oracle. Reject changed fields, duplicate/unknown keys, wrong headers/algo/domain, disallowed/nonminimal/indefinite encoding, malformed length/depth/text, trailing data and oversized inputs under G2. No prose-only signing. |
 | A04 — identity/key class | Two synthetic user/key hierarchies work within scope; reject unauthenticated/substituted keys, wrong owner/app/install/executable/session/resource, uncertified rotation, temporary persistent grant and delegated expansion. New key never silently becomes old identity. |
 | A05 — vault/approval | Real-provider encrypted key round trip and authorized signing; metadata/ciphertext/tag tampering, wrong credentials, KDF bounds, locked vault, canceled/stale/forged/wrong-byte/head/epoch/reused approval and unauthorized caller deny. Test memory/allocator/lock/core/trace behavior and protection errors under G3; no secrets in evidence. |
@@ -146,32 +149,24 @@ Fuzz bounded parsing/DAG/IPC and preserve reproductions. Verify sensitivity with
 
 ## Build and verification entry points
 
-At preparation time only upstream interfaces exist; Claude implements the proposed cham3 scripts. Capture actual commands/package versions rather than presenting this outline as executed verification.
+No Rust workspace or M2 scripts exist at this scope-change baseline. Claude implements the proposed interfaces; this outline is not executed product verification. Install dependencies only inside a disposable Debian 13 amd64 environment, using authenticated exact package inputs frozen under G1. Record rustc -Vv, cargo -V, std/target/linker/native versions, package hashes, feature graph and Cargo.lock digest.
 
-Repository-root checkout/identity commands:
-
-~~~sh
-git submodule update --init toolchains/stasha
-git -C toolchains/stasha rev-parse HEAD
-git -C toolchains/stasha submodule update --init extlib/llvm
-git -C toolchains/stasha ls-tree HEAD extlib/llvm
-~~~
-
-In a disposable Debian 13 amd64 environment, follow the pinned upstream workflow: build pinned LLVM/LLD, explicitly build pinned Clang/resource headers, then use its driver pair for Stasha/runtimes. make llvm alone does not establish all qualification inputs. Bootstrap dependency installation happens only in the disposable environment. Never substitute host Homebrew LLVM or assume distro LLVM matches LLVM 23.
-
-After the pinned toolchain exists, upstream interfaces inside toolchains/stasha are:
+Once the workspace and dependencies are prepared, required Cargo operations include:
 
 ~~~sh
-python3 scripts/verify_llvm_toolchain.py --llvm-build build/llvm --require-clang --output build/qualification/toolchain.json
-bash scripts/qualify_linux.sh ./bin/stasha build/qualification
+cargo metadata --locked --offline --format-version 1
+cargo build --workspace --frozen
+cargo build --workspace --release --frozen
+cargo test --workspace --frozen
+cargo test --workspace --release --frozen
 ~~~
 
-Set exact pinned CC/CXX/LLVM_BUILD and independently recorded C oracle as its workflow does; build tests/cinterop/build/libcinterop_support.a first. Review runtime/ABI sidecars and selected stdlib dependency footprint. Ignore generated artifacts.
+Use an isolated CARGO_TARGET_DIR under ignored out/ for each verification run. Frozen requires both a fixed lockfile and already available dependency sources. Dependency acquisition/vendoring is a separate authenticated, recorded preparation step; do not let build scripts fetch uncontrolled inputs. Freeze and check overflow-checks = true for release and custom profiles too, and explicitly record panic strategy. Add format/lint checks with pinned tool versions and targeted naming allowances.
 
 Required future repository interfaces (create/document, not yet runnable):
 
 ~~~sh
-sh build/scripts/qualify_m2_stasha.sh
+sh build/scripts/qualify_m2_rust.sh
 sh build/scripts/build_m2_core.sh
 sh tests/m2/run_m2_tests.sh unit
 sh tests/m2/run_m2_tests.sh integration
@@ -180,14 +175,7 @@ sh tests/m2/run_m2_tests.sh packaging
 sh tests/m2/run_m2_tests.sh harness
 ~~~
 
-Dispatcher must fail unknown suites, missing prerequisites, compile/link/runtime failures, stale output, required skips/zero tests, missing evidence and failed controls. Use unique output and validate compilation and execution. Ordinary single-file tests need separate execution:
-
-~~~sh
-./toolchains/stasha/bin/stasha test tests/m2/example_unit.sts -o out/m2/example_unit_test
-./out/m2/example_unit_test
-~~~
-
-The example path is illustrative, not an existing test. Proper harness verifies fresh identity/count/exit; bounded observation flags are not native-provider memory/coverage proof.
+Dispatcher must fail unknown suites, missing prerequisites, compile/link/runtime failures, stale output, required skips/zero tests, missing evidence and failed controls. Cargo test normally compiles and executes; --no-run does not execute and cannot satisfy acceptance. Validate suite inventory/counts and exit statuses rather than accepting a zero-test Cargo success. Use exact toolchain and native-provider fixtures; record Miri/sanitizer/fuzzer availability and limits without treating them as proof of the entire dependency graph.
 
 ## Security and failure behavior
 
@@ -195,20 +183,20 @@ Use disposable Debian environments and synthetic keys/users for service/package/
 
 Mandatory denial does not wait for ECR closure evidence. Report gaps under G5 and keep unresolved authority denied; never issue background user signatures, infer complete history or reset uncertain consumption. New authority needs durable verified signed admission/current validity; real resources need enforcement confirmation.
 
-Compiler traps/service crashes cannot leave continuing expanded authority or falsely confirmed state. Freeze supervisor/recovery/freshness behavior; do not weaken checks to accommodate FFI/compiler limits.
+Panics/aborts/service crashes cannot leave continuing expanded authority or falsely confirmed state. Freeze supervisor/recovery/freshness behavior; do not weaken checks to accommodate unsafe/FFI/compiler limits.
 
 ## Completion, review and handoff
 
 - Record each package's exact base/target, owner, changes, tests/controls/environment, gaps and next action under [WORKFLOW.md](../engineering/WORKFLOW.md), [ORCHESTRATION.md](../agents/ORCHESTRATION.md) and templates.
 - Author cannot independently approve sensitive designs/code/tests. Route exact candidates to Codex, resolve findings and repeat affected review/checks.
 - Backend work cannot be READY before gates; M2 cannot be DONE with mandatory NOT_RUN/BLOCKED or missing security review.
-- Final handoff includes .sts/native ownership inventory, provider/wire/storage/anchor decisions, A01–A15 evidence, package/runtime footprint, pin/provenance, exact implementation/review/integration commits and later-milestone obligations.
+- Final handoff includes .rs/unsafe/native ownership inventory, provider/wire/storage/anchor decisions, A01–A15 evidence, package/runtime footprint, pin/provenance, exact implementation/review/integration commits and later-milestone obligations.
 - Merge/push/release require applicable owner authorization and gates. This request prepares the task branch and packet, not publication.
 
 ## Current decisions / blockers / next action
 
-Approved: Stasha core and pinned submodule; ADR 0001 scoped architecture and immediate denial; repository workflow/security/naming.
+Owner-authorized scope: memory-safe compiled core; Rust selected for the implementation assignment and Stasha submodule removed for now; ADR 0001 scoped architecture and immediate denial; repository workflow/security/naming.
 
-Pending: G1–G6 detailed designs and Debian-specific qualification. The upstream Ubuntu receipt closes neither.
+Pending: G1–G6 detailed designs and Debian-specific Rust/dependency qualification. Historical Stasha/Ubuntu receipts qualify neither Rust nor M2.
 
 Next: Claude begins M2-001/M2-002 on this branch, preserving preparation commits; produce useful qualification/probes/designs, present exact independently reviewed choices for owner approval, then continue each admitted dependency through M2-008 without inventing approval or reducing the full milestone.

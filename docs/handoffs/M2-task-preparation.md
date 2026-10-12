@@ -1,5 +1,7 @@
 # Handoff: M2 task preparation
 
+Historical preparation record: the 2026-10-12 owner scope change supersedes the Stasha assignment and submodule. The [Rust transition handoff](M2-rust-transition.md) records current preparation. Checks below remain evidence only for their exact earlier candidates.
+
 - **State:** DONE for branch/submodule/research/task/prompt preparation, independently APPROVED. Product M2 remains DRAFT; READY starting packages are M2-001 and M2-002.
 - **Role / provider:** Codex coordinator/researcher/documentation implementer; intended product implementer Claude Code; independent preparation/architecture-security reviewer assigned separately.
 - **Task authority:** Owner's 2026-10-12 request for M2 branch, full task, Claude prompt and Stasha core, followed by explicit submodule request; PROJECT.md and approved ADR 0001.

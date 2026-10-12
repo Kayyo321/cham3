@@ -100,10 +100,16 @@ Do not update this status based on plans, generated code claims, or chat summari
 - **2026-10-12 scoped adoption APPROVED:** Independent [architecture/security review](reviews/ecr_adr_0001_adoption_review.md) approved exact candidate `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644`, with F1 resolved. The owner then explicitly answered “Approve this scope and integrate locally”, approving ADR 0001, the mandatory-denial lifecycle rule, `PROJECT.md` §5.7 / Phase 2, and ECR as a required M2 pillar. Task: [ECR-ADR-001-ADOPTION](tasks/ecr_adr_0001_adoption.md). Finalization `8c3ab8028c7d7255debee58af988218d0eaa35bf` was independently APPROVED and fast-forwarded into local `main`; formatting and local-link checks PASS. Evidence: [adoption handoff](handoffs/ecr_adr_0001_adoption_handoff.md). Remote publication NOT_RUN; the old proposal review remains historical.
 - Documentation only: ECR implementation and runtime verification are **NOT_RUN**. Detailed lifecycle-evidence, schema/storage, retention/privacy, authentication/identity, and anti-replay/recovery designs remain implementation gates. No unrelated milestone state or historical evidence is changed.
 
-## M2 task preparation — 2026-10-12
+## M2 task preparation — 2026-10-12 (historical language assignment)
 
 - Owner requested a new M2 task branch, complete implementation specification and Claude prompt, with the core in Stasha and Stasha added as a submodule.
 - Preparation branch: codex/m2-cryptographic-contract-core, base aa843f7ac19398f580f3577ba047300971ba6095. [Task](tasks/M2-cryptographic-contract-core.md), [Stasha research](research/M2_stasha_readiness.md), [Claude prompt](prompts/m2_claude_implementation.md), [preparation handoff](handoffs/M2-task-preparation.md).
 - toolchains/stasha is pinned to 5ada5de229df1255cd9b64ab0e28e94ae3d754b1 (source 0.2.0-dev, ABI 11). Exact upstream Ubuntu x86-64 qualification evidence was inspected and selected receipts retained in [M2 planning evidence](evidence/M2-planning/README.md). Pinned Debian/compiler/provider/M2 verification remains NOT_RUN.
 - Full M2 backend implementation is DRAFT pending ADR 0001's detailed design gates. M2-001 qualification and M2-002 concrete designs are READY. This prepares Claude's assignment; no contract/vault/ECR implementation or new full-system enforcement claim.
 - Preparation DONE: [independent review](reviews/M2-task-preparation.md) APPROVED exact candidate c28499c88d2b2e0e73903e9ba6b2b899668d4973 with no findings. Formatting, relative-link, JSON, receipt consistency and submodule-pin checks PASS; unresolved design approvals and product verification remain pending.
+
+## M2 language scope change — 2026-10-12
+
+- The owner superseded the Stasha assignment with a memory-safe compiled-language requirement and requested removal of the submodule for now. Rust is selected for the revised implementation assignment; toolchains/stasha and its .gitmodules registration have been removed.
+- Current [task](tasks/M2-cryptographic-contract-core.md), [Claude prompt](prompts/m2_claude_implementation.md), [Rust research](research/M2_rust_readiness.md) and [transition handoff](handoffs/M2-rust-transition.md) supersede earlier Stasha instructions. Previous research/receipts/reviews remain historical at their stated exact commits.
+- Preparation revision is IN_REVIEW. Full M2 remains DRAFT; M2-001/M2-002 remain READY. Rust/Debian/provider/product verification is NOT_RUN; ECR scope, security requirements and G1–G6 design approvals are unchanged.
