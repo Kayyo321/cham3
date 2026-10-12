@@ -1,0 +1,18 @@
+[package]
+name = "cham3_vaultd"
+description = "Encrypted signing vault: key objects, authorized unlock and exact-proposal signing (cham3-vaultd)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+# No doctests: every executed suite must contain real tests (tests/m2/run_m2_tests.sh
+# rejects zero-test suites).
+[lib]
+doctest = false
+
+[dependencies]

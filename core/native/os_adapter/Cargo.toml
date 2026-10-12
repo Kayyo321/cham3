@@ -1,0 +1,21 @@
+[package]
+name = "cham3_os_adapter"
+description = "Narrow safe Linux adapter for cham3 core services: CSPRNG, process hardening, memory locking and peer credentials."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# This adapter calls only safe rustix APIs and therefore forbids unsafe code itself.
+# rustix's internal unsafe/raw-syscall code is inventoried with the other dependencies.
+[lints]
+workspace = true
+
+# No doctests: every executed suite must contain real tests (tests/m2/run_m2_tests.sh
+# rejects zero-test suites).
+[lib]
+doctest = false
+
+[dependencies]
+rustix = { workspace = true }

@@ -1,0 +1,24 @@
+# cham3 M2 Cargo configuration (PROPOSED G1, docs/decisions/0003_m2_rust_toolchain_dependencies.md).
+#
+# Dependency sources come only from Debian 13 librust-*-dev packages installed under
+# /usr/share/cargo/registry (authenticated by APT). crates.io is never contacted.
+# Debian's registry entries carry a placeholder package checksum, so per-file source
+# digests are pinned separately in build/m2/crate_sources.sha256 and checked by
+# build/scripts/qualify_m2_rust.sh.
+[source.crates-io]
+replace-with = "debian_registry"
+
+[source.debian_registry]
+directory = "/usr/share/cargo/registry"
+
+[net]
+offline = true
+
+[build]
+# Formally verified fiat-crypto field arithmetic for curve25519-dalek: no SIMD
+# intrinsics/unsafe backend and no curve25519-dalek-derive procedural macro.
+# Do not override with RUSTFLAGS; build scripts verify the selected backend.
+rustflags = ["--cfg", "curve25519_dalek_backend=\"fiat\""]
+
+[term]
+color = "never"

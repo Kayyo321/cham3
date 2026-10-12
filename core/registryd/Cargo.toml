@@ -1,0 +1,18 @@
+[package]
+name = "cham3_registryd"
+description = "Eternal Contract Repository: immutable signed DAG, admission, indexes, lifecycle and recovery (cham3-registryd)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+# No doctests: every executed suite must contain real tests (tests/m2/run_m2_tests.sh
+# rejects zero-test suites).
+[lib]
+doctest = false
+
+[dependencies]

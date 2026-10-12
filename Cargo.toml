@@ -1,0 +1,90 @@
+# cham3 M2 Rust workspace.
+#
+# Status: M2-001 qualification candidate under the PROPOSED G1 design
+# (docs/decisions/0003_m2_rust_toolchain_dependencies.md). Domain crates are safe Rust
+# with crate-level #![forbid(unsafe_code)]; unsafe code is confined to
+# core/native/secure_memory. Dependency sources are Debian 13 librust-*-dev packages
+# (see .cargo/config.toml and build/m2/debian_packages.txt); builds are offline.
+[workspace]
+resolver = "3"
+members = [
+    "core/contract_format",
+    "core/identityd",
+    "core/vaultd",
+    "core/contractd",
+    "core/policyd",
+    "core/registryd",
+    "core/native/secure_memory",
+    "core/native/os_adapter",
+    "core/probes/provider_probe",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "AGPL-3.0-only"
+publish = false
+
+# Exact versions. Only the Debian-packaged version of each crate is available to the
+# offline build, and Cargo.lock records the resolution.
+[workspace.dependencies]
+ed25519-dalek = { version = "=2.1.1", default-features = false, features = ["std", "zeroize"] }
+sha2 = { version = "=0.10.8", default-features = false, features = ["std"] }
+chacha20poly1305 = { version = "=0.10.1", default-features = false }
+argon2 = { version = "=0.5.3", default-features = false, features = ["zeroize"] }
+zeroize = { version = "=1.8.1", default-features = false }
+subtle = { version = "=2.6.1", default-features = false, features = ["std"] }
+rustix = { version = "=0.38.37", default-features = false, features = ["std", "use-libc-auxv", "mm", "param", "process", "net", "rand"] }
+# Test-only.
+proptest = { version = "=1.6.0", default-features = false, features = ["std"] }
+ciborium = { version = "=0.2.2", default-features = false, features = ["std"] }
+
+# Workspace lints. Domain crates opt in with `lints.workspace = true` and also carry
+# #![forbid(unsafe_code)] in their crate roots. Native adapter crates set their own.
+#
+# Naming: the repository requires snake_case_t type names and PascalCase constants
+# (AGENTS.md). rustc's non_camel_case_types and non_upper_case_globals lints contradict
+# that convention, so exactly those two lints are allowed; non_snake_case stays a hard
+# error and tests/m2/naming/check_rust_naming.py enforces the repository rule instead.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+non_camel_case_types = "allow"
+non_upper_case_globals = "allow"
+non_snake_case = "deny"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+print_stdout = "allow"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+indexing_slicing = "deny"
+arithmetic_side_effects = "deny"
+as_conversions = "deny"
+
+# Overflow checks are enabled in every profile. Release (deployment) aborts on panic;
+# no authority, consumption or secret-cleanup guarantee may depend on unwinding or
+# Drop. cargo test always builds the harness with unwinding; the deployed abort
+# behavior is verified separately against release binaries (tests/m2/fault/).
+[profile.dev]
+overflow-checks = true
+panic = "unwind"
+debug-assertions = true
+incremental = false
+
+[profile.release]
+overflow-checks = true
+panic = "abort"
+debug-assertions = false
+codegen-units = 1
+incremental = false
+lto = false
+strip = "none"
+
+[profile.test]
+overflow-checks = true
+
+[profile.bench]
+overflow-checks = true

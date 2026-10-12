@@ -1,0 +1,34 @@
+[package]
+name = "cham3_provider_probe"
+description = "M2-001 qualification probe: exercises candidate cryptographic providers and native adapters on the target."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Qualification probe only; not packaged or deployed. It exists to execute the real
+# candidate providers under the pinned toolchain in debug and release profiles.
+[lints]
+workspace = true
+
+[[bin]]
+name = "cham3_provider_probe"
+path = "src/main.rs"
+# Behavior is exercised as a subprocess by tests/m2/fault/; no unit tests in main.rs.
+test = false
+
+# No doctests: every executed suite must contain real tests (tests/m2/run_m2_tests.sh
+# rejects zero-test suites).
+[lib]
+doctest = false
+
+[dependencies]
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+chacha20poly1305 = { workspace = true }
+argon2 = { workspace = true }
+zeroize = { workspace = true }
+subtle = { workspace = true }
+cham3_secure_memory = { path = "../../native/secure_memory" }
+cham3_os_adapter = { path = "../../native/os_adapter" }

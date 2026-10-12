@@ -1,0 +1,54 @@
+# M2 Rust qualification inputs: explicitly requested Debian 13 (trixie) packages,
+# pinned to exact versions. Format: <package>=<version>, one per line.
+#
+# Status: PROPOSED under the G1 design gate (docs/decisions/0003_m2_rust_toolchain_dependencies.md).
+# These pins are a qualification candidate, not an approved toolchain. The complete
+# installed set (including transitive packages) and the .deb SHA-256 digests from
+# authenticated APT metadata are recorded by build/scripts/qualify_m2_rust.sh, which
+# fails if an installed version differs from this list.
+#
+# Consumers: build/m2/dev_container.dockerfile and build/scripts/qualify_m2_rust.sh.
+
+# Toolchain: compiler, Cargo, standard library, lint/format tools, linker inputs.
+rustc=1.85.1+dfsg1-1+deb13u1
+cargo=1.85.1+dfsg1-1+deb13u1
+libstd-rust-dev=1.85.1+dfsg1-1+deb13u1
+rust-clippy=1.85.1+dfsg1-1+deb13u1
+rustfmt=1.85.1+dfsg1-1+deb13u1
+gcc-14=14.2.0-19
+binutils=2.44-3
+libc6-dev=2.41-12+deb13u4
+
+# Runtime Rust dependency sources (installed under /usr/share/cargo/registry).
+librust-ed25519-dalek-dev=2.1.1+4.1.3+20240618+dfsg-9
+librust-sha2-dev=0.10.8-1+b2
+librust-chacha20poly1305-dev=0.10.1-1+b3
+librust-argon2-dev=0.5.3-1+b2
+librust-zeroize-dev=1.8.1-1
+librust-getrandom-dev=0.2.15-1
+librust-subtle-dev=2.6.1-1
+librust-rustix-dev=0.38.37-4
+
+# Test-only Rust dependency sources (never linked into deployed binaries).
+librust-proptest-dev=1.6.0-1
+librust-ciborium-dev=0.2.2-2
+
+# Independent test oracles (OpenSSL via python3-cryptography, libsodium via
+# python3-nacl/python3-argon2, and a separate CBOR implementation).
+python3=3.13.5-1
+python3-cbor2=5.6.5-1
+python3-cryptography=43.0.0-3+deb13u1
+python3-nacl=1.5.0-7
+python3-argon2=21.1.0-3
+
+# Analysis, static checks and packaging tools.
+valgrind=1:3.24.0-3
+shellcheck=0.10.0-1
+yamllint=1.37.1-1
+git=1:2.47.3-0+deb13u1
+dpkg-dev=1.22.22
+debhelper=13.24.2
+fakeroot=1.37.1.1-1
+lintian=2.122.0
+systemd=257.13-1~deb13u1
+adduser=3.152
