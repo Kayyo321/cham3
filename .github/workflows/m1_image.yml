@@ -12,11 +12,18 @@
 # Jobs: f2_native (real-archive signatures, exhaustive pin policy, closure by download
 # host, controls, real install + upgrade), m1_iso (packages, M1 ISO, image-m1 with the
 # ISO pool / installer payload audit) and m1_vm (live graphical session, disk install,
-# installed system). Started by hand because the ISO build and the VM gates take hours.
-# Results are development evidence only and prove no M2-M4 security enforcement.
+# installed system). They take hours, so they run on pushes to the M1 task branch that
+# change more than documentation, and by hand (workflow_dispatch, once this file is on
+# the default branch). Results are development evidence only and prove no M2-M4
+# security enforcement.
 name: m1_image
 
 on:
+  push:
+    branches:
+      - task/M1-bootable-desktop
+    paths-ignore:
+      - "docs/**"
   workflow_dispatch:
     inputs:
       reuse_iso_run_id:
@@ -161,7 +168,7 @@ jobs:
       # SECURITY: --privileged is acceptable only on GitHub-hosted ephemeral runners.
       - name: VM gates (privileged Debian 13 container)
         env:
-          CHAM3_VM_PHASES: ${{ inputs.vm_phases }}
+          CHAM3_VM_PHASES: ${{ inputs.vm_phases || 'live install installed' }}
         run: >-
           docker run --rm --privileged ${CHAM3_KVM_DEVICE:-}
           --env CHAM3_VM_PHASES
