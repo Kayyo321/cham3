@@ -17,5 +17,7 @@ Evidence for [M2](../../tasks/M2-cryptographic-contract-core.md). Each directory
 | [advisory_review_r4](advisory_review_r4/advisory_readme.md) | revision-4 inputs, newer tracker snapshot | pinned container, `m2_advisory_review.py` | Results byte-identical to revision 3; triage unchanged | Author-run; not independent clearance |
 | [m2_001_amd64_vm_28a8595](m2_001_amd64_vm_28a8595/) | 28a8595e627bcd092acaff4b8161522cf5d38f7f (revision 4.1, clean) | Same VM environment | Qualification PASS (harness 120), static gates, unchanged-input proof, the re-review's I04 probe at 9b1aa2b and 28a8595 | Author development evidence |
 | [m2_001_amd64_ci_28a8595](m2_001_amd64_ci_28a8595/) | 28a8595 (revision 4.1) | GitHub Actions m2/m1/m0 runs 38312981989 / 38312982028 / 38312982051 | All success | Author-retrieved CI evidence |
+| [m2_003_amd64_vm_4841039](m2_003_amd64_vm_4841039/) | 4841039d772ca923e09a55f1505f119317e73a91 (M2-003, clean) | Same VM environment | Qualification PASS (unit 60+60, format differential 5 642 cases / 0 mismatches, harness 128), static gates, unchanged-input and lock-delta proof, the pre-fix oracle reproduction, 10-seed exploration | Author development evidence |
+| [m2_003_amd64_ci_4841039](m2_003_amd64_ci_4841039/) | 4841039 (M2-003) | GitHub Actions m2/m1/m0 runs 38319998393 / 38319998397 / 38319998384 | All success | Author-retrieved CI evidence |
 
 Revision-1 amd64 evidence is in the independent review's archive (`docs/reviews/M2-001-002-codex-security-review-evidence.tar.gz` on `main`, publication commit 9cf8825).

@@ -1,0 +1,56 @@
+{
+  "cases": 5642,
+  "cases_per_object": 300,
+  "corpus_sha256": "b714ad731b3052d822b3046d1c3cca350f171c69788a5b42f6dabb5ff6d6477f",
+  "coverage": {
+    "envelope": 775,
+    "envelope_decode": 610,
+    "intrinsic": 109,
+    "ok": 496,
+    "payload_decode": 619,
+    "schema": 2786,
+    "signature": 247
+  },
+  "distinct_outcomes": 56,
+  "error": "4 outcome mismatches",
+  "mismatch_count": 4,
+  "mismatches": [
+    {
+      "actual": "err schema invalid_time",
+      "expected": "ok 42b8722a453590bcbb1f9e73cfd66a11e7d2338c8e3a4221d953f9062c0afe0b same",
+      "family": "structure",
+      "index": 1764,
+      "input_sha256": "42b8722a453590bcbb1f9e73cfd66a11e7d2338c8e3a4221d953f9062c0afe0b",
+      "kind": "key_certificate"
+    },
+    {
+      "actual": "err schema invalid_time",
+      "expected": "ok 5b4cc93a6661b62dbe9e326be1ee8dff155f3cd9b473bcb6d5e5a031dffb094a same",
+      "family": "structure",
+      "index": 2034,
+      "input_sha256": "5b4cc93a6661b62dbe9e326be1ee8dff155f3cd9b473bcb6d5e5a031dffb094a",
+      "kind": "key_certificate"
+    },
+    {
+      "actual": "err schema invalid_time",
+      "expected": "err intrinsic result_state_mismatch",
+      "family": "structure",
+      "index": 2429,
+      "input_sha256": "2769bcf1319975b38a83f49012eda5e784611346ddf7449bcd65aea22e33e94c",
+      "kind": "commit"
+    },
+    {
+      "actual": "err schema invalid_text",
+      "expected": "err schema list_not_strictly_ascending",
+      "family": "structure",
+      "index": 2487,
+      "input_sha256": "a105755c4c65f60420461a6ef11e8dea34ece29a41168f0db1cb0ca81d2c4275",
+      "kind": "commit"
+    }
+  ],
+  "probe": "/target/debug/cham3_format_probe",
+  "probe_sha256": "580034b151fa67c088e95a68b9177c2d7f9291982a61803c48fe251e64e136d8",
+  "result": "FAIL",
+  "seed": 3,
+  "total_tests": 5642
+}

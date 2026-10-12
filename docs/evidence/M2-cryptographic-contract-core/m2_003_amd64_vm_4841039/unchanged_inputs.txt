@@ -1,0 +1,45 @@
+$ git diff ecc8213 4841039 -- Cargo.lock
+diff --git a/Cargo.lock b/Cargo.lock
+index bfadd14..e2e6d07 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -87,6 +87,10 @@ dependencies = [
+ [[package]]
+ name = "cham3_contract_format"
+ version = "0.1.0"
++dependencies = [
++ "ed25519-dalek",
++ "sha2",
++]
+ 
+ [[package]]
+ name = "cham3_contractd"
+
+$ git diff --exit-code ecc8213 4841039 -- Cargo.toml build .github PROJECT.md docs tests/m2/vectors core/identityd core/vaultd core/contractd core/policyd core/registryd core/native core/probes
+exit 0
+
+$ diff of dependency_inventory.md against revision 4.1 (28a8595)
+exit 0
+
+$ git diff --stat ecc8213 4841039
+ Cargo.lock                                         |    4 +
+ core/contract_format/Cargo.toml                    |    9 +
+ core/contract_format/src/bin/cham3_format_probe.rs |  122 ++
+ core/contract_format/src/dcbor.rs                  |  516 ++++++++
+ core/contract_format/src/envelope.rs               |  268 ++++
+ core/contract_format/src/error.rs                  |  171 +++
+ core/contract_format/src/hash.rs                   |   58 +
+ core/contract_format/src/intrinsic.rs              |  200 +++
+ core/contract_format/src/lib.rs                    |  100 +-
+ core/contract_format/src/schema.rs                 | 1345 ++++++++++++++++++++
+ core/contract_format/src/text.rs                   |  176 +++
+ core/contract_format/tests/ecr_vectors.rs          |  376 ++++++
+ core/contract_format/tests/schema_mutations.rs     |  289 +++++
+ core/contract_format/tests/support/mod.rs          |  326 +++++
+ tests/m2/harness/test_m2_format_verifier.py        |  170 +++
+ tests/m2/lib/m2_harness.py                         |   83 ++
+ tests/m2/oracle/ecr_oracle.py                      |   13 +-
+ tests/m2/oracle/format_differential.py             |  273 ++++
+ tests/m2/run_m2_tests.sh                           |   10 +-
+ tests/m2/test_inventory.txt                        |   32 +
+ 20 files changed, 4529 insertions(+), 12 deletions(-)

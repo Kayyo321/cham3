@@ -211,7 +211,7 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 |---|---|---|---|
 | M2-001 | DONE (owner-approved G1, 2026-10-12) | Cargo workspace on Debian 13 Rust 1.85.1 with Debian-packaged offline crates; pinned qualification container and arm64 locks; per-file crate source manifest; domain skeletons with `#![forbid(unsafe_code)]`; `core/native/secure_memory` (only unsafe) and safe `core/native/os_adapter`; provider probe with published KATs and an independent OpenSSL/libsodium/libargon2 oracle; strict dispatcher with inventory-exact validation, harness canaries, lint controls, deployed-profile probes, naming checker, dependency/unsafe inventory, `qualify_m2_rust.sh`, `build_m2_core.sh`, `m2_checks.yml`. arm64 development qualification PASS; **amd64 qualification NOT_RUN** (owner instruction: reviewer runs it in the cloud). | Done: amd64 qualification PASS (author VM, CI and the reviewer's own run); independent re-review r5 APPROVE; G1 approved with a pre-M2-007 advisory re-check condition (ADR 0003). |
 | M2-002 | DONE (owner-approved G1–G6, 2026-10-12) | APPROVED ADRs [0003 (G1)](../decisions/0003_m2_rust_toolchain_dependencies.md), [0004 (G2)](../decisions/0004_m2_wire_schema_hash.md), [0005 (G3)](../decisions/0005_m2_identity_vault_ipc.md), [0006 (G4)](../decisions/0006_m2_storage_anchor_recovery.md), [0007 (G5)](../decisions/0007_m2_lifecycle_time_consumption.md), [0008 (G6)](../decisions/0008_m2_retention_privacy_update_identity.md); [wire format](../specs/m2_wire_format_v1.md), [CDDL](../specs/m2_ecr_v1.cddl), [service IPC](../specs/m2_service_ipc_v1.md); [ECR v1 vectors](../../tests/m2/vectors/ecr_v1/vectors_readme.md) from an independent oracle. | Done: independent re-review r5 APPROVE for every gate; owner decisions ADR 0006 §9.1 A, §9.2 C1; ADR 0007 §4 A, §8 B (trusted time never lowered; forward-error recovery deferred); ADR 0008 §3 A. |
-| M2-003 | READY → IN_PROGRESS (Claude Code) | Strict schema/COSE verifier | Gates G1, G2, G3 approved. Independent review of the exact candidate required. |
+| M2-003 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Candidate 4841039. | Independent review of the exact candidate; owner decision on erratum E1 (`list_length`). |
 | M2-004 | READY | — | Gates G1, G3, G6 approved; starts after M2-003 (one writer on this branch). |
 | M2-005 … M2-008 | DRAFT | — | Gates approved; each waits for its package dependencies (M2-003/004 interfaces, M2-005, M2-004–006, M2-003–007). |
 
@@ -268,6 +268,13 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
   - ADR 0007 §8 open question: **defer; never lower trusted time** in M2.
   - ADR 0008 §3: **Option A**, whole-account deletion only.
 - M2-001 and M2-002 are **DONE** ([completion handoff](../handoffs/M2-001-002-completion.md)). M2-003 is READY and started.
+
+### M2-003 implementation (2026-10-12)
+
+- Candidate **4841039d772ca923e09a55f1505f119317e73a91** on base ecc8213: verification layers 1–5 of wire format §1 in `core/contract_format` (safe Rust; no new dependency, Cargo.lock gains only edges to the pinned `ed25519-dalek` and `sha2`). Details, evidence and the review prompt: [M2-003 handoff](../handoffs/M2-003-format-verifier.md).
+- The differential check against the independent oracle found two oracle defects (trailing newline and non-ASCII digits accepted by its patterns), fixed in test code only; the vectors are unchanged.
+- Owner decision requested: erratum E1. Wire format §§6.1/7 say `list_too_long`, while the approved vectors use `list_length`, for too short as well as too long.
+- M2-004 is not started (one writer on this branch); it starts after the M2-003 review.
 
 ### Final M2 review requirement (owner instruction, 2026-10-12)
 

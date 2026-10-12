@@ -1,0 +1,38 @@
+diff --git a/tests/m2/oracle/ecr_oracle.py b/tests/m2/oracle/ecr_oracle.py
+index ccfd785..d0b8a51 100644
+--- a/tests/m2/oracle/ecr_oracle.py
++++ b/tests/m2/oracle/ecr_oracle.py
+@@ -309,9 +309,12 @@ def parse_and_verify(data, expected_kind, resolver):
+ 
+ # ------------------------------------------------------------------ schema
+ 
+-AppIdPattern = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+-OperationPattern = re.compile(r"^[a-z][a-z0-9_]*$")
+-TimePattern = re.compile(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$")
++# M2-003: patterns are matched with fullmatch and ASCII semantics. With match() and
++# "$", a trailing "\n" was accepted, and "\d" accepted non-ASCII digits (found by the
++# Rust differential check; wire format §§3.2 and 3.4 allow neither).
++AppIdPattern = re.compile(r"[a-z0-9][a-z0-9._-]*", re.ASCII)
++OperationPattern = re.compile(r"[a-z][a-z0-9_]*", re.ASCII)
++TimePattern = re.compile(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z", re.ASCII)
+ ForbiddenText = set(range(0x00, 0x20)) | set(range(0x7F, 0xA0)) | {0x061C, 0x200E, 0x200F, 0xFEFF} | set(range(0x202A, 0x202F)) | set(range(0x2066, 0x206A))
+ 
+ 
+@@ -364,7 +367,7 @@ def check_bool(value, path):
+ def check_time(value, path):
+     if not isinstance(value, str):
+         schema_error("wrong_type", path)
+-    match = TimePattern.match(value)
++    match = TimePattern.fullmatch(value)
+     if not match or len(value) != 20:
+         schema_error("invalid_time", path)
+     year, month, day, hour, minute, second = (int(part) for part in match.groups())
+@@ -386,7 +389,7 @@ def check_pattern_text(value, path, pattern, minimum, maximum):
+         schema_error("wrong_type", path)
+     if not minimum <= len(value.encode("utf-8")) <= maximum:
+         schema_error("value_out_of_range", path)
+-    if not pattern.match(value):
++    if not pattern.fullmatch(value):
+         schema_error("invalid_text", path)
+     return value
+ 

@@ -1,0 +1,21 @@
+dbc4f00bfd63c76da831145c198dc68fd3468d812cf43518899bbeae92c25324  out/m2/runs/unit_20261012T230340Z_1658/target_debug/debug/cham3_format_probe
+seed 100: PASS format-differential 5640 tests
+  cases 5640 mismatches 0 distinct 56 corpus 7ef446df2009b843
+seed 101: PASS format-differential 5644 tests
+  cases 5644 mismatches 0 distinct 55 corpus 671c07ec030628e8
+seed 102: PASS format-differential 5642 tests
+  cases 5642 mismatches 0 distinct 55 corpus 608e8d5efe3b297b
+seed 103: PASS format-differential 5637 tests
+  cases 5637 mismatches 0 distinct 55 corpus f4d9f74faefb2e69
+seed 104: PASS format-differential 5644 tests
+  cases 5644 mismatches 0 distinct 56 corpus 48ddc5bee0f2e911
+seed 105: PASS format-differential 5642 tests
+  cases 5642 mismatches 0 distinct 56 corpus 2b8a9a1cb5d62b8d
+seed 106: PASS format-differential 5641 tests
+  cases 5641 mismatches 0 distinct 55 corpus 333cd59f3d96cab5
+seed 107: PASS format-differential 5642 tests
+  cases 5642 mismatches 0 distinct 55 corpus 338318c4d321e8a1
+seed 108: PASS format-differential 5646 tests
+  cases 5646 mismatches 0 distinct 56 corpus c52f8acf82658661
+seed 109: PASS format-differential 5642 tests
+  cases 5642 mismatches 0 distinct 55 corpus a339600203db15a8
