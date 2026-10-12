@@ -1,0 +1,4 @@
+8d90a9586af542964610c835f29494dbafb5a2436ee639e74635803c7ce016c5  assets/branding/cham3-logo-icon-transparent.png
+27a26b7aa93ca7199f7188faddf4472f53dc6cfa38075aa0cdb3dec03b16c71f  assets/branding/cham3-logo-transparent.png
+b5b4c9d8aa112d1fd9bd905913670e110b3c251cd4b5113bc4bf6f625548771b  assets/branding/cham3-logo.png
+0477ddf70a68de9f6854c6a2b80fdf703bcb6b2fcab7c21932f0880a3344830a  assets/wallpapers/cham3_minimal_charcoal.png

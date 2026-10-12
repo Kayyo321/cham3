@@ -1,0 +1,13 @@
+test_missing_wallpaper_metadata_install_is_rejected (test_m1_static_packaged_paths.packaged_paths_fixture_t.test_missing_wallpaper_metadata_install_is_rejected) ... ok
+test_positive_control_is_consistent (test_m1_static_packaged_paths.packaged_paths_fixture_t.test_positive_control_is_consistent) ... ok
+test_session_without_selection_is_rejected (test_m1_static_packaged_paths.packaged_paths_fixture_t.test_session_without_selection_is_rejected) ... ok
+test_superseded_session_name_is_rejected (test_m1_static_packaged_paths.packaged_paths_fixture_t.test_superseded_session_name_is_rejected) ... ok
+test_superseded_wallpaper_name_is_rejected (test_m1_static_packaged_paths.packaged_paths_fixture_t.test_superseded_wallpaper_name_is_rejected) ... ok
+test_image_gate_names_match_packaging (test_m1_static_packaged_paths.packaged_paths_real_t.test_image_gate_names_match_packaging) ... ok
+test_rules_install_the_resolution_named_wallpaper (test_m1_static_packaged_paths.packaged_paths_real_t.test_rules_install_the_resolution_named_wallpaper) ... ok
+test_superseded_names_are_rejected_against_real_packaging (test_m1_static_packaged_paths.packaged_paths_real_t.test_superseded_names_are_rejected_against_real_packaging) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.001s
+
+OK

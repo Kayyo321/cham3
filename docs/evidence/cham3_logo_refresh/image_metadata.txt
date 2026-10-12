@@ -1,0 +1,16 @@
+/Users/jessicabruce/cham3/assets/branding/cham3-logo-icon-transparent.png
+  pixelWidth: 731
+  pixelHeight: 731
+  hasAlpha: yes
+/Users/jessicabruce/cham3/assets/branding/cham3-logo-transparent.png
+  pixelWidth: 1254
+  pixelHeight: 1254
+  hasAlpha: yes
+/Users/jessicabruce/cham3/assets/branding/cham3-logo.png
+  pixelWidth: 1254
+  pixelHeight: 1254
+  hasAlpha: no
+/Users/jessicabruce/cham3/assets/wallpapers/cham3_minimal_charcoal.png
+  pixelWidth: 3840
+  pixelHeight: 2160
+  hasAlpha: no
