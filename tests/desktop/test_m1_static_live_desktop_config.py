@@ -2,8 +2,10 @@
 
 Mirrors the M0 live-config suite but asserts the M1 contract values: trixie amd64,
 contrib/non-free/firmware archive areas, installable live debian-installer,
-firmware on, and cham3-full as the only package-list entry. Fixture controls
-show that the checker rejects the M0 config (positive control for the defect).
+firmware-binary on and firmware-chroot off (F2: the image installs the explicit
+cham3_firmware list, see test_m1_static_firmware.py), and cham3-full as the only
+package-list entry. Fixture controls show that the checker rejects the M0 config
+(positive control for the defect).
 """
 
 import os
@@ -84,8 +86,10 @@ def live_config_problems(config_text, package_list_text):
     if len(bootloaders) != 1 or not {"syslinux", "grub-efi"} <= set(bootloaders[0].split(",")):
         problems.append("bootloaders must include syslinux and grub-efi, found %r" % bootloaders)
 
-    for name in ("--firmware-chroot", "--firmware-binary"):
-        single(name, "true")
+    # F2 firmware decision: live-build does not install firmware packages itself
+    # (--firmware-chroot false); cham3_firmware.list.chroot installs the explicit set.
+    single("--firmware-chroot", "false")
+    single("--firmware-binary", "true")
     for name in ("--security", "--updates", "--apt-secure"):
         single(name, "true")
     for fragment in ForbiddenAptFragments:
@@ -189,7 +193,7 @@ class live_desktop_config_fixture_t(unittest.TestCase):
             "    --mode debian --distribution trixie --architecture amd64 \\\n"
             "    --archive-areas \"main contrib non-free non-free-firmware\" \\\n"
             "    --debian-installer live --binary-image iso-hybrid \\\n"
-            "    --bootloaders syslinux,grub-efi --firmware-chroot true --firmware-binary true \\\n"
+            "    --bootloaders syslinux,grub-efi --firmware-chroot false --firmware-binary true \\\n"
             "    --security true --updates true --apt-secure true --apt-recommends true \\\n"
             "    --mirror-bootstrap http://deb.debian.org/debian/ \\\n"
             "    --mirror-chroot http://deb.debian.org/debian/ \\\n"
@@ -207,8 +211,14 @@ class live_desktop_config_fixture_t(unittest.TestCase):
         problems = live_config_problems(m0, "cham3-base\n")
         self.assertTrue(any("--debian-installer" in p for p in problems), problems)
         self.assertTrue(any("--archive-areas" in p for p in problems), problems)
-        self.assertTrue(any("--firmware-chroot" in p for p in problems), problems)
+        self.assertTrue(any("--firmware-binary" in p for p in problems), problems)
         self.assertTrue(any("package list must contain only cham3-full" in p for p in problems), problems)
+
+    def test_firmware_chroot_true_is_rejected(self):
+        # Negative control for F2: live-build firmware scheduling is what fetched the b43 installers.
+        config = self.good_config().replace("--firmware-chroot false", "--firmware-chroot true")
+        problems = live_config_problems(config, "cham3-full\n")
+        self.assertTrue(any("--firmware-chroot" in p for p in problems), problems)
 
     def test_non_official_mirror_is_rejected(self):
         config = self.good_config().replace("http://deb.debian.org/debian/", "http://http.kali.org/kali/", 1)
