@@ -240,3 +240,21 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
   - ADR 0007 §4 and the new **§8** (time-bound strength);
   - ADR 0008 §3;
   - how G1's independent Debian check is to be obtained.
+
+### Re-review of revision 4 and revision 4.1 (2026-10-12)
+
+- Independent re-review of 9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a / 70c431c13a1c76fd2948e6c8f0ae33b720618043 on `review/m2-001-002-r4-security` at 3a3b5d17ddc44b96c3fcc8265c5b337066aff0fb:
+  - **APPROVE for owner consideration** for G2, G3, G4, G5 and G6. These are design recommendations, not owner approvals.
+  - **CHANGES_REQUESTED** for M2-001 and G1, only because the reviewer's own Debian tracker retrieval was BLOCKED.
+  - R13, R14 and R15 PASS. Low, nonblocking note I04 on G4 model-test coverage.
+- Revision 4.1 (candidate **28a8595e627bcd092acaff4b8161522cf5d38f7f**, test/oracle-only) answers I04 ([author response](../reviews/M2-001-002-finding-resolutions-r4.md); [handoff](../handoffs/M2-001-002-rereview-r5.md)).
+- The owner now offers a desktop environment where the independent reviewer can perform the Debian check with its own retrieval.
+- No gate is owner-approved; M2-003..M2-008 remain DRAFT.
+
+### Final M2 review requirement (owner instruction, 2026-10-12)
+
+- When M2 implementation is complete (M2-003..M2-008, before M2 is declared DONE), the owner will run the final independent security review with the **Codex Security plugin skill**.
+- The implementer preparing the final M2 handoff must:
+  1. remind the owner of this;
+  2. write the final review prompt so that the reviewer uses that skill in addition to the standard review steps, and records the skill's exact name/version, the commands it ran and every finding in its review record.
+- Findings from the skill are handled like any other independent-review finding (PASS/FAIL/NOT_RUN/BLOCKED, no self-approval).
