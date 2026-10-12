@@ -1,0 +1,3 @@
+[submodule "toolchains/stasha"]
+	path = toolchains/stasha
+	url = https://github.com/Kayyo321/stasha.git

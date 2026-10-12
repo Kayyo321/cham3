@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "llvm_revision": "348061d58dfe5e59027a0d6d51f916197cdd8d68",
+  "llvm_version": "23.0.0git",
+  "source_root": "/home/runner/work/stasha/stasha/extlib/llvm/llvm",
+  "build_root": "/home/runner/work/stasha/stasha/build/llvm",
+  "targets": [
+    "X86",
+    "AArch64"
+  ],
+  "projects": [
+    "clang",
+    "lld"
+  ],
+  "assertions": "OFF",
+  "rtti": "NO",
+  "host_target": "x86_64-unknown-linux-gnu",
+  "llvm_config_sha256": "3b1c8fadef08d077593bda449b9838e4a717cbd89d2e4c2808bd122f732d5954",
+  "cmake_cache_sha256": "57f014f2043bf63ce885873626c83a04160cea424d60d205084ded605e203112",
+  "lld_archives": {
+    "liblldCOFF.a": 2463308,
+    "liblldCommon.a": 374310,
+    "liblldELF.a": 7374536,
+    "liblldMachO.a": 2478062,
+    "liblldMinGW.a": 93390,
+    "liblldWasm.a": 1179444
+  },
+  "scope": "source/build identity receipt; not a reproducible-build or semantic-test claim",
+  "clang": {
+    "path": "/home/runner/work/stasha/stasha/build/llvm/bin/clang-23",
+    "sha256": "ef8541f14441025912971481a00afd1b153564714193a1c3bd3297773024133c",
+    "version": "clang version 23.0.0git (https://github.com/llvm/llvm-project.git 348061d58dfe5e59027a0d6d51f916197cdd8d68)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /home/runner/work/stasha/stasha/build/llvm/bin",
+    "target": "x86_64-unknown-linux-gnu",
+    "resource_dir": "/home/runner/work/stasha/stasha/build/llvm/lib/clang/23",
+    "resource_headers": {
+      "stdint.h": {
+        "path": "/home/runner/work/stasha/stasha/build/llvm/lib/clang/23/include/stdint.h",
+        "sha256": "f43783466c93f77a6464274ebf18f9e4cc46f0d90770ddee2993c6cf39f7514f"
+      },
+      "stddef.h": {
+        "path": "/home/runner/work/stasha/stasha/build/llvm/lib/clang/23/include/stddef.h",
+        "sha256": "b3e62a046ddf28d09eedebe6eb9461cb7060e47cad2c69964b222c4eea10347e"
+      },
+      "stdarg.h": {
+        "path": "/home/runner/work/stasha/stasha/build/llvm/lib/clang/23/include/stdarg.h",
+        "sha256": "ce6e43d79dc89b50208ecf259b1ffd519f5a78cd3a2c7fcaac6386f376b89fef"
+      }
+    }
+  }
+}

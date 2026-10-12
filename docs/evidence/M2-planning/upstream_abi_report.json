@@ -1,0 +1,16 @@
+{
+  "compiler": "/home/runner/work/stasha/stasha/bin/stasha",
+  "sha256": "96bf909b497246c11a45204b558c6648ba84744be6775ac8e07863750587ebf3",
+  "c_compiler": "clang version 23.0.0git (https://github.com/llvm/llvm-project.git 348061d58dfe5e59027a0d6d51f916197cdd8d68)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /home/runner/work/stasha/stasha/build/llvm/bin\n",
+  "optimizations": [
+    {
+      "level": 0,
+      "output": "object layout: 79 cases passed\naggregate call ABI: 79 bidirectional/callback/indirect cases and 7 register pressure cases passed\n"
+    },
+    {
+      "level": 2,
+      "output": "object layout: 79 cases passed\naggregate call ABI: 79 bidirectional/callback/indirect cases and 7 register pressure cases passed\n"
+    }
+  ],
+  "rejections": 7
+}
