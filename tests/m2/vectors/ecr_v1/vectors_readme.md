@@ -1,6 +1,6 @@
 # ECR v1 published vectors
 
-- **Status:** PROPOSED G2 vectors, revision 3 after independent review 9cf8825 (R06–R08) and re-review 336f13b (R07-r2, R12, R13); revision 4 after re-review f451f2e changes only `journal_scenarios` (R14 key-naming interface) ([ADR 0004](../../../../docs/decisions/0004_m2_wire_schema_hash.md)); not approved. Regenerate only together with a reviewed change to [the wire format](../../../../docs/specs/m2_wire_format_v1.md).
+- **Status:** APPROVED with G2 (owner, 2026-10-12, after independent re-review bd081df; vectors at 28a8595). History: PROPOSED G2 vectors, revision 3 after independent review 9cf8825 (R06–R08) and re-review 336f13b (R07-r2, R12, R13); revision 4 after re-review f451f2e changes only `journal_scenarios` (R14 key-naming interface) ([ADR 0004](../../../../docs/decisions/0004_m2_wire_schema_hash.md)). Regenerate only together with a reviewed change to [the wire format](../../../../docs/specs/m2_wire_format_v1.md).
 - **Producer/oracle:** [tests/m2/oracle/ecr_oracle.py](../../oracle/ecr_oracle.py), an independent Python implementation (own deterministic CBOR encoder and strict decoder, libsodium Ed25519 via python3-nacl, cbor2 as a second canonical cross-check). It shares no code with the Rust crates.
 - **Synthetic material only:** every key seed is `SHA-256("cham3 m2 synthetic test key v1: " || label)` and every identifier is derived from a public label. These keys are published and must never sign anything outside tests.
 

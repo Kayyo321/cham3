@@ -1,11 +1,11 @@
 ; cham3 ECR wire schema, version 1 (CDDL, RFC 8610).
 ;
-; Status: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md), revision 3:
+; Status: APPROVED with G2 (owner, 2026-10-12, after independent re-review bd081df).
+; History: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md), revision 3:
 ; revised after the independent review at 9cf8825 (R06-R08) and the re-review at
 ; 336f13b (R07-r2, R12, R13). Revision 3 changes no type; it changes admission
 ; semantics (wire format 6.7, 6.11, 6.12) and documents the recovery binding below.
-; Not approved; implementation (M2-003) is gated on independent re-review and owner
-; approval.
+; The approval does not change the text; M2-003 implements it.
 ; Normative prose, limits and validation order: docs/specs/m2_wire_format_v1.md.
 ; Every item is encoded with the cham3_dcbor_v1 deterministic profile; maps are closed
 ; (unknown keys rejected) and optional keys are omitted, never null.
