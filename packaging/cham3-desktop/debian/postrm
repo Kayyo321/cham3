@@ -6,7 +6,7 @@
 set -e
 
 dumpcap_default_path=/usr/bin/dumpcap
-pin_listing_suffix="root root 754"
+pin_listing_suffix="root root 750"
 
 remove_dumpcap_override() {
     program=$(dpkg-divert --truename "${dumpcap_default_path}" 2> /dev/null) || program=${dumpcap_default_path}

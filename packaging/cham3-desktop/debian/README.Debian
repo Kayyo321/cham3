@@ -38,7 +38,7 @@ Packet capture (dumpcap)
   set-user-id root dumpcap when setcap is missing or fails. cham3-desktop
   removes that fallback:
     - debian/postinst pins a dpkg-statoverride (owner root, group root, mode
-      0754) on dumpcap.
+      0750) on dumpcap.
       While an override exists, wireshark-common's postinst changes nothing on
       the file, so the fallback cannot run on an upgrade, on dpkg-reconfigure
       wireshark-common, or when wireshark-common is installed after
@@ -47,7 +47,7 @@ Packet capture (dumpcap)
     - the same script runs when cham3-desktop is configured and, through a dpkg
       file trigger on /usr/bin/dumpcap, after any package installs, upgrades or
       removes that file. It clears the set-user-id and set-group-id bits, makes
-      the file root:wireshark mode 0754 (no access for others) and sets
+      the file root:wireshark mode 0750 (no access for others) and sets
       cap_net_admin,cap_net_raw=eip.
     - if the capabilities cannot be set, for example on a file system without
       capability support, dumpcap is left without any set-id bit and without
@@ -65,7 +65,10 @@ Packet capture (dumpcap)
   user to the group is a deliberate administrative step that lets that user
   capture the network traffic visible to the host, so treat it as a privilege.
   Once the override exists, the wireshark-common debconf answer install-setuid
-  (preseeded true in the image) no longer affects dumpcap.
+  (preseeded true in the image) no longer affects dumpcap, and
+  dpkg-reconfigure wireshark-common leaves the file as it is, including any
+  capabilities that were set earlier. Run dpkg-reconfigure cham3-desktop to
+  apply the policy again.
   Limits: this covers the file /usr/bin/dumpcap only. In the one dpkg run that
   installs wireshark-common and cham3-desktop together for the first time,
   Debian's own postinst can still set the bit if dpkg configures

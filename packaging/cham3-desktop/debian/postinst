@@ -7,12 +7,15 @@
 # missing or fails it falls back to a set-user-id root dumpcap. cham3 does not
 # accept that fallback, and dumpcap is not left set-user-id on any path:
 #
-#   1. A dpkg-statoverride (root root 0754) is pinned on dumpcap. While an
+#   1. A dpkg-statoverride (root root 0750) is pinned on dumpcap. While an
 #      override exists, wireshark-common's postinst changes nothing on the file
 #      (it only lists the override), so its set-user-id fallback cannot run
-#      during install, upgrade or dpkg-reconfigure, whatever the order in which
-#      dpkg configures cham3-desktop and wireshark-common. dpkg applies the
+#      during an upgrade, during dpkg-reconfigure wireshark-common, or when
+#      wireshark-common is installed after cham3-desktop. dpkg applies the
 #      override on every unpack, so a new dumpcap is never set-user-id either.
+#      The one gap is the dpkg run that installs both packages for the first
+#      time and configures wireshark-common first: its postinst can set the bit
+#      before the override exists, and step 2 clears it later in the same run.
 #      The override uses group root so that it never names the wireshark group:
 #      wireshark-common deletes that group when it is purged, and dpkg aborts
 #      when an override names an unknown group.
@@ -20,15 +23,16 @@
 #      trigger in debian/triggers, whenever a package installs, upgrades or
 #      removes /usr/bin/dumpcap. If dumpcap is installed it
 #        - removes the set-user-id and set-group-id bits,
-#        - makes it root:wireshark, mode 0754 (no access for others), creating
+#        - makes it root:wireshark, mode 0750 (no access for others), creating
 #          the system group when needed, and
 #        - sets only cap_net_admin,cap_net_raw=eip on it.
 #      If the capabilities cannot be set, dumpcap is left with no set-id bit and
 #      no file capabilities: capture is unavailable (fail closed), never root.
 #
-# It does nothing to dumpcap when it is not installed, and it never adds a user
-# to the "wireshark" group: membership is a deliberate per-user administrative
-# step.
+# When dumpcap is not installed it changes no file (it only registers the
+# override, which dpkg applies if wireshark-common is installed later). It never
+# adds a user to the "wireshark" group: membership is a deliberate per-user
+# administrative step.
 set -e
 
 dumpcap_default_path=/usr/bin/dumpcap
@@ -37,8 +41,8 @@ capture_caps=cap_net_admin,cap_net_raw=eip
 # The dpkg-statoverride pin: owner, group, mode (as dpkg-statoverride lists it).
 pin_owner=root
 pin_group=root
-pin_mode_argument=0754
-pin_mode_listed=754
+pin_mode_argument=0750
+pin_mode_listed=750
 
 report() {
     printf 'cham3-desktop: %s\n' "$1" >&2
@@ -113,7 +117,7 @@ enforce_dumpcap_policy() {
     if [ "${foreign_override}" = "no" ]; then
         if ensure_capture_group; then
             chown "root:${capture_group}" -- "${program}"
-            chmod u=rwx,g=rx,o=r -- "${program}"
+            chmod u=rwx,g=rx,o= -- "${program}"
         else
             report "could not create the system group ${capture_group}; ${program} is left without file capabilities"
         fi
