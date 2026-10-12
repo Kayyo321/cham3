@@ -14,10 +14,19 @@ the trusted value with its BOOTTIME (never raw realtime), so a restart in the sa
 resumes from the maximum and keeps counting with BOOTTIME. A new boot cannot measure
 elapsed time: trusted time starts no earlier than the last persisted trusted value.
 
+Stated limits (ADR 0007 section 5.7, revision 4, R15): lag behind actual time does not
+grow within a boot but accumulates across boots whose wall clock starts behind (bounded
+only by the unobserved intervals since trusted time last equalled actual time, not by
+the age of the latest floor), and an accepted forward error is never corrected, so an
+already-admitted future start can become eligible arbitrarily early. observed_clock_t
+and observed_start_eligible model owner option B of ADR 0007 section 8 (PROPOSED, not
+selected), which removes the second limit for starts.
+
 Status: PROPOSED G5 design (ADR 0007, not approved). Status of the real clock: NOT_RUN.
 """
 
 AnomalySeconds = 300
+AdmissionSkewSeconds = 300
 
 
 class floor_t:
@@ -87,3 +96,27 @@ def revision_2_high_water(start_realtime, start_boottime, observations):
     for realtime, boottime in observations:
         high = max(high, start_realtime + (boottime - start_boottime), realtime)
     return high
+
+
+def admission_timestamp_ok(clock, timestamp, boottime):
+    """ADR 0007 section 5: a commit timestamp must be within +-300 s of trusted now. It
+    bounds only the new commit's timestamp, never when an admitted start is reached."""
+    return abs(timestamp - clock.now(boottime)) <= AdmissionSkewSeconds
+
+
+class observed_clock_t(trusted_clock_t):
+    """Owner option B (ADR 0007 section 8, PROPOSED, not selected): CLOCK_BOOTTIME seconds
+    observed by cham3 across boots. Persisted with every floor and resumed from the
+    largest persisted value (same boot) or the last one (new boot); powered-off time and
+    wall-clock samples never advance it."""
+
+    def __init__(self, boot_id, boottime, floors=()):
+        super().__init__(boot_id, 0, boottime, floors)
+
+    def sample(self, realtime, boottime):
+        raise TypeError("the observed clock never takes wall-clock samples")
+
+
+def observed_start_eligible(effective_start, admitted_trusted, admitted_observed, trusted_now, observed_now):
+    """Option B start rule: the trusted-time rule and enough observed time since admission."""
+    return effective_start <= trusted_now and observed_now - admitted_observed >= effective_start - admitted_trusted

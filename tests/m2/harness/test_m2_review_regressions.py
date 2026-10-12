@@ -5,8 +5,12 @@ and r2_probes.py (re-review 336f13b appendix: R07-r2, R12) is replayed separatel
 against the repaired oracle and must now be rejected with the designated layer/code;
 positive controls show the unmodified or legitimately varied objects still pass. The
 journal-rule sensitivity tests inject a controlled defect into a copy of the oracle's
-journal model and require the published scenarios to detect it. The R09-r2 time
-counterexample is in test_m2_trusted_time.py; R01-r2 in test_m2_source_identity.py.
+journal model and require the published scenarios to detect it. Revision 4 (R14,
+re-review f451f2e) adds the recovery key-naming interface: the IPC specification's
+registryd table must route the naming record, agree with the oracle's interface model,
+and the model's role, durability and reconciliation rules are defect-tested. The time
+counterexamples (R09-r2, R15) are in test_m2_trusted_time.py; R01-r2 in
+test_m2_source_identity.py.
 """
 
 import copy
@@ -14,11 +18,14 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import unittest
 
 from m2_harness_support import RepoRoot
 
 OraclePath = os.path.join(RepoRoot, "tests", "m2", "oracle", "ecr_oracle.py")
+IpcSpecPath = os.path.join(RepoRoot, "docs", "specs", "m2_service_ipc_v1.md")
+RoleToken = re.compile(r"^(service:[a-z*]+|trusted_client|admin|fixture_consumer)$")
 VectorsPath = os.path.join(RepoRoot, "tests", "m2", "vectors", "ecr_v1", "vectors.json")
 
 
@@ -216,18 +223,152 @@ class review_regressions_t(unittest.TestCase):
         self.assertTrue(any("recovery_rejects_deleted_user" in failure for failure in failures), failures)
 
     def test_defect_old_keys_not_retired_is_detected(self):
-        original = self.oracle.journal_t.admit_record
-
         def keep_old_keys(journal, record):
             original(journal, record)
-            if record.get("record") == "recovery_keys":
-                journal.min_key_epoch = 0
-                for key in journal.keys.values():
-                    key.retired = False
-        failures = self.with_defect("admit_record", keep_old_keys,
+            journal.min_key_epoch = 0
+            for key in journal.keys.values():
+                key.retired = False
+        original = self.oracle.journal_t.admit_naming
+        failures = self.with_defect("admit_naming", keep_old_keys,
                                     {"recovery_rejects_stale_key", "recovery_rejects_abandoned_key"})
         self.assertTrue(any("recovery_rejects_stale_key" in failure for failure in failures), failures)
         self.assertTrue(any("recovery_rejects_abandoned_key" in failure for failure in failures), failures)
+
+
+    # ------------------------------------------------------------ R14: key-naming route
+
+    def registry_table(self):
+        with open(IpcSpecPath, "r", encoding="utf-8") as handle:
+            text = handle.read()
+        table = text.split("### cham3-registryd")[1].split("## 4.")[0]
+        rows = {}
+        for operations, roles in re.findall(r"^\| (.*?) \| (.*?) \|", table, re.M):
+            for operation in re.findall(r"`([a-z_]+)`", operations):
+                rows[operation] = {token for token in re.findall(r"`([^`]+)`", roles) if RoleToken.match(token)}
+        return rows
+
+    def test_r14_reviewer_static_gap_is_closed(self):
+        # The re-review's static reproduction asserted the gap; it must now find a
+        # registryd naming operation authorized for vaultd.
+        rows = self.registry_table()
+        self.assertTrue(any("recovery_keys" in operation for operation in rows), rows)
+        self.assertTrue(any("service:vaultd" in roles for roles in rows.values()), rows)
+
+    def test_r14_specification_matches_interface_model(self):
+        rows = self.registry_table()
+        self.assertEqual(rows["name_recovery_keys"], {"service:vaultd"})
+        self.assertEqual(rows["append_identity"], {"service:identityd"})
+        for operation, roles in self.oracle.RegistryModelOperations.items():
+            self.assertEqual(rows.get(operation), roles, operation)
+        vaultd_operations = {operation for operation, roles in rows.items() if "service:vaultd" in roles}
+        self.assertEqual(vaultd_operations, {"name_recovery_keys", "recovery_status"},
+                         "vaultd reaches registryd only for key naming and its reconciliation")
+        # No registryd operation appends a caller-chosen record.
+        self.assertEqual(self.oracle.OperationArguments["name_recovery_keys"],
+                         {"owner_uid", "recovery_id", "persistent_key_id", "temporary_key_id"})
+
+    def test_r14_positive_scenarios_name_keys_only_through_the_interface(self):
+        for scenario in self.vectors["journal_scenarios"]:
+            for step in scenario["steps"]:
+                self.assertNotEqual(step.get("record", {}).get("record"), "recovery_keys", scenario["name"])
+        journal = self.oracle.journal_t(self.resolver, key_authority=True)
+        self.assert_rejected(lambda: journal.admit_record({"record": "recovery_keys"}), "admission", "lifecycle_rule")
+
+    def with_service_defect(self, name, replacement, scenarios):
+        original = getattr(self.oracle.registry_service_t, name)
+        setattr(self.oracle.registry_service_t, name, replacement)
+        try:
+            return self.scenario_failures(scenarios)
+        finally:
+            setattr(self.oracle.registry_service_t, name, original)
+
+    def test_defect_naming_open_to_every_role_is_detected(self):
+        operations = self.oracle.RegistryModelOperations
+        original = operations["name_recovery_keys"]
+        operations["name_recovery_keys"] = {"service:vaultd", "service:identityd", "service:contractd", "service:policyd",
+                                            "trusted_client", "admin", "fixture_consumer"}
+        try:
+            failures = self.scenario_failures({"recovery_naming_interface"})
+        finally:
+            operations["name_recovery_keys"] = original
+        self.assertGreaterEqual(len(failures), 6, failures)
+
+    def test_defect_unanchored_naming_served_is_detected(self):
+        original = self.oracle.registry_service_t.op_name_recovery_keys
+
+        def apply_before_anchor(service, args, anchor_fault):
+            return original(service, args, False)
+        failures = self.with_service_defect("op_name_recovery_keys", apply_before_anchor,
+                                            {"recovery_naming_anchor_failure_restart", "recovery_naming_anchor_failure_retry"})
+        self.assertTrue(any("recovery_naming_anchor_failure_restart" in failure for failure in failures), failures)
+
+    def test_defect_lost_durable_tail_is_detected(self):
+        def drop_tail(service, anchor_fault=False):
+            if anchor_fault and service.pending is not None:
+                self.oracle.ipc_error("storage_unavailable")
+            service.pending = None
+        failures = self.with_service_defect("settle", drop_tail, {"recovery_naming_anchor_failure_restart"})
+        self.assertTrue(failures)
+
+    def test_defect_non_idempotent_retry_is_detected(self):
+        original = self.oracle.registry_service_t.op_name_recovery_keys
+
+        def strict(service, args, anchor_fault):
+            if args["recovery_id"] in service.journal.named_keys:
+                self.oracle.record_error("recovery_rule", "already named")
+            return original(service, args, anchor_fault)
+        failures = self.with_service_defect("op_name_recovery_keys", strict,
+                                            {"recovery_naming_interface", "recovery_naming_anchor_failure_restart"})
+        self.assertGreaterEqual(len(failures), 2, failures)
+
+    def test_r14_vault_reconciliation_never_erases_named_or_unknown_keys(self):
+        held = (b"\x01" * 32, b"\x02" * 32)
+        other = (b"\x03" * 32, b"\x04" * 32)
+
+        def status(named, ceremony_open=True, state="contained"):
+            return {"user_state": state, "ceremony_open": ceremony_open,
+                    "persistent_key_id": named[0] if named else None, "temporary_key_id": named[1] if named else None}
+        decide = self.oracle.vault_reconcile
+        self.assertEqual(decide(None, held), "keep_and_retry")
+        self.assertEqual(decide(status(held), held), "keep_named")
+        self.assertEqual(decide(status(held, False, "normal"), held), "keep_named", "closed ceremony: these are the current keys")
+        self.assertEqual(decide(status(held, False, "contained"), held), "keep_named", "aborted ceremony: retired only by a later naming")
+        self.assertEqual(decide(status(other), held), "erase_retired")
+        self.assertEqual(decide(status(None), held), "resume_naming")
+        self.assertEqual(decide(status(None, False, "deleted"), held), "erase_unnamed")
+
+    def test_r14_in_flight_request_after_vault_restart_reconciles(self):
+        # vaultd restarts while its naming request is still queued at registryd. It
+        # resumes with the keys it holds (never regenerates while they are nameable), so
+        # the late request and the resumed one name the same keys.
+        valid_by_name = {item["name"]: (item["kind"], bytes.fromhex(item["envelope"])) for item in self.vectors["valid"]}
+        scenario = next(item for item in self.vectors["journal_scenarios"] if item["name"] == "recovery_naming_interface")
+        journal = self.oracle.journal_t(self.resolver, key_authority=True)
+        service = self.oracle.registry_service_t(journal)
+        steps = scenario["steps"]
+        first_naming = next(index for index, step in enumerate(steps)
+                            if step.get("call", {}).get("operation") == "name_recovery_keys" and step["expect"] == "admitted")
+        for step in steps[:first_naming]:
+            if "valid" in step:
+                kind, data = valid_by_name[step["valid"]]
+                if kind == "commit":
+                    service.admit(data)
+                else:
+                    service.call("service:identityd", "append_identity", {"kind": kind, "object": data})
+            elif "commit" in step and step["expect"] == "admitted":
+                service.admit(bytes.fromhex(step["commit"]))
+            elif "identity" in step and step["expect"] == "admitted":
+                service.call("service:identityd", "append_identity", {"kind": step["kind"], "object": bytes.fromhex(step["identity"])})
+            elif "record" in step and step["expect"] == "admitted":
+                service.record(self.oracle.decode_record(step["record"]))
+        args = self.oracle.decode_record(steps[first_naming]["call"]["args"])
+        held = (args["persistent_key_id"], args["temporary_key_id"])
+        status_args = {"owner_uid": 1001, "recovery_id": args["recovery_id"]}
+        self.assertEqual(self.oracle.vault_reconcile(service.call("service:vaultd", "recovery_status", status_args), held), "resume_naming")
+        late = service.call("service:vaultd", "name_recovery_keys", dict(args))
+        resumed = service.call("service:vaultd", "name_recovery_keys", dict(args))
+        self.assertEqual((late["already_named"], resumed["already_named"]), (False, True))
+        self.assertEqual(self.oracle.vault_reconcile(service.call("service:vaultd", "recovery_status", status_args), held), "keep_named")
 
 
 if __name__ == "__main__":

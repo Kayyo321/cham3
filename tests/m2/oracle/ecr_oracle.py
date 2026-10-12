@@ -767,10 +767,13 @@ def apply_delta(base, delta):
 
 
 RecoveryCommitTypes = {"restore", "revocation"}
-# Unsigned registry records the model accepts; every one of them only narrows authority.
+# Unsigned registry records registryd writes on its own authority (start-up decisions,
+# lifecycle, ceremony open/close); every one of them only narrows authority. The
+# ceremony's key-naming record is not among them: registryd builds it only inside the
+# vaultd-only operation name_recovery_keys (registry_service_t, revision 4, R14).
 RecordKinds = {"expired", "session_ended", "restriction", "containment", "quarantine", "admin_recover",
-               "recovery_opened", "recovery_keys", "recovery_closed", "deletion_pending"}
-RecordByteFields = {"grant_id", "grant_ids", "session_id", "recovery_id", "persistent_key_id", "temporary_key_id"}
+               "recovery_opened", "recovery_closed", "deletion_pending"}
+RecordByteFields = {"grant_id", "grant_ids", "session_id", "recovery_id", "persistent_key_id", "temporary_key_id", "object"}
 
 
 def record_error(code, detail=""):
@@ -823,6 +826,10 @@ class journal_t:
         self.state = "normal"  # normal / contained / quarantined / deleted
         self.recovery = None
         self.recovery_epochs = set()
+        # Durable records admitted so far, and the keys each ceremony named (kept after
+        # close or abort so vaultd can reconcile its key objects, R14).
+        self.sequence = 0
+        self.named_keys = {}
 
     # ------------------------------------------------------------ queries
 
@@ -904,6 +911,7 @@ class journal_t:
             identity = key_record_t({"authority_class": "persistent", "key_epoch": 0, "not_before": payload["enrolled"]})
             identity.authority_class = "identity"
             self.keys[payload["user_id"]] = identity
+            self.sequence += 1
             return payload
         if self.user_id is None or payload["owner_user_id"] != self.user_id:
             key_authority_error("key_not_certified", "identity object for another or unenrolled user")
@@ -915,6 +923,7 @@ class journal_t:
             if target is None or target.authority_class == "identity":
                 key_authority_error("key_not_certified", "invalidation of an unknown key")
             target.invalidated = target.invalidated or payload["reason"]
+            self.sequence += 1
             return payload
         if payload["owner_uid"] != self.uid or payload["subject_key_id"] in self.keys:
             key_authority_error("key_not_certified", "certificate owner or duplicate key")
@@ -926,6 +935,7 @@ class journal_t:
         elif payload["key_epoch"] < max([self.min_key_epoch, 1]):
             key_authority_error("key_epoch_stale", "certificate below the current key epoch")
         self.keys[payload["subject_key_id"]] = key_record_t(payload)
+        self.sequence += 1
         return payload
 
     # ------------------------------------------------------------ commits (layer 7)
@@ -1019,6 +1029,7 @@ class journal_t:
         if self.key_authority and self.state == "contained":
             lineage.recovered = True
         self.commits[commit_id] = payload
+        self.sequence += 1
         return payload
 
     def check_restore(self, payload):
@@ -1132,20 +1143,6 @@ class journal_t:
                 record_error("recovery_rule", "recovery key epoch must exceed every earlier key epoch")
             self.recovery = {"recovery_id": record["recovery_id"], "key_epoch": record["key_epoch"]}
             self.recovery_epochs.add(record["key_epoch"])
-        elif kind == "recovery_keys":
-            recovery = self.recovery
-            if recovery is None or recovery["recovery_id"] != record["recovery_id"] or "persistent_key_id" in recovery:
-                record_error("recovery_rule", "no open ceremony awaiting its keys")
-            for field, authority in (("persistent_key_id", "persistent"), ("temporary_key_id", "temporary")):
-                key = self.keys.get(record[field])
-                if key is None or key.authority_class != authority or key.key_epoch != recovery["key_epoch"] or key.invalidated:
-                    record_error("recovery_rule", "named recovery key not certified for this ceremony")
-            for key_id, key in self.keys.items():
-                if key.authority_class != "identity" and key_id not in (record["persistent_key_id"], record["temporary_key_id"]):
-                    key.retired = True
-            self.min_key_epoch = recovery["key_epoch"]
-            recovery["persistent_key_id"] = record["persistent_key_id"]
-            recovery["temporary_key_id"] = record["temporary_key_id"]
         elif kind == "recovery_closed":
             recovery = self.recovery
             if self.state != "contained" or recovery is None or recovery["recovery_id"] != record["recovery_id"] \
@@ -1158,12 +1155,177 @@ class journal_t:
                 self.ended.setdefault(grant_id, "deleted")
             self.state = "deleted"
             self.recovery = None
+        self.sequence += 1
+
+    def check_naming(self, record):
+        """ADR 0006 section 10 step 3: the ceremony's recovery_keys record names exactly
+        two keys certified at the open ceremony's epoch. Validation only."""
+        recovery = self.recovery
+        if self.state != "contained" or recovery is None or recovery["recovery_id"] != record["recovery_id"] \
+                or "persistent_key_id" in recovery:
+            record_error("recovery_rule", "no open ceremony awaiting its keys")
+        for field, authority in (("persistent_key_id", "persistent"), ("temporary_key_id", "temporary")):
+            key = self.keys.get(record[field])
+            if key is None or key.authority_class != authority or key.key_epoch != recovery["key_epoch"] or key.invalidated:
+                record_error("recovery_rule", "named recovery key not certified for this ceremony")
+
+    def admit_naming(self, record):
+        """Applies a recovery_keys record: retires every other contract key (including
+        epoch-E keys of an abandoned attempt) and raises the minimum signing key epoch.
+        Reached only through registry_service_t.name_recovery_keys."""
+        self.check_naming(record)
+        recovery = self.recovery
+        for key_id, key in self.keys.items():
+            if key.authority_class != "identity" and key_id not in (record["persistent_key_id"], record["temporary_key_id"]):
+                key.retired = True
+        self.min_key_epoch = recovery["key_epoch"]
+        recovery["persistent_key_id"] = record["persistent_key_id"]
+        recovery["temporary_key_id"] = record["temporary_key_id"]
+        self.named_keys[record["recovery_id"]] = (record["persistent_key_id"], record["temporary_key_id"])
+        self.sequence += 1
+
+
+# Registry operations of docs/specs/m2_service_ipc_v1.md section 3 that the interface
+# model executes, with their allowed SO_PEERCRED roles. The harness compares this table
+# with the specification's registryd table.
+RegistryModelOperations = {
+    "append_identity": {"service:identityd"},
+    "name_recovery_keys": {"service:vaultd"},
+    "recovery_status": {"trusted_client", "admin", "service:vaultd"},
+}
+IdentityAppendKinds = {"identity_enrollment", "key_certificate", "key_invalidation"}
+OperationArguments = {
+    "append_identity": {"kind", "object"},
+    "name_recovery_keys": {"owner_uid", "recovery_id", "persistent_key_id", "temporary_key_id"},
+    "recovery_status": {"owner_uid", "recovery_id"},
+}
+
+
+def ipc_error(code, detail=""):
+    raise oracle_error_t("ipc", code, detail)
+
+
+class registry_service_t:
+    """Interface model of registryd for one user's journal (revision 4, R14).
+
+    Every step of a scenario passes through it: commits (contractd admit), identity
+    objects (identityd append_identity), registryd's own records, and role-checked
+    operation calls. It models what the transport adds to journal_t: the caller's role
+    (from SO_PEERCRED), closed argument maps, records built by registryd itself (no
+    caller-supplied record bytes), and journal -> anchor -> reply ordering. A record that
+    is durable in the journal but whose anchor update failed is the user's pending tail:
+    it takes effect only once anchored, every later operation for the user first
+    completes that anchor update (or fails storage_unavailable), and a restart rolls it
+    forward (ADR 0006 section 4, m == a + 1). Not the service: no sockets, files, locks
+    or crash points (NOT_RUN until M2-005/M2-006).
+    """
+
+    def __init__(self, journal):
+        self.journal = journal
+        self.pending = None
+        self.identity_objects = {}
+
+    def durable_records(self):
+        return self.journal.sequence + (0 if self.pending is None else 1)
+
+    def settle(self, anchor_fault=False):
+        if self.pending is None:
+            return
+        if anchor_fault:
+            ipc_error("storage_unavailable", "the anchor update of the user's durable tail failed")
+        record, self.pending = self.pending, None
+        # Validated under the user lock when it was appended; nothing for this user has
+        # been admitted since, so applying it now cannot fail.
+        self.journal.admit_naming(record)
+
+    def restart(self):
+        """Startup roll-forward of a complete, durable but unanchored tail record."""
+        self.settle()
+
+    def admit(self, data, anchor_fault=False):
+        self.settle(anchor_fault)
+        return self.journal.admit_commit(data)
+
+    def record(self, record, anchor_fault=False):
+        self.settle(anchor_fault)
+        return self.journal.admit_record(record)
+
+    def call(self, caller, operation, args, caller_uid=None, anchor_fault=False):
+        allowed = RegistryModelOperations.get(operation)
+        if allowed is None:
+            ipc_error("unknown_operation", operation)
+        if caller not in allowed:
+            ipc_error("role_denied", "%s may not call %s" % (caller, operation))
+        if set(args) != OperationArguments[operation]:
+            ipc_error("malformed_request", "arguments are a closed map")
+        if caller == "trusted_client" and args.get("owner_uid") != caller_uid:
+            ipc_error("owner_mismatch", "a trusted client acts only for its own UID")
+        self.settle(anchor_fault)
+        return getattr(self, "op_" + operation)(args, anchor_fault)
+
+    def op_append_identity(self, args, anchor_fault):
+        if args["kind"] not in IdentityAppendKinds:
+            ipc_error("malformed_request", "append_identity accepts identity objects only")
+        digest = hashlib.sha256(args["object"]).digest()
+        if digest in self.identity_objects:
+            # Idempotent: the identical object is already durable (identityd retry).
+            return {"journal_seq": self.identity_objects[digest], "already_present": True}
+        self.journal.admit_identity(args["object"], args["kind"])
+        self.identity_objects[digest] = self.journal.sequence
+        return {"journal_seq": self.journal.sequence, "already_present": False}
+
+    def op_name_recovery_keys(self, args, anchor_fault):
+        journal = self.journal
+        if args["owner_uid"] != journal.uid:
+            record_error("recovery_rule", "no ceremony of this user")
+        named = journal.named_keys.get(args["recovery_id"])
+        requested = (args["persistent_key_id"], args["temporary_key_id"])
+        if named is not None:
+            if named == requested and journal.recovery is not None and journal.recovery["recovery_id"] == args["recovery_id"]:
+                # Reconciliation: the naming record is already durable and anchored (its
+                # reply or the first anchor attempt was lost); no second record.
+                return {"named": True, "already_named": True}
+            record_error("recovery_rule", "this ceremony already named its keys or is no longer open")
+        record = {"record": "recovery_keys", "recovery_id": args["recovery_id"],
+                  "persistent_key_id": args["persistent_key_id"], "temporary_key_id": args["temporary_key_id"]}
+        journal.check_naming(record)
+        if anchor_fault:
+            self.pending = record
+            ipc_error("storage_unavailable", "naming record durable, anchor update failed; a retry reconciles")
+        journal.admit_naming(record)
+        return {"named": True, "already_named": False}
+
+    def op_recovery_status(self, args, anchor_fault):
+        journal = self.journal
+        if args["owner_uid"] != journal.uid:
+            record_error("recovery_rule", "no ceremony of this user")
+        recovery = journal.recovery
+        open_here = recovery is not None and recovery["recovery_id"] == args["recovery_id"]
+        named = journal.named_keys.get(args["recovery_id"])
+        return {"user_state": journal.state, "ceremony_open": open_here,
+                "persistent_key_id": named[0] if named else None, "temporary_key_id": named[1] if named else None}
+
+
+def vault_reconcile(status, held):
+    """vaultd's decision for one ceremony's encrypted key objects after recover_keys
+    failed, timed out or vaultd restarted (ADR 0006 section 10, R14). `status` is the
+    recovery_status result, or None when it could not be obtained; `held` is the
+    (persistent, temporary) key-id pair vaultd holds durable objects and certificates for.
+    Objects are erased only on a positive answer that they can never be named."""
+    if status is None:
+        return "keep_and_retry"
+    named = (status["persistent_key_id"], status["temporary_key_id"])
+    if status["persistent_key_id"] is not None:
+        return "keep_named" if named == held else "erase_retired"
+    if status["ceremony_open"]:
+        return "resume_naming"
+    return "erase_unnamed"
 
 
 def decode_record(record):
     decoded = {}
     for key, value in record.items():
-        if key in RecordByteFields:
+        if key in RecordByteFields and value is not None:
             decoded[key] = [bytes.fromhex(item) for item in value] if isinstance(value, list) else bytes.fromhex(value)
         else:
             decoded[key] = value
@@ -1171,7 +1333,8 @@ def decode_record(record):
 
 
 def encode_record(record):
-    return {key: ([item.hex() for item in value] if isinstance(value, list) else value.hex()) if key in RecordByteFields else value
+    return {key: ([item.hex() for item in value] if isinstance(value, list) else value.hex())
+            if key in RecordByteFields and value is not None else value
             for key, value in record.items()}
 
 
@@ -1773,6 +1936,27 @@ def build_journal_scenarios(keys, kate, ids, payloads):
     def record(value, expect="admitted", check=None, note=""):
         return with_check({"record": encode_record(value)}, expect, check, note)
 
+    def call(caller, operation, args, expect="admitted", check=None, note="", caller_uid=None, result=None):
+        step = {"caller": caller, "operation": operation, "args": encode_record(args)}
+        if caller_uid is not None:
+            step["caller_uid"] = caller_uid
+        step = with_check({"call": step}, expect, check, note)
+        if result is not None:
+            step["result"] = encode_record(result)
+        return step
+
+    def faulted(step):
+        """The anchor write fails during this step (the journal append, if any, is durable)."""
+        step["anchor_fault"] = True
+        return step
+
+    def counted(step, records):
+        step["records"] = records
+        return step
+
+    def restart(note=""):
+        return with_check({"restart": True}, "admitted", None, note)
+
     def scenario(name, finding, description, steps, key_authority=False):
         scenarios.append({"name": name, "finding": finding, "description": description,
                           "key_authority": key_authority, "steps": steps})
@@ -2008,11 +2192,26 @@ def build_journal_scenarios(keys, kate, ids, payloads):
     contained = prefix + [record({"record": "containment"}, check={"ended": suspended},
                                  note="unverifiable unclean run: every grant suspended, the live temporary branch ends")]
     opened = contained + [record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c1", "role": "trusted_client"})]
+    def name_keys(expect="admitted", caller="service:vaultd", named=(None, None), recovery=None, uid=1001, extra=None,
+                  check=None, note="", caller_uid=None, result=None):
+        args = {"owner_uid": uid, "recovery_id": recovery or ceremony_id,
+                "persistent_key_id": (named[0] or recovery_persistent).key_id, "temporary_key_id": (named[1] or recovery_temporary).key_id}
+        args.update(extra or {})
+        return call(caller, "name_recovery_keys", args, expect, check, note, caller_uid, result)
+
+    def status(result, caller="service:vaultd", expect="admitted", recovery=None, uid=1001, caller_uid=None, note=""):
+        return call(caller, "recovery_status", {"owner_uid": uid, "recovery_id": recovery or ceremony_id}, expect,
+                    None, note, caller_uid, result)
+
+    def named_status(keys=(None, None), ceremony_open=True, state="contained"):
+        if keys is None:
+            return {"user_state": state, "ceremony_open": ceremony_open, "persistent_key_id": None, "temporary_key_id": None}
+        return {"user_state": state, "ceremony_open": ceremony_open,
+                "persistent_key_id": (keys[0] or recovery_persistent).key_id, "temporary_key_id": (keys[1] or recovery_temporary).key_id}
+
     keyed = opened + [identity_step(recovery_persistent_certificate, "key_certificate"),
                       identity_step(recovery_temporary_certificate, "key_certificate"),
-                      record({"record": "recovery_keys", "recovery_id": ceremony_id,
-                              "persistent_key_id": recovery_persistent.key_id, "temporary_key_id": recovery_temporary.key_id},
-                             check={"ended": suspended})]
+                      name_keys(check={"ended": suspended}, result={"named": True, "already_named": False})]
     editor_fresh = make_grant("editor projects re-authorized", "filesystem", "home:Projects", ["read", "write"], start=Times[11])
 
     editor_cleanup = editor.payload("editor remove suspended", "revocation", recovery_persistent, [editor_genesis_id], editor_genesis["result_state"],
@@ -2039,8 +2238,7 @@ def build_journal_scenarios(keys, kate, ids, payloads):
                         note="the pre-containment key cannot sign recovery commits"),
                  identity_step(recovery_persistent_certificate, "key_certificate"),
                  identity_step(recovery_temporary_certificate, "key_certificate"),
-                 record({"record": "recovery_keys", "recovery_id": ceremony_id,
-                         "persistent_key_id": recovery_persistent.key_id, "temporary_key_id": recovery_temporary.key_id}),
+                 name_keys(note="registryd name_recovery_keys, called by vaultd"),
                  commit(kate_recovered, check={"current": renewed_ids, "ended": suspended},
                         note="per-lineage progress: Kate re-authorized with new grant ids; the editor lineage stays suspended"),
                  commit(kate_recovered, fails("admission", "stale_head"), note="the same recovery commit cannot be admitted twice"),
@@ -2130,32 +2328,110 @@ def build_journal_scenarios(keys, kate, ids, payloads):
                        record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c1", "role": "trusted_client"})] +
              keyed[len(opened):] + [commit(kate_recovered, check={"current": renewed_ids, "ended": suspended})],
              key_authority=True)
+
+    # ------------------------------------------------------------ R14: key-naming interface
+    certified = opened + keyed[len(opened):len(opened) + 2]
+    naming_record = encode({"record": "recovery_keys", "recovery_id": ceremony_id,
+                            "persistent_key_id": recovery_persistent.key_id, "temporary_key_id": recovery_temporary.key_id})
+    scenario("recovery_naming_interface", "R14",
+             "Only vaultd can name the ceremony's keys, through registryd name_recovery_keys with a closed argument map; registryd builds the record itself and admits exactly two keys certified at the open ceremony's epoch; a retry with the same keys is idempotent",
+             opened + [
+                 call("service:vaultd", "append_identity", {"kind": "key_certificate", "object": recovery_persistent_certificate},
+                      fails("ipc", "role_denied"), note="certificates reach the journal only through identityd"),
+                 counted(identity_step(recovery_persistent_certificate, "key_certificate"), 16),
+                 counted(identity_step(recovery_temporary_certificate, "key_certificate"), 17),
+                 call("service:identityd", "append_identity", {"kind": "recovery_keys", "object": naming_record}, fails("ipc", "malformed_request"),
+                      note="the identity append path cannot carry a naming record"),
+                 name_keys(fails("ipc", "role_denied"), caller="service:identityd"),
+                 name_keys(fails("ipc", "role_denied"), caller="trusted_client", caller_uid=1001, note="the owner names keys only through vaultd recover_keys"),
+                 name_keys(fails("ipc", "role_denied"), caller="admin"),
+                 name_keys(fails("ipc", "role_denied"), caller="service:contractd"),
+                 name_keys(fails("ipc", "role_denied"), caller="service:policyd"),
+                 name_keys(fails("ipc", "role_denied"), caller="fixture_consumer"),
+                 name_keys(fails("ipc", "malformed_request"), extra={"key_epoch": 2}, note="the epoch comes from the open ceremony, never from the caller"),
+                 name_keys(fails("ipc", "malformed_request"), extra={"record": "recovery_keys"}, note="no caller-supplied record"),
+                 name_keys(fails("admission", "recovery_rule"), uid=1002, note="no ceremony of that user"),
+                 name_keys(fails("admission", "recovery_rule"), recovery=synthetic_id("another ceremony")),
+                 name_keys(fails("admission", "recovery_rule"), named=(recovery_temporary, recovery_persistent), note="authority classes swapped"),
+                 name_keys(fails("admission", "recovery_rule"), named=(keys["user_1002_persistent"], None), note="key not certified for this user"),
+                 name_keys(fails("admission", "recovery_rule"), named=(persistent, temporary), note="pre-ceremony keys below the ceremony epoch"),
+                 commit(kate_recovered, fails("key_authority", "recovery_key_required"), note="certified but unnamed keys sign nothing"),
+                 counted(status(named_status(None)), 17),
+                 counted(name_keys(result={"named": True, "already_named": False}, check={"ended": suspended}), 18),
+                 counted(name_keys(result={"named": True, "already_named": True}, note="retry after a lost reply: no second record"), 18),
+                 name_keys(fails("admission", "recovery_rule"), named=(abandoned, None), note="a ceremony names its keys once"),
+                 status(named_status()),
+                 commit(kate_recovered, check={"current": renewed_ids, "ended": suspended}),
+                 record({"record": "recovery_closed", "recovery_id": ceremony_id}),
+                 name_keys(fails("admission", "recovery_rule"), note="no naming after close"),
+                 status(named_status(state="normal", ceremony_open=False), caller="trusted_client", caller_uid=1001,
+                        note="named keys stay reported after close: vaultd never erases the user's current keys"),
+                 status(None, caller="trusted_client", caller_uid=1002, expect=fails("ipc", "owner_mismatch"))],
+             key_authority=True)
+    scenario("recovery_naming_anchor_failure_restart", "R14",
+             "The naming record is durable but its anchor update fails: it takes effect only once anchored, nothing is served past the unanchored tail, and a restart rolls it forward; vaultd's retry then reconciles without a second record",
+             certified + [
+                 counted(faulted(name_keys(fails("ipc", "storage_unavailable"))), 18),
+                 counted(faulted(commit(kate_recovered, fails("ipc", "storage_unavailable"), note="no admission while the user's tail is unanchored")), 18),
+                 faulted(status(None, expect=fails("ipc", "storage_unavailable"), note="vaultd keeps its key objects on an unknown status")),
+                 restart("startup roll-forward of the complete, durable tail (ADR 0006 section 4)"),
+                 status(named_status(), note="vaultd keeps the named keys"),
+                 counted(identity_step(recovery_persistent_certificate, "key_certificate",
+                                       note="identityd re-registration of an identical certificate is idempotent"), 18),
+                 counted(name_keys(result={"named": True, "already_named": True}), 18),
+                 counted(commit(kate_recovered, check={"current": renewed_ids, "ended": suspended}), 19)],
+             key_authority=True)
+    scenario("recovery_naming_anchor_failure_retry", "R14",
+             "Same-run retry after an anchor failure: the next call first completes the anchor update of the durable tail, then reports the keys as already named",
+             certified + [
+                 counted(faulted(name_keys(fails("ipc", "storage_unavailable"))), 18),
+                 faulted(name_keys(fails("ipc", "storage_unavailable"), note="the anchor still fails: no second record")),
+                 counted(name_keys(result={"named": True, "already_named": True}), 18),
+                 name_keys(fails("admission", "recovery_rule"), named=(abandoned, None)),
+                 counted(commit(kate_recovered, check={"current": renewed_ids}), 19)],
+             key_authority=True)
     return scenarios
 
 
 def run_scenario(scenario, valid_by_name, resolver):
-    """Returns a list of failure strings for one stored journal scenario."""
+    """Returns a list of failure strings for one stored journal scenario. Every step
+    passes through the registry interface model (revision 4, R14)."""
     journal = journal_t(resolver, key_authority=scenario["key_authority"])
+    service = registry_service_t(journal)
     failures = []
     for index, step in enumerate(scenario["steps"]):
+        fault = step.get("anchor_fault", False)
+        result = None
         try:
             if "valid" in step:
                 kind, data = valid_by_name[step["valid"]]
                 if kind == "commit":
-                    journal.admit_commit(data)
+                    service.admit(data, fault)
                 else:
-                    journal.admit_identity(data, kind)
+                    service.call("service:identityd", "append_identity", {"kind": kind, "object": data}, anchor_fault=fault)
             elif "commit" in step:
-                journal.admit_commit(bytes.fromhex(step["commit"]))
+                service.admit(bytes.fromhex(step["commit"]), fault)
             elif "identity" in step:
-                journal.admit_identity(bytes.fromhex(step["identity"]), step["kind"])
+                service.call("service:identityd", "append_identity", {"kind": step["kind"], "object": bytes.fromhex(step["identity"])},
+                             anchor_fault=fault)
+            elif "record" in step:
+                service.record(decode_record(step["record"]), fault)
+            elif "call" in step:
+                call = step["call"]
+                result = service.call(call["caller"], call["operation"], decode_record(call["args"]), call.get("caller_uid"), fault)
             else:
-                journal.admit_record(decode_record(step["record"]))
+                service.restart()
             outcome = "admitted"
         except oracle_error_t as error:
             outcome = {"layer": error.layer, "error": error.code}
         if outcome != step["expect"]:
             failures.append("scenario %s step %d: expected %s got %s" % (scenario["name"], index, step["expect"], outcome))
+        if "result" in step and (result is None or encode_record(result) != step["result"]):
+            failures.append("scenario %s step %d: result %s, expected %s" % (scenario["name"], index,
+                                                                             None if result is None else encode_record(result), step["result"]))
+        if "records" in step and service.durable_records() != step["records"]:
+            failures.append("scenario %s step %d: %d durable records, expected %d" % (scenario["name"], index,
+                                                                                     service.durable_records(), step["records"]))
         for standing, grant_ids in step.get("check", {}).items():
             for grant_id in grant_ids:
                 have = journal.standing(bytes.fromhex(grant_id))
