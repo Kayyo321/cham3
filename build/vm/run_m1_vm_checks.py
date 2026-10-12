@@ -62,6 +62,8 @@ PanelWidgetOrder = Cham3Widgets + ("org.kde.plasma.systemtray", "org.kde.plasma.
 InertWidgets = ("org.cham3.alias_wheel", "org.cham3.tag_pager", "org.cham3.contract_dock",
                 "org.cham3.netproto_launcher", "org.cham3.killswitch")
 InertWords = re.compile(r"unavailable|unverified|disconnected", re.IGNORECASE)
+# The panel captions are small; tesseract often drops a final letter there.
+CaptionWords = re.compile(r"unavailab|unverifi|disconnect", re.IGNORECASE)
 MenuCategories = ("Development", "Graphics", "Internet", "Multimedia", "Office", "Settings", "System",
                   "Utilities", "Education", "All Applications")
 PanelThicknessRange = (56, 64)
@@ -382,7 +384,7 @@ def choose_accel(requested):
     return "kvm" if usable else "tcg"
 
 
-def ocr(path, out_dir, label, box=None):
+def ocr(path, out_dir, label, box=None, scale=2):
     """Text that tesseract reads from a screenshot (optionally a box of it), or None."""
     if shutil.which("tesseract") is None:
         return None
@@ -395,7 +397,7 @@ def ocr(path, out_dir, label, box=None):
         image = image.crop(box)
     if sum(image.getdata()) / float(image.width * image.height) < 128:
         image = ImageOps.invert(image)
-    image = ImageOps.autocontrast(image).resize((image.width * 2, image.height * 2))
+    image = ImageOps.autocontrast(image).resize((image.width * scale, image.height * scale), Image.LANCZOS)
     prepared = os.path.join(out_dir, "ocr_%s.png" % label)
     image.save(prepared)
     completed = subprocess.run(["tesseract", prepared, "stdout", "--psm", "11"], capture_output=True, text=True,
@@ -803,12 +805,12 @@ def inert_checks(vm, results, prefix, panel, state, screen_size):
     vm.move(width / 2, height / 2, width, height)
     vm.key("esc")
     time.sleep(2)
-    strip = ocr(vm.screenshot("panel_strip"), results.out_dir, prefix + "_panel_strip", panel_box)
+    strip = ocr(vm.screenshot("panel_strip"), results.out_dir, prefix + "_panel_strip", panel_box, scale=3)
     if strip is None:
         results.blocked(prefix + "_panel_captions_unavailable", "tesseract or python3-pil is absent")
     else:
-        results.check(prefix + "_panel_captions_unavailable", len(InertWords.findall(strip)) >= 3,
-                      "%d state captions read in the panel strip" % len(InertWords.findall(strip)))
+        results.check(prefix + "_panel_captions_unavailable", len(CaptionWords.findall(strip)) >= 3,
+                      "%d state captions read in the panel strip" % len(CaptionWords.findall(strip)))
     for widget_type in Cham3Widgets[1:]:
         center = widget_center(panel, state, widget_type, screen_size)
         short = widget_type.split(".")[-1]
@@ -950,6 +952,7 @@ def phase_installed(args, results):
               "live-config 2>&1 | grep 'install ok installed' || echo none")
         results.check("installed_live_packages_removed",
                       results.facts["installed_live_packages_removed"]["output"].strip().endswith("none"), "")
+        installer_record(vm, results, password)
         common_system_checks(vm, results, "installed", password)
         dumpcap_checks(vm, results, "installed", password)
         capture_checks(vm, results, "installed", password)
@@ -961,6 +964,25 @@ def phase_installed(args, results):
         graphical_checks(vm, results, "installed", user, args.session_timeout)
     finally:
         vm.stop()
+
+
+def installer_record(vm, results, password):
+    """The installer's own logs (kept by d-i under /var/log/installer) and the resulting apt sources."""
+    status, output = guest(vm, results, "installed_installer_syslog", root_command(
+        "ls -la /var/log/installer/; grep -E 'apt-setup|live-installer|choose-mirror|apt-mirror-setup|"
+        "packages-remove|mirror/' /var/log/installer/syslog | tail -n 200", password), timeout=120)
+    vm.serial.run(root_command("cp /var/log/installer/syslog /tmp/installer-syslog && chmod 0644 "
+                               "/tmp/installer-syslog", password), 60)
+    _, full = vm.serial.run("tail -n 600 /tmp/installer-syslog", 300)
+    with open(os.path.join(results.out_dir, "installer_syslog_tail.txt"), "w", encoding="utf-8") as handle:
+        handle.write(full)
+    status, sources = guest(vm, results, "installed_sources_list", "cat /etc/apt/sources.list; echo ====; "
+                            "ls -1 /etc/apt/sources.list.d/")
+    main_lines = [line for line in sources.splitlines() if re.match(r"^deb\s", line.strip())]
+    has_main = any("deb.debian.org" in line and " trixie " in line + " " and " main" in line for line in main_lines)
+    has_security = any("security" in line and "trixie-security" in line and " main" in line for line in main_lines)
+    results.check("installed_debian_main_sources", has_main and has_security,
+                  {"sources_list_deb_lines": main_lines})
 
 
 def installed_apt_gates(vm, results, password):
