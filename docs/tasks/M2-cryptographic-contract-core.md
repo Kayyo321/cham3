@@ -163,6 +163,8 @@ cargo test --workspace --release --frozen
 
 Use an isolated CARGO_TARGET_DIR under ignored out/ for each verification run. Frozen requires both a fixed lockfile and already available dependency sources. Dependency acquisition/vendoring is a separate authenticated, recorded preparation step; do not let build scripts fetch uncontrolled inputs. Freeze and check overflow-checks = true for release and custom profiles too, and explicitly record panic strategy. Add format/lint checks with pinned tool versions and targeted naming allowances.
 
+Cargo's ordinary test harness ignores panic=abort. Verify deployed panic/abort and process-death behavior using separate subprocess fault-injection tests against binaries built with the actual approved deployment profile; cargo test alone cannot establish abort cleanup or recovery.
+
 Required future repository interfaces (create/document, not yet runnable):
 
 ~~~sh

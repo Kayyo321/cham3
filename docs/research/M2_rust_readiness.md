@@ -16,6 +16,8 @@ Commit the workspace Cargo.lock; record the exact dependency feature/source/chec
 
 [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) make overflow checking and panic handling explicit build choices. Enable overflow checks for debug, release and custom profiles; use checked operations for security-relevant arithmetic. Freeze actual profile settings and test failure/recovery. Panic abort or process termination may bypass cleanup; vault protection, admission and one-shot recovery cannot rely solely on destructors.
 
+The ordinary Cargo test harness ignores panic=abort. Exercise deployed panic/abort handling using subprocess fault-injection against binaries built with the actual approved profile, alongside unit tests; this is required implementation evidence, not a test performed during preparation.
+
 ## Verification and dependency decisions
 
 [Cargo test](https://doc.rust-lang.org/cargo/commands/cargo-test.html) normally builds and runs tests; --no-run only builds. A successful command can still select zero tests. The M2 harness must validate actual suite inventory, nonzero expected counts, required ignored/filtered/skipped cases, fresh output and process results. Test debug/release, controlled unsafe insertion in domain crates, assertion/compile/link failure, missing tools and zero-test rejection. Fuzz malformed inputs; record optional Miri/sanitizer tooling scope rather than implying universal dependency coverage.
