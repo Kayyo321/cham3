@@ -1,0 +1,94 @@
+#!/bin/sh
+# cham3-desktop preinst (install and upgrade).
+#
+# Registers the dpkg-statoverride that keeps /usr/bin/dumpcap from ever being
+# set-user-id (see debian/postinst) before the rest of this package is
+# unpacked. The override therefore already exists when dpkg configures
+# wireshark-common later in the same dpkg or apt run, including a run that is
+# interrupted before cham3-desktop itself is configured: while an override
+# exists, wireshark-common's postinst only lists it and changes nothing on the
+# file, so its set-user-id fallback cannot run in either configuration order
+# once cham3-desktop has been unpacked.
+#
+# A dumpcap that is already installed with a set-id bit (wireshark-common was
+# configured before this package was unpacked, with the debconf answer
+# install-setuid true and a missing or failing setcap) has the bits cleared
+# here, at unpack time. The postinst then sets the group and the capabilities.
+#
+# Fails, and so aborts the unpack of cham3-desktop, when the override cannot be
+# registered, when an existing override gives dumpcap a set-id mode, or when a
+# set-id bit cannot be cleared. The protection is never silently missing.
+set -e
+
+dumpcap_default_path=/usr/bin/dumpcap
+# The dpkg-statoverride pin: owner, group, mode (as dpkg-statoverride lists it).
+pin_owner=root
+pin_group=root
+pin_mode_argument=0750
+pin_mode_listed=750
+
+report() {
+    printf 'cham3-desktop: %s\n' "$1" >&2
+}
+
+# True when a dpkg-statoverride listing ("owner group mode path") has a
+# set-user-id or set-group-id mode.
+override_has_set_id_mode() {
+    listed_mode=$(printf '%s\n' "$1" | awk '{ print $3 }')
+    case "${listed_mode}" in
+        [2-7][0-7][0-7][0-7]) return 0 ;;
+    esac
+    return 1
+}
+
+# Clear the set-id bits of an installed dumpcap. Done first, so that no later
+# failure can leave them.
+clear_set_id_bits() {
+    resolved=$(readlink -f -- "$1" 2> /dev/null) || resolved=$1
+    if [ -f "${resolved}" ] && { [ -u "${resolved}" ] || [ -g "${resolved}" ]; }; then
+        chmod u-s,g-s -- "${resolved}"
+        if [ -u "${resolved}" ] || [ -g "${resolved}" ]; then
+            report "ERROR: ${resolved} is still set-user-id or set-group-id; refusing to continue."
+            return 1
+        fi
+        report "cleared the set-id bits of ${resolved}"
+    fi
+    return 0
+}
+
+register_dumpcap_override() {
+    program=$(dpkg-divert --truename "${dumpcap_default_path}" 2> /dev/null) || program=${dumpcap_default_path}
+    clear_set_id_bits "${program}" || return 1
+    current_override=$(dpkg-statoverride --list "${program}" 2> /dev/null) || current_override=
+    if [ -z "${current_override}" ]; then
+        if ! dpkg-statoverride --add "${pin_owner}" "${pin_group}" "${pin_mode_argument}" "${program}"; then
+            report "ERROR: could not register the dpkg-statoverride for ${program}; refusing to continue, because the set-user-id fallback of wireshark-common would not be blocked"
+            return 1
+        fi
+        current_override=$(dpkg-statoverride --list "${program}" 2> /dev/null) || current_override=
+        if [ "${current_override}" != "${pin_owner} ${pin_group} ${pin_mode_listed} ${program}" ]; then
+            report "ERROR: the dpkg-statoverride for ${program} is not in place after registering it (found '${current_override}'); refusing to continue"
+            return 1
+        fi
+    elif override_has_set_id_mode "${current_override}"; then
+        report "ERROR: an existing dpkg-statoverride gives ${program} a set-id mode (${current_override}); cham3 does not allow a set-user-id or set-group-id dumpcap."
+        report "Remove it (dpkg-statoverride --remove ${program}) and install cham3-desktop again."
+        return 1
+    fi
+    return 0
+}
+
+case "$1" in
+    install | upgrade)
+        register_dumpcap_override
+        ;;
+    abort-upgrade) ;;
+    *)
+        echo "preinst called with unknown argument '$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

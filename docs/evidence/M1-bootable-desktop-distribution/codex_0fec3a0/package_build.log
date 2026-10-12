@@ -1,0 +1,137 @@
+== building cham3-base
+dpkg-buildpackage: info: source package cham3-base
+dpkg-buildpackage: info: source version 0.0.0~m0
+dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source changed by cham3 developers <maintainers@cham3.invalid>
+ dpkg-source --before-build .
+dpkg-buildpackage: info: host architecture amd64
+ debian/rules clean
+dh clean
+   dh_clean
+ debian/rules binary
+dh binary
+   dh_update_autotools_config
+   dh_autoreconf
+   create-stamp debian/debhelper-build-stamp
+   dh_prep
+   dh_auto_install --destdir=debian/cham3-base/
+   dh_installdocs
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_missing
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'cham3-base' in '../cham3-base_0.0.0~m0_all.deb'.
+ dpkg-genbuildinfo --build=binary -O../cham3-base_0.0.0~m0_amd64.buildinfo
+ dpkg-genchanges --build=binary -O../cham3-base_0.0.0~m0_amd64.changes
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source --after-build .
+dpkg-buildpackage: info: binary-only upload (no source included)
+== building cham3-desktop
+dpkg-buildpackage: info: source package cham3-desktop
+dpkg-buildpackage: info: source version 0.0.0~m1
+dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source changed by cham3 developers <maintainers@cham3.invalid>
+ dpkg-source --before-build .
+dpkg-buildpackage: info: host architecture amd64
+ debian/rules clean
+dh clean
+   dh_clean
+ debian/rules binary
+dh binary
+   dh_update_autotools_config
+   dh_autoreconf
+   debian/rules override_dh_auto_build
+make[1]: Entering directory '/tmp/tmp.aqfju3C0qD/cham3-desktop'
+set -e; for plasmoid in desktop/plasma/plasmoids/org.cham3.*; do \
+    cmp -s desktop/plasma/shared/cham3_shared.js "$plasmoid/contents/code/cham3_shared.js" || \
+    { echo "cham3_shared.js drift in $plasmoid" >&2; exit 1; }; \
+done
+make[1]: Leaving directory '/tmp/tmp.aqfju3C0qD/cham3-desktop'
+   create-stamp debian/debhelper-build-stamp
+   dh_prep
+   dh_auto_install --destdir=debian/cham3-desktop/
+   debian/rules override_dh_install
+make[1]: Entering directory '/tmp/tmp.aqfju3C0qD/cham3-desktop'
+dh_install
+# Wallpaper image: KDE image-wallpaper layout, resolution-named file.
+install -D -m 0644 assets/wallpapers/cham3_minimal_charcoal.png \
+    debian/cham3-desktop/usr/share/wallpapers/Cham3/contents/images/3840x2160.png
+# Layout template org.cham3.panel: the panel script keeps its repo name and
+# is installed under the name Plasma requires (contents/layout.js).
+install -D -m 0644 desktop/plasma/layout-templates/org.cham3.panel/metadata.json \
+    debian/cham3-desktop/usr/share/plasma/layout-templates/org.cham3.panel/metadata.json
+install -D -m 0644 desktop/plasma/layout/cham3_panel_layout.js \
+    debian/cham3-desktop/usr/share/plasma/layout-templates/org.cham3.panel/contents/layout.js
+# System-wide defaults (lowest precedence, overridden by user config):
+# make the cham3 look-and-feel the default for new profiles and carry the
+# color scheme values, because KDE reads colors from kdeglobals.
+install -d debian/cham3-desktop/etc/xdg
+sed -e 's/^contrast=4$/contrast=4\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze/' \
+    -e '/^\[Cham3Accents\]$/,$d' \
+    desktop/plasma/color-schemes/Cham3Dark.colors > debian/cham3-desktop/etc/xdg/kdeglobals
+printf '\n[Icons]\nTheme=breeze-dark\n' >> debian/cham3-desktop/etc/xdg/kdeglobals
+printf '[Theme]\nname=breeze-dark\n' > debian/cham3-desktop/etc/xdg/plasmarc
+make[1]: Leaving directory '/tmp/tmp.aqfju3C0qD/cham3-desktop'
+   dh_installdocs
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_missing
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'cham3-desktop' in '../cham3-desktop_0.0.0~m1_all.deb'.
+ dpkg-genbuildinfo --build=binary -O../cham3-desktop_0.0.0~m1_amd64.buildinfo
+ dpkg-genchanges --build=binary -O../cham3-desktop_0.0.0~m1_amd64.changes
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source --after-build .
+dpkg-buildpackage: info: binary-only upload (no source included)
+== building cham3-full
+dpkg-buildpackage: info: source package cham3-full
+dpkg-buildpackage: info: source version 0.0.0~m1
+dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source changed by cham3 developers <maintainers@cham3.invalid>
+ dpkg-source --before-build .
+dpkg-buildpackage: info: host architecture amd64
+ debian/rules clean
+dh clean
+   dh_clean
+ debian/rules binary
+dh binary
+   dh_update_autotools_config
+   dh_autoreconf
+   create-stamp debian/debhelper-build-stamp
+   dh_prep
+   dh_auto_install --destdir=debian/cham3-full/
+   dh_installdocs
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_missing
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'cham3-full' in '../cham3-full_0.0.0~m1_all.deb'.
+ dpkg-genbuildinfo --build=binary -O../cham3-full_0.0.0~m1_amd64.buildinfo
+ dpkg-genchanges --build=binary -O../cham3-full_0.0.0~m1_amd64.changes
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source --after-build .
+dpkg-buildpackage: info: binary-only upload (no source included)
+== lintian
+# lintian exit status: 0
+build_packages: PASS (packages in /workspace/M1-rereview/out/packages)

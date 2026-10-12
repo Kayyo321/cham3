@@ -1,0 +1,21 @@
+Alias wheel
+
+alias selection: unavailable - cham3 session services not present
+
+You clicked: Tor (Purple). Nothing was selected.
+
+oO Direct alias (Rose): unavailable
+
+® Tor alias (Purple): unavailable
+
+e@ Offline alias (White): unavailable
+
+Aliases are user-scoped execution contexts, not signing identities or virtual machines. The wheel does not switch profiles or change any network mode.
+
+M1 visual foundation only. This control performs no security action and reports no active security state.
+
+aA
+
+Cr
+
+Cham?

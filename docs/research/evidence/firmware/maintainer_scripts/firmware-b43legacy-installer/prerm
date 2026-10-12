@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+#########################################################################
+
+FIRMWARE_INSTALL_DIR="/usr/lib/firmware"
+
+B43="b43legacy"
+
+#########################################################################
+# stable sections below, not updated for firmware updates		#
+#########################################################################
+
+if [ "$1" = purge ] || [ "$1" = remove ]; then
+	catalog="${FIRMWARE_INSTALL_DIR}/${B43}/firmware-${B43}-installer.catalog"
+	if [ -f "${catalog}" ]; then
+		echo "$0: Deleting installed firmware..." 1>&2
+		LC_ALL=C xargs -r -0 -a "${catalog}" dpkg-query -S 2>&1 1>/dev/null | sed -es',[^/]\+,,' | xargs -r rm -f --
+		rm "${catalog}"
+		rmdir --ignore-fail-on-non-empty "${FIRMWARE_INSTALL_DIR}/${B43}"
+	fi
+fi
+
+

@@ -1,0 +1,23 @@
+{
+  "accel": "tcg",
+  "cpus": 2,
+  "elapsed_seconds": 52.4,
+  "firmware": "seabios (QEMU default BIOS)",
+  "host_platform": "Linux-6.18.44-x86_64-with-glibc2.41 x86_64",
+  "iso_path": "/workspace/M1-rereview/out/image/cham3-m0-dev-amd64.iso",
+  "iso_sha256": "3074795cc19effff09d86bca0f71a6d101d981e6e83184c37dda664f2cccbb08",
+  "machine": "pc",
+  "matched_markers": [
+    "login_prompt",
+    "sendkey_ret_x1"
+  ],
+  "memory_mib": 1024,
+  "qemu_binary": "/usr/bin/qemu-system-x86_64",
+  "qemu_version": "QEMU emulator version 10.0.13 (Debian 1:10.0.13+ds-0+deb13u1)",
+  "reason": "login prompt reached on serial console",
+  "result": "PASS",
+  "runtime_checks": {
+    "performed": false,
+    "reason": "login prompt requires credentials; none are typed by this script"
+  }
+}

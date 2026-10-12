@@ -1,0 +1,199 @@
+=== zaproxy
+zaproxy:
+  Installed: (none)
+  Candidate: 2.17.0-0kali1
+  Version table:
+     2.17.0-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: zaproxy
+Version: 2.17.0-0kali1
+Architecture: all
+Installed-Size: 273308
+Depends: default-jre
+Breaks: kali-menu (<< 1.371.1)
+Homepage: https://github.com/zaproxy/zaproxy
+Section: utils
+Filename: pool/main/z/zaproxy/zaproxy_2.17.0-0kali1_all.deb
+Size: 221820224
+SHA256: 9490cc3c613ca847db8f12c5c6b00d162e17274e4fcfed566bb93d1aa1feda47
+=== burpsuite
+burpsuite:
+  Installed: (none)
+  Candidate: 2026.8-0kali1
+  Version table:
+     2026.8-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: burpsuite
+Version: 2026.8-0kali1
+Architecture: amd64
+Installed-Size: 352962
+Depends: default-jre, java-wrappers
+Homepage: https://portswigger.net
+Section: net
+Filename: pool/main/b/burpsuite/burpsuite_2026.8-0kali1_amd64.deb
+Size: 344402560
+SHA256: 6e68cad47c66d854ab944aa417a54290c18b396e0727583108b790b857638b1f
+=== wpscan
+wpscan:
+  Installed: (none)
+  Candidate: 4.1.0-0kali1
+  Version table:
+     4.1.0-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/non-free amd64 Packages
+Package: wpscan
+Version: 4.1.0-0kali1
+Architecture: all
+Installed-Size: 695
+Depends: curl, ruby-activesupport (>= 2:7.1), ruby-cms-scanner (>= 0.15.0), ruby-yajl (>= 1.4.1), ruby, ruby-activesupport (<< 2:8.2), ruby-addressable (>= 2.9), ruby-ethon (>= 0.14), ruby-ethon (<< 0.19), ruby-get-process-mem (>= 0.2.5), ruby-get-process-mem (<< 1.1.0), ruby-nokogiri (>= 1.16), ruby-public-suffix (>= 4.0.3), ruby-public-suffix (<< 7.1), ruby-progressbar (>= 1.10), ruby-progressbar (<< 1.14), ruby-sys-proctable (>= 1.2.2), ruby-sys-proctable (<< 1.4.0), ruby-typhoeus (>= 1.3), ruby-typhoeus (<< 1.7), ruby-xmlrpc (>= 0.3), ruby-ostruct (>= 0.6), ruby-fiddle (>= 1.1), ruby-ferrum (>= 0.8)
+Homepage: https://wpscan.com/wordpress-security-scanner
+Section: non-free/utils
+Filename: pool/non-free/w/wpscan/wpscan_4.1.0-0kali1_all.deb
+Size: 109064
+SHA256: 20caf190d6adc4cc2bedc5b8df34038aaacb452853ac5dfede260aafe49583e9
+=== metasploit-framework
+metasploit-framework:
+  Installed: (none)
+  Candidate: 6.5.3-0kali1
+  Version table:
+     6.5.3-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: metasploit-framework
+Version: 6.5.3-0kali1
+Architecture: amd64
+Installed-Size: 613132
+Depends: bundler, curl, gcc-mingw-w64-i686-win32, gcc-mingw-w64-x86-64-win32, git, john, nasm, nmap, openssl, postgresql, python3, rake, ruby-json (>= 1.8.3), wget, ruby (>= 1:3.3), ruby (<< 1:3.4), libc6 (>= 2.38), libffi8 (>= 3.4), libgcc-s1 (>= 3.0), liblzma5 (>= 5.1.1alpha+20120614), libpcap0.8t64 (>= 1.0.0), libruby3.3 (>= 3.3.1), libsqlite3-0 (>= 3.7.10), libssl3t64 (>= 3.4.0), libstdc++6 (>= 13.1), oracle-instantclient-basic (>= 19.6.0.0.0), zlib1g (>= 1:1.2.3.4)
+Suggests: clamav, clamav-daemon, default-jre-headless
+Conflicts: metasploit-common
+Breaks: metasploit (<= 4.11.4-2015071402-1kali0)
+Homepage: https://www.metasploit.com/
+Section: net
+Filename: pool/main/m/metasploit-framework/metasploit-framework_6.5.3-0kali1_amd64.deb
+Size: 270131624
+SHA256: fcb1100612b748b5122f3413033279693f80fd42a9e6122c3464f4db748c19b6
+=== exploitdb
+exploitdb:
+  Installed: (none)
+  Candidate: 20260904-0kali1
+  Version table:
+     20260904-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: exploitdb
+Version: 20260904-0kali1
+Architecture: all
+Installed-Size: 196101
+Depends: libxml2-utils
+Homepage: https://www.exploit-db.com
+Section: utils
+Filename: pool/main/e/exploitdb/exploitdb_20260904-0kali1_all.deb
+Size: 30414644
+SHA256: b417d86c6e3c126d2fa2c9be2f8d6c10417697fc95ebaf5a729c299d59d3f385
+=== ghidra
+ghidra:
+  Installed: (none)
+  Candidate: 12.1.4+ds-0kali1
+  Version table:
+     12.1.4+ds-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: ghidra
+Version: 12.1.4+ds-0kali1
+Architecture: amd64
+Installed-Size: 843563
+Depends: openjdk-25-jdk, libc6 (>= 2.38), libgcc-s1 (>= 3.0), libstdc++6 (>= 13.1)
+Recommends: ghidra-data (>= 9.2)
+Homepage: https://github.com/NationalSecurityAgency/ghidra
+Section: misc
+Filename: pool/main/g/ghidra/ghidra_12.1.4+ds-0kali1_amd64.deb
+Size: 515275208
+SHA256: 128b96ae74b22eb508401378950a6b8eb3274c2e29b50f10d1a59f1fca3caad6
+=== rizin-cutter
+rizin-cutter:
+  Installed: (none)
+  Candidate: 2.5.0-0kali1
+  Version table:
+     2.5.0-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: rizin-cutter
+Version: 2.5.0-0kali1
+Architecture: amd64
+Installed-Size: 10867
+Depends: python3, libc6 (>= 2.34), libcgraph8 (>= 14.1.2), libgcc-s1 (>= 3.0), libgvc7 (>= 14.1.2), libkf6syntaxhighlighting6 (>= 6.0.0), libpyside6-py3-6.10 (>= 6.10.3), libpython3.14 (>= 3.14.1), libqt6core5compat6 (>= 6.6.0), libqt6core6t64 (>= 6.10.2), libqt6gui6 (>= 6.9.1), libqt6network6 (>= 6.1.2), libqt6opengl6 (>= 6.1.2), libqt6openglwidgets6 (>= 6.1.2), libqt6svg6 (>= 6.6.0), libqt6svgwidgets6 (>= 6.6.0), libqt6widgets6 (>= 6.7.2), librizin0 (>= 0.9.1), librizin0 (<< 0.9.1.0), libshiboken6-py3-6.10 (>= 6.10.3), libstdc++6 (>= 14)
+Conflicts: radare2-cutter
+Provides: radare2-cutter
+Homepage: https://cutter.re
+Section: devel
+Filename: pool/main/r/rizin-cutter/rizin-cutter_2.5.0-0kali1_amd64.deb
+Size: 2028760
+SHA256: e0e647c191b41bd6b4ffb3bf6b76c8ed5dd381dc00ae179aab94edc7b0440d79
+=== rizin
+rizin:
+  Installed: (none)
+  Candidate: 0.9.1-0kali1
+  Version table:
+     0.9.1-0kali1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: rizin
+Version: 0.9.1-0kali1
+Architecture: amd64
+Installed-Size: 334
+Depends: libc6 (>= 2.38), librizin0 (>= 0.9.1), librizin0 (<< 0.9.1.0)
+Homepage: https://rizin.re/
+Section: devel
+Filename: pool/main/r/rizin/rizin_0.9.1-0kali1_amd64.deb
+Size: 56136
+SHA256: 41a2acc204a9adad6174139ea3b0b50639f67bb0e664bbf6601defdc91002fd1
+=== radare2
+radare2:
+  Installed: (none)
+  Candidate: 6.0.4+dfsg-1
+  Version table:
+     6.0.4+dfsg-1 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: radare2
+Version: 6.0.4+dfsg-1
+Installed-Size: 3673
+Architecture: amd64
+Depends: libc6 (>= 2.38), libradare2-6.0.0t64 (>= 6.0.4+dfsg)
+Recommends: libradare2-dev
+Size: 278352
+SHA256: dcb375213e9c1477ae08d47bfb25c1b13a6ba2d41bc2665b81a4bae66bb64eb0
+Homepage: https://www.radare.org
+Section: devel
+Filename: pool/main/r/radare2/radare2_6.0.4+dfsg-1_amd64.deb
+=== mitmproxy
+mitmproxy:
+  Installed: (none)
+  Candidate: 12.2.3-0kali5
+  Version table:
+     12.2.3-0kali5 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: mitmproxy
+Version: 12.2.3-0kali5
+Architecture: all
+Installed-Size: 5084
+Pre-Depends: dpkg (>= 1.17.14)
+Depends: fonts-font-awesome (>= 4.2.0~dfsg), python3-aioquic, python3-h2 (>= 4.1), python3-hyperframe (>= 6.0), python3-mitmproxy-rs (>= 0.12.3), python3-urwid (>= 2.6.14), python3-argon2, python3-asgiref (>= 3.2.10), python3-bcrypt, python3-brotli (>= 1.1.0), python3-certifi (>= 2019.9.11), python3-cryptography (<= 50.0.0), python3-cryptography (>= 42.0), python3-flask (<< 3.1.4), python3-flask (>= 3.0), python3-h11 (>= 0.11), python3-kaitaistruct (>= 0.10), python3-ldap3 (>= 2.8), python3-msgpack (>= 1.0.0), python3-openssl (>= 24.3.0), python3-publicsuffix2 (>= 2.20190812), python3-pyparsing (>= 2.4.2), python3-pyperclip (>= 1.8.2), python3-ruamel.yaml (>= 0.16), python3-sortedcontainers (>= 2.3.0), python3-supported-min (>= 3.13) | python3-typing-extensions, python3-tornado (>= 6.4.1), python3-wsproto (>= 1.0), python3-zstandard (>= 0.15), python3:any
+Conflicts: python-netlib
+Homepage: https://mitmproxy.org
+Section: net
+Filename: pool/main/m/mitmproxy/mitmproxy_12.2.3-0kali5_all.deb
+Size: 1328956
+SHA256: 0d2d281a0cc9353a612efb2295124226bf6060f1802976b0e4fe5c45dbc6a26d
+=== amass
+amass:
+  Installed: (none)
+  Candidate: 5.1.1-0kali3
+  Version table:
+     5.1.1-0kali3 500
+        500 http://http.kali.org/kali kali-rolling/main amd64 Packages
+Package: amass
+Version: 5.1.1-0kali3
+Architecture: amd64
+Installed-Size: 51788
+Depends: libpostal-data, sudo, libc6 (>= 2.34)
+Suggests: postgresql
+Homepage: https://github.com/OWASP/Amass
+Section: net
+Filename: pool/main/a/amass/amass_5.1.1-0kali3_amd64.deb
+Size: 12420072
+SHA256: 72d3563addb64ada4527170be7b45a88d7aec29acb367261365a6beecea11999
+=== cutter

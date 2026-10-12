@@ -1,0 +1,58 @@
+#!/bin/sh
+# vim:ts=2:sw=2:et
+
+set -e
+
+is_arm_system() {
+  # Check to see if the host is running an arm-based system
+  # (i.e. whether the raspi-firmware package is useful)
+  DPKG_ARCH=$(dpkg --print-architecture)
+  case "$DPKG_ARCH" in
+    arm64|armel|armhf)
+      return 0;;
+    *)
+      return 1;;
+  esac
+}
+
+case "$1" in
+  configure)
+    if ! is_arm_system ; then
+      # Not running on an arm-based system, skip the postinst
+      exit 0
+    fi
+
+    if ischroot ; then
+      true # chroot detected - skip mount point check
+    elif test -e /usr/bin/systemd-detect-virt && systemd-detect-virt -q ; then
+      true # virtualization detected - skip mount point check
+    elif ! mountpoint -q /boot/firmware; then
+      echo "Error: missing /boot/firmware, did you forget to mount it?" >&2
+      exit 1
+    fi
+
+    # Ensure the target directory exists. See https://bugs.debian.org/887062
+    mkdir -p /boot/firmware
+
+    cp -r /usr/lib/raspi-firmware/* /boot/firmware/
+    sync -f /boot/firmware || true
+
+    # Manually trigger the kernel postinst hook when raspi-firmware is first
+    # installed (or upgraded), as the kernel package might already be installed
+    # (or not upgraded) and hence the hook would not get triggered otherwise.
+    DEB_MAINT_PARAMS="configure" /etc/kernel/postinst.d/z50-raspi-firmware
+    ;;
+esac
+
+# Automatically added by dh_installdeb/13.23
+dpkg-maintscript-helper rm_conffile /etc/kernel/postinst.d/linux-firmware-raspi3 1.20161123-2 -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postrm.d/50raspi3-firmware /etc/kernel/postrm.d/z50-raspi-firmware 1.20190718-1\~ -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postinst.d/50raspi3-firmware /etc/kernel/postinst.d/z50-raspi-firmware 1.20190718-1\~ -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/initramfs/post-update.d/50raspi3-firmware /etc/initramfs/post-update.d/z50-raspi-firmware 1.20190718-1\~ -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postrm.d/z50-raspi3-firmware /etc/kernel/postrm.d/z50-raspi-firmware -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/kernel/postinst.d/z50-raspi3-firmware /etc/kernel/postinst.d/z50-raspi-firmware -- "$@"
+dpkg-maintscript-helper mv_conffile /etc/initramfs/post-update.d/z50-raspi3-firmware /etc/initramfs/post-update.d/z50-raspi-firmware -- "$@"
+# End automatically added section
+
+
+exit 0

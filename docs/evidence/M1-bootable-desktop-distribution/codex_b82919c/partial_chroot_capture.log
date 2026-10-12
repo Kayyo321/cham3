@@ -1,0 +1,8 @@
+Capturing on 'Loopback: lo'
+File: /tmp/codex-member.pcapng
+
+Packets captured: 0
+Packets received/dropped on interface 'Loopback: lo': 0/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (0.0%)
+group_member_exit=0
+chroot: failed to run command '/usr/bin/dumpcap': Permission denied
+nonmember_exit=126

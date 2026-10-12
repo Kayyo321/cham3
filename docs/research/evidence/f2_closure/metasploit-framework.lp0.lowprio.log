@@ -1,0 +1,33 @@
+### mode=lowprio target=metasploit-framework extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=lowprio target=metasploit-framework. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 50
+
+Package: metasploit-framework
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y metasploit-framework
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ oracle-instantclient-basic : Depends: libaio1t64 (>= 0.3.113-8+kali1) but 0.3.113-8+b1 is to be installed
+E: Unable to correct problems, you have held broken packages.
+E: The following information from --solver 3.0 may provide additional context:
+   Unable to satisfy dependencies. Reached two conflicting decisions:
+   1. libaio1t64:amd64=0.3.113-9+kali2 is not selected for install
+   2. libaio1t64:amd64=0.3.113-9+kali2 is selected for install because:
+      1. metasploit-framework:amd64=6.5.3-0kali1 is selected for install
+      2. metasploit-framework:amd64 Depends oracle-instantclient-basic (>= 19.6.0.0.0)
+      3. oracle-instantclient-basic:amd64 Depends libaio1t64 (>= 0.3.113-8+kali1)
+### exit=100

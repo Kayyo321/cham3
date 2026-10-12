@@ -1,0 +1,8 @@
+setpriv from util-linux 2.41.5
+debootstrap 1.0.141
+live-build 1:20250505+deb13u1
+qemu-system-x86 1:10.0.13+ds-0+deb13u1
+util-linux 2.41.5-0+deb13u1
+wireshark-common 4.4.19-0+deb13u1
+root wireshark 750
+/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip

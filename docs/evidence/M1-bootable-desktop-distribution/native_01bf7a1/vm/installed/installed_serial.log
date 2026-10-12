@@ -1,0 +1,1184 @@
+[H[J[1;1H[?25l[m[H[J[1;1H[2;25HGNU GRUB  version 2.12-9+deb13u2
+
+[m[4;2H+----------------------------------------------------------------------------+[5;2H|[5;79H|[6;2H|[6;79H|[7;2H|[7;79H|[8;2H|[8;79H|[9;2H|[9;79H|[10;2H|[10;79H|[11;2H|[11;79H|[12;2H|[12;79H|[13;2H|[13;79H|[14;2H|[14;79H|[15;2H|[15;79H|[16;2H|[16;79H|[17;2H+----------------------------------------------------------------------------+[m[18;2H[19;2H[m     Use the ^ and v keys to select which entry is highlighted.          
+      Press enter to boot the selected OS, `e' to edit the commands       
+      before booting or `c' for a command-line.                           [5;80H [7m[5;3H*Debian GNU/Linux                                                           [m[5;78H[m[m[6;3H Advanced options for Debian GNU/Linux                                      [m[6;78H[m[m[7;3H                                                                            [m[7;78H[m[m[8;3H                                                                            [m[8;78H[m[m[9;3H                                                                            [m[9;78H[m[m[10;3H                                                                            [m[10;78H[m[m[11;3H                                                                            [m[11;78H[m[m[12;3H                                                                            [m[12;78H[m[m[13;3H                                                                            [m[13;78H[m[m[14;3H                                                                            [m[14;78H[m[m[15;3H                                                                            [m[15;78H[m[m[16;3H                                                                            [m[16;78H[m[16;80H [5;78H[22;1H   The highlighted entry will be executed automatically in 5s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 4s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 3s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 2s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 1s.                 [5;78H[22;1H   The highlighted entry will be executed automatically in 0s.                 [5;78H[?25h[H[J[1;1H[H[J[1;1H  Booting `Debian GNU/Linux'
+
+Loading Linux 6.12.111+deb13-amd64 ...
+Loading initial ramdisk ...
+/dev/vda1: clean, 187844/2984240 files, 2122859/11929600 blocks
+[!p]104[?7h[!p]104[?7h[6n[32766;32766H[6n[!p]104[?7h[6n[32766;32766H[6n
+Debian GNU/Linux 13 cham3-vm-test ttyS0
+
+cham3-vm-test login: cham3test
+Password: 
+Linux cham3-vm-test 6.12.111+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.111-1 (2026-09-28) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+[?2004hcham3test@cham3-vm-test:~$ stty -echo cols 250; export TERM=dumb PAGER=cat SYSTEMD_PAGER=; PS1='cham3vm$ '
+[?2004lcham3vm$ __CHAM3S_1
+__CHAM3E_1_0
+cham3vm$ __CHAM3S_2
+none
+__CHAM3E_2_0
+cham3vm$ __CHAM3S_3
+total 360
+drwxr-xr-x 3 root root   4096 Oct 12 05:57 .
+drwxr-xr-x 6 root root   4096 Oct 12 05:57 ..
+drwxr-xr-x 2 root root   4096 Oct 12 05:57 cdebconf
+-rw-r--r-- 1 root root     62 Oct 12 05:57 firmware-summary
+-rw-r--r-- 1 root root  28450 Oct 12 05:57 hardware-summary
+-rw-r--r-- 1 root root    160 Oct 12 05:57 lsb-release
+-rw------- 1 root root  83861 Oct 12 05:57 partman
+-rw-r--r-- 1 root root  62584 Oct 12 05:57 status
+-rw------- 1 root root 164414 Oct 12 05:57 syslog
+Oct 12 05:52:12 anna-install: Queueing udeb apt-mirror-setup for later installation
+Oct 12 05:52:12 anna[3028]: DEBUG: retrieving apt-mirror-setup 1:0.198
+Oct 12 05:52:12 anna[3028]: DEBUG: retrieving apt-setup-udeb 1:0.198
+Oct 12 05:52:13 anna[3028]: DEBUG: retrieving choose-mirror-bin 2.133
+Oct 12 05:52:15 anna[3028]: DEBUG: retrieving live-installer 58
+Oct 12 05:52:54 main-menu[2177]: INFO: Menu item 'live-installer' selected
+Oct 12 05:56:10 /usr/lib/live-installer.d/openssh-server: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:13 /usr/lib/post-base-installer.d/25live-installer-console-setup: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:13 live-installer: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:21 main-menu[2177]: INFO: Menu item 'apt-setup-udeb' selected
+Oct 12 05:56:21 apt-setup: umount: can't unmount /target/media/cdrom0: Invalid argument
+Oct 12 05:56:21 apt-setup: umount: can't unmount /target/media/cdrom1: Invalid argument
+Oct 12 05:56:21 /usr/lib/apt-setup/generators/40cdrom: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:22 apt-setup: Using CD-ROM mount point /media/cdrom/
+Oct 12 05:56:22 apt-setup: Identifying... 
+Oct 12 05:56:22 apt-setup: [8d68a99992ba5abf7d433f0ede7037b2-2]
+Oct 12 05:56:22 apt-setup: Scanning disc for index files...
+Oct 12 05:56:22 apt-setup: Found 3 package indexes, 0 source indexes, 0 translation indexes and 0 signatures
+Oct 12 05:56:22 apt-setup: This disc is called: 
+Oct 12 05:56:22 apt-setup: 'Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24'
+Oct 12 05:56:22 apt-setup: Copying package lists...
+Oct 12 05:56:22 apt-setup: ^MReading Package Indexes... 0%^M^MReading Package Indexes... 0%^M
+Oct 12 05:56:22 apt-setup: ^MReading Package Indexes... Done^M
+Oct 12 05:56:22 apt-setup: Writing new source list
+Oct 12 05:56:22 apt-setup: Source list entries for this disc are:
+Oct 12 05:56:22 apt-setup: deb cdrom:[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24]/ trixie main non-free non-free-firmware
+Oct 12 05:56:22 apt-setup: Repeat this process for the rest of the CDs in your set.
+Oct 12 05:56:22 apt-setup: W: Failed to mount '/dev/sr1' to '/media/cdrom/'
+Oct 12 05:56:22 apt-setup: W: Failed to mount '/dev/sr1' to '/media/cdrom/'
+Oct 12 05:56:23 choose-mirror[9634]: DEBUG: command: wget --no-verbose http://deb.debian.org/debian/dists/trixie/Release -O - | grep -E '^(Suite|Codename|Architectures):'
+Oct 12 05:56:23 choose-mirror[9634]: DEBUG: command: wget --no-verbose http://deb.debian.org/debian/dists/stable/Release -O - | grep -E '^(Suite|Codename|Architectures):'
+Oct 12 05:56:23 choose-mirror[9634]: INFO: suite/codename set to: stable/trixie
+Oct 12 05:56:23 choose-mirror[9634]: DEBUG: command: wget --no-verbose http://deb.debian.org/debian/dists/trixie/main/binary-amd64/Release -O - | grep ^Architecture:
+__CHAM3E_3_0
+cham3vm$ __CHAM3S_4
+__CHAM3E_4_0
+cham3vm$ __CHAM3S_5
+Oct 12 05:56:31 in-target: Hit:2 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:31 in-target: Hit:3 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:31 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:33 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:33 in-target: Fetched 5649 B in 2s (2712 B/s)
+Oct 12 05:56:33 in-target: Reading package lists...
+Oct 12 05:56:34 in-target: 
+Oct 12 05:56:34 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:34 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:34 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:34 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:34 in-target: Hit:1 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:34 in-target: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:34 in-target: Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:34 in-target: Get:4 http://security.debian.org/debian-security trixie-security/main Sources [240 kB]
+Oct 12 05:56:34 in-target: Get:5 http://security.debian.org/debian-security trixie-security/non-free-firmware Sources [696 B]
+Oct 12 05:56:34 in-target: Hit:6 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:35 in-target: Get:7 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:35 in-target: Fetched 247 kB in 1s (417 kB/s)
+Oct 12 05:56:35 in-target: Reading package lists...
+Oct 12 05:56:35 in-target: 
+Oct 12 05:56:36 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:36 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:36 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:36 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:36 in-target: Hit:1 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:36 in-target: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:36 in-target: Hit:3 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:36 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:36 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:36 in-target: Fetched 5649 B in 1s (9789 B/s)
+Oct 12 05:56:36 in-target: Reading package lists...
+Oct 12 05:56:37 in-target: 
+Oct 12 05:56:37 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:37 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:37 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:37 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:37 in-target: Hit:1 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:37 in-target: Hit:2 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:37 in-target: Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:38 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:38 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:38 in-target: Fetched 5649 B in 1s (11.2 kB/s)
+Oct 12 05:56:38 in-target: Reading package lists...
+Oct 12 05:56:38 in-target: 
+Oct 12 05:56:39 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:39 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:39 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:39 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:39 in-target: Hit:1 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:39 in-target: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:39 in-target: Hit:3 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:39 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:39 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:39 in-target: Fetched 5649 B in 0s (18.6 kB/s)
+Oct 12 05:56:39 in-target: Reading package lists...
+Oct 12 05:56:40 in-target: 
+Oct 12 05:56:40 main-menu[2177]: (process:9464): 2026-10-12 05:56:23 URL:http://deb.debian.org/debian/dists/trixie/Release [138612/138612] -> "-" [1]
+Oct 12 05:56:40 main-menu[2177]: (process:9464): 2026-10-12 05:56:23 URL:http://deb.debian.org/debian/dists/stable/Release [138612/138612] -> "-" [1]
+Oct 12 05:56:40 main-menu[2177]: (process:9464): 2026-10-12 05:56:23 URL:http://deb.debian.org/debian/dists/trixie/main/binary-amd64/Release [116/116] -> "-" [1]
+Oct 12 05:56:40 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:40 systemd-boot-installer: systemd-boot is only usable on 64bit EFI systems, not amd64/generic
+Oct 12 05:56:40 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:40 main-menu[2177]: INFO: Menu item 'grub-installer' selected
+Oct 12 05:56:40 grub-installer: info: architecture: amd64/generic
+Oct 12 05:56:40 grub-installer: info: Bind mounting /run into /target
+Oct 12 05:56:40 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:40 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:40 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:40 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:40 in-target: Reading package lists...
+Oct 12 05:56:42 in-target: 
+Oct 12 05:56:42 in-target: Building dependency tree...
+Oct 12 05:56:42 in-target: 
+Oct 12 05:56:42 in-target: Reading state information...
+Oct 12 05:56:42 in-target: 
+Oct 12 05:56:42 in-target: The following additional packages will be installed:
+Oct 12 05:56:42 in-target:   gettext-base libefiboot1t64 libefivar1t64
+Oct 12 05:56:42 in-target: Suggested packages:
+Oct 12 05:56:42 in-target:   multiboot-doc grub-emu mtools xorriso desktop-base
+Oct 12 05:56:42 in-target: Recommended packages:
+Oct 12 05:56:42 in-target:   os-prober
+Oct 12 05:56:42 in-target: The following NEW packages will be installed:
+Oct 12 05:56:42 in-target:   gettext-base grub-common libefiboot1t64 libefivar1t64
+Oct 12 05:56:42 kernel: [  276.636548] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:42 kernel: [  276.636959] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:42 in-target: 0 upgraded, 4 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:42 in-target: Need to get 0 B/3245 kB of archives.
+Oct 12 05:56:42 in-target: After this operation, 19.2 MB of additional disk space will be used.
+Oct 12 05:56:42 in-target: Get:1 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 gettext-base amd64 0.23.1-2 [243 kB]
+Oct 12 05:56:42 in-target: Get:2 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 libefivar1t64 amd64 38-3.1+b1 [58.5 kB]
+Oct 12 05:56:42 in-target: Get:3 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 libefiboot1t64 amd64 38-3.1+b1 [43.9 kB]
+Oct 12 05:56:42 in-target: Get:4 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub-common amd64 2.12-9+deb13u2 [2899 kB]
+Oct 12 05:56:43 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:43 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:43 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:43 in-target: Selecting previously unselected package gettext-base.^M
+Oct 12 05:56:43 in-target: (Reading database ... ^M
+Oct 12 05:56:43 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M
+Oct 12 05:56:43 in-target: (Reading database ... 40%^M(Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:56:43 in-target: (Reading database ... 55%^M
+Oct 12 05:56:43 in-target: (Reading database ... 60%^M
+Oct 12 05:56:43 in-target: (Reading database ... 65%^M
+Oct 12 05:56:43 in-target: (Reading database ... 70%^M
+Oct 12 05:56:43 in-target: (Reading database ... 75%^M
+Oct 12 05:56:43 in-target: (Reading database ... 80%^M
+Oct 12 05:56:43 in-target: (Reading database ... 85%^M
+Oct 12 05:56:43 in-target: (Reading database ... 90%^M
+Oct 12 05:56:43 in-target: (Reading database ... 95%^M
+Oct 12 05:56:43 in-target: (Reading database ... 100%^M(Reading database ... 179038 files and directories currently installed.)^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../gettext-base_0.23.1-2_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking gettext-base (0.23.1-2) ...^M
+Oct 12 05:56:43 in-target: Selecting previously unselected package libefivar1t64:amd64.^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../libefivar1t64_38-3.1+b1_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking libefivar1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Selecting previously unselected package libefiboot1t64:amd64.^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../libefiboot1t64_38-3.1+b1_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking libefiboot1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Selecting previously unselected package grub-common.^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../grub-common_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking grub-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:43 in-target: Setting up libefivar1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Setting up gettext-base (0.23.1-2) ...^M
+Oct 12 05:56:43 in-target: Setting up libefiboot1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Setting up grub-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/multi-user.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/suspend.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/hibernate.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/hybrid-sleep.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/suspend-then-hibernate.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Processing triggers for libc-bin (2.41-12+deb13u4) ...^M
+Oct 12 05:56:45 kernel: [  278.827331] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:45 kernel: [  278.827744] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:45 kernel: [  278.842316] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:45 kernel: [  278.842763] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:45 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:45 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:45 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:45 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:45 in-target: Reading package lists...
+Oct 12 05:56:45 in-target: 
+Oct 12 05:56:45 in-target: Building dependency tree...
+Oct 12 05:56:45 in-target: 
+Oct 12 05:56:45 in-target: Reading state information...
+Oct 12 05:56:45 in-target: 
+Oct 12 05:56:46 in-target: grub-common is already the newest version (2.12-9+deb13u2).
+Oct 12 05:56:46 in-target: 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:46 kernel: [  279.931478] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:46 kernel: [  279.931848] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:46 kernel: [  279.946745] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:46 kernel: [  279.947170] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:46 grub-installer: info: Identified partition label for /dev/vda1: msdos
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-legacy which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-amd64-bin which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-amd64-signed which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-amd64 which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-ia32-bin which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-ia32 which isn't installed
+Oct 12 05:56:46 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:46 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:46 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:46 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:46 in-target: Reading package lists...
+Oct 12 05:56:46 in-target: 
+Oct 12 05:56:46 in-target: Building dependency tree...
+Oct 12 05:56:47 in-target: 
+Oct 12 05:56:47 in-target: Reading state information...
+Oct 12 05:56:47 in-target: 
+Oct 12 05:56:47 in-target: The following NEW packages will be installed:
+Oct 12 05:56:47 in-target:   os-prober
+Oct 12 05:56:47 in-target: 0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:47 in-target: Need to get 18.4 kB of archives.
+Oct 12 05:56:47 in-target: After this operation, 100 kB of additional disk space will be used.
+Oct 12 05:56:47 in-target: Get:1 http://deb.debian.org/debian trixie/main amd64 os-prober amd64 1.83 [18.4 kB]
+Oct 12 05:56:47 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:47 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:47 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:47 in-target: Fetched 18.4 kB in 0s (232 kB/s)
+Oct 12 05:56:47 in-target: Selecting previously unselected package os-prober.^M
+Oct 12 05:56:47 in-target: (Reading database ... ^M
+Oct 12 05:56:47 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 
+Oct 12 05:56:47 in-target: 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 45%^M
+Oct 12 05:56:47 in-target: (Reading database ... 50%^M
+Oct 12 05:56:47 in-target: (Reading database ... 55%^M
+Oct 12 05:56:47 in-target: (Reading database ... 60%^M
+Oct 12 05:56:48 in-target: (Reading database ... 65%^M
+Oct 12 05:56:48 in-target: (Reading database ... 70%^M
+Oct 12 05:56:48 in-target: (Reading database ... 75%^M
+Oct 12 05:56:48 in-target: (Reading database ... 80%^M
+Oct 12 05:56:48 in-target: (Reading database ... 85%^M
+Oct 12 05:56:48 in-target: (Reading database ... 90%^M
+Oct 12 05:56:48 in-target: (Reading database ... 95%^M
+Oct 12 05:56:48 in-target: (Reading database ... 100%^M(Reading database ... 179277 files and directories currently installed.)^M
+Oct 12 05:56:48 in-target: Preparing to unpack .../os-prober_1.83_amd64.deb ...^M
+Oct 12 05:56:48 in-target: Unpacking os-prober (1.83) ...^M
+Oct 12 05:56:48 in-target: Setting up os-prober (1.83) ...^M
+Oct 12 05:56:48 kernel: [  282.193612] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:48 kernel: [  282.194046] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:48 kernel: [  282.209386] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:48 kernel: [  282.209757] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:48 anna-install: Installing ext2-modules
+Oct 12 05:56:48 anna-install: Installing ext3-modules
+Oct 12 05:56:48 anna-install: Installing ext4-modules
+Oct 12 05:56:48 anna-install: Installing xfs-modules
+Oct 12 05:56:48 anna-install: Installing jfs-modules
+Oct 12 05:56:48 anna-install: Installing msdos-modules
+Oct 12 05:56:48 os-prober: unknown udeb msdos-modules
+Oct 12 05:56:48 anna-install: Installing vfat-modules
+Oct 12 05:56:48 os-prober: unknown udeb vfat-modules
+Oct 12 05:56:48 anna-install: Installing ntfs-modules
+Oct 12 05:56:48 os-prober: unknown udeb ntfs-modules
+Oct 12 05:56:48 anna-install: Installing minix-modules
+Oct 12 05:56:48 os-prober: unknown udeb minix-modules
+Oct 12 05:56:48 anna-install: Installing hfs-modules
+Oct 12 05:56:48 os-prober: unknown udeb hfs-modules
+Oct 12 05:56:48 anna-install: Installing hfsplus-modules
+Oct 12 05:56:48 os-prober: unknown udeb hfsplus-modules
+Oct 12 05:56:48 anna-install: Installing qnx4-modules
+Oct 12 05:56:48 os-prober: unknown udeb qnx4-modules
+Oct 12 05:56:48 anna-install: Installing ufs-modules
+Oct 12 05:56:48 os-prober: unknown udeb ufs-modules
+Oct 12 05:56:48 anna-install: Installing btrfs-modules
+Oct 12 05:56:48 anna-install: Installing fuse-modules
+Oct 12 05:56:48 os-prober: unknown udeb fuse-modules
+Oct 12 05:56:48 anna-install: Installing fs-core-modules
+Oct 12 05:56:48 os-prober: unknown udeb fs-core-modules
+Oct 12 05:56:48 anna-install: Installing fs-secondary-modules
+Oct 12 05:56:48 os-prober: unknown udeb fs-secondary-modules
+Oct 12 05:56:50 os-prober: debug: running /usr/lib/os-probes/50mounted-tests on /dev/vda2
+Oct 12 05:56:50 50mounted-tests: debug: /dev/vda2 type not recognised; skipping
+Oct 12 05:56:50 os-prober: debug: os detected by /usr/lib/os-probes/50mounted-tests
+Oct 12 05:56:50 os-prober: debug: /dev/vda5: is active swap
+Oct 12 05:56:50 grub-installer: info: initial os-prober call found the following OSes:
+Oct 12 05:56:50 grub-installer: info: 
+Oct 12 05:56:50 grub-installer: info: Found NO other OSes, triggering question about os-prober, default no
+Oct 12 05:56:50 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:50 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:50 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:50 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:50 in-target: Reading package lists...
+Oct 12 05:56:50 in-target: 
+Oct 12 05:56:50 in-target: Building dependency tree...
+Oct 12 05:56:51 in-target: 
+Oct 12 05:56:51 in-target: Reading state information...
+Oct 12 05:56:51 in-target: 
+Oct 12 05:56:51 in-target: The following additional packages will be installed:
+Oct 12 05:56:51 in-target:   grub-pc-bin grub2-common
+Oct 12 05:56:51 in-target: Suggested packages:
+Oct 12 05:56:51 in-target:   desktop-base
+Oct 12 05:56:51 in-target: The following NEW packages will be installed:
+Oct 12 05:56:51 in-target:   grub-pc grub-pc-bin grub2-common
+Oct 12 05:56:51 kernel: [  285.248586] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:51 kernel: [  285.248970] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:51 in-target: 0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:51 in-target: Need to get 0 B/1791 kB of archives.
+Oct 12 05:56:51 in-target: After this operation, 5224 kB of additional disk space will be used.
+Oct 12 05:56:51 in-target: Get:1 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub2-common amd64 2.12-9+deb13u2 [641 kB]
+Oct 12 05:56:51 in-target: Get:2 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub-pc-bin amd64 2.12-9+deb13u2 [1021 kB]
+Oct 12 05:56:51 in-target: Get:3 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub-pc amd64 2.12-9+deb13u2 [128 kB]
+Oct 12 05:56:51 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:51 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:51 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:51 in-target: Preconfiguring packages ...
+Oct 12 05:56:51 in-target: Selecting previously unselected package grub2-common.^M
+Oct 12 05:56:51 in-target: (Reading database ... ^M
+Oct 12 05:56:51 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M
+Oct 12 05:56:51 in-target: (Reading database ... 35%^M(Reading database ... 40%
+Oct 12 05:56:51 in-target: ^M(Reading database ... 45%^M
+Oct 12 05:56:51 in-target: (Reading database ... 50%^M
+Oct 12 05:56:51 in-target: (Reading database ... 55%^M
+Oct 12 05:56:52 in-target: (Reading database ... 60%^M
+Oct 12 05:56:52 in-target: (Reading database ... 65%^M
+Oct 12 05:56:52 in-target: (Reading database ... 70%^M
+Oct 12 05:56:52 in-target: (Reading database ... 75%^M
+Oct 12 05:56:52 in-target: (Reading database ... 80%^M
+Oct 12 05:56:52 in-target: (Reading database ... 85%^M
+Oct 12 05:56:52 in-target: (Reading database ... 90%^M
+Oct 12 05:56:52 in-target: (Reading database ... 95%^M
+Oct 12 05:56:52 in-target: (Reading database ... 100%^M(Reading database ... 179316 files and directories currently installed.)^M
+Oct 12 05:56:52 in-target: Preparing to unpack .../grub2-common_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:52 in-target: Unpacking grub2-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Selecting previously unselected package grub-pc-bin.^M
+Oct 12 05:56:52 in-target: Preparing to unpack .../grub-pc-bin_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:52 in-target: Unpacking grub-pc-bin (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Selecting previously unselected package grub-pc.^M
+Oct 12 05:56:52 in-target: Preparing to unpack .../grub-pc_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:52 in-target: Unpacking grub-pc (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Setting up grub2-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Setting up grub-pc-bin (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Setting up grub-pc (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory^M
+Oct 12 05:56:52 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory^M
+Oct 12 05:56:52 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory^M
+Oct 12 05:56:52 in-target: Creating config file /etc/default/grub with new version^M
+Oct 12 05:56:53 kernel: [  286.835621] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:53 kernel: [  286.836006] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:53 kernel: [  286.850026] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:53 kernel: [  286.850384] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:53 grub-installer: info: Installing grub on '/dev/vda'
+Oct 12 05:56:53 grub-installer: info: Running chroot /target grub-install  --force "/dev/vda"
+Oct 12 05:56:53 grub-installer: Installing for i386-pc platform.
+Oct 12 05:56:54 grub-installer: Installation finished. No error reported.
+Oct 12 05:56:54 grub-installer: info: grub-install ran successfully
+Oct 12 05:56:54 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:54 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:54 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:54 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:54 in-target: Reading package lists...
+Oct 12 05:56:54 in-target: 
+Oct 12 05:56:54 in-target: Building dependency tree...
+Oct 12 05:56:54 in-target: 
+Oct 12 05:56:54 in-target: Reading state information...
+Oct 12 05:56:54 in-target: 
+Oct 12 05:56:55 in-target: grub-common is already the newest version (2.12-9+deb13u2).
+Oct 12 05:56:55 in-target: 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:55 kernel: [  288.972566] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:55 kernel: [  288.972906] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:55 kernel: [  288.987534] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:55 kernel: [  288.987893] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:55 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:56 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:56 main-menu[2177]: (process:10615): Setting partition 1 of /dev/vda to active... done.
+Oct 12 05:56:56 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:56 systemd-boot-installer: systemd-boot is only usable on 64bit EFI systems, not amd64/generic
+Oct 12 05:56:56 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:56 systemd-boot-installer: systemd-boot is only usable on 64bit EFI systems, not amd64/generic
+Oct 12 05:56:56 main-menu[2177]: INFO: Menu item 'finish-install' selected
+Oct 12 05:56:56 finish-install: info: Running /usr/lib/finish-install.d/01kickseed
+Oct 12 05:56:56 finish-install: info: Running /usr/lib/finish-install.d/05localechooser
+Oct 12 05:56:56 finish-install: info: Running /usr/lib/finish-install.d/06user-setup
+Oct 12 05:56:56 user-setup: Shadow passwords are now on.
+Oct 12 05:56:56 usermod[12484]: change user 'root' password
+Oct 12 05:56:57 adduser[12493]: Adding user `cham3test' ...
+Oct 12 05:56:57 adduser[12493]: Selecting UID/GID from range 1000 to 59999 ...
+Oct 12 05:56:57 adduser[12493]: Adding new group `cham3test' (1000) ...
+Oct 12 05:56:57 groupadd[12497]: group added to /etc/group: name=cham3test, GID=1000
+Oct 12 05:56:57 groupadd[12497]: group added to /etc/gshadow: name=cham3test
+Oct 12 05:56:57 groupadd[12497]: new group: name=cham3test, GID=1000
+Oct 12 05:56:57 adduser[12493]: Adding new user `cham3test' (1000) with group `cham3test (1000)' ...
+Oct 12 05:56:57 useradd[12502]: new user: name=cham3test, UID=1000, GID=1000, home=/home/cham3test, shell=/bin/bash, from=none
+Oct 12 05:56:57 adduser[12493]: Creating home directory `/home/cham3test' ...
+Oct 12 05:56:57 adduser[12493]: Copying files from `/etc/skel' ...
+Oct 12 05:56:57 adduser[12493]: Adding new user `cham3test' to supplemental / extra groups `users' ...
+Oct 12 05:56:57 adduser[12493]: Adding user `cham3test' to group `users' ...
+Oct 12 05:56:57 gpasswd[12518]: members of group users set by root to cham3test
+Oct 12 05:56:57 chfn[12523]: changed user 'cham3test' information
+Oct 12 05:56:57 chpasswd[12530]: pam_unix(chpasswd:chauthtok): password changed for cham3test
+Oct 12 05:56:57 adduser[12536]: Adding user `cham3test' to group `audio' ...
+Oct 12 05:56:57 usermod[12538]: add 'cham3test' to group 'audio'
+Oct 12 05:56:57 usermod[12538]: add 'cham3test' to shadow group 'audio'
+Oct 12 05:56:57 adduser[12544]: Adding user `cham3test' to group `cdrom' ...
+Oct 12 05:56:57 usermod[12546]: add 'cham3test' to group 'cdrom'
+Oct 12 05:56:57 usermod[12546]: add 'cham3test' to shadow group 'cdrom'
+Oct 12 05:56:57 adduser[12552]: Adding user `cham3test' to group `dip' ...
+Oct 12 05:56:57 usermod[12554]: add 'cham3test' to group 'dip'
+Oct 12 05:56:57 usermod[12554]: add 'cham3test' to shadow group 'dip'
+Oct 12 05:56:57 adduser[12560]: Adding user `cham3test' to group `floppy' ...
+Oct 12 05:56:57 usermod[12562]: add 'cham3test' to group 'floppy'
+Oct 12 05:56:57 usermod[12562]: add 'cham3test' to shadow group 'floppy'
+Oct 12 05:56:57 adduser[12568]: Adding user `cham3test' to group `video' ...
+Oct 12 05:56:57 usermod[12570]: add 'cham3test' to group 'video'
+Oct 12 05:56:57 usermod[12570]: add 'cham3test' to shadow group 'video'
+Oct 12 05:56:57 adduser[12576]: Adding user `cham3test' to group `plugdev' ...
+Oct 12 05:56:57 usermod[12578]: add 'cham3test' to group 'plugdev'
+Oct 12 05:56:57 usermod[12578]: add 'cham3test' to shadow group 'plugdev'
+Oct 12 05:56:57 adduser[12584]: Adding user `cham3test' to group `netdev' ...
+Oct 12 05:56:57 usermod[12586]: add 'cham3test' to group 'netdev'
+Oct 12 05:56:57 usermod[12586]: add 'cham3test' to shadow group 'netdev'
+Oct 12 05:56:57 user-setup: fatal: The group `scanner' does not exist.
+Oct 12 05:56:57 adduser[12592]: The group `scanner' does not exist.
+Oct 12 05:56:57 user-setup: fatal: The group `bluetooth' does not exist.
+Oct 12 05:56:57 adduser[12595]: The group `bluetooth' does not exist.
+Oct 12 05:56:57 user-setup: fatal: The group `debian-tor' does not exist.
+Oct 12 05:56:57 adduser[12598]: The group `debian-tor' does not exist.
+Oct 12 05:56:57 user-setup: fatal: The group `lpadmin' does not exist.
+Oct 12 05:56:57 adduser[12601]: The group `lpadmin' does not exist.
+Oct 12 05:56:57 adduser[12604]: Adding user `cham3test' to group `sudo' ...
+Oct 12 05:56:57 usermod[12606]: add 'cham3test' to group 'sudo'
+Oct 12 05:56:57 usermod[12606]: add 'cham3test' to shadow group 'sudo'
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07brltty
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07preseed
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07rootskel
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07speakup
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/08hw-detect
+Oct 12 05:56:58 hw-detect: detected virtualization 'kvm' (with systemd-detect-virt)
+Oct 12 05:56:58 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:58 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:58 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:58 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:58 in-target: Reading package lists...
+Oct 12 05:56:58 in-target: 
+Oct 12 05:56:58 in-target: Building dependency tree...
+Oct 12 05:56:58 in-target: 
+Oct 12 05:56:58 in-target: Reading state information...
+Oct 12 05:56:58 in-target: 
+Oct 12 05:56:58 in-target: The following additional packages will be installed:
+Oct 12 05:56:58 in-target:   liburing2
+Oct 12 05:56:58 in-target: The following NEW packages will be installed:
+Oct 12 05:56:58 in-target:   liburing2 qemu-guest-agent
+Oct 12 05:56:58 in-target: 0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:58 in-target: Need to get 589 kB of archives.
+Oct 12 05:56:58 in-target: After this operation, 3955 kB of additional disk space will be used.
+Oct 12 05:56:58 in-target: Get:1 http://deb.debian.org/debian trixie/main amd64 liburing2 amd64 2.9-1 [26.4 kB]
+Oct 12 05:56:58 in-target: Get:2 http://deb.debian.org/debian trixie/main amd64 qemu-guest-agent amd64 1:10.0.13+ds-0+deb13u1 [562 kB]
+Oct 12 05:56:59 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:59 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:59 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:59 in-target: Fetched 589 kB in 0s (7578 kB/s)
+Oct 12 05:56:59 in-target: Selecting previously unselected package liburing2:amd64.^M
+Oct 12 05:56:59 in-target: (Reading database ... ^M
+Oct 12 05:56:59 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M
+Oct 12 05:56:59 in-target: (Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:56:59 in-target: (Reading database ... 55%^M
+Oct 12 05:56:59 in-target: (Reading database ... 60%^M
+Oct 12 05:56:59 in-target: (Reading database ... 65%^M
+Oct 12 05:56:59 in-target: (Reading database ... 70%^M
+Oct 12 05:56:59 in-target: (Reading database ... 75%^M
+Oct 12 05:56:59 in-target: (Reading database ... 80%^M
+Oct 12 05:56:59 in-target: (Reading database ... 85%^M
+Oct 12 05:56:59 in-target: (Reading database ... 90%^M
+Oct 12 05:56:59 in-target: (Reading database ... 95%^M
+Oct 12 05:56:59 in-target: (Reading database ... 100%^M(Reading database ... 179661 files and directories currently installed.)^M
+Oct 12 05:56:59 in-target: Preparing to unpack .../liburing2_2.9-1_amd64.deb ...^M
+Oct 12 05:56:59 in-target: Unpacking liburing2:amd64 (2.9-1) ...^M
+Oct 12 05:56:59 in-target: Selecting previously unselected package qemu-guest-agent.^M
+Oct 12 05:56:59 in-target: Preparing to unpack .../qemu-guest-agent_1%3a10.0.13+ds-0+deb13u1_amd64.deb ...^M
+Oct 12 05:56:59 in-target: Unpacking qemu-guest-agent (1:10.0.13+ds-0+deb13u1) ...^M
+Oct 12 05:56:59 in-target: Setting up liburing2:amd64 (2.9-1) ...^M
+Oct 12 05:56:59 in-target: Setting up qemu-guest-agent (1:10.0.13+ds-0+deb13u1) ...^M
+Oct 12 05:56:59 in-target: Running in chroot, ignoring request.^M^M
+Oct 12 05:56:59 in-target: invoke-rc.d: policy-rc.d denied execution of start.^M
+Oct 12 05:56:59 in-target: Processing triggers for libc-bin (2.41-12+deb13u4) ...^M
+Oct 12 05:57:00 kernel: [  293.939486] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:00 kernel: [  293.939857] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:00 kernel: [  293.954184] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:00 kernel: [  293.954512] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:00 finish-install: dpkg-query: no packages found matching task-desktop
+Oct 12 05:57:00 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:00 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:57:00 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:57:00 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:57:00 in-target: Reading package lists...
+Oct 12 05:57:00 in-target: 
+Oct 12 05:57:00 in-target: Building dependency tree...
+Oct 12 05:57:00 in-target: 
+Oct 12 05:57:00 in-target: Reading state information...
+Oct 12 05:57:00 in-target: 
+Oct 12 05:57:01 in-target: The following NEW packages will be installed:
+Oct 12 05:57:01 in-target:   spice-vdagent
+Oct 12 05:57:01 in-target: 0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:57:01 in-target: Need to get 61.1 kB of archives.
+Oct 12 05:57:01 in-target: After this operation, 223 kB of additional disk space will be used.
+Oct 12 05:57:01 in-target: Get:1 http://deb.debian.org/debian trixie/main amd64 spice-vdagent amd64 0.22.1-4.1 [61.1 kB]
+Oct 12 05:57:01 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:57:01 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:57:01 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:57:01 in-target: Fetched 61.1 kB in 0s (578 kB/s)
+Oct 12 05:57:01 in-target: Selecting previously unselected package spice-vdagent.^M
+Oct 12 05:57:01 in-target: (Reading database ... ^M
+Oct 12 05:57:01 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:57:01 in-target: (Reading database ... 55%^M
+Oct 12 05:57:01 in-target: (Reading database ... 60%^M
+Oct 12 05:57:01 in-target: (Reading database ... 65%^M
+Oct 12 05:57:01 in-target: (Reading database ... 70%^M
+Oct 12 05:57:01 in-target: (Reading database ... 75%^M
+Oct 12 05:57:01 in-target: (Reading database ... 80%^M
+Oct 12 05:57:01 in-target: (Reading database ... 85%^M
+Oct 12 05:57:01 in-target: (Reading database ... 90%^M
+Oct 12 05:57:01 in-target: (Reading database ... 95%^M
+Oct 12 05:57:01 in-target: (Reading database ... 100%^M(Reading database ... 179684 files and directories currently installed.)^M
+Oct 12 05:57:01 in-target: Preparing to unpack .../spice-vdagent_0.22.1-4.1_amd64.deb ...^M
+Oct 12 05:57:01 in-target: Unpacking spice-vdagent (0.22.1-4.1) ...^M
+Oct 12 05:57:01 in-target: Setting up spice-vdagent (0.22.1-4.1) ...^M
+Oct 12 05:57:01 in-target: Running in chroot, ignoring request.^M^M
+Oct 12 05:57:01 in-target: invoke-rc.d: policy-rc.d denied execution of start.^M
+Oct 12 05:57:02 kernel: [  296.121133] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:02 kernel: [  296.121515] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:02 kernel: [  296.135665] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:02 kernel: [  296.136051] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:02 finish-install: info: Running /usr/lib/finish-install.d/10apt-cdrom-setup
+Oct 12 05:57:02 finish-install: Disabling CDROM entries in sources.list (preseed)
+Oct 12 05:57:02 finish-install: Hit:1 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:57:02 finish-install: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:57:02 finish-install: Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:57:02 finish-install: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:57:02 finish-install: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:57:02 finish-install: Fetched 5649 B in 0s (18.9 kB/s)
+Oct 12 05:57:02 finish-install: Reading package lists...
+Oct 12 05:57:03 finish-install: 
+Oct 12 05:57:03 finish-install: info: Running /usr/lib/finish-install.d/10clock-setup
+Oct 12 05:57:03 clock-setup: not setting hardware clock
+Oct 12 05:57:03 finish-install: info: Running /usr/lib/finish-install.d/10open-iscsi
+Oct 12 05:57:03 finish-install: info: Running /usr/lib/finish-install.d/10update-initramfs
+Oct 12 05:57:03 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:04 finish-install: info: Running /usr/lib/finish-install.d/14remove-live-packages
+Oct 12 05:57:04 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:04 in-target: Reading package lists...
+Oct 12 05:57:04 in-target: 
+Oct 12 05:57:04 in-target: Building dependency tree...
+Oct 12 05:57:04 in-target: 
+Oct 12 05:57:04 in-target: Reading state information...
+Oct 12 05:57:04 in-target: 
+Oct 12 05:57:04 in-target: The following packages will be REMOVED:
+Oct 12 05:57:04 in-target:   busybox* live-boot* live-boot-initramfs-tools* live-config*
+Oct 12 05:57:04 in-target:   live-config-systemd* user-setup*
+Oct 12 05:57:05 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:57:05 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:57:05 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:57:05 in-target: 0 upgraded, 0 newly installed, 6 to remove and 0 not upgraded.
+Oct 12 05:57:05 in-target: After this operation, 1526 kB disk space will be freed.
+Oct 12 05:57:05 in-target: (Reading database ... ^M
+Oct 12 05:57:05 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M
+Oct 12 05:57:05 in-target: (Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 
+Oct 12 05:57:05 in-target: 45%^M(Reading database ... 50%^M
+Oct 12 05:57:05 in-target: (Reading database ... 55%^M
+Oct 12 05:57:05 in-target: (Reading database ... 60%^M
+Oct 12 05:57:05 in-target: (Reading database ... 65%^M
+Oct 12 05:57:05 in-target: (Reading database ... 70%^M
+Oct 12 05:57:05 in-target: (Reading database ... 75%^M
+Oct 12 05:57:05 in-target: (Reading database ... 80%^M
+Oct 12 05:57:05 in-target: (Reading database ... 85%^M
+Oct 12 05:57:05 in-target: (Reading database ... 90%^M
+Oct 12 05:57:05 in-target: (Reading database ... 95%^M
+Oct 12 05:57:05 in-target: (Reading database ... 100%^M(Reading database ... 179708 files and directories currently installed.)^M
+Oct 12 05:57:05 in-target: Removing live-boot (1:20250815~deb13u1) ...^M
+Oct 12 05:57:05 in-target: Removing live-boot-initramfs-tools (1:20250815~deb13u1) ...^M
+Oct 12 05:57:05 in-target: update-initramfs: deferring update (trigger activated)^M
+Oct 12 05:57:05 in-target: Removing busybox (1:1.37.0-6+b9) ...^M
+Oct 12 05:57:05 in-target: Removing live-config (11.0.5) ...^M
+Oct 12 05:57:05 in-target: Removing live-config-systemd (11.0.5) ...^M
+Oct 12 05:57:05 in-target: Removing user-setup (1.107) ...^M
+Oct 12 05:57:05 in-target: Processing triggers for initramfs-tools (0.148.4) ...^M
+Oct 12 05:57:05 in-target: update-initramfs: Generating /boot/initrd.img-6.12.111+deb13-amd64^M
+Oct 12 05:57:05 in-target: W: No zstd in /usr/bin:/sbin:/bin, using gzip^M
+Oct 12 05:57:15 in-target: (Reading database ... ^M
+Oct 12 05:57:15 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M
+Oct 12 05:57:15 in-target: (Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:57:15 in-target: (Reading database ... 55%^M
+Oct 12 05:57:15 in-target: (Reading database ... 60%^M
+Oct 12 05:57:15 in-target: (Reading database ... 65%^M
+Oct 12 05:57:15 in-target: (Reading database ... 70%^M
+Oct 12 05:57:15 in-target: (Reading database ... 75%^M
+Oct 12 05:57:15 in-target: (Reading database ... 80%^M
+Oct 12 05:57:15 in-target: (Reading database ... 85%^M
+Oct 12 05:57:15 in-target: (Reading database ... 90%^M
+Oct 12 05:57:16 in-target: (Reading database ... 95%^M
+Oct 12 05:57:16 in-target: (Reading database ... 100%^M(Reading database ... 179591 files and directories currently installed.)^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-config (11.0.5) ...^M
+Oct 12 05:57:16 in-target: dpkg: warning: while removing live-config, directory '/usr/lib/live/config' not empty so not removed^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-boot (1:20250815~deb13u1) ...^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-config-systemd (11.0.5) ...^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-boot-initramfs-tools (1:20250815~deb13u1) ...^M
+Oct 12 05:57:16 in-target: Purging configuration files for user-setup (1.107) ...^M
+Oct 12 05:57:16 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory^M
+Oct 12 05:57:16 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory^M
+Oct 12 05:57:16 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory^M
+Oct 12 05:57:16 in-target: debconf: unable to initialize frontend: Passthrough^M
+Oct 12 05:57:16 in-target: debconf: (Failed to open fd 3: Bad file descriptor at (eval 16) line 3.)^M
+Oct 12 05:57:16 in-target: debconf: falling back to frontend: Noninteractive^M
+Oct 12 05:57:16 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:16 in-target: update-initramfs: Generating /boot/initrd.img-6.12.111+deb13-amd64
+Oct 12 05:57:16 in-target: W: No zstd in /usr/bin:/sbin:/bin, using gzip
+Oct 12 05:57:26 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:26 in-target: Reading package lists...
+Oct 12 05:57:26 in-target: 
+Oct 12 05:57:26 in-target: Building dependency tree...
+Oct 12 05:57:26 in-target: 
+Oct 12 05:57:26 in-target: Reading state information...
+Oct 12 05:57:26 in-target: 
+Oct 12 05:57:27 in-target: 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/15cdrom-detect
+Oct 12 05:57:27 cdrom-detect: Unmounting and ejecting '/dev/sr0'
+Oct 12 05:57:27 cdrom-detect: Not ejecting CD, per debconf setting.
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/20final-message
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/30hw-detect
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/50config-target-network
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/55netcfg-copy-config
+Oct 12 05:57:27 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:27 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:28 netcfg[18440]: INFO: Starting netcfg v.1.197
+Oct 12 05:57:28 netcfg[18440]: DEBUG: No interface given; clearing /etc/network/interfaces
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Writing informative header
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Success!
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Writing loopback interface
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Success!
+Oct 12 05:57:28 finish-install: info: Running /usr/lib/finish-install.d/60cleanup
+Oct 12 05:57:28 finish-install: Reading package lists...
+Oct 12 05:57:29 finish-install: 
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/65partman-md
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/70mtab
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/80hvcgetty
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/90base-installer
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/90console
+Oct 12 05:57:29 finish-install: Configuring init for serial console
+Oct 12 05:57:29 finish-install: grep: /target/etc/securetty: No such file or directory
+Oct 12 05:57:29 finish-install: grep: /target/etc/securetty: No such file or directory
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/94random-seed
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/94save-logs
+__CHAM3E_5_0
+cham3vm$ __CHAM3S_6
+#deb cdrom:[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24]/ trixie main non-free non-free-firmware
+
+deb http://deb.debian.org/debian trixie main non-free non-free-firmware
+deb-src http://deb.debian.org/debian trixie main non-free non-free-firmware
+
+deb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware
+deb-src http://security.debian.org/debian-security trixie-security main non-free non-free-firmware
+
+# trixie-updates, to get updates before a point release is made;
+# see https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_updates_and_backports
+deb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware
+deb-src http://deb.debian.org/debian trixie-updates main non-free non-free-firmware
+
+# This system was installed using removable media.
+# The matching "deb cdrom" entries were disabled at the end
+# of the installation process by preseed.
+# For information about how to configure apt package sources,
+# see the sources.list(5) manual.
+====
+cham3_debian_contrib.list
+zzz_cham3_kali.list
+zzz_cham3_librewolf.list
+__CHAM3E_6_0
+cham3vm$ __CHAM3S_7
+Linux cham3-vm-test 6.12.111+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.111-1 (2026-09-28) x86_64 GNU/Linux
+BOOT_IMAGE=/boot/vmlinuz-6.12.111+deb13-amd64 root=UUID=14e16d3a-ffb4-4d61-99a5-10e35520233f ro console=ttyS0,115200n8 console=tty0 console=ttyS0,115200n8 quiet
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+VERSION_CODENAME=trixie
+__CHAM3E_7_0
+cham3vm$ __CHAM3S_8
+amass 5.1.1-0kali3 install ok installed
+cham3-archive-keyring 0.0.0~m1 install ok installed
+cham3-desktop 0.0.0~m1 install ok installed
+cham3-full 0.0.0~m1 install ok installed
+exploitdb 20260904-0kali1 install ok installed
+ghidra 12.1.4+ds-0kali1 install ok installed
+librewolf 157.0.1-1 install ok installed
+radare2 6.0.4+dfsg-1 install ok installed
+torbrowser-launcher 0.3.7-3 install ok installed
+wireshark-common 4.4.19-0+deb13u1 install ok installed
+zaproxy 2.17.0-0kali1 install ok installed
+__CHAM3E_8_0
+cham3vm$ __CHAM3S_9
+alsa-topology-conf install ok installed
+amd64-microcode install ok installed
+atmel-firmware install ok installed
+bluez-firmware install ok installed
+dahdi-firmware-nonfree install ok installed
+firmware-amd-graphics install ok installed
+firmware-ast install ok installed
+firmware-ath9k-htc install ok installed
+firmware-atheros install ok installed
+firmware-bnx2 install ok installed
+firmware-bnx2x install ok installed
+firmware-brcm80211 install ok installed
+firmware-carl9170 install ok installed
+firmware-cavium install ok installed
+firmware-cirrus install ok installed
+firmware-intel-graphics install ok installed
+firmware-intel-misc install ok installed
+firmware-intel-sound install ok installed
+firmware-ipw2x00 install ok installed
+firmware-ivtv install ok installed
+firmware-iwlwifi install ok installed
+firmware-libertas install ok installed
+firmware-linux install ok installed
+firmware-linux-free install ok installed
+firmware-linux-nonfree install ok installed
+firmware-marvell-prestera install ok installed
+firmware-mediatek install ok installed
+firmware-misc-nonfree install ok installed
+firmware-myricom install ok installed
+firmware-netronome install ok installed
+firmware-netxen install ok installed
+firmware-nvidia-graphics install ok installed
+firmware-nvidia-tesla-535-gsp install ok installed
+firmware-qlogic install ok installed
+firmware-realtek install ok installed
+firmware-siano install ok installed
+firmware-sof-signed install ok installed
+firmware-zd1211 install ok installed
+indi-dsi install ok installed
+intel-microcode install ok installed
+libfishcamp1t64 install ok installed
+libsbig4t64 install ok installed
+wireless-regdb install ok installed
+__CHAM3E_9_0
+cham3vm$ __CHAM3S_10
+debian-archive-bookworm-automatic.asc
+debian-archive-bookworm-security-automatic.asc
+debian-archive-bookworm-stable.asc
+debian-archive-bullseye-automatic.asc
+debian-archive-bullseye-security-automatic.asc
+debian-archive-bullseye-stable.asc
+debian-archive-trixie-automatic.asc
+debian-archive-trixie-security-automatic.asc
+debian-archive-trixie-stable.asc
+cham3_kali_archive.gpg
+cham3_librewolf.gpg
+deb http://deb.debian.org/debian trixie main non-free non-free-firmware
+deb-src http://deb.debian.org/debian trixie main non-free non-free-firmware
+deb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware
+deb-src http://security.debian.org/debian-security trixie-security main non-free non-free-firmware
+deb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware
+deb-src http://deb.debian.org/debian trixie-updates main non-free non-free-firmware
+deb [arch=amd64 signed-by=/usr/share/keyrings/cham3_librewolf.gpg] https://repo.librewolf.net librewolf main
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie contrib
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie-updates contrib
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://security.debian.org/debian-security trixie-security contrib
+deb [arch=amd64 signed-by=/usr/share/keyrings/cham3_kali_archive.gpg] http://http.kali.org/kali/ kali-rolling main
+__CHAM3E_10_0
+cham3vm$ __CHAM3S_11
+zaproxy:
+  Installed: 2.17.0-0kali1
+  Candidate: 2.17.0-0kali1
+  Version table:
+ *** 2.17.0-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+exploitdb:
+  Installed: 20260904-0kali1
+  Candidate: 20260904-0kali1
+  Version table:
+ *** 20260904-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+ghidra:
+  Installed: 12.1.4+ds-0kali1
+  Candidate: 12.1.4+ds-0kali1
+  Version table:
+ *** 12.1.4+ds-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+amass:
+  Installed: 5.1.1-0kali3
+  Candidate: 5.1.1-0kali3
+  Version table:
+ *** 5.1.1-0kali3 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+radare2:
+  Installed: 6.0.4+dfsg-1
+  Candidate: 6.0.4+dfsg-1
+  Version table:
+ *** 6.0.4+dfsg-1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+librewolf:
+  Installed: 157.0.1-1
+  Candidate: 157.0.1-1
+  Version table:
+ *** 157.0.1-1 500
+         -1 https://repo.librewolf.net librewolf/main amd64 Packages
+        100 /var/lib/dpkg/status
+     157.0-1 500
+         -1 https://repo.librewolf.net librewolf/main amd64 Packages
+ghidra-data:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     10.5-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+kali-defaults:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     2026.3.2 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+burpsuite:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     2026.8-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+metasploit-framework:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     6.5.3-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+libc6:
+  Installed: 2.41-12+deb13u4
+  Candidate: 2.41-12+deb13u4
+  Version table:
+     2.43-6 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+ *** 2.41-12+deb13u4 500
+        500 http://deb.debian.org/debian trixie/main amd64 Packages
+        100 /var/lib/dpkg/status
+__CHAM3E_11_0
+cham3vm$ __CHAM3S_12
+750 root wireshark
+/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip
+override=root root 750 /usr/bin/dumpcap
+* wireshark-common/install-setuid: false
+__CHAM3E_12_0
+cham3vm$ __CHAM3S_13
+__CHAM3E_13_0
+cham3vm$ __CHAM3S_14
+__CHAM3E_14_0
+cham3vm$ __CHAM3S_15
+__CHAM3E_15_0
+cham3vm$ __CHAM3S_16
+__CHAM3E_16_0
+cham3vm$ __CHAM3S_17
+__CHAM3E_17_0
+cham3vm$ __CHAM3S_18
+__CHAM3E_18_0
+cham3vm$ __CHAM3S_19
+__CHAM3E_19_0
+cham3vm$ __CHAM3S_20
+__CHAM3E_20_0
+cham3vm$ __CHAM3S_21
+member_rc=0
+member_bytes=436
+nonmember_rc=126
+member_log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-cLkSrV/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%) 
+nonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied 
+__CHAM3E_21_0
+cham3vm$ __CHAM3S_22
+0% [Working]            Hit:1 http://deb.debian.org/debian trixie InRelease
+0% [Waiting for headers] [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]                                                                                                         Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+                                                                                                         Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+                                                                                                         0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]                                                                                   Hit:4 http://http.kali.org/kali kali-rolling InRelease
+                                                                                   0% [Connecting to repo.librewolf.net]0% [Connecting to repo.librewolf.net (15.204.58.112)]                                                     Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+                                                     0% [5 InRelease 5649 B/5649 B 100%]                                   0% [Working]100% [Working]              Fetched 5649 B in 0s (17.4 kB/s)
+Reading package lists... 0%Reading package lists... 0%Reading package lists... 0%Reading package lists... 31%Reading package lists... 31%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 51%Reading package lists... 51%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 61%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... Done
+__CHAM3E_22_0
+cham3vm$ __CHAM3S_23
+zaproxy:
+  Installed: 2.17.0-0kali1
+  Candidate: 2.17.0-0kali1
+  Version table:
+ *** 2.17.0-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+exploitdb:
+  Installed: 20260904-0kali1
+  Candidate: 20260904-0kali1
+  Version table:
+ *** 20260904-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+ghidra:
+  Installed: 12.1.4+ds-0kali1
+  Candidate: 12.1.4+ds-0kali1
+  Version table:
+ *** 12.1.4+ds-0kali1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+amass:
+  Installed: 5.1.1-0kali3
+  Candidate: 5.1.1-0kali3
+  Version table:
+ *** 5.1.1-0kali3 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+radare2:
+  Installed: 6.0.4+dfsg-1
+  Candidate: 6.0.4+dfsg-1
+  Version table:
+ *** 6.0.4+dfsg-1 500
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+        100 /var/lib/dpkg/status
+librewolf:
+  Installed: 157.0.1-1
+  Candidate: 157.0.1-1
+  Version table:
+ *** 157.0.1-1 500
+         -1 https://repo.librewolf.net librewolf/main amd64 Packages
+        100 /var/lib/dpkg/status
+     157.0-1 500
+         -1 https://repo.librewolf.net librewolf/main amd64 Packages
+ghidra-data:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     10.5-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+kali-defaults:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     2026.3.2 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+burpsuite:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     2026.8-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+metasploit-framework:
+  Installed: (none)
+  Candidate: (none)
+  Version table:
+     6.5.3-0kali1 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+libc6:
+  Installed: 2.41-12+deb13u4
+  Candidate: 2.41-12+deb13u4
+  Version table:
+     2.43-6 -1
+         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages
+ *** 2.41-12+deb13u4 500
+        500 http://deb.debian.org/debian trixie/main amd64 Packages
+        100 /var/lib/dpkg/status
+__CHAM3E_23_0
+cham3vm$ __CHAM3S_24
+__CHAM3E_24_0
+cham3vm$ __CHAM3S_25
+Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
+Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done
+Reading state information... 0% Reading state information... 0%Reading state information... Done
+Calculating upgrade... 0%Calculating upgrade... 10%Calculating upgrade... Done
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+__CHAM3E_25_0
+cham3vm$ __CHAM3S_26
+Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
+Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done
+Reading state information... 0% Reading state information... 0%Reading state information... Done
+Package ghidra-data is not available, but is referred to by another package.
+This may mean that the package is missing, has been obsoleted, or
+is only available from another source
+
+E: Package 'ghidra-data' has no installation candidate
+__CHAM3E_26_100
+cham3vm$ __CHAM3S_27
+4.4.19-0+deb13u1__CHAM3E_27_0
+cham3vm$ __CHAM3S_28
+Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
+Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done
+Reading state information... 0% Reading state information... 0%Reading state information... Done
+wireshark-common is already the newest version (4.4.19-0+deb13u1).
+0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+__CHAM3E_28_0
+cham3vm$ __CHAM3S_29
+4.4.19-0+deb13u1__CHAM3E_29_0
+cham3vm$ __CHAM3S_30
+root root 750 /usr/bin/dumpcap
+__CHAM3E_30_0
+cham3vm$ __CHAM3S_31
+750 root wireshark
+/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip
+override=root root 750 /usr/bin/dumpcap
+* wireshark-common/install-setuid: false
+__CHAM3E_31_0
+cham3vm$ __CHAM3S_32
+Reading package lists... 0%Reading package lists... 100%Reading package lists... Done
+Building dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done
+Reading state information... 0% Reading state information... 0%Reading state information... Done
+0 upgraded, 0 newly installed, 1 reinstalled, 0 to remove and 0 not upgraded.
+Need to get 608 kB of archives.
+After this operation, 0 B of additional disk space will be used.
+0% [Working]            Get:1 http://security.debian.org/debian-security trixie-security/main amd64 wireshark-common amd64 4.4.19-0+deb13u1 [608 kB]
+5% [1 wireshark-common 36.9 kB/608 kB 6%]                                         100% [Working]              Fetched 608 kB in 0s (2039 kB/s)
+debconf: unable to initialize frontend: Dialog
+debconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)
+debconf: falling back to frontend: Readline
+Preconfiguring packages ...
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 179586 files and directories currently installed.)
+Preparing to unpack .../wireshark-common_4.4.19-0+deb13u1_amd64.deb ...
+Unpacking wireshark-common (4.4.19-0+deb13u1) over (4.4.19-0+deb13u1) ...
+debconf: unable to initialize frontend: Dialog
+debconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)
+debconf: falling back to frontend: Readline
+debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+debconf: unable to initialize frontend: Teletype
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Noninteractive
+Setting up wireshark-common (4.4.19-0+deb13u1) ...
+debconf: unable to initialize frontend: Dialog
+debconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)
+debconf: falling back to frontend: Readline
+debconf: unable to initialize frontend: Readline
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Teletype
+debconf: unable to initialize frontend: Teletype
+debconf: (This frontend requires a controlling tty.)
+debconf: falling back to frontend: Noninteractive
+root root 750 /usr/bin/dumpcap
+Processing triggers for cham3-desktop (0.0.0~m1) ...
+cham3-desktop: WARNING: file capabilities were not set on /usr/bin/dumpcap.
+cham3-desktop: Packet capture by non-root users is unavailable (fail closed); the set-user-id fallback is not used.
+cham3-desktop: Fix the cause (capability support on the file system) and run: dpkg-reconfigure cham3-desktop
+Processing triggers for shared-mime-info (2.4-5+b2) ...
+Processing triggers for hicolor-icon-theme (0.18-2) ...
+__CHAM3E_32_0
+cham3vm$ __CHAM3S_33
+750 root wireshark
+override=root root 750 /usr/bin/dumpcap
+* wireshark-common/install-setuid: false
+__CHAM3E_33_0
+cham3vm$ __CHAM3S_34
+__CHAM3E_34_0
+cham3vm$ __CHAM3S_35
+__CHAM3E_35_0
+cham3vm$ __CHAM3S_36
+__CHAM3E_36_0
+cham3vm$ __CHAM3S_37
+__CHAM3E_37_0
+cham3vm$ __CHAM3S_38
+__CHAM3E_38_0
+cham3vm$ __CHAM3S_39
+__CHAM3E_39_0
+cham3vm$ __CHAM3S_40
+__CHAM3E_40_0
+cham3vm$ __CHAM3S_41
+__CHAM3E_41_0
+cham3vm$ __CHAM3S_42
+member_rc=1
+member_bytes=0
+nonmember_rc=126
+member_log=Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied. 
+nonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied 
+__CHAM3E_42_0
+cham3vm$ __CHAM3S_43
+__CHAM3E_43_0
+cham3vm$ __CHAM3S_44
+750 root wireshark
+/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip
+override=root root 750 /usr/bin/dumpcap
+* wireshark-common/install-setuid: false
+__CHAM3E_44_0
+cham3vm$ __CHAM3S_45
+__CHAM3E_45_0
+cham3vm$ __CHAM3S_46
+__CHAM3E_46_0
+cham3vm$ __CHAM3S_47
+__CHAM3E_47_0
+cham3vm$ __CHAM3S_48
+__CHAM3E_48_0
+cham3vm$ __CHAM3S_49
+__CHAM3E_49_0
+cham3vm$ __CHAM3S_50
+__CHAM3E_50_0
+cham3vm$ __CHAM3S_51
+__CHAM3E_51_0
+cham3vm$ __CHAM3S_52
+__CHAM3E_52_0
+cham3vm$ __CHAM3S_53
+member_rc=0
+member_bytes=436
+nonmember_rc=126
+member_log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-dwlIPp/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%) 
+nonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied 
+__CHAM3E_53_0
+cham3vm$ __CHAM3S_54
+Name=sddm Desktop= Type=x11 Class=greeter Active=yes 
+Name=sddm Desktop= Type=unspecified Class=manager-early Active=yes 
+Name=cham3test Desktop= Type=tty Class=user Active=yes 
+Name=cham3test Desktop= Type=unspecified Class=manager Active=yes 
+Name=cham3test Desktop=KDE Type=wayland Class=user Active=no 
+__CHAM3E_54_1
+cham3vm$ __CHAM3S_55
+Name=sddm Desktop= Type=unspecified Class=manager-early Active=yes 
+Name=cham3test Desktop= Type=tty Class=user Active=yes 
+Name=cham3test Desktop= Type=unspecified Class=manager Active=yes 
+Name=cham3test Desktop=KDE Type=wayland Class=user Active=yes 
+plasmashell=running
+__CHAM3E_55_0
+cham3vm$ __CHAM3S_56
+1284 /usr/bin/kwin_wayland_wrapper --xwayland
+1290 /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-0 --xwayland-fd 8 --xwayland-fd 9 --xwayland-display :1 --xwayland-xauthority /run/user/1000/xauth_aGPJrn --xwayland
+1344 /usr/bin/Xwayland :1 -auth /run/user/1000/xauth_aGPJrn -listenfd 8 -listenfd 9 -displayfd 66 -wm 68 -rootless
+1412 /usr/bin/plasmashell --no-respawn
+WAYLAND_DISPLAY=wayland-0
+XDG_SESSION_TYPE=wayland
+__CHAM3E_56_0
+cham3vm$ __CHAM3S_57
+ColorScheme=Cham3Dark
+LookAndFeelPackage=org.cham3.desktop
+widgetStyle=Breeze
+__CHAM3E_57_0
+cham3vm$ __CHAM3S_58
+__CHAM3E_58_0
+cham3vm$ __CHAM3S_59
+__CHAM3E_59_0
+cham3vm$ __CHAM3S_60
+__CHAM3E_60_0
+cham3vm$ __CHAM3S_61
+__CHAM3E_61_0
+cham3vm$ __CHAM3S_62
+__CHAM3E_62_0
+cham3vm$ __CHAM3S_63
+__CHAM3E_63_0
+cham3vm$ __CHAM3S_64
+{"type":"s","data":["{\"panels\":[{\"location\":\"right\",\"form_factor\":\"vertical\",\"height\":60,\"length\":783,\"alignment\":\"left\",\"hiding\":\"none\",\"offset\":0,\"screen\":0,\"widgets\":[{\"type\":\"org.cham3.user_launcher\",\"id\":3,\"geometry\":{\"x\":4,\"y\":8,\"width\":52,\"height\":52}},{\"type\":\"org.cham3.alias_wheel\",\"id\":4,\"geometry\":{\"x\":4,\"y\":64,\"width\":52,\"height\":58}},{\"type\":\"org.cham3.tag_pager\",\"id\":5,\"geometry\":{\"x\":4,\"y\":126,\"width\":52,\"height\":128}},{\"type\":\"org.cham3.contract_dock\",\"id\":6,\"geometry\":{\"x\":4,\"y\":258,\"width\":52,\"height\":88}},{\"type\":\"org.cham3.netproto_launcher\",\"id\":7,\"geometry\":{\"x\":4,\"y\":350,\"width\":52,\"height\":40}},{\"type\":\"org.cham3.killswitch\",\"id\":8,\"geometry\":{\"x\":4,\"y\":394,\"width\":52,\"height\":68}},{\"type\":\"org.cham3.settings_launcher\",\"id\":9,\"geometry\":{\"x\":4,\"y\":466,\"width\":52,\"height\":52}},{\"type\":\"org.cham3.task_manager\",\"id\":10,\"geometry\":{\"x\":4,\"y\":522,\"width\":52,\"height\":52}},{\"type\":\"org.kde.plasma.systemtray\",\"id\":11,\"geometry\":{\"x\":4,\"y\":578,\"width\":52,\"height\":86}},{\"type\":\"org.kde.plasma.digitalclock\",\"id\":21,\"geometry\":{\"x\":4,\"y\":668,\"width\":52,\"height\":103}}]}],\"desktops\":[{\"wallpaper_plugin\":\"org.kde.image\",\"image\":\"file:///usr/share/wallpapers/Cham3\",\"screen\":0}],\"screens\":[{\"x\":0,\"y\":0,\"width\":1280,\"height\":800}]}"]}
+__CHAM3E_64_0
+cham3vm$ __CHAM3S_65
+__CHAM3E_65_1
+cham3vm$ __CHAM3S_66
+1745
+__CHAM3E_66_0
+cham3vm$ __CHAM3S_67
+__CHAM3E_67_0
+cham3vm$ 

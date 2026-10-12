@@ -1,0 +1,13 @@
+cham3-full (0.0.0~m1) UNRELEASED; urgency=low
+
+  * M1 metapackage: cham3-desktop plus the curated application suite.
+  * Codex review F2 (owner-approved): adds librewolf (official LibreWolf
+    repository) and zaproxy, amass, exploitdb, ghidra and radare2 (Kali archive,
+    per-package allowlist) as dependencies. The sources, keys and pins live in
+    the image definition (build/live-desktop), not in this package. mitmproxy,
+    wpscan and metasploit-framework are deferred pending separate review and are
+    not dependencies; cutter and rizin are omitted in favour of radare2 and
+    burpsuite in favour of zaproxy (see the package description).
+  * Maintainer address is a reserved placeholder pending an owner decision.
+
+ -- cham3 developers <maintainers@cham3.invalid>  Sun, 11 Oct 2026 00:00:00 +0000

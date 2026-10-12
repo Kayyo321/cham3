@@ -1,0 +1,15 @@
+Package: libpostal-data
+Source: libpostal
+Version: 1.1.4-0kali1
+Architecture: all
+Maintainer: Kali Developers <devel@kali.org>
+Installed-Size: 20
+Depends: curl
+Breaks: libpostal1 (<< 1.1+git20250713.019f9ae-0kali10)
+Replaces: libpostal1 (<< 1.1+git20250713.019f9ae-0kali10)
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://github.com/openvenues/libpostal
+Description: data for the C library libpostal
+ The package contains the geo data for libpostal.

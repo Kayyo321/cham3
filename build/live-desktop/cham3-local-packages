@@ -1,0 +1,14 @@
+# Local binary packages that build_image.sh stages into config/packages.chroot
+# for the cham3 M1 desktop image profile (CHAM3_LIVE_DIR=build/live-desktop).
+# live-build installs every .deb found in config/packages.chroot, so the staged
+# set must be exactly the packages this image profile needs: build_image.sh
+# stages only the built .deb files whose package name is listed here.
+#
+# Format: one binary package name per line; blank lines and lines starting with
+# "#" are ignored. A listed package that was not built stops the build, and a
+# built package that is not listed is not staged (fail closed).
+#
+# cham3-full depends on cham3-desktop. cham3-base (the empty M0 development
+# skeleton) is intentionally not listed: the M1 image does not need it.
+cham3-desktop
+cham3-full

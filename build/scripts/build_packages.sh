@@ -36,6 +36,48 @@ for package_dir in "${repo_root}"/packaging/*/; do
     build_dir="${work_dir}/${package_name}"
     mkdir -p "${build_dir}"
     cp -a "${package_dir}." "${build_dir}/"
+    # Optional extra source roots: a package that packages content living
+    # elsewhere in the repo (for example desktop/ or assets/, per PROJECT.md
+    # section 13) lists each repo-relative directory, one per line, in
+    # debian/cham3-extra-sources. Each is staged into the build dir at the same
+    # relative path so debian/rules and debian/install can consume it. Packages
+    # without this file build exactly as before. Fail closed on an unsafe or
+    # missing source so a build can never silently omit packaged content.
+    extra_sources_file="${build_dir}/debian/cham3-extra-sources"
+    if [ -f "${extra_sources_file}" ]; then
+        while IFS= read -r extra_rel || [ -n "${extra_rel}" ]; do
+            case "${extra_rel}" in
+                ''|'#'*) continue ;;
+            esac
+            case "${extra_rel}" in
+                /*|*..*)
+                    echo "build_packages: unsafe path in cham3-extra-sources: ${extra_rel}" >&2
+                    exit 2
+                    ;;
+            esac
+            extra_src="${repo_root}/${extra_rel}"
+            [ -e "${extra_src}" ] || {
+                echo "build_packages: missing extra source ${extra_rel} for ${package_name}" >&2
+                exit 2
+            }
+            # Fail closed on any symlink in the staged tree whose target escapes the
+            # repository (or dangles), so a link inside desktop/ or assets/ cannot
+            # pull a host path into the package.
+            while IFS= read -r link; do
+                [ -n "${link}" ] || continue
+                target=$(readlink -f -- "${link}" 2> /dev/null || true)
+                case "${target}" in
+                    "${repo_root}"/*|"${repo_root}") : ;;
+                    *)
+                        echo "build_packages: ${extra_rel} contains a symlink escaping the repo: ${link}" >&2
+                        exit 2
+                        ;;
+                esac
+            done < <(find "${extra_src}" -type l 2> /dev/null)
+            mkdir -p "${build_dir}/$(dirname -- "${extra_rel}")"
+            cp -a "${extra_src}" "${build_dir}/${extra_rel}"
+        done < "${extra_sources_file}"
+    fi
     (cd "${build_dir}" && dpkg-buildpackage -us -uc -b)
     # Outputs land next to the build directory, i.e. in ${work_dir}.
     built_any=1

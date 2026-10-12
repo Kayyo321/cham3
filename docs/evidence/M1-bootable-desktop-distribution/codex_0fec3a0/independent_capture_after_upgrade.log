@@ -1,0 +1,2 @@
+{"command": ["setpriv", "--reuid=2001", "--regid=2001", "--groups=wireshark", "sh", "-c", "exec /usr/bin/dumpcap -p -i lo -a duration:4 -c 1 -w /tmp/codex-member-real.pcapng"], "exit": 0, "stdout": "", "stderr": "Capturing on 'Loopback: lo'\nFile: /tmp/codex-member-real.pcapng\n\nPackets: 1 \nPackets captured: 1\nPackets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)\n", "bytes": 436}
+{"nonmember_exit": 126, "stderr": "sh: 1: exec: /usr/bin/dumpcap: Permission denied\n"}

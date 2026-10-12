@@ -1,0 +1,11 @@
+Network Protocol Editor
+
+Network Protocol Editor unavailable (M4 enforcement not present)
+
+The planned Clearnet, Tor and Offline tabs are not present. No setting is shown, proposed, signed or applied, and no firewall, routing or Tor configuration is changed
+
+M1 visual foundation only. This control performs no security action and reports no active security state
+
+\G]
+
+Cham;

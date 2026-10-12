@@ -29,10 +29,47 @@ def changelog_version():
     return match.group(1)
 
 
+def expected_deb_names():
+    """Derive the exact set of .deb files the build must produce from the
+    packaging/*/debian definitions. This keeps the original M0 guarantee that
+    build_packages.sh produces nothing unexpected, while scaling to the M1
+    package set (cham3-base plus cham3-desktop and cham3-full) without
+    hardcoding M1 names. All current cham3 binary packages are Architecture:
+    all; a non-"all" value is used verbatim and would need a build-arch lookup.
+    """
+    root = m0_support.repo_root()
+    packaging = os.path.join(root, "packaging")
+    names = []
+    for entry in sorted(os.listdir(packaging)):
+        debian = os.path.join(packaging, entry, "debian")
+        control_path = os.path.join(debian, "control")
+        changelog_path = os.path.join(debian, "changelog")
+        if not (os.path.isfile(control_path) and os.path.isfile(changelog_path)):
+            continue
+        with open(changelog_path, "r", encoding="utf-8", errors="replace") as handle:
+            first_line = handle.readline()
+        version_match = re.match(r"^\S+ \(([^)]+)\)", first_line)
+        if not version_match:
+            raise AssertionError("cannot parse changelog version in %s" % changelog_path)
+        version = version_match.group(1)
+        stanzas = m0_support.parse_control(
+            m0_support.read_text(os.path.join("packaging", entry, "debian", "control"))
+        )
+        for stanza in stanzas:
+            if "Package" in stanza:
+                arch = stanza.get("Architecture", "all")
+                names.append("%s_%s_%s.deb" % (stanza["Package"], version, arch))
+    return sorted(names)
+
+
 class packages_output_t(unittest.TestCase):
-    def test_exactly_the_expected_deb_is_built(self):
+    def test_exactly_the_expected_debs_are_built(self):
         names = sorted(os.path.basename(p) for p in glob.glob(os.path.join(packages_dir(), "*.deb")))
-        self.assertEqual(names, [m0_support.DebFileName])
+        expected = expected_deb_names()
+        # cham3-base must always be among them (M0 anchor), and the set must be
+        # exactly what packaging/ declares (no stray debs).
+        self.assertIn(m0_support.DebFileName, expected)
+        self.assertEqual(names, expected)
 
     def test_deb_version_matches_changelog_version(self):
         self.assertEqual(changelog_version(), m0_support.ExpectedVersion)

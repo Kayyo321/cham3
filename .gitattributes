@@ -1,0 +1,7 @@
+# Captured EXTERNAL evidence (upstream maintainer scripts, tool transcripts, review
+# evidence) is committed byte for byte so that it can be compared with its source.
+# Its trailing whitespace and final blank lines are part of that record, so git's
+# whitespace checks (git diff --check) do not apply to it. cham3-authored files are
+# checked normally.
+docs/research/evidence/** -whitespace
+docs/evidence/** -whitespace

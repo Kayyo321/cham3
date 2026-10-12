@@ -1,0 +1,33 @@
+### mode=strict target=radare2 extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=strict target=radare2. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: -1
+
+Package: radare2
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y radare2
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Solving dependencies...
+Some packages could not be installed. This may mean that you have
+requested an impossible situation or if you are using the unstable
+distribution that some required packages have not yet been created
+or been moved out of Incoming.
+The following information may help to resolve the situation:
+
+The following packages have unmet dependencies:
+ radare2 : Depends: libradare2-6.0.0t64 (>= 6.0.4+dfsg) but it is not installable
+E: Unable to correct problems, you have held broken packages.
+E: The following information from --solver 3.0 may provide additional context:
+   Unable to satisfy dependencies. Reached two conflicting decisions:
+   1. libradare2-6.0.0t64:amd64=6.0.4+dfsg-1 is not selected for install
+   2. libradare2-6.0.0t64:amd64=6.0.4+dfsg-1 is selected for install because:
+      1. radare2:amd64=6.0.4+dfsg-1 is selected for install
+      2. radare2:amd64 Depends libradare2-6.0.0t64 (>= 6.0.4+dfsg)
+      3. libradare2-6.0.0t64:amd64 is available in version 6.0.4+dfsg-1
+### exit=100

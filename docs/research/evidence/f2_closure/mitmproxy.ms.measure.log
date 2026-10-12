@@ -1,0 +1,232 @@
+### mode=measure target=mitmproxy extra_allow=python3-mitmproxy-rs python3-mitmproxy-linux libpython3.14 libpython3.14-stdlib libpython3.14-minimal
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=measure target=mitmproxy. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: mitmproxy
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: python3-mitmproxy-rs
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: python3-mitmproxy-linux
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libpython3.14
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libpython3.14-stdlib
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libpython3.14-minimal
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y mitmproxy
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  fonts-font-awesome fonts-font-awesome-legacy libargon2-1 libbrotli1 libc-bin
+  libc-gconv-modules-extra libc6 libexpat1 libpython3-stdlib libpython3.14
+  libpython3.14-minimal libpython3.14-stdlib libyaml-0-2 media-types netbase
+  publicsuffix python3 python3-aioquic python3-argon2
+  python3-argon2-cffi-bindings python3-asgiref python3-attr
+  python3-autocommand python3-bcrypt python3-blinker python3-brotli
+  python3-certifi python3-cffi python3-cffi-backend python3-click
+  python3-cryptography python3-flask python3-h11 python3-h2 python3-hpack
+  python3-hyperframe python3-itsdangerous python3-jaraco.context
+  python3-jaraco.functools python3-jinja2 python3-kaitaistruct python3-ldap3
+  python3-markupsafe python3-minimal python3-mitmproxy-linux
+  python3-mitmproxy-rs python3-more-itertools python3-msgpack python3-openssl
+  python3-packaging python3-publicsuffix2 python3-pyasn1 python3-pycparser
+  python3-pylsqpack python3-pyparsing python3-pyperclip python3-ruamel.yaml
+  python3-ruamel.yaml.clib python3-service-identity python3-setuptools
+  python3-sortedcontainers python3-tornado python3-urwid python3-wcwidth
+  python3-werkzeug python3-wsproto python3-zipp python3-zstandard python3.14
+  python3.14-minimal
+Suggested packages:
+  node-fortawesome-fontawesome-free python3-doc python3-tk python3-venv
+  python-aioquic-doc python-argon2-doc python-attr-doc python-blinker-doc
+  python3-dev python-cryptography-doc python3-cryptography-vectors
+  python-flask-doc python-jinja2-doc python-openssl-doc cpp
+  python-pylsqpack-doc python-pyparsing-doc python-setuptools-doc
+  python-sortedcontainers-doc python3-pycurl python-tornado-doc
+  python3-twisted python-urwid-doc ipython3 python-werkzeug-doc python3-lxml
+  python3-watchdog python-zstandard-doc python3.14-venv python3.14-doc
+  binutils binfmt-support
+Recommended packages:
+  python3-dotenv python3-babel xclip | xsel | wl-clipboard | python3-qtpy
+  | python3-pyqt5 python3-idna python3-pyinotify
+The following NEW packages will be installed:
+  fonts-font-awesome fonts-font-awesome-legacy libargon2-1
+  libc-gconv-modules-extra libexpat1 libpython3-stdlib libpython3.14
+  libpython3.14-minimal libpython3.14-stdlib libyaml-0-2 media-types mitmproxy
+  netbase publicsuffix python3 python3-aioquic python3-argon2
+  python3-argon2-cffi-bindings python3-asgiref python3-attr
+  python3-autocommand python3-bcrypt python3-blinker python3-brotli
+  python3-certifi python3-cffi python3-cffi-backend python3-click
+  python3-cryptography python3-flask python3-h11 python3-h2 python3-hpack
+  python3-hyperframe python3-itsdangerous python3-jaraco.context
+  python3-jaraco.functools python3-jinja2 python3-kaitaistruct python3-ldap3
+  python3-markupsafe python3-minimal python3-mitmproxy-linux
+  python3-mitmproxy-rs python3-more-itertools python3-msgpack python3-openssl
+  python3-packaging python3-publicsuffix2 python3-pyasn1 python3-pycparser
+  python3-pylsqpack python3-pyparsing python3-pyperclip python3-ruamel.yaml
+  python3-ruamel.yaml.clib python3-service-identity python3-setuptools
+  python3-sortedcontainers python3-tornado python3-urwid python3-wcwidth
+  python3-werkzeug python3-wsproto python3-zipp python3-zstandard python3.14
+  python3.14-minimal
+The following packages will be upgraded:
+  libbrotli1 libc-bin libc6
+3 upgraded, 68 newly installed, 0 to remove and 114 not upgraded.
+Inst libc6 [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Conf libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-bin [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64])
+Conf libc6 (2.43-6 kali-rolling [amd64])
+Conf libc-bin (2.43-6 kali-rolling [amd64])
+Inst libexpat1 (2.8.4-1 kali-rolling [amd64])
+Inst fonts-font-awesome-legacy (6-3 kali-rolling [all])
+Inst fonts-font-awesome (7.3.0+dfsg-1 kali-rolling [all])
+Inst libpython3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Inst python3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Conf libpython3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Conf libexpat1 (2.8.4-1 kali-rolling [amd64])
+Conf python3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Inst python3-minimal (3.14.7-3 kali-rolling [amd64])
+Inst media-types (14.0.0 kali-rolling [all])
+Inst netbase (6.6 kali-rolling [all])
+Inst libpython3.14-stdlib (3.14.7-4 kali-rolling [amd64])
+Inst python3.14 (3.14.7-4 kali-rolling [amd64])
+Inst libpython3-stdlib (3.14.7-3 kali-rolling [amd64])
+Conf python3-minimal (3.14.7-3 kali-rolling [amd64])
+Inst python3 (3.14.7-3 kali-rolling [amd64])
+Inst python3-certifi (2026.7.22+ds-1 kali-rolling [all])
+Inst python3-bcrypt (5.0.0-6+b1 kali-rolling [amd64])
+Inst python3-cffi-backend (2.1.1-1+b1 kali-rolling [amd64])
+Inst python3-cryptography (49.0.0-2 kali-rolling [amd64])
+Inst python3-openssl (26.4.0-1 kali-rolling [all])
+Inst python3-pylsqpack (0.3.23-1 kali-rolling [amd64])
+Inst python3-attr (26.1.0-1 kali-rolling [all])
+Inst python3-service-identity (26.1.0-2 kali-rolling [all])
+Inst python3-aioquic (1.3.0-2 kali-rolling [amd64])
+Inst python3-hpack (4.0.0-4 kali-rolling [all])
+Inst python3-hyperframe (6.1.0-2 kali-rolling [all])
+Inst python3-h2 (4.3.0-2 kali-rolling [all])
+Inst python3-mitmproxy-linux (0.12.11-0kali1 kali-rolling [amd64])
+Inst libpython3.14 (3.14.7-4 kali-rolling [amd64])
+Inst python3-mitmproxy-rs (0.12.11-0kali1 kali-rolling [amd64])
+Inst python3-wcwidth (0.8.3+dfsg1-1 kali-rolling [all])
+Inst python3-urwid (3.0.4-1 kali-rolling [amd64])
+Inst python3-autocommand (2.2.2-4 kali-rolling [all])
+Inst python3-jaraco.context (6.0.1-2 kali-rolling [all])
+Inst python3-more-itertools (11.1.0-2 kali-rolling [all])
+Inst python3-jaraco.functools (4.1.0-1 Debian:13.7/stable, kali-rolling [all])
+Inst python3-packaging (26.2-2 kali-rolling [all])
+Inst python3-zipp (3.23.0-2 kali-rolling [all])
+Inst python3-setuptools (84.0.0-2 kali-rolling [all])
+Inst python3-pycparser (3.0-1 kali-rolling [all])
+Inst python3-cffi (2.1.1-1 kali-rolling [all])
+Inst libargon2-1 (0~20190702+dfsg-6 kali-rolling [amd64])
+Inst python3-argon2-cffi-bindings (26.1.0-1 kali-rolling [amd64])
+Inst python3-argon2 (25.1.0-4 kali-rolling [amd64])
+Inst python3-asgiref (3.12.1-1 kali-rolling [all])
+Inst python3-brotli (1.2.0-4+b1 kali-rolling [amd64])
+Inst python3-blinker (1.9.0-2 kali-rolling [all])
+Inst python3-click (8.3.3-2 kali-rolling [all])
+Inst python3-itsdangerous (2.2.0-4 kali-rolling [all])
+Inst python3-markupsafe (3.0.3-2+b1 kali-rolling [amd64])
+Inst python3-jinja2 (3.1.6-3 kali-rolling [all])
+Inst python3-werkzeug (3.1.8-1 kali-rolling [all])
+Inst python3-flask (3.1.3-4 kali-rolling [all])
+Inst python3-h11 (0.16.0-2 kali-rolling [all])
+Inst python3-kaitaistruct (0.11-1 kali-rolling [all])
+Inst python3-pyasn1 (0.6.4-1 kali-rolling [all])
+Inst python3-ldap3 (2.9.1-2 Debian:13.7/stable, kali-rolling [all])
+Inst python3-msgpack (1.2.1-1 kali-rolling [amd64])
+Inst publicsuffix (20260725.1419-1 kali-rolling [all])
+Inst python3-publicsuffix2 (2.20191221-5.1 kali-rolling [all])
+Inst python3-pyparsing (3.3.2-2 kali-rolling [all])
+Inst python3-pyperclip (1.11.0-1 kali-rolling [all])
+Inst libyaml-0-2 (0.2.5-2+b1 kali-rolling [amd64])
+Inst python3-ruamel.yaml.clib (0.2.15+ds2-2+b1 kali-rolling [amd64])
+Inst python3-ruamel.yaml (0.18.14-4 kali-rolling [all])
+Inst python3-sortedcontainers (2.4.0-3 kali-rolling [all])
+Inst python3-tornado (6.5.5-5 kali-rolling [amd64])
+Inst python3-wsproto (1.3.2-3 kali-rolling [all])
+Inst python3-zstandard (0.25.0-1+b2 kali-rolling [amd64])
+Inst mitmproxy (12.2.3-0kali5 kali-rolling [all])
+Inst libbrotli1 [1.1.0-2+b7] (1.2.0-4+b1 kali-rolling [amd64])
+Conf fonts-font-awesome-legacy (6-3 kali-rolling [all])
+Conf fonts-font-awesome (7.3.0+dfsg-1 kali-rolling [all])
+Conf media-types (14.0.0 kali-rolling [all])
+Conf netbase (6.6 kali-rolling [all])
+Conf libpython3.14-stdlib (3.14.7-4 kali-rolling [amd64])
+Conf python3.14 (3.14.7-4 kali-rolling [amd64])
+Conf libpython3-stdlib (3.14.7-3 kali-rolling [amd64])
+Conf python3 (3.14.7-3 kali-rolling [amd64])
+Conf python3-certifi (2026.7.22+ds-1 kali-rolling [all])
+Conf python3-bcrypt (5.0.0-6+b1 kali-rolling [amd64])
+Conf python3-cffi-backend (2.1.1-1+b1 kali-rolling [amd64])
+Conf python3-cryptography (49.0.0-2 kali-rolling [amd64])
+Conf python3-openssl (26.4.0-1 kali-rolling [all])
+Conf python3-pylsqpack (0.3.23-1 kali-rolling [amd64])
+Conf python3-attr (26.1.0-1 kali-rolling [all])
+Conf python3-service-identity (26.1.0-2 kali-rolling [all])
+Conf python3-aioquic (1.3.0-2 kali-rolling [amd64])
+Conf python3-hpack (4.0.0-4 kali-rolling [all])
+Conf python3-hyperframe (6.1.0-2 kali-rolling [all])
+Conf python3-h2 (4.3.0-2 kali-rolling [all])
+Conf python3-mitmproxy-linux (0.12.11-0kali1 kali-rolling [amd64])
+Conf libpython3.14 (3.14.7-4 kali-rolling [amd64])
+Conf python3-mitmproxy-rs (0.12.11-0kali1 kali-rolling [amd64])
+Conf python3-wcwidth (0.8.3+dfsg1-1 kali-rolling [all])
+Conf python3-urwid (3.0.4-1 kali-rolling [amd64])
+Conf python3-autocommand (2.2.2-4 kali-rolling [all])
+Conf python3-jaraco.context (6.0.1-2 kali-rolling [all])
+Conf python3-more-itertools (11.1.0-2 kali-rolling [all])
+Conf python3-jaraco.functools (4.1.0-1 Debian:13.7/stable, kali-rolling [all])
+Conf python3-packaging (26.2-2 kali-rolling [all])
+Conf python3-zipp (3.23.0-2 kali-rolling [all])
+Conf python3-setuptools (84.0.0-2 kali-rolling [all])
+Conf python3-pycparser (3.0-1 kali-rolling [all])
+Conf python3-cffi (2.1.1-1 kali-rolling [all])
+Conf libargon2-1 (0~20190702+dfsg-6 kali-rolling [amd64])
+Conf python3-argon2-cffi-bindings (26.1.0-1 kali-rolling [amd64])
+Conf python3-argon2 (25.1.0-4 kali-rolling [amd64])
+Conf python3-asgiref (3.12.1-1 kali-rolling [all])
+Conf python3-brotli (1.2.0-4+b1 kali-rolling [amd64])
+Conf python3-blinker (1.9.0-2 kali-rolling [all])
+Conf python3-click (8.3.3-2 kali-rolling [all])
+Conf python3-itsdangerous (2.2.0-4 kali-rolling [all])
+Conf python3-markupsafe (3.0.3-2+b1 kali-rolling [amd64])
+Conf python3-jinja2 (3.1.6-3 kali-rolling [all])
+Conf python3-werkzeug (3.1.8-1 kali-rolling [all])
+Conf python3-flask (3.1.3-4 kali-rolling [all])
+Conf python3-h11 (0.16.0-2 kali-rolling [all])
+Conf python3-kaitaistruct (0.11-1 kali-rolling [all])
+Conf python3-pyasn1 (0.6.4-1 kali-rolling [all])
+Conf python3-ldap3 (2.9.1-2 Debian:13.7/stable, kali-rolling [all])
+Conf python3-msgpack (1.2.1-1 kali-rolling [amd64])
+Conf publicsuffix (20260725.1419-1 kali-rolling [all])
+Conf python3-publicsuffix2 (2.20191221-5.1 kali-rolling [all])
+Conf python3-pyparsing (3.3.2-2 kali-rolling [all])
+Conf python3-pyperclip (1.11.0-1 kali-rolling [all])
+Conf libyaml-0-2 (0.2.5-2+b1 kali-rolling [amd64])
+Conf python3-ruamel.yaml.clib (0.2.15+ds2-2+b1 kali-rolling [amd64])
+Conf python3-ruamel.yaml (0.18.14-4 kali-rolling [all])
+Conf python3-sortedcontainers (2.4.0-3 kali-rolling [all])
+Conf python3-tornado (6.5.5-5 kali-rolling [amd64])
+Conf python3-wsproto (1.3.2-3 kali-rolling [all])
+Conf python3-zstandard (0.25.0-1+b2 kali-rolling [amd64])
+Conf mitmproxy (12.2.3-0kali5 kali-rolling [all])
+Conf libbrotli1 (1.2.0-4+b1 kali-rolling [amd64])
+### exit=0

@@ -1,0 +1,64 @@
+== Release metadata (trixie InRelease)
+Origin: Debian
+Label: Debian
+Suite: stable
+Codename: trixie
+Date: Sat, 12 Sep 2026 07:55:41 UTC
+== trixie automatic archive key fingerprints
+== apt version
+apt 3.0.3 (amd64)
+== showpkg/rdepends for dangling names
+--- showpkg mitmproxy
+Package: mitmproxy
+Versions: 
+
+Reverse Depends: 
+  python3-tornado,mitmproxy 5.0~
+Dependencies: 
+Provides: 
+Reverse Provides: 
+--- rdepends mitmproxy
+<mitmproxy>
+--- showpkg radare2
+Package: radare2
+Versions: 
+
+Reverse Depends: 
+  diffoscope,radare2
+  forensics-all,radare2
+Dependencies: 
+Provides: 
+Reverse Provides: 
+--- rdepends radare2
+<radare2>
+--- showpkg exiftool
+Package: exiftool
+Versions: 
+
+Reverse Depends: 
+  daps,exiftool
+  staticsite,exiftool
+  ranger,exiftool
+  nnn,exiftool
+  lf,exiftool
+Dependencies: 
+Provides: 
+Reverse Provides: 
+libimage-exiftool-perl 13.25+dfsg-1 (= )
+--- rdepends exiftool
+<exiftool>
+--- showpkg searchsploit
+--- rdepends searchsploit
+E: No packages found
+--- policy for absent-name candidates
+librewolf: 
+zaproxy: 
+burpsuite: 
+wpscan: 
+amass: 
+metasploit-framework: 
+exploitdb: 
+ghidra: 
+cutter: 
+rizin: 
+rizin-cutter: 

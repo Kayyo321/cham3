@@ -1,0 +1,24 @@
+== tests/boot (boot, repo: /workspace/M1-rereview, out: /workspace/M1-rereview/out) ==
+test_emergency_mode_fails (test_boot_classifier.boot_classifier_t.test_emergency_mode_fails) ... ok
+test_empty_log_is_pending_not_pass (test_boot_classifier.boot_classifier_t.test_empty_log_is_pending_not_pass) ... ok
+test_fail_marker_overrides_login_prompt (test_boot_classifier.boot_classifier_t.test_fail_marker_overrides_login_prompt) ... ok
+test_incomplete_log_is_pending_not_pass (test_boot_classifier.boot_classifier_t.test_incomplete_log_is_pending_not_pass) ... ok
+test_initramfs_shell_fails (test_boot_classifier.boot_classifier_t.test_initramfs_shell_fails) ... ok
+test_kernel_panic_fails (test_boot_classifier.boot_classifier_t.test_kernel_panic_fails) ... ok
+test_live_config_autologin_shell_passes (test_boot_classifier.boot_classifier_t.test_live_config_autologin_shell_passes) ... ok
+test_login_prompt_passes (test_boot_classifier.boot_classifier_t.test_login_prompt_passes) ... ok
+test_missing_live_medium_fails (test_boot_classifier.boot_classifier_t.test_missing_live_medium_fails) ... ok
+test_bare_root_shell_without_login_prompt_fails (test_boot_classifier.boot_rescue_and_root_shell_t.test_bare_root_shell_without_login_prompt_fails) ... ok
+test_login_prompt_passes (test_boot_classifier.boot_rescue_and_root_shell_t.test_login_prompt_passes) ... ok
+test_maintenance_password_prompt_fails (test_boot_classifier.boot_rescue_and_root_shell_t.test_maintenance_password_prompt_fails) ... ok
+test_non_root_autologin_prompt_passes (test_boot_classifier.boot_rescue_and_root_shell_t.test_non_root_autologin_prompt_passes) ... ok
+test_rescue_mode_fails (test_boot_classifier.boot_rescue_and_root_shell_t.test_rescue_mode_fails) ... ok
+test_boot_result_is_pass (test_boot_result.boot_result_t.test_boot_result_is_pass) ... ok
+test_result_binds_to_built_iso (test_boot_result.boot_result_t.test_result_binds_to_built_iso) ... ok
+test_result_json_has_required_keys_and_types (test_boot_result.boot_result_t.test_result_json_has_required_keys_and_types) ... ok
+test_serial_log_reproduces_recorded_classification (test_boot_result.boot_result_t.test_serial_log_reproduces_recorded_classification) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.230s
+
+OK

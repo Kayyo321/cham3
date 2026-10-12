@@ -1,0 +1,18 @@
+# cham3 LibreWolf pin (F2, owner-approved). Every package of the LibreWolf
+# repository has priority -1 except librewolf, so the repository can never
+# supply or replace any other package. Packages that exist in Debian keep coming
+# from Debian.
+#
+# Binding (F6): "Pin: origin" matches the host name of the source URI configured
+# in zzz_cham3_librewolf.list (https://repo.librewolf.net), not a field of the
+# repository's signed Release file. The earlier "Pin: release n=librewolf" rule
+# stopped matching when a validly signed Release file carried another Codename,
+# which left every package of the repository at priority 500. See cham3_kali.pref.
+
+Package: *
+Pin: origin "repo.librewolf.net"
+Pin-Priority: -1
+
+Package: librewolf
+Pin: origin "repo.librewolf.net"
+Pin-Priority: 500

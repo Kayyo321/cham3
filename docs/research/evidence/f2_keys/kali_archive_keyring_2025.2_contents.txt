@@ -1,0 +1,11 @@
+./x/usr/share/keyrings/kali-archive-keyring.gpg
+-----------------------------------------------
+pub   rsa4096 2025-04-17 [SC] [expires: 2028-04-17]
+      827C 8569 F251 8CC6 77FE  CA1A ED65 462E C8D5 E4C5
+uid           [ unknown] Kali Linux Archive Automatic Signing Key (2025) <devel@kali.org>
+
+pub   rsa4096 2012-03-05 [SC] [expires: 2027-02-04]
+      44C6 513A 8E4F B3D3 0875  F758 ED44 4FF0 7D8D 0BF6
+uid           [ unknown] Kali Linux Repository <devel@kali.org>
+sub   rsa4096 2012-03-05 [E] [expires: 2027-02-04]
+

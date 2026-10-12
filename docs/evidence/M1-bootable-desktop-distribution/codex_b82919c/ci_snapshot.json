@@ -1,0 +1,16 @@
+{
+  "source": "public GitHub run and job pages, retrieved 2026-10-11",
+  "commit": "848b72ac16fe656fe3c6730b42f1482fdd3ca95c",
+  "m1_checks": {
+    "url": "https://github.com/Kayyo321/cham3/actions/runs/38181193291",
+    "conclusion": "success"
+  },
+  "m0_checks": {
+    "url": "https://github.com/Kayyo321/cham3/actions/runs/38181193243",
+    "conclusion": "failure",
+    "job_url": "https://github.com/Kayyo321/cham3/actions/runs/38181193243/job/114593916523",
+    "failed_step": "Build live image",
+    "step_exit_code": 1,
+    "limits": "Public step-log endpoint returned 404; exact CI root cause was not read. Independent local reproduction shows the unresolvable cham3-full dependencies."
+  }
+}

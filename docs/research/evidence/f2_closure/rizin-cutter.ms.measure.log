@@ -1,0 +1,388 @@
+### mode=measure target=rizin-cutter extra_allow=libcgraph8 libgvc7 libpyside6-py3-6.10 libpython3.14
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=measure target=rizin-cutter. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: rizin-cutter
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libcgraph8
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libgvc7
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libpyside6-py3-6.10
+Pin: release o=Kali
+Pin-Priority: 500
+
+Package: libpython3.14
+Pin: release o=Kali
+Pin-Priority: 500
+
+### command: apt-get -s install --no-install-recommends -y rizin-cutter
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  gcc-14-base librtmp1
+Use 'apt autoremove' to remove them.
+The following additional packages will be installed:
+  curl fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-mono
+  gcc-16-base libatomic1 libb2-1 libc-bin libc-gconv-modules-extra libc6
+  libcapstone5 libcdt6 libcgraph8 libclang1-21 libcurl4-gnutls libcurl4t64
+  libdbus-1-3 libdouble-conversion3 libdrm-amdgpu1 libdrm-common libdrm-intel1
+  libdrm2 libduktape207 libedit2 libegl-mesa0 libegl1 libelf1t64 libevdev2
+  libexpat1 libfontconfig1 libfreetype6 libgbm1 libgcc-s1 libgcrypt20
+  libgl1-mesa-dri libglib2.0-0t64 libglvnd0 libglx-mesa0 libglx0 libgomp1
+  libgpg-error0 libgraphite2-3 libgudev-1.0-0 libgvc7 libharfbuzz0b libice6
+  libicu78 libinput-bin libinput10 libjpeg62-turbo
+  libkf6syntaxhighlighting-data libkf6syntaxhighlighting6 libllvm21 libltdl7
+  libmd4c0 libmspack0t64 libmtdev1t64 libnghttp3-9 libngtcp2-16
+  libngtcp2-crypto-gnutls8 libngtcp2-crypto-ossl0 libopengl0 libpathplan4
+  libpciaccess0 libpcre2-16-0 libpcre2-32-0 libpcre2-8-0 libpng16-16t64
+  libproxy1v5 libpyside6-py3-6.10 libpython3-stdlib libpython3.14
+  libpython3.14-minimal libpython3.14-stdlib libqt6core5compat6 libqt6core6t64
+  libqt6dbus6 libqt6gui6 libqt6network6 libqt6opengl6 libqt6openglwidgets6
+  libqt6qml6 libqt6svg6 libqt6svgwidgets6 libqt6widgets6 librizin-common
+  librizin0 libsensors-config libsensors5 libshiboken6-py3-6.10 libsm6
+  libstdc++6 libts0t64 libvulkan1 libwacom-common libwacom9 libwayland-client0
+  libx11-6 libx11-data libx11-xcb1 libxau6 libxcb-cursor0 libxcb-dri3-0
+  libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-present0
+  libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0
+  libxcb-sync1 libxcb-util1 libxcb-xfixes0 libxcb-xinput0 libxcb-xkb1 libxcb1
+  libxdmcp6 libxdot4 libxext6 libxkbcommon-x11-0 libxkbcommon0 libxml2-16
+  libxshmfence1 libxslt1.1 libxxf86vm1 libz3-4 libzip5 media-types
+  mesa-libgallium netbase pci.ids python3 python3-minimal python3.14
+  python3.14-minimal shared-mime-info x11-common xkb-data
+Suggested packages:
+  low-memory-monitor qt6-qmltooling-plugins lm-sensors libwacom-bin
+  python3-doc python3-tk python3-venv python3.14-venv python3.14-doc binutils
+  binfmt-support
+Recommended packages:
+  libglib2.0-data xdg-user-dirs qt6-translations-l10n qt6-gtk-platformtheme
+  qt6-qpa-plugins qt6-svg-plugins qt6-wayland libgl1 mesa-vulkan-drivers
+  | vulkan-icd
+The following NEW packages will be installed:
+  fontconfig fontconfig-config fonts-dejavu-core fonts-dejavu-mono gcc-16-base
+  libatomic1 libb2-1 libc-gconv-modules-extra libcapstone5 libcdt6 libcgraph8
+  libclang1-21 libcurl4-gnutls libdbus-1-3 libdouble-conversion3
+  libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm2 libduktape207 libedit2
+  libegl-mesa0 libegl1 libelf1t64 libevdev2 libexpat1 libfontconfig1
+  libfreetype6 libgbm1 libgl1-mesa-dri libglib2.0-0t64 libglvnd0 libglx-mesa0
+  libglx0 libgomp1 libgraphite2-3 libgudev-1.0-0 libgvc7 libharfbuzz0b libice6
+  libicu78 libinput-bin libinput10 libjpeg62-turbo
+  libkf6syntaxhighlighting-data libkf6syntaxhighlighting6 libllvm21 libltdl7
+  libmd4c0 libmspack0t64 libmtdev1t64 libngtcp2-16 libngtcp2-crypto-gnutls8
+  libngtcp2-crypto-ossl0 libopengl0 libpathplan4 libpciaccess0 libpcre2-16-0
+  libpcre2-32-0 libpng16-16t64 libproxy1v5 libpyside6-py3-6.10
+  libpython3-stdlib libpython3.14 libpython3.14-minimal libpython3.14-stdlib
+  libqt6core5compat6 libqt6core6t64 libqt6dbus6 libqt6gui6 libqt6network6
+  libqt6opengl6 libqt6openglwidgets6 libqt6qml6 libqt6svg6 libqt6svgwidgets6
+  libqt6widgets6 librizin-common librizin0 libsensors-config libsensors5
+  libshiboken6-py3-6.10 libsm6 libts0t64 libvulkan1 libwacom-common libwacom9
+  libwayland-client0 libx11-6 libx11-data libx11-xcb1 libxau6 libxcb-cursor0
+  libxcb-dri3-0 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1
+  libxcb-present0 libxcb-randr0 libxcb-render-util0 libxcb-render0
+  libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-util1 libxcb-xfixes0
+  libxcb-xinput0 libxcb-xkb1 libxcb1 libxdmcp6 libxdot4 libxext6
+  libxkbcommon-x11-0 libxkbcommon0 libxml2-16 libxshmfence1 libxslt1.1
+  libxxf86vm1 libz3-4 libzip5 media-types mesa-libgallium netbase pci.ids
+  python3 python3-minimal python3.14 python3.14-minimal rizin-cutter
+  shared-mime-info x11-common xkb-data
+The following packages will be upgraded:
+  curl libc-bin libc6 libcurl4t64 libgcc-s1 libgcrypt20 libgpg-error0
+  libnghttp3-9 libpcre2-8-0 libstdc++6
+10 upgraded, 133 newly installed, 0 to remove and 107 not upgraded.
+Inst libc6 [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Conf libc-gconv-modules-extra (2.43-6 kali-rolling [amd64]) [libc-bin:amd64 ]
+Inst libc-bin [2.41-12+deb13u4] (2.43-6 kali-rolling [amd64])
+Conf libc6 (2.43-6 kali-rolling [amd64])
+Conf libc-bin (2.43-6 kali-rolling [amd64])
+Inst gcc-16-base (16.2.0-3 kali-rolling [amd64])
+Conf gcc-16-base (16.2.0-3 kali-rolling [amd64])
+Inst libgcc-s1 [14.2.0-19] (16.2.0-3 kali-rolling [amd64])
+Conf libgcc-s1 (16.2.0-3 kali-rolling [amd64])
+Inst libexpat1 (2.8.4-1 kali-rolling [amd64])
+Inst libpython3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Inst python3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Conf libpython3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Conf libexpat1 (2.8.4-1 kali-rolling [amd64])
+Conf python3.14-minimal (3.14.7-4 kali-rolling [amd64])
+Inst python3-minimal (3.14.7-3 kali-rolling [amd64])
+Inst media-types (14.0.0 kali-rolling [all])
+Inst netbase (6.6 kali-rolling [all])
+Inst libpython3.14-stdlib (3.14.7-4 kali-rolling [amd64])
+Inst python3.14 (3.14.7-4 kali-rolling [amd64])
+Inst libpython3-stdlib (3.14.7-3 kali-rolling [amd64])
+Conf python3-minimal (3.14.7-3 kali-rolling [amd64])
+Inst python3 (3.14.7-3 kali-rolling [amd64])
+Inst libpcre2-8-0 [10.46-1~deb13u3] (10.48-3 kali-rolling [amd64])
+Conf libpcre2-8-0 (10.48-3 kali-rolling [amd64])
+Inst libstdc++6 [14.2.0-19] (16.2.0-3 kali-rolling [amd64])
+Conf libstdc++6 (16.2.0-3 kali-rolling [amd64])
+Inst libnghttp3-9 [1.8.0-1] (1.17.0-1 kali-rolling [amd64])
+Inst libngtcp2-16 (1.24.0-1 kali-rolling [amd64])
+Inst libngtcp2-crypto-ossl0 (1.24.0-1 kali-rolling [amd64])
+Inst curl [8.14.1-2+deb13u5] (8.22.0-1 kali-rolling [amd64]) []
+Inst libcurl4t64 [8.14.1-2+deb13u5] (8.22.0-1 kali-rolling [amd64])
+Inst libpng16-16t64 (1.6.58-1 kali-rolling [amd64])
+Inst libfreetype6 (2.14.3+dfsg-2 kali-rolling [amd64])
+Inst fonts-dejavu-mono (2.37-9 kali-rolling [all])
+Inst fonts-dejavu-core (2.37-9 kali-rolling [all])
+Inst fontconfig-config (2.17.1-5 kali-rolling [amd64])
+Inst libfontconfig1 (2.17.1-5 kali-rolling [amd64])
+Inst fontconfig (2.17.1-5 kali-rolling [amd64])
+Inst libatomic1 (16.2.0-3 kali-rolling [amd64])
+Inst libgomp1 (16.2.0-3 kali-rolling [amd64])
+Inst libb2-1 (0.98.1-1.1+b3 kali-rolling [amd64])
+Inst libcapstone5 (5.0.9-1 kali-rolling [amd64])
+Inst libcdt6 (14.1.2-1+b3 kali-rolling [amd64])
+Inst libcgraph8 (14.1.2-1+b3 kali-rolling [amd64])
+Inst libedit2 (3.1-20260512-1 kali-rolling [amd64])
+Inst libxml2-16 (2.15.4+dfsg-1 kali-rolling [amd64])
+Inst libz3-4 (4.13.3-1.1 kali-rolling [amd64])
+Inst libllvm21 (1:21.1.8-13 kali-rolling [amd64])
+Inst libclang1-21 (1:21.1.8-13 kali-rolling [amd64])
+Inst libngtcp2-crypto-gnutls8 (1.24.0-1 kali-rolling [amd64])
+Inst libcurl4-gnutls (8.22.0-1 kali-rolling [amd64])
+Inst libdbus-1-3 (1.16.2-5+b1 kali-rolling [amd64])
+Inst libdouble-conversion3 (3.4.0-1+b1 kali-rolling [amd64])
+Inst libdrm-common (2.4.134-3 kali-rolling [all])
+Inst libdrm2 (2.4.134-3 kali-rolling [amd64])
+Inst libdrm-amdgpu1 (2.4.134-3 kali-rolling [amd64])
+Inst pci.ids (0.0~2026.09.23-1 kali-rolling [all])
+Inst libpciaccess0 (0.19-2 kali-rolling [amd64])
+Inst libdrm-intel1 (2.4.134-3 kali-rolling [amd64])
+Inst libduktape207 (2.7.0-2+b3 kali-rolling [amd64])
+Inst libelf1t64 (0.196-1 kali-rolling [amd64])
+Inst libsensors-config (1:3.6.2-2 Debian:13.7/stable, kali-rolling [all])
+Inst libsensors5 (1:3.6.2-2+b2 kali-rolling [amd64])
+Inst libxau6 (1:1.0.11-1+b2 kali-rolling [amd64])
+Inst libxdmcp6 (1:1.1.5-2+b1 kali-rolling [amd64])
+Inst libxcb1 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libx11-data (2:1.8.13-1 kali-rolling [all])
+Inst libx11-6 (2:1.8.13-1 kali-rolling [amd64])
+Inst libx11-xcb1 (2:1.8.13-1 kali-rolling [amd64])
+Inst libxcb-dri3-0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-present0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-randr0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-sync1 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-xfixes0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxshmfence1 (1.3.3-1+b2 kali-rolling [amd64])
+Inst mesa-libgallium (26.1.6-1 kali-rolling [amd64])
+Inst libgbm1 (26.1.6-1 kali-rolling [amd64])
+Inst libwayland-client0 (1.26.0-1 kali-rolling [amd64])
+Inst libxcb-shm0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libegl-mesa0 (26.1.6-1 kali-rolling [amd64])
+Inst libevdev2 (1.13.7+dfsg-1 kali-rolling [amd64])
+Inst libgpg-error0 [1.51-4] (1.61-5 kali-rolling [amd64])
+Inst libgcrypt20 [1.11.0-7+deb13u1] (1.12.2-1 kali-rolling [amd64])
+Inst libvulkan1 (1.4.357.0-1 kali-rolling [amd64])
+Inst libgl1-mesa-dri (26.1.6-1 kali-rolling [amd64])
+Inst libglib2.0-0t64 (2.90.0-1 kali-rolling [amd64])
+Inst libglvnd0 (1.7.0-3+b1 kali-rolling [amd64])
+Inst libxcb-glx0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxext6 (2:1.3.4-1+b4 kali-rolling [amd64])
+Inst libxxf86vm1 (1:1.1.4-2+b1 kali-rolling [amd64])
+Inst libglx-mesa0 (26.1.6-1 kali-rolling [amd64])
+Inst libgraphite2-3 (1.3.15-2 kali-rolling [amd64])
+Inst libgudev-1.0-0 (238-7+b2 kali-rolling [amd64])
+Inst libltdl7 (2.6.2-2 kali-rolling [amd64])
+Inst libpathplan4 (14.1.2-1+b3 kali-rolling [amd64])
+Inst libxdot4 (14.1.2-1+b3 kali-rolling [amd64])
+Inst libgvc7 (14.1.2-1+b3 kali-rolling [amd64])
+Inst libharfbuzz0b (12.3.2-2+b2 kali-rolling [amd64])
+Inst x11-common (1:7.7+26 kali-rolling [all])
+Inst libice6 (2:1.1.1-1+b2 kali-rolling [amd64])
+Inst libicu78 (78.3-2 kali-rolling [amd64])
+Inst libwacom-common (2.20.0-1 kali-rolling [all])
+Inst libwacom9 (2.20.0-1 kali-rolling [amd64])
+Inst libinput-bin (1.31.3-1 kali-rolling [amd64])
+Inst libmtdev1t64 (1.1.7-1+b2 kali-rolling [amd64])
+Inst libinput10 (1.31.3-1 kali-rolling [amd64])
+Inst libjpeg62-turbo (1:3.1.3-4 kali-rolling [amd64])
+Inst libkf6syntaxhighlighting-data (6.30.0-1 kali-rolling [all])
+Inst shared-mime-info (2.4-5+b3 kali-rolling [amd64])
+Inst libpcre2-16-0 (10.48-3 kali-rolling [amd64])
+Inst libqt6core6t64 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libegl1 (1.7.0-3+b1 kali-rolling [amd64])
+Inst libglx0 (1.7.0-3+b1 kali-rolling [amd64])
+Inst libmd4c0 (0.5.3-1 kali-rolling [amd64])
+Inst libopengl0 (1.7.0-3+b1 kali-rolling [amd64])
+Inst libqt6dbus6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libsm6 (2:1.2.6-1+b2 kali-rolling [amd64])
+Inst libts0t64 (1.22-1.1+b2 kali-rolling [amd64])
+Inst libxcb-util1 (0.4.1-1+b2 kali-rolling [amd64])
+Inst libxcb-image0 (0.4.0-2+b3 kali-rolling [amd64])
+Inst libxcb-render0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-render-util0 (0.3.10-1+b2 kali-rolling [amd64])
+Inst libxcb-cursor0 (0.1.6-1 kali-rolling [amd64])
+Inst libxcb-icccm4 (0.4.2-1+b2 kali-rolling [amd64])
+Inst libxcb-keysyms1 (0.4.1-1+b2 kali-rolling [amd64])
+Inst libxcb-shape0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-xinput0 (1.17.0-2+b2 kali-rolling [amd64])
+Inst libxcb-xkb1 (1.17.0-2+b2 kali-rolling [amd64])
+Inst xkb-data (2.48-1 kali-rolling [all])
+Inst libxkbcommon0 (1.13.1-1 kali-rolling [amd64])
+Inst libxkbcommon-x11-0 (1.13.1-1 kali-rolling [amd64])
+Inst libqt6gui6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libproxy1v5 (0.5.12-3 kali-rolling [amd64])
+Inst libqt6network6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libkf6syntaxhighlighting6 (6.30.0-1 kali-rolling [amd64])
+Inst libmspack0t64 (0.11-1.1+b2 kali-rolling [amd64])
+Inst libpcre2-32-0 (10.48-3 kali-rolling [amd64])
+Inst libqt6qml6 (6.10.2+dfsg-6 kali-rolling [amd64])
+Inst libxslt1.1 (1.1.45-0.1 kali-rolling [amd64])
+Inst libshiboken6-py3-6.10 (6.10.3-3 kali-rolling [amd64])
+Inst libpyside6-py3-6.10 (6.10.3-3 kali-rolling [amd64])
+Inst libpython3.14 (3.14.7-4 kali-rolling [amd64])
+Inst libqt6core5compat6 (6.10.2-4 kali-rolling [amd64])
+Inst libqt6opengl6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libqt6widgets6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libqt6openglwidgets6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Inst libqt6svg6 (6.10.2-9 kali-rolling [amd64])
+Inst libqt6svgwidgets6 (6.10.2-9 kali-rolling [amd64])
+Inst librizin-common (0.9.1-0kali1 kali-rolling [all])
+Inst libzip5 (1.11.4-2+b1 kali-rolling [amd64])
+Inst librizin0 (0.9.1-0kali1 kali-rolling [amd64])
+Inst rizin-cutter (2.5.0-0kali1 kali-rolling [amd64])
+Conf media-types (14.0.0 kali-rolling [all])
+Conf netbase (6.6 kali-rolling [all])
+Conf libpython3.14-stdlib (3.14.7-4 kali-rolling [amd64])
+Conf python3.14 (3.14.7-4 kali-rolling [amd64])
+Conf libpython3-stdlib (3.14.7-3 kali-rolling [amd64])
+Conf python3 (3.14.7-3 kali-rolling [amd64])
+Conf libnghttp3-9 (1.17.0-1 kali-rolling [amd64])
+Conf libngtcp2-16 (1.24.0-1 kali-rolling [amd64])
+Conf libngtcp2-crypto-ossl0 (1.24.0-1 kali-rolling [amd64])
+Conf curl (8.22.0-1 kali-rolling [amd64])
+Conf libcurl4t64 (8.22.0-1 kali-rolling [amd64])
+Conf libpng16-16t64 (1.6.58-1 kali-rolling [amd64])
+Conf libfreetype6 (2.14.3+dfsg-2 kali-rolling [amd64])
+Conf fonts-dejavu-mono (2.37-9 kali-rolling [all])
+Conf fonts-dejavu-core (2.37-9 kali-rolling [all])
+Conf fontconfig-config (2.17.1-5 kali-rolling [amd64])
+Conf libfontconfig1 (2.17.1-5 kali-rolling [amd64])
+Conf fontconfig (2.17.1-5 kali-rolling [amd64])
+Conf libatomic1 (16.2.0-3 kali-rolling [amd64])
+Conf libgomp1 (16.2.0-3 kali-rolling [amd64])
+Conf libb2-1 (0.98.1-1.1+b3 kali-rolling [amd64])
+Conf libcapstone5 (5.0.9-1 kali-rolling [amd64])
+Conf libcdt6 (14.1.2-1+b3 kali-rolling [amd64])
+Conf libcgraph8 (14.1.2-1+b3 kali-rolling [amd64])
+Conf libedit2 (3.1-20260512-1 kali-rolling [amd64])
+Conf libxml2-16 (2.15.4+dfsg-1 kali-rolling [amd64])
+Conf libz3-4 (4.13.3-1.1 kali-rolling [amd64])
+Conf libllvm21 (1:21.1.8-13 kali-rolling [amd64])
+Conf libclang1-21 (1:21.1.8-13 kali-rolling [amd64])
+Conf libngtcp2-crypto-gnutls8 (1.24.0-1 kali-rolling [amd64])
+Conf libcurl4-gnutls (8.22.0-1 kali-rolling [amd64])
+Conf libdbus-1-3 (1.16.2-5+b1 kali-rolling [amd64])
+Conf libdouble-conversion3 (3.4.0-1+b1 kali-rolling [amd64])
+Conf libdrm-common (2.4.134-3 kali-rolling [all])
+Conf libdrm2 (2.4.134-3 kali-rolling [amd64])
+Conf libdrm-amdgpu1 (2.4.134-3 kali-rolling [amd64])
+Conf pci.ids (0.0~2026.09.23-1 kali-rolling [all])
+Conf libpciaccess0 (0.19-2 kali-rolling [amd64])
+Conf libdrm-intel1 (2.4.134-3 kali-rolling [amd64])
+Conf libduktape207 (2.7.0-2+b3 kali-rolling [amd64])
+Conf libelf1t64 (0.196-1 kali-rolling [amd64])
+Conf libsensors-config (1:3.6.2-2 Debian:13.7/stable, kali-rolling [all])
+Conf libsensors5 (1:3.6.2-2+b2 kali-rolling [amd64])
+Conf libxau6 (1:1.0.11-1+b2 kali-rolling [amd64])
+Conf libxdmcp6 (1:1.1.5-2+b1 kali-rolling [amd64])
+Conf libxcb1 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libx11-data (2:1.8.13-1 kali-rolling [all])
+Conf libx11-6 (2:1.8.13-1 kali-rolling [amd64])
+Conf libx11-xcb1 (2:1.8.13-1 kali-rolling [amd64])
+Conf libxcb-dri3-0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-present0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-randr0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-sync1 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-xfixes0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxshmfence1 (1.3.3-1+b2 kali-rolling [amd64])
+Conf mesa-libgallium (26.1.6-1 kali-rolling [amd64])
+Conf libgbm1 (26.1.6-1 kali-rolling [amd64])
+Conf libwayland-client0 (1.26.0-1 kali-rolling [amd64])
+Conf libxcb-shm0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libegl-mesa0 (26.1.6-1 kali-rolling [amd64])
+Conf libevdev2 (1.13.7+dfsg-1 kali-rolling [amd64])
+Conf libgpg-error0 (1.61-5 kali-rolling [amd64])
+Conf libgcrypt20 (1.12.2-1 kali-rolling [amd64])
+Conf libvulkan1 (1.4.357.0-1 kali-rolling [amd64])
+Conf libgl1-mesa-dri (26.1.6-1 kali-rolling [amd64])
+Conf libglib2.0-0t64 (2.90.0-1 kali-rolling [amd64])
+Conf libglvnd0 (1.7.0-3+b1 kali-rolling [amd64])
+Conf libxcb-glx0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxext6 (2:1.3.4-1+b4 kali-rolling [amd64])
+Conf libxxf86vm1 (1:1.1.4-2+b1 kali-rolling [amd64])
+Conf libglx-mesa0 (26.1.6-1 kali-rolling [amd64])
+Conf libgraphite2-3 (1.3.15-2 kali-rolling [amd64])
+Conf libgudev-1.0-0 (238-7+b2 kali-rolling [amd64])
+Conf libltdl7 (2.6.2-2 kali-rolling [amd64])
+Conf libpathplan4 (14.1.2-1+b3 kali-rolling [amd64])
+Conf libxdot4 (14.1.2-1+b3 kali-rolling [amd64])
+Conf libgvc7 (14.1.2-1+b3 kali-rolling [amd64])
+Conf libharfbuzz0b (12.3.2-2+b2 kali-rolling [amd64])
+Conf x11-common (1:7.7+26 kali-rolling [all])
+Conf libice6 (2:1.1.1-1+b2 kali-rolling [amd64])
+Conf libicu78 (78.3-2 kali-rolling [amd64])
+Conf libwacom-common (2.20.0-1 kali-rolling [all])
+Conf libwacom9 (2.20.0-1 kali-rolling [amd64])
+Conf libinput-bin (1.31.3-1 kali-rolling [amd64])
+Conf libmtdev1t64 (1.1.7-1+b2 kali-rolling [amd64])
+Conf libinput10 (1.31.3-1 kali-rolling [amd64])
+Conf libjpeg62-turbo (1:3.1.3-4 kali-rolling [amd64])
+Conf libkf6syntaxhighlighting-data (6.30.0-1 kali-rolling [all])
+Conf shared-mime-info (2.4-5+b3 kali-rolling [amd64])
+Conf libpcre2-16-0 (10.48-3 kali-rolling [amd64])
+Conf libqt6core6t64 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libegl1 (1.7.0-3+b1 kali-rolling [amd64])
+Conf libglx0 (1.7.0-3+b1 kali-rolling [amd64])
+Conf libmd4c0 (0.5.3-1 kali-rolling [amd64])
+Conf libopengl0 (1.7.0-3+b1 kali-rolling [amd64])
+Conf libqt6dbus6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libsm6 (2:1.2.6-1+b2 kali-rolling [amd64])
+Conf libts0t64 (1.22-1.1+b2 kali-rolling [amd64])
+Conf libxcb-util1 (0.4.1-1+b2 kali-rolling [amd64])
+Conf libxcb-image0 (0.4.0-2+b3 kali-rolling [amd64])
+Conf libxcb-render0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-render-util0 (0.3.10-1+b2 kali-rolling [amd64])
+Conf libxcb-cursor0 (0.1.6-1 kali-rolling [amd64])
+Conf libxcb-icccm4 (0.4.2-1+b2 kali-rolling [amd64])
+Conf libxcb-keysyms1 (0.4.1-1+b2 kali-rolling [amd64])
+Conf libxcb-shape0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-xinput0 (1.17.0-2+b2 kali-rolling [amd64])
+Conf libxcb-xkb1 (1.17.0-2+b2 kali-rolling [amd64])
+Conf xkb-data (2.48-1 kali-rolling [all])
+Conf libxkbcommon0 (1.13.1-1 kali-rolling [amd64])
+Conf libxkbcommon-x11-0 (1.13.1-1 kali-rolling [amd64])
+Conf libqt6gui6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libproxy1v5 (0.5.12-3 kali-rolling [amd64])
+Conf libqt6network6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libkf6syntaxhighlighting6 (6.30.0-1 kali-rolling [amd64])
+Conf libmspack0t64 (0.11-1.1+b2 kali-rolling [amd64])
+Conf libpcre2-32-0 (10.48-3 kali-rolling [amd64])
+Conf libqt6qml6 (6.10.2+dfsg-6 kali-rolling [amd64])
+Conf libxslt1.1 (1.1.45-0.1 kali-rolling [amd64])
+Conf libshiboken6-py3-6.10 (6.10.3-3 kali-rolling [amd64])
+Conf libpyside6-py3-6.10 (6.10.3-3 kali-rolling [amd64])
+Conf libpython3.14 (3.14.7-4 kali-rolling [amd64])
+Conf libqt6core5compat6 (6.10.2-4 kali-rolling [amd64])
+Conf libqt6opengl6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libqt6widgets6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libqt6openglwidgets6 (6.10.2+dfsg-16 kali-rolling [amd64])
+Conf libqt6svg6 (6.10.2-9 kali-rolling [amd64])
+Conf libqt6svgwidgets6 (6.10.2-9 kali-rolling [amd64])
+Conf librizin-common (0.9.1-0kali1 kali-rolling [all])
+Conf libzip5 (1.11.4-2+b1 kali-rolling [amd64])
+Conf librizin0 (0.9.1-0kali1 kali-rolling [amd64])
+Conf rizin-cutter (2.5.0-0kali1 kali-rolling [amd64])
+### exit=0

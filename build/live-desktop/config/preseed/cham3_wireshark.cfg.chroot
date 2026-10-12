@@ -1,0 +1,21 @@
+# Applied by live-build with debconf-set-selections BEFORE package installation.
+#
+# "false" (F3): wireshark-common's postinst then leaves /usr/bin/dumpcap
+# root:root, mode 0755, without capabilities, and never applies its group layout
+# or its set-user-id root fallback. With "true" (the earlier answer) that postinst
+# sets group "wireshark" plus file capabilities and, when setcap is missing or
+# fails, makes dumpcap set-user-id root. The answer is read when wireshark-common
+# is configured, which during the image build can happen before cham3-desktop is
+# configured, so "false" keeps the build free of a set-user-id dumpcap whatever
+# order apt and dpkg choose.
+#
+# Capture for non-root users comes from the cham3-desktop package instead. Its
+# preinst registers a dpkg-statoverride (root root 0750) on dumpcap when it is
+# unpacked, and its postinst and dpkg file trigger make dumpcap root:wireshark,
+# mode 0750, with only cap_net_admin,cap_net_raw=eip, creating the system group
+# "wireshark" when needed. If the capabilities cannot be set, capture by non-root
+# users is unavailable; dumpcap never runs as set-user-id root.
+#
+# The image adds no user to the "wireshark" group. Membership is a deliberate
+# per-user administrative step that lets that user capture packets.
+wireshark-common wireshark-common/install-setuid boolean false

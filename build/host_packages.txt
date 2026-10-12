@@ -27,6 +27,10 @@ squashfs-tools
 xorriso
 # cpio is a hard Depends of live-build (used for includes handling).
 cpio
+# gnupg: the M1 desktop profile verifies and dearmors the pinned Kali and
+# LibreWolf archive keys into a local keyring package at lb config time
+# (build/live-desktop/auto/build_archive_keyring).
+gnupg
 
 # Image inspection and boot test (build/vm/run_boot_test.py)
 qemu-system-x86

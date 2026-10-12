@@ -1,0 +1,600 @@
+Oct 12 05:56:31 in-target: Hit:2 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:31 in-target: Hit:3 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:31 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:33 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:33 in-target: Fetched 5649 B in 2s (2712 B/s)
+Oct 12 05:56:33 in-target: Reading package lists...
+Oct 12 05:56:34 in-target: 
+Oct 12 05:56:34 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:34 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:34 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:34 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:34 in-target: Hit:1 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:34 in-target: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:34 in-target: Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:34 in-target: Get:4 http://security.debian.org/debian-security trixie-security/main Sources [240 kB]
+Oct 12 05:56:34 in-target: Get:5 http://security.debian.org/debian-security trixie-security/non-free-firmware Sources [696 B]
+Oct 12 05:56:34 in-target: Hit:6 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:35 in-target: Get:7 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:35 in-target: Fetched 247 kB in 1s (417 kB/s)
+Oct 12 05:56:35 in-target: Reading package lists...
+Oct 12 05:56:35 in-target: 
+Oct 12 05:56:36 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:36 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:36 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:36 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:36 in-target: Hit:1 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:36 in-target: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:36 in-target: Hit:3 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:36 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:36 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:36 in-target: Fetched 5649 B in 1s (9789 B/s)
+Oct 12 05:56:36 in-target: Reading package lists...
+Oct 12 05:56:37 in-target: 
+Oct 12 05:56:37 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:37 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:37 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:37 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:37 in-target: Hit:1 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:37 in-target: Hit:2 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:37 in-target: Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:38 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:38 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:38 in-target: Fetched 5649 B in 1s (11.2 kB/s)
+Oct 12 05:56:38 in-target: Reading package lists...
+Oct 12 05:56:38 in-target: 
+Oct 12 05:56:39 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:39 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:39 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:39 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:39 in-target: Hit:1 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:56:39 in-target: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:56:39 in-target: Hit:3 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:56:39 in-target: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:56:39 in-target: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:56:39 in-target: Fetched 5649 B in 0s (18.6 kB/s)
+Oct 12 05:56:39 in-target: Reading package lists...
+Oct 12 05:56:40 in-target: 
+Oct 12 05:56:40 main-menu[2177]: (process:9464): 2026-10-12 05:56:23 URL:http://deb.debian.org/debian/dists/trixie/Release [138612/138612] -> "-" [1]
+Oct 12 05:56:40 main-menu[2177]: (process:9464): 2026-10-12 05:56:23 URL:http://deb.debian.org/debian/dists/stable/Release [138612/138612] -> "-" [1]
+Oct 12 05:56:40 main-menu[2177]: (process:9464): 2026-10-12 05:56:23 URL:http://deb.debian.org/debian/dists/trixie/main/binary-amd64/Release [116/116] -> "-" [1]
+Oct 12 05:56:40 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:40 systemd-boot-installer: systemd-boot is only usable on 64bit EFI systems, not amd64/generic
+Oct 12 05:56:40 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:40 main-menu[2177]: INFO: Menu item 'grub-installer' selected
+Oct 12 05:56:40 grub-installer: info: architecture: amd64/generic
+Oct 12 05:56:40 grub-installer: info: Bind mounting /run into /target
+Oct 12 05:56:40 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:40 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:40 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:40 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:40 in-target: Reading package lists...
+Oct 12 05:56:42 in-target: 
+Oct 12 05:56:42 in-target: Building dependency tree...
+Oct 12 05:56:42 in-target: 
+Oct 12 05:56:42 in-target: Reading state information...
+Oct 12 05:56:42 in-target: 
+Oct 12 05:56:42 in-target: The following additional packages will be installed:
+Oct 12 05:56:42 in-target:   gettext-base libefiboot1t64 libefivar1t64
+Oct 12 05:56:42 in-target: Suggested packages:
+Oct 12 05:56:42 in-target:   multiboot-doc grub-emu mtools xorriso desktop-base
+Oct 12 05:56:42 in-target: Recommended packages:
+Oct 12 05:56:42 in-target:   os-prober
+Oct 12 05:56:42 in-target: The following NEW packages will be installed:
+Oct 12 05:56:42 in-target:   gettext-base grub-common libefiboot1t64 libefivar1t64
+Oct 12 05:56:42 kernel: [  276.636548] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:42 kernel: [  276.636959] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:42 in-target: 0 upgraded, 4 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:42 in-target: Need to get 0 B/3245 kB of archives.
+Oct 12 05:56:42 in-target: After this operation, 19.2 MB of additional disk space will be used.
+Oct 12 05:56:42 in-target: Get:1 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 gettext-base amd64 0.23.1-2 [243 kB]
+Oct 12 05:56:42 in-target: Get:2 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 libefivar1t64 amd64 38-3.1+b1 [58.5 kB]
+Oct 12 05:56:42 in-target: Get:3 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 libefiboot1t64 amd64 38-3.1+b1 [43.9 kB]
+Oct 12 05:56:42 in-target: Get:4 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub-common amd64 2.12-9+deb13u2 [2899 kB]
+Oct 12 05:56:43 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:43 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:43 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:43 in-target: Selecting previously unselected package gettext-base.^M
+Oct 12 05:56:43 in-target: (Reading database ... ^M
+Oct 12 05:56:43 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M
+Oct 12 05:56:43 in-target: (Reading database ... 40%^M(Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:56:43 in-target: (Reading database ... 55%^M
+Oct 12 05:56:43 in-target: (Reading database ... 60%^M
+Oct 12 05:56:43 in-target: (Reading database ... 65%^M
+Oct 12 05:56:43 in-target: (Reading database ... 70%^M
+Oct 12 05:56:43 in-target: (Reading database ... 75%^M
+Oct 12 05:56:43 in-target: (Reading database ... 80%^M
+Oct 12 05:56:43 in-target: (Reading database ... 85%^M
+Oct 12 05:56:43 in-target: (Reading database ... 90%^M
+Oct 12 05:56:43 in-target: (Reading database ... 95%^M
+Oct 12 05:56:43 in-target: (Reading database ... 100%^M(Reading database ... 179038 files and directories currently installed.)^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../gettext-base_0.23.1-2_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking gettext-base (0.23.1-2) ...^M
+Oct 12 05:56:43 in-target: Selecting previously unselected package libefivar1t64:amd64.^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../libefivar1t64_38-3.1+b1_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking libefivar1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Selecting previously unselected package libefiboot1t64:amd64.^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../libefiboot1t64_38-3.1+b1_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking libefiboot1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Selecting previously unselected package grub-common.^M
+Oct 12 05:56:43 in-target: Preparing to unpack .../grub-common_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:43 in-target: Unpacking grub-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:43 in-target: Setting up libefivar1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Setting up gettext-base (0.23.1-2) ...^M
+Oct 12 05:56:43 in-target: Setting up libefiboot1t64:amd64 (38-3.1+b1) ...^M
+Oct 12 05:56:43 in-target: Setting up grub-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/multi-user.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/suspend.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/hibernate.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/hybrid-sleep.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Created symlink '/etc/systemd/system/suspend-then-hibernate.target.wants/grub-common.service' → '/usr/lib/systemd/system/grub-common.service'.^M^M
+Oct 12 05:56:44 in-target: Processing triggers for libc-bin (2.41-12+deb13u4) ...^M
+Oct 12 05:56:45 kernel: [  278.827331] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:45 kernel: [  278.827744] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:45 kernel: [  278.842316] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:45 kernel: [  278.842763] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:45 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:45 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:45 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:45 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:45 in-target: Reading package lists...
+Oct 12 05:56:45 in-target: 
+Oct 12 05:56:45 in-target: Building dependency tree...
+Oct 12 05:56:45 in-target: 
+Oct 12 05:56:45 in-target: Reading state information...
+Oct 12 05:56:45 in-target: 
+Oct 12 05:56:46 in-target: grub-common is already the newest version (2.12-9+deb13u2).
+Oct 12 05:56:46 in-target: 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:46 kernel: [  279.931478] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:46 kernel: [  279.931848] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:46 kernel: [  279.946745] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:46 kernel: [  279.947170] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:46 grub-installer: info: Identified partition label for /dev/vda1: msdos
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-legacy which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-amd64-bin which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-amd64-signed which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-amd64 which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-ia32-bin which isn't installed
+Oct 12 05:56:46 grub-installer: dpkg: warning: ignoring request to remove grub-efi-ia32 which isn't installed
+Oct 12 05:56:46 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:46 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:46 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:46 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:46 in-target: Reading package lists...
+Oct 12 05:56:46 in-target: 
+Oct 12 05:56:46 in-target: Building dependency tree...
+Oct 12 05:56:47 in-target: 
+Oct 12 05:56:47 in-target: Reading state information...
+Oct 12 05:56:47 in-target: 
+Oct 12 05:56:47 in-target: The following NEW packages will be installed:
+Oct 12 05:56:47 in-target:   os-prober
+Oct 12 05:56:47 in-target: 0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:47 in-target: Need to get 18.4 kB of archives.
+Oct 12 05:56:47 in-target: After this operation, 100 kB of additional disk space will be used.
+Oct 12 05:56:47 in-target: Get:1 http://deb.debian.org/debian trixie/main amd64 os-prober amd64 1.83 [18.4 kB]
+Oct 12 05:56:47 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:47 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:47 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:47 in-target: Fetched 18.4 kB in 0s (232 kB/s)
+Oct 12 05:56:47 in-target: Selecting previously unselected package os-prober.^M
+Oct 12 05:56:47 in-target: (Reading database ... ^M
+Oct 12 05:56:47 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 
+Oct 12 05:56:47 in-target: 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 45%^M
+Oct 12 05:56:47 in-target: (Reading database ... 50%^M
+Oct 12 05:56:47 in-target: (Reading database ... 55%^M
+Oct 12 05:56:47 in-target: (Reading database ... 60%^M
+Oct 12 05:56:48 in-target: (Reading database ... 65%^M
+Oct 12 05:56:48 in-target: (Reading database ... 70%^M
+Oct 12 05:56:48 in-target: (Reading database ... 75%^M
+Oct 12 05:56:48 in-target: (Reading database ... 80%^M
+Oct 12 05:56:48 in-target: (Reading database ... 85%^M
+Oct 12 05:56:48 in-target: (Reading database ... 90%^M
+Oct 12 05:56:48 in-target: (Reading database ... 95%^M
+Oct 12 05:56:48 in-target: (Reading database ... 100%^M(Reading database ... 179277 files and directories currently installed.)^M
+Oct 12 05:56:48 in-target: Preparing to unpack .../os-prober_1.83_amd64.deb ...^M
+Oct 12 05:56:48 in-target: Unpacking os-prober (1.83) ...^M
+Oct 12 05:56:48 in-target: Setting up os-prober (1.83) ...^M
+Oct 12 05:56:48 kernel: [  282.193612] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:48 kernel: [  282.194046] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:48 kernel: [  282.209386] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:48 kernel: [  282.209757] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:48 anna-install: Installing ext2-modules
+Oct 12 05:56:48 anna-install: Installing ext3-modules
+Oct 12 05:56:48 anna-install: Installing ext4-modules
+Oct 12 05:56:48 anna-install: Installing xfs-modules
+Oct 12 05:56:48 anna-install: Installing jfs-modules
+Oct 12 05:56:48 anna-install: Installing msdos-modules
+Oct 12 05:56:48 os-prober: unknown udeb msdos-modules
+Oct 12 05:56:48 anna-install: Installing vfat-modules
+Oct 12 05:56:48 os-prober: unknown udeb vfat-modules
+Oct 12 05:56:48 anna-install: Installing ntfs-modules
+Oct 12 05:56:48 os-prober: unknown udeb ntfs-modules
+Oct 12 05:56:48 anna-install: Installing minix-modules
+Oct 12 05:56:48 os-prober: unknown udeb minix-modules
+Oct 12 05:56:48 anna-install: Installing hfs-modules
+Oct 12 05:56:48 os-prober: unknown udeb hfs-modules
+Oct 12 05:56:48 anna-install: Installing hfsplus-modules
+Oct 12 05:56:48 os-prober: unknown udeb hfsplus-modules
+Oct 12 05:56:48 anna-install: Installing qnx4-modules
+Oct 12 05:56:48 os-prober: unknown udeb qnx4-modules
+Oct 12 05:56:48 anna-install: Installing ufs-modules
+Oct 12 05:56:48 os-prober: unknown udeb ufs-modules
+Oct 12 05:56:48 anna-install: Installing btrfs-modules
+Oct 12 05:56:48 anna-install: Installing fuse-modules
+Oct 12 05:56:48 os-prober: unknown udeb fuse-modules
+Oct 12 05:56:48 anna-install: Installing fs-core-modules
+Oct 12 05:56:48 os-prober: unknown udeb fs-core-modules
+Oct 12 05:56:48 anna-install: Installing fs-secondary-modules
+Oct 12 05:56:48 os-prober: unknown udeb fs-secondary-modules
+Oct 12 05:56:50 os-prober: debug: running /usr/lib/os-probes/50mounted-tests on /dev/vda2
+Oct 12 05:56:50 50mounted-tests: debug: /dev/vda2 type not recognised; skipping
+Oct 12 05:56:50 os-prober: debug: os detected by /usr/lib/os-probes/50mounted-tests
+Oct 12 05:56:50 os-prober: debug: /dev/vda5: is active swap
+Oct 12 05:56:50 grub-installer: info: initial os-prober call found the following OSes:
+Oct 12 05:56:50 grub-installer: info: 
+Oct 12 05:56:50 grub-installer: info: Found NO other OSes, triggering question about os-prober, default no
+Oct 12 05:56:50 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:50 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:50 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:50 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:50 in-target: Reading package lists...
+Oct 12 05:56:50 in-target: 
+Oct 12 05:56:50 in-target: Building dependency tree...
+Oct 12 05:56:51 in-target: 
+Oct 12 05:56:51 in-target: Reading state information...
+Oct 12 05:56:51 in-target: 
+Oct 12 05:56:51 in-target: The following additional packages will be installed:
+Oct 12 05:56:51 in-target:   grub-pc-bin grub2-common
+Oct 12 05:56:51 in-target: Suggested packages:
+Oct 12 05:56:51 in-target:   desktop-base
+Oct 12 05:56:51 in-target: The following NEW packages will be installed:
+Oct 12 05:56:51 in-target:   grub-pc grub-pc-bin grub2-common
+Oct 12 05:56:51 kernel: [  285.248586] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:51 kernel: [  285.248970] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:51 in-target: 0 upgraded, 3 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:51 in-target: Need to get 0 B/1791 kB of archives.
+Oct 12 05:56:51 in-target: After this operation, 5224 kB of additional disk space will be used.
+Oct 12 05:56:51 in-target: Get:1 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub2-common amd64 2.12-9+deb13u2 [641 kB]
+Oct 12 05:56:51 in-target: Get:2 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub-pc-bin amd64 2.12-9+deb13u2 [1021 kB]
+Oct 12 05:56:51 in-target: Get:3 cdrom://[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24] trixie/main amd64 grub-pc amd64 2.12-9+deb13u2 [128 kB]
+Oct 12 05:56:51 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:51 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:51 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:51 in-target: Preconfiguring packages ...
+Oct 12 05:56:51 in-target: Selecting previously unselected package grub2-common.^M
+Oct 12 05:56:51 in-target: (Reading database ... ^M
+Oct 12 05:56:51 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M
+Oct 12 05:56:51 in-target: (Reading database ... 35%^M(Reading database ... 40%
+Oct 12 05:56:51 in-target: ^M(Reading database ... 45%^M
+Oct 12 05:56:51 in-target: (Reading database ... 50%^M
+Oct 12 05:56:51 in-target: (Reading database ... 55%^M
+Oct 12 05:56:52 in-target: (Reading database ... 60%^M
+Oct 12 05:56:52 in-target: (Reading database ... 65%^M
+Oct 12 05:56:52 in-target: (Reading database ... 70%^M
+Oct 12 05:56:52 in-target: (Reading database ... 75%^M
+Oct 12 05:56:52 in-target: (Reading database ... 80%^M
+Oct 12 05:56:52 in-target: (Reading database ... 85%^M
+Oct 12 05:56:52 in-target: (Reading database ... 90%^M
+Oct 12 05:56:52 in-target: (Reading database ... 95%^M
+Oct 12 05:56:52 in-target: (Reading database ... 100%^M(Reading database ... 179316 files and directories currently installed.)^M
+Oct 12 05:56:52 in-target: Preparing to unpack .../grub2-common_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:52 in-target: Unpacking grub2-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Selecting previously unselected package grub-pc-bin.^M
+Oct 12 05:56:52 in-target: Preparing to unpack .../grub-pc-bin_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:52 in-target: Unpacking grub-pc-bin (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Selecting previously unselected package grub-pc.^M
+Oct 12 05:56:52 in-target: Preparing to unpack .../grub-pc_2.12-9+deb13u2_amd64.deb ...^M
+Oct 12 05:56:52 in-target: Unpacking grub-pc (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Setting up grub2-common (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Setting up grub-pc-bin (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: Setting up grub-pc (2.12-9+deb13u2) ...^M
+Oct 12 05:56:52 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory^M
+Oct 12 05:56:52 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory^M
+Oct 12 05:56:52 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory^M
+Oct 12 05:56:52 in-target: Creating config file /etc/default/grub with new version^M
+Oct 12 05:56:53 kernel: [  286.835621] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:53 kernel: [  286.836006] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:53 kernel: [  286.850026] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:53 kernel: [  286.850384] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:53 grub-installer: info: Installing grub on '/dev/vda'
+Oct 12 05:56:53 grub-installer: info: Running chroot /target grub-install  --force "/dev/vda"
+Oct 12 05:56:53 grub-installer: Installing for i386-pc platform.
+Oct 12 05:56:54 grub-installer: Installation finished. No error reported.
+Oct 12 05:56:54 grub-installer: info: grub-install ran successfully
+Oct 12 05:56:54 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:54 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:54 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:54 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:54 in-target: Reading package lists...
+Oct 12 05:56:54 in-target: 
+Oct 12 05:56:54 in-target: Building dependency tree...
+Oct 12 05:56:54 in-target: 
+Oct 12 05:56:54 in-target: Reading state information...
+Oct 12 05:56:54 in-target: 
+Oct 12 05:56:55 in-target: grub-common is already the newest version (2.12-9+deb13u2).
+Oct 12 05:56:55 in-target: 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:55 kernel: [  288.972566] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:55 kernel: [  288.972906] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:55 kernel: [  288.987534] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:56:55 kernel: [  288.987893] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:56:55 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:56 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:56 main-menu[2177]: (process:10615): Setting partition 1 of /dev/vda to active... done.
+Oct 12 05:56:56 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:56 systemd-boot-installer: systemd-boot is only usable on 64bit EFI systems, not amd64/generic
+Oct 12 05:56:56 depthcharge-tools-installer: Not installing to non-ChromeOS board.
+Oct 12 05:56:56 systemd-boot-installer: systemd-boot is only usable on 64bit EFI systems, not amd64/generic
+Oct 12 05:56:56 main-menu[2177]: INFO: Menu item 'finish-install' selected
+Oct 12 05:56:56 finish-install: info: Running /usr/lib/finish-install.d/01kickseed
+Oct 12 05:56:56 finish-install: info: Running /usr/lib/finish-install.d/05localechooser
+Oct 12 05:56:56 finish-install: info: Running /usr/lib/finish-install.d/06user-setup
+Oct 12 05:56:56 user-setup: Shadow passwords are now on.
+Oct 12 05:56:56 usermod[12484]: change user 'root' password
+Oct 12 05:56:57 adduser[12493]: Adding user `cham3test' ...
+Oct 12 05:56:57 adduser[12493]: Selecting UID/GID from range 1000 to 59999 ...
+Oct 12 05:56:57 adduser[12493]: Adding new group `cham3test' (1000) ...
+Oct 12 05:56:57 groupadd[12497]: group added to /etc/group: name=cham3test, GID=1000
+Oct 12 05:56:57 groupadd[12497]: group added to /etc/gshadow: name=cham3test
+Oct 12 05:56:57 groupadd[12497]: new group: name=cham3test, GID=1000
+Oct 12 05:56:57 adduser[12493]: Adding new user `cham3test' (1000) with group `cham3test (1000)' ...
+Oct 12 05:56:57 useradd[12502]: new user: name=cham3test, UID=1000, GID=1000, home=/home/cham3test, shell=/bin/bash, from=none
+Oct 12 05:56:57 adduser[12493]: Creating home directory `/home/cham3test' ...
+Oct 12 05:56:57 adduser[12493]: Copying files from `/etc/skel' ...
+Oct 12 05:56:57 adduser[12493]: Adding new user `cham3test' to supplemental / extra groups `users' ...
+Oct 12 05:56:57 adduser[12493]: Adding user `cham3test' to group `users' ...
+Oct 12 05:56:57 gpasswd[12518]: members of group users set by root to cham3test
+Oct 12 05:56:57 chfn[12523]: changed user 'cham3test' information
+Oct 12 05:56:57 chpasswd[12530]: pam_unix(chpasswd:chauthtok): password changed for cham3test
+Oct 12 05:56:57 adduser[12536]: Adding user `cham3test' to group `audio' ...
+Oct 12 05:56:57 usermod[12538]: add 'cham3test' to group 'audio'
+Oct 12 05:56:57 usermod[12538]: add 'cham3test' to shadow group 'audio'
+Oct 12 05:56:57 adduser[12544]: Adding user `cham3test' to group `cdrom' ...
+Oct 12 05:56:57 usermod[12546]: add 'cham3test' to group 'cdrom'
+Oct 12 05:56:57 usermod[12546]: add 'cham3test' to shadow group 'cdrom'
+Oct 12 05:56:57 adduser[12552]: Adding user `cham3test' to group `dip' ...
+Oct 12 05:56:57 usermod[12554]: add 'cham3test' to group 'dip'
+Oct 12 05:56:57 usermod[12554]: add 'cham3test' to shadow group 'dip'
+Oct 12 05:56:57 adduser[12560]: Adding user `cham3test' to group `floppy' ...
+Oct 12 05:56:57 usermod[12562]: add 'cham3test' to group 'floppy'
+Oct 12 05:56:57 usermod[12562]: add 'cham3test' to shadow group 'floppy'
+Oct 12 05:56:57 adduser[12568]: Adding user `cham3test' to group `video' ...
+Oct 12 05:56:57 usermod[12570]: add 'cham3test' to group 'video'
+Oct 12 05:56:57 usermod[12570]: add 'cham3test' to shadow group 'video'
+Oct 12 05:56:57 adduser[12576]: Adding user `cham3test' to group `plugdev' ...
+Oct 12 05:56:57 usermod[12578]: add 'cham3test' to group 'plugdev'
+Oct 12 05:56:57 usermod[12578]: add 'cham3test' to shadow group 'plugdev'
+Oct 12 05:56:57 adduser[12584]: Adding user `cham3test' to group `netdev' ...
+Oct 12 05:56:57 usermod[12586]: add 'cham3test' to group 'netdev'
+Oct 12 05:56:57 usermod[12586]: add 'cham3test' to shadow group 'netdev'
+Oct 12 05:56:57 user-setup: fatal: The group `scanner' does not exist.
+Oct 12 05:56:57 adduser[12592]: The group `scanner' does not exist.
+Oct 12 05:56:57 user-setup: fatal: The group `bluetooth' does not exist.
+Oct 12 05:56:57 adduser[12595]: The group `bluetooth' does not exist.
+Oct 12 05:56:57 user-setup: fatal: The group `debian-tor' does not exist.
+Oct 12 05:56:57 adduser[12598]: The group `debian-tor' does not exist.
+Oct 12 05:56:57 user-setup: fatal: The group `lpadmin' does not exist.
+Oct 12 05:56:57 adduser[12601]: The group `lpadmin' does not exist.
+Oct 12 05:56:57 adduser[12604]: Adding user `cham3test' to group `sudo' ...
+Oct 12 05:56:57 usermod[12606]: add 'cham3test' to group 'sudo'
+Oct 12 05:56:57 usermod[12606]: add 'cham3test' to shadow group 'sudo'
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07brltty
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07preseed
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07rootskel
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/07speakup
+Oct 12 05:56:58 finish-install: info: Running /usr/lib/finish-install.d/08hw-detect
+Oct 12 05:56:58 hw-detect: detected virtualization 'kvm' (with systemd-detect-virt)
+Oct 12 05:56:58 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:56:58 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:58 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:58 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:58 in-target: Reading package lists...
+Oct 12 05:56:58 in-target: 
+Oct 12 05:56:58 in-target: Building dependency tree...
+Oct 12 05:56:58 in-target: 
+Oct 12 05:56:58 in-target: Reading state information...
+Oct 12 05:56:58 in-target: 
+Oct 12 05:56:58 in-target: The following additional packages will be installed:
+Oct 12 05:56:58 in-target:   liburing2
+Oct 12 05:56:58 in-target: The following NEW packages will be installed:
+Oct 12 05:56:58 in-target:   liburing2 qemu-guest-agent
+Oct 12 05:56:58 in-target: 0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:56:58 in-target: Need to get 589 kB of archives.
+Oct 12 05:56:58 in-target: After this operation, 3955 kB of additional disk space will be used.
+Oct 12 05:56:58 in-target: Get:1 http://deb.debian.org/debian trixie/main amd64 liburing2 amd64 2.9-1 [26.4 kB]
+Oct 12 05:56:58 in-target: Get:2 http://deb.debian.org/debian trixie/main amd64 qemu-guest-agent amd64 1:10.0.13+ds-0+deb13u1 [562 kB]
+Oct 12 05:56:59 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:56:59 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:56:59 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:56:59 in-target: Fetched 589 kB in 0s (7578 kB/s)
+Oct 12 05:56:59 in-target: Selecting previously unselected package liburing2:amd64.^M
+Oct 12 05:56:59 in-target: (Reading database ... ^M
+Oct 12 05:56:59 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M
+Oct 12 05:56:59 in-target: (Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:56:59 in-target: (Reading database ... 55%^M
+Oct 12 05:56:59 in-target: (Reading database ... 60%^M
+Oct 12 05:56:59 in-target: (Reading database ... 65%^M
+Oct 12 05:56:59 in-target: (Reading database ... 70%^M
+Oct 12 05:56:59 in-target: (Reading database ... 75%^M
+Oct 12 05:56:59 in-target: (Reading database ... 80%^M
+Oct 12 05:56:59 in-target: (Reading database ... 85%^M
+Oct 12 05:56:59 in-target: (Reading database ... 90%^M
+Oct 12 05:56:59 in-target: (Reading database ... 95%^M
+Oct 12 05:56:59 in-target: (Reading database ... 100%^M(Reading database ... 179661 files and directories currently installed.)^M
+Oct 12 05:56:59 in-target: Preparing to unpack .../liburing2_2.9-1_amd64.deb ...^M
+Oct 12 05:56:59 in-target: Unpacking liburing2:amd64 (2.9-1) ...^M
+Oct 12 05:56:59 in-target: Selecting previously unselected package qemu-guest-agent.^M
+Oct 12 05:56:59 in-target: Preparing to unpack .../qemu-guest-agent_1%3a10.0.13+ds-0+deb13u1_amd64.deb ...^M
+Oct 12 05:56:59 in-target: Unpacking qemu-guest-agent (1:10.0.13+ds-0+deb13u1) ...^M
+Oct 12 05:56:59 in-target: Setting up liburing2:amd64 (2.9-1) ...^M
+Oct 12 05:56:59 in-target: Setting up qemu-guest-agent (1:10.0.13+ds-0+deb13u1) ...^M
+Oct 12 05:56:59 in-target: Running in chroot, ignoring request.^M^M
+Oct 12 05:56:59 in-target: invoke-rc.d: policy-rc.d denied execution of start.^M
+Oct 12 05:56:59 in-target: Processing triggers for libc-bin (2.41-12+deb13u4) ...^M
+Oct 12 05:57:00 kernel: [  293.939486] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:00 kernel: [  293.939857] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:00 kernel: [  293.954184] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:00 kernel: [  293.954512] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:00 finish-install: dpkg-query: no packages found matching task-desktop
+Oct 12 05:57:00 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:00 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:57:00 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:57:00 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:57:00 in-target: Reading package lists...
+Oct 12 05:57:00 in-target: 
+Oct 12 05:57:00 in-target: Building dependency tree...
+Oct 12 05:57:00 in-target: 
+Oct 12 05:57:00 in-target: Reading state information...
+Oct 12 05:57:00 in-target: 
+Oct 12 05:57:01 in-target: The following NEW packages will be installed:
+Oct 12 05:57:01 in-target:   spice-vdagent
+Oct 12 05:57:01 in-target: 0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:57:01 in-target: Need to get 61.1 kB of archives.
+Oct 12 05:57:01 in-target: After this operation, 223 kB of additional disk space will be used.
+Oct 12 05:57:01 in-target: Get:1 http://deb.debian.org/debian trixie/main amd64 spice-vdagent amd64 0.22.1-4.1 [61.1 kB]
+Oct 12 05:57:01 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:57:01 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:57:01 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:57:01 in-target: Fetched 61.1 kB in 0s (578 kB/s)
+Oct 12 05:57:01 in-target: Selecting previously unselected package spice-vdagent.^M
+Oct 12 05:57:01 in-target: (Reading database ... ^M
+Oct 12 05:57:01 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:57:01 in-target: (Reading database ... 55%^M
+Oct 12 05:57:01 in-target: (Reading database ... 60%^M
+Oct 12 05:57:01 in-target: (Reading database ... 65%^M
+Oct 12 05:57:01 in-target: (Reading database ... 70%^M
+Oct 12 05:57:01 in-target: (Reading database ... 75%^M
+Oct 12 05:57:01 in-target: (Reading database ... 80%^M
+Oct 12 05:57:01 in-target: (Reading database ... 85%^M
+Oct 12 05:57:01 in-target: (Reading database ... 90%^M
+Oct 12 05:57:01 in-target: (Reading database ... 95%^M
+Oct 12 05:57:01 in-target: (Reading database ... 100%^M(Reading database ... 179684 files and directories currently installed.)^M
+Oct 12 05:57:01 in-target: Preparing to unpack .../spice-vdagent_0.22.1-4.1_amd64.deb ...^M
+Oct 12 05:57:01 in-target: Unpacking spice-vdagent (0.22.1-4.1) ...^M
+Oct 12 05:57:01 in-target: Setting up spice-vdagent (0.22.1-4.1) ...^M
+Oct 12 05:57:01 in-target: Running in chroot, ignoring request.^M^M
+Oct 12 05:57:01 in-target: invoke-rc.d: policy-rc.d denied execution of start.^M
+Oct 12 05:57:02 kernel: [  296.121133] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:02 kernel: [  296.121515] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:02 kernel: [  296.135665] ISO 9660 Extensions: Microsoft Joliet Level 3
+Oct 12 05:57:02 kernel: [  296.136051] ISO 9660 Extensions: RRIP_1991A
+Oct 12 05:57:02 finish-install: info: Running /usr/lib/finish-install.d/10apt-cdrom-setup
+Oct 12 05:57:02 finish-install: Disabling CDROM entries in sources.list (preseed)
+Oct 12 05:57:02 finish-install: Hit:1 http://deb.debian.org/debian trixie InRelease
+Oct 12 05:57:02 finish-install: Hit:2 http://deb.debian.org/debian trixie-updates InRelease
+Oct 12 05:57:02 finish-install: Hit:3 http://security.debian.org/debian-security trixie-security InRelease
+Oct 12 05:57:02 finish-install: Hit:4 http://http.kali.org/kali kali-rolling InRelease
+Oct 12 05:57:02 finish-install: Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]
+Oct 12 05:57:02 finish-install: Fetched 5649 B in 0s (18.9 kB/s)
+Oct 12 05:57:02 finish-install: Reading package lists...
+Oct 12 05:57:03 finish-install: 
+Oct 12 05:57:03 finish-install: info: Running /usr/lib/finish-install.d/10clock-setup
+Oct 12 05:57:03 clock-setup: not setting hardware clock
+Oct 12 05:57:03 finish-install: info: Running /usr/lib/finish-install.d/10open-iscsi
+Oct 12 05:57:03 finish-install: info: Running /usr/lib/finish-install.d/10update-initramfs
+Oct 12 05:57:03 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:04 finish-install: info: Running /usr/lib/finish-install.d/14remove-live-packages
+Oct 12 05:57:04 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:04 in-target: Reading package lists...
+Oct 12 05:57:04 in-target: 
+Oct 12 05:57:04 in-target: Building dependency tree...
+Oct 12 05:57:04 in-target: 
+Oct 12 05:57:04 in-target: Reading state information...
+Oct 12 05:57:04 in-target: 
+Oct 12 05:57:04 in-target: The following packages will be REMOVED:
+Oct 12 05:57:04 in-target:   busybox* live-boot* live-boot-initramfs-tools* live-config*
+Oct 12 05:57:04 in-target:   live-config-systemd* user-setup*
+Oct 12 05:57:05 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory
+Oct 12 05:57:05 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory
+Oct 12 05:57:05 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory
+Oct 12 05:57:05 in-target: 0 upgraded, 0 newly installed, 6 to remove and 0 not upgraded.
+Oct 12 05:57:05 in-target: After this operation, 1526 kB disk space will be freed.
+Oct 12 05:57:05 in-target: (Reading database ... ^M
+Oct 12 05:57:05 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M
+Oct 12 05:57:05 in-target: (Reading database ... 35%^M(Reading database ... 40%^M(Reading database ... 
+Oct 12 05:57:05 in-target: 45%^M(Reading database ... 50%^M
+Oct 12 05:57:05 in-target: (Reading database ... 55%^M
+Oct 12 05:57:05 in-target: (Reading database ... 60%^M
+Oct 12 05:57:05 in-target: (Reading database ... 65%^M
+Oct 12 05:57:05 in-target: (Reading database ... 70%^M
+Oct 12 05:57:05 in-target: (Reading database ... 75%^M
+Oct 12 05:57:05 in-target: (Reading database ... 80%^M
+Oct 12 05:57:05 in-target: (Reading database ... 85%^M
+Oct 12 05:57:05 in-target: (Reading database ... 90%^M
+Oct 12 05:57:05 in-target: (Reading database ... 95%^M
+Oct 12 05:57:05 in-target: (Reading database ... 100%^M(Reading database ... 179708 files and directories currently installed.)^M
+Oct 12 05:57:05 in-target: Removing live-boot (1:20250815~deb13u1) ...^M
+Oct 12 05:57:05 in-target: Removing live-boot-initramfs-tools (1:20250815~deb13u1) ...^M
+Oct 12 05:57:05 in-target: update-initramfs: deferring update (trigger activated)^M
+Oct 12 05:57:05 in-target: Removing busybox (1:1.37.0-6+b9) ...^M
+Oct 12 05:57:05 in-target: Removing live-config (11.0.5) ...^M
+Oct 12 05:57:05 in-target: Removing live-config-systemd (11.0.5) ...^M
+Oct 12 05:57:05 in-target: Removing user-setup (1.107) ...^M
+Oct 12 05:57:05 in-target: Processing triggers for initramfs-tools (0.148.4) ...^M
+Oct 12 05:57:05 in-target: update-initramfs: Generating /boot/initrd.img-6.12.111+deb13-amd64^M
+Oct 12 05:57:05 in-target: W: No zstd in /usr/bin:/sbin:/bin, using gzip^M
+Oct 12 05:57:15 in-target: (Reading database ... ^M
+Oct 12 05:57:15 in-target: (Reading database ... 5%^M(Reading database ... 10%^M(Reading database ... 15%^M(Reading database ... 20%^M(Reading database ... 25%^M(Reading database ... 30%^M(Reading database ... 35%^M(Reading database ... 40%^M
+Oct 12 05:57:15 in-target: (Reading database ... 45%^M(Reading database ... 50%^M
+Oct 12 05:57:15 in-target: (Reading database ... 55%^M
+Oct 12 05:57:15 in-target: (Reading database ... 60%^M
+Oct 12 05:57:15 in-target: (Reading database ... 65%^M
+Oct 12 05:57:15 in-target: (Reading database ... 70%^M
+Oct 12 05:57:15 in-target: (Reading database ... 75%^M
+Oct 12 05:57:15 in-target: (Reading database ... 80%^M
+Oct 12 05:57:15 in-target: (Reading database ... 85%^M
+Oct 12 05:57:15 in-target: (Reading database ... 90%^M
+Oct 12 05:57:16 in-target: (Reading database ... 95%^M
+Oct 12 05:57:16 in-target: (Reading database ... 100%^M(Reading database ... 179591 files and directories currently installed.)^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-config (11.0.5) ...^M
+Oct 12 05:57:16 in-target: dpkg: warning: while removing live-config, directory '/usr/lib/live/config' not empty so not removed^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-boot (1:20250815~deb13u1) ...^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-config-systemd (11.0.5) ...^M
+Oct 12 05:57:16 in-target: Purging configuration files for live-boot-initramfs-tools (1:20250815~deb13u1) ...^M
+Oct 12 05:57:16 in-target: Purging configuration files for user-setup (1.107) ...^M
+Oct 12 05:57:16 in-target: locale: Cannot set LC_CTYPE to default locale: No such file or directory^M
+Oct 12 05:57:16 in-target: locale: Cannot set LC_MESSAGES to default locale: No such file or directory^M
+Oct 12 05:57:16 in-target: locale: Cannot set LC_ALL to default locale: No such file or directory^M
+Oct 12 05:57:16 in-target: debconf: unable to initialize frontend: Passthrough^M
+Oct 12 05:57:16 in-target: debconf: (Failed to open fd 3: Bad file descriptor at (eval 16) line 3.)^M
+Oct 12 05:57:16 in-target: debconf: falling back to frontend: Noninteractive^M
+Oct 12 05:57:16 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:16 in-target: update-initramfs: Generating /boot/initrd.img-6.12.111+deb13-amd64
+Oct 12 05:57:16 in-target: W: No zstd in /usr/bin:/sbin:/bin, using gzip
+Oct 12 05:57:26 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:26 in-target: Reading package lists...
+Oct 12 05:57:26 in-target: 
+Oct 12 05:57:26 in-target: Building dependency tree...
+Oct 12 05:57:26 in-target: 
+Oct 12 05:57:26 in-target: Reading state information...
+Oct 12 05:57:26 in-target: 
+Oct 12 05:57:27 in-target: 0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/15cdrom-detect
+Oct 12 05:57:27 cdrom-detect: Unmounting and ejecting '/dev/sr0'
+Oct 12 05:57:27 cdrom-detect: Not ejecting CD, per debconf setting.
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/20final-message
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/30hw-detect
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/50config-target-network
+Oct 12 05:57:27 finish-install: info: Running /usr/lib/finish-install.d/55netcfg-copy-config
+Oct 12 05:57:27 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:27 /bin/in-target: warning: /target/etc/mtab won't be updated since it is a symlink.
+Oct 12 05:57:28 netcfg[18440]: INFO: Starting netcfg v.1.197
+Oct 12 05:57:28 netcfg[18440]: DEBUG: No interface given; clearing /etc/network/interfaces
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Writing informative header
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Success!
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Writing loopback interface
+Oct 12 05:57:28 netcfg[18440]: DEBUG: Success!
+Oct 12 05:57:28 finish-install: info: Running /usr/lib/finish-install.d/60cleanup
+Oct 12 05:57:28 finish-install: Reading package lists...
+Oct 12 05:57:29 finish-install: 
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/65partman-md
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/70mtab
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/80hvcgetty
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/90base-installer
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/90console
+Oct 12 05:57:29 finish-install: Configuring init for serial console
+Oct 12 05:57:29 finish-install: grep: /target/etc/securetty: No such file or directory
+Oct 12 05:57:29 finish-install: grep: /target/etc/securetty: No such file or directory
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/94random-seed
+Oct 12 05:57:29 finish-install: info: Running /usr/lib/finish-install.d/94save-logs

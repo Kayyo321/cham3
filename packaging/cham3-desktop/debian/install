@@ -1,0 +1,10 @@
+# Plasma widgets (plugin id == directory name), 8 cham3 panel components.
+desktop/plasma/plasmoids/org.cham3.* usr/share/plasma/plasmoids/
+# Look-and-feel package (defaults + layout entry point).
+desktop/plasma/look-and-feel/org.cham3.desktop usr/share/plasma/look-and-feel/
+# Color scheme (KDE file name spelling).
+desktop/plasma/color-schemes/Cham3Dark.colors usr/share/color-schemes/
+# Wallpaper metadata (the image itself is installed by debian/rules).
+desktop/plasma/wallpapers/cham3/metadata.json usr/share/wallpapers/Cham3/
+# Branding logos.
+assets/branding/*.png usr/share/cham3/branding/

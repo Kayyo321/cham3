@@ -1,9 +1,10 @@
 # Task: M1 — Bootable desktop distribution
 
-- **State:** DRAFT
-- **Owner / role / provider:** Unassigned / IMPLEMENTER / TBD
-- **Created / updated:** 2026-10-11
-- **Base commit:** `3f4690d80c87f4d1a2da88a9bbc1ba7bacb1dedc` (includes approved ADR 0002)
+- **State:** READY_TO_MERGE. Independent Codex re-review **APPROVED** implementation target `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on 2026-10-12 with F2 and F3 security approval **GRANTED** (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`, evidence `docs/evidence/M1-bootable-desktop-distribution/codex_01bf7a1/`). All acceptance criteria have evidence. The owner authorized the merge on 2026-10-12; DONE follows the merge and passing post-merge checks.
+- **Next owner / action:** Claude Code (INTEGRATOR) merges into `main` with `--no-ff`, publishes it, and records the post-merge checks.
+- **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER. Cycles 0–1 used the subagents `m1_worker` (Sonnet 5.5), `m1_test_reviewer` (Haiku 5.5) and `m1_docs_research` (Haiku 5.5); in repair cycle 2 the owner asked for direct implementation without them. Independent REVIEWER/SECURITY REVIEWER: Codex (OpenAI) — CHANGES_REQUESTED on `b82919c` and `0fec3a0`; **APPROVE** on `01bf7a1`.
+- **Created / updated:** 2026-10-11 / 2026-10-12
+- **Base commit (M1 implementation baseline):** `401c6cf9a550c81decf832cbc346f6908b9c95ef` (current `main`; includes approved ADR 0002 and current branding assets). The older historical base `3f4690d80c87f4d1a2da88a9bbc1ba7bacb1dedc` recorded at drafting is superseded as the implementation baseline and kept as context only.
 
 ## Objective
 
@@ -20,6 +21,10 @@ Deliver a bootable, installable Debian GNU/Linux 13 (Trixie) x86-64 image with K
 - Source: [ADR 0002 — Default right-hand taskbar layout and trusted desktop boundaries](../decisions/0002_default_right_taskbar_layout.md), **APPROVED**. M1 supplies the visual/package foundation; the full panel and trusted interactions are assigned to M5-001 in [M5 task specification](M5-default-taskbar-layout.md). ADR 0002 does not claim implementation and reserves ECR Explorer pending ADR 0001 approval/implementation.
 - Source: task request dated 2026-10-11. It specifies the privacy browsers, traffic-monitoring tools, curated security-tool suite, and duplicate-utility exclusions below.
 - Owner decision recorded 2026-10-11: prefer Debian 13 packages; use a Debian-native equivalent when a requested tool is unavailable or incompatible; permit a selected Kali-origin package only when no suitable Debian-native option exists and only through a narrowly pinned, separately reviewed source. Include the resulting curated suite in the default `cham3-full` package set. The exact package list and dependency closure still require review before implementation.
+- **Owner decision recorded 2026-10-11 (M1 repair cycle, after the dependency-closure review in `docs/research/M1_package_disposition.md`):** include these foreign-sourced roles in `cham3-full` via strictly pinned, authenticated, separately-reviewed sources — LibreWolf (its official repository), and OWASP ZAP (`zaproxy`), `amass`, searchsploit (`exploitdb`), Ghidra (`ghidra`), and `radare2` (satisfying the radare2/Cutter role) from a **narrowly pinned** Kali source (apt Pin-Priority `-1` for the Kali origin with a per-package allowlist; closure review shows no Debian base package is admitted, and a simulated `dist-upgrade` migrates nothing to Kali). This is not a global Kali repository. **Defer** `mitmproxy`, `wpscan`, and `metasploit-framework` to a separate, independently-reviewed follow-up task: their dependency closures pull Debian base libraries (libc6/Qt/Ruby) from Kali and no clean route exists yet. This is an explicit, recorded **scope amendment**, not a silent omission; `cham3-full` documents the deferrals. Burp Suite (licence) and Cutter/rizin (closure) are omitted in favour of ZAP and radare2. Including the six is contingent on native dependency-closure confirmation on Codex Remote and independent Codex security review before merge.
+- **Owner decision recorded 2026-10-11 (M1 repair cycle):** build firmware without the fetch-at-install Broadcom `b43`/`b43legacy` installers (`--firmware-chroot false` plus an explicit self-contained firmware set), removing the only build-time network fetch. Modern Broadcom (`brcm80211`) and all other firmware remain; legacy b43/b43legacy SoftMAC 43xx Wi-Fi coverage is intentionally dropped, as Debian ships no self-contained firmware blobs for those chips.
+
+- **Owner decision recorded 2026-10-12 (M1 repair cycle, after the Codex re-review of `0fec3a0`):** the explicit firmware list's `firmware-ipw2x00` and `firmware-ivtv` refuse to install without a debconf licence answer, which live-build's `chroot_firmware` stage gave automatically under the earlier `--firmware-chroot true` design. Preseed acceptance of both licences for the development image (`build/live-desktop/config/preseed/cham3_firmware_licenses.cfg.chroot`), keeping all 42 approved firmware packages; revisit before any public release.
 
 ## Scope and exclusions
 
@@ -88,21 +93,23 @@ Package lists and metapackages must avoid desktop conflicts, document unavailabl
 
 ## Acceptance criteria
 
-- [ ] The task is assigned on a dedicated task branch/worktree based on the recorded baseline; exact branch/worktree and target commit are recorded.
-- [ ] A documented Debian 13 Trixie x86-64 live-build path produces a bootable, installable ISO from declared inputs without production credentials or undocumented host state.
-- [ ] In a disposable VM, the ISO boots into KDE Plasma 6 on Wayland and completes the documented installation path. Record VM details, artifact identity, and limitations.
-- [ ] The installed desktop uses cham3 branding defaults and starts with a 56–64 Plasma logical-pixel vertical panel on the right edge.
-- [ ] The panel contains the nine components in the order and presentation defined by ADR 0002: `cham3_user_launcher`, `cham3_alias_wheel`, `cham3_tag_pager`, `cham3_contract_dock`, `cham3_netproto_launcher`, `cham3_killswitch`, `cham3_settings_launcher`, `cham3_task_manager`, and the upstream Plasma tray/clock. M1 verifies visual/package foundation; interactive and trusted behavior is tracked by M5-001.
-- [ ] M2–M4-dependent functions visibly report unavailable/disconnected/unverified state; M1 controls cannot imply active contracts, aliases/profile isolation, network modes, kill-switch enforcement, or cryptographic identity without authoritative backend evidence.
-- [ ] The desktop preserves the distinction between desired, signed/verified, pending, and actively enforced policy. An absent, stale, or failed backend produces a visible unavailable/failure state and cannot trigger a false success state.
-- [ ] `cham3-desktop` and `cham3-full` have valid package metadata and dependency relationships; the curated security suite is included in the default `cham3-full` package set.
-- [ ] Package manifests prefer Debian 13 packages, use Debian-native equivalents for unavailable/incompatible requests, and include a Kali-origin package only when no suitable Debian-native option exists and that package passes the separately reviewed narrow-pinning/source/dependency checks. Every substitution or omission is documented; no general or unreviewed foreign repository is enabled.
-- [ ] Package-source configuration authenticates package origin/signatures, limits Kali package selection to the reviewed allowlist and dependency closure, and documents update/upgrade behavior without silently changing package origin.
-- [ ] Installed `.desktop` entries appear under appropriate launcher/menu categories and pass desktop-file validation; launch checks confirm entries resolve to installed applications.
-- [ ] The Debian KDE utilities listed above are present as selected by the package design, and package/dependency inspection confirms the named redundant alternatives are absent.
-- [ ] Image build, package validation, desktop-file validation, ISO boot, and installation evidence are recorded with exact commands/environments and `PASS`, `FAIL`, `NOT_RUN`, or `BLOCKED` results. Build/boot success is not described as proof of M2–M4 security enforcement.
-- [ ] `docs/STATUS.md` is updated only with evidence-backed M1 results, after verification; it does not promote this draft or planned work to implemented status.
-- [ ] An independent reviewer examines the exact target commit. Because this task defines security-sensitive status behavior and distribution contents, security review is required before the task can advance to READY_TO_MERGE or DONE.
+Status at `01bf7a1` (2026-10-12): every criterion below has evidence, mapped row by row (A1–A15) in `docs/evidence/M1-bootable-desktop-distribution/acceptance_matrix.md`. Author evidence: `native_01bf7a1/`. Independent Codex evidence: `codex_01bf7a1/`.
+
+- [x] The task is assigned on a dedicated task branch/worktree based on the recorded baseline; exact branch/worktree and target commit are recorded.
+- [x] A documented Debian 13 Trixie x86-64 live-build path produces a bootable, installable ISO from declared inputs without production credentials or undocumented host state.
+- [x] In a disposable VM, the ISO boots into KDE Plasma 6 on Wayland and completes the documented installation path. Record VM details, artifact identity, and limitations.
+- [x] The installed desktop uses cham3 branding defaults and starts with a 56–64 Plasma logical-pixel vertical panel on the right edge.
+- [x] The panel contains the nine components in the order and presentation defined by ADR 0002: `cham3_user_launcher`, `cham3_alias_wheel`, `cham3_tag_pager`, `cham3_contract_dock`, `cham3_netproto_launcher`, `cham3_killswitch`, `cham3_settings_launcher`, `cham3_task_manager`, and the upstream Plasma tray/clock. M1 verifies visual/package foundation; interactive and trusted behavior is tracked by M5-001.
+- [x] M2–M4-dependent functions visibly report unavailable/disconnected/unverified state; M1 controls cannot imply active contracts, aliases/profile isolation, network modes, kill-switch enforcement, or cryptographic identity without authoritative backend evidence.
+- [x] The desktop preserves the distinction between desired, signed/verified, pending, and actively enforced policy. An absent, stale, or failed backend produces a visible unavailable/failure state and cannot trigger a false success state.
+- [x] `cham3-desktop` and `cham3-full` have valid package metadata and dependency relationships; the curated security suite is included in the default `cham3-full` package set.
+- [x] Package manifests prefer Debian 13 packages, use Debian-native equivalents for unavailable/incompatible requests, and include a Kali-origin package only when no suitable Debian-native option exists and that package passes the separately reviewed narrow-pinning/source/dependency checks. Every substitution or omission is documented; no general or unreviewed foreign repository is enabled.
+- [x] Package-source configuration authenticates package origin/signatures, limits Kali package selection to the reviewed allowlist and dependency closure, and documents update/upgrade behavior without silently changing package origin.
+- [x] Installed `.desktop` entries appear under appropriate launcher/menu categories and pass desktop-file validation; launch checks confirm entries resolve to installed applications.
+- [x] The Debian KDE utilities listed above are present as selected by the package design, and package/dependency inspection confirms the named redundant alternatives are absent.
+- [x] Image build, package validation, desktop-file validation, ISO boot, and installation evidence are recorded with exact commands/environments and `PASS`, `FAIL`, `NOT_RUN`, or `BLOCKED` results. Build/boot success is not described as proof of M2–M4 security enforcement.
+- [x] `docs/STATUS.md` is updated only with evidence-backed M1 results, after verification; it does not promote this draft or planned work to implemented status.
+- [x] An independent reviewer examines the exact target commit. Because this task defines security-sensitive status behavior and distribution contents, security review is required before the task can advance to READY_TO_MERGE or DONE.
 
 ## Security considerations
 
@@ -124,15 +131,49 @@ Package lists and metapackages must avoid desktop conflicts, document unavailabl
 
 ## Assignment and Git
 
-- **Coordinator / implementer:** Codex, COORDINATOR / IMPLEMENTER for this specification change.
-- **Implementation owner:** TBD for the M1 product implementation.
-- **Reviewer / test owner:** Independent reviewer and test owner TBD; the task author cannot approve this security-sensitive work.
-- **Specification branch/worktree:** `task/M1-bootable-desktop-spec`, `/private/tmp/cham3-m1-bootable-desktop-spec`; integrated with ADR 0002 at `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd`, then removed during repository reconciliation.
-- **Task implementation branch/worktree:** TBD; create a dedicated branch/worktree from an approved implementation baseline.
-- **Specification target commit:** `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd`. The task remains DRAFT.
+- **Specification author (historical):** Codex, COORDINATOR / IMPLEMENTER for the original specification change.
+- **M1 implementation coordinator / integrator:** Claude Code (Opus 5.5). Owns integration, shared build-script changes, status/task/handoff records, and verification.
+- **Implementation owner:** Claude Code — `m1_worker` (Sonnet 5.5) under the coordinator, owning `packaging/cham3-desktop/`, `packaging/cham3-full/`, `desktop/`, `build/live-desktop/`.
+- **Test owner:** `m1_test_reviewer` (Haiku 5.5), owning new `tests/` suites and internal review. Internal review does not substitute for independent approval.
+- **Independent reviewer / security reviewer:** Codex. CHANGES_REQUESTED on `b82919c` (`docs/reviews/M1-bootable-desktop-distribution-codex.md`) and `0fec3a0` (`docs/reviews/M1-bootable-desktop-distribution-codex-rereview.md`); **APPROVE** on `01bf7a1` with F2/F3 security approval GRANTED (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`). The author did not approve its own security-sensitive work.
+- **Implementation baseline:** `401c6cf9a550c81decf832cbc346f6908b9c95ef` on `main`.
+- **Branches / worktrees (off the baseline):**
+  - `task/M1-bootable-desktop` — `/Users/jessicabruce/cham3-worktrees/M1-integration` (coordinator/integrator; shared `build/scripts/*`, docs, integration merges).
+  - `task/M1-worker` — `/Users/jessicabruce/cham3-worktrees/M1-worker` (implementer; packaging/desktop/live-desktop).
+  - `test/M1` — `/Users/jessicabruce/cham3-worktrees/M1-test` (test owner; `tests/`).
+  - `docs/M1-research` — `/Users/jessicabruce/cham3-worktrees/M1-docs` (package disposition matrix and readiness packet under `docs/research/`).
+- **Persistent subagent definitions:** `.claude/agents/m1_worker.md`, `.claude/agents/m1_test_reviewer.md`, `.claude/agents/m1_docs_research.md`.
+- **Target commit:** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `task/M1-bootable-desktop` (supersedes `0fec3a0` and `b82919c`; independently approved). Handoff: `docs/handoffs/M1-bootable-desktop-distribution.md`. Heavy/native gates: `.github/workflows/m1_image.yml` on GitHub-hosted x86-64 runners (declared environment in `docs/evidence/M1-bootable-desktop-distribution/codex_remote_verification.md`).
+- **Historical specification record:** `task/M1-bootable-desktop-spec` at `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd` (worktree removed during reconciliation).
 
 ## Decisions / blockers
 
 - **Resolved owner decisions (2026-10-11):** Prefer Debian 13 packages; use a Debian-native equivalent for an unavailable or incompatible requested tool; permit selected Kali-origin packages only when no suitable Debian-native option exists and only through a narrowly pinned, separately reviewed source; include the suite in default `cham3-full`.
-- **Open implementation reviews:** Determine exact package-by-package dispositions and review any Kali-origin allowlist, dependency closure, source pinning, signature/origin verification, and upgrade behavior before implementation.
-- **Blocker and next action:** The M0 dependency is satisfied. Keep this task DRAFT until implementation, test, and independent review owners are assigned and package-by-package dispositions are prepared for review. Then move it to READY only when those inputs and interfaces are settled. Any Kali-origin allowlist, dependency closure, source pinning, signature/origin verification, and upgrade behavior remain required review evidence before implementation.
+- **Implementation reviews (resolved 2026-10-12):** package-by-package dispositions are in `docs/research/M1_package_disposition.md`. The Kali allowlist, dependency closure, host-bound source pinning, signature/origin verification and upgrade behavior passed independent Codex review and an independent native F2 rerun at `01bf7a1` (F2 security approval GRANTED). Codex Remote's proxy blocked the Kali and LibreWolf hosts, so the native closure confirmation that the sourcing decision made a precondition for including the six foreign roles ran in the declared GitHub Actions environment instead.
+- **Blockers:** none for M1. Outside this task and still open before any public release: the three deferred tools (separate reviewed task), the firmware licence decision, package maintainer/copyright/licence metadata, Kali archive key rotation (key expires 2028-04-17), UEFI and real-hardware coverage.
+
+### Independent Codex re-review (2026-10-12)
+
+- **Verdict / exact target:** **APPROVE** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` from baseline `401c6cf9a550c81decf832cbc346f6908b9c95ef`, for the approved M1 development scope. Evidence revision `058f839` changed only `docs/**`. F6, F3, F7 and F8 are closed, and the native-gate repairs passed independent reruns. Review record: `551266e` on `review/M1-codex-01bf7a1`, `docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`.
+- **Security approval:** F2 GRANTED for the narrow authenticated sources, host-bound pinning, dependency closure and upgrade policy. F3 GRANTED for the dumpcap policy and tested lifecycle.
+- **Independent checks:**
+  - All PASS:
+    - static checks;
+    - static/desktop/staging 82/261/16;
+    - F6 signed synthetic suite 22;
+    - package build, lintian and 8 package tests;
+    - committed native SHA256SUMS;
+    - the staged `auto/build` failure-path probe;
+    - F2 real-archive gates 7/7;
+    - privileged capture 77 with no skips;
+    - M1 ISO independently rebuilt from `01bf7a1`, with image-m1 54/54;
+    - VM live/install/installed 37/1/65 against the rebuilt ISO.
+  - M0 regression: reviewed from run 38207816428, not rerun.
+  - Commands and logs: `docs/evidence/M1-bootable-desktop-distribution/codex_01bf7a1/README.md`.
+- **Limits stated by the reviewer:**
+  - Coverage is QEMU BIOS/q35 only, with no UEFI or physical hardware, and no M2–M4 guarantees.
+  - The apt origin controls do not make third-party application code safe.
+  - Real-archive metadata rolls between runs, so no reproducible ISO is claimed.
+  - Key rotation, release licence/publication readiness and the three deferred tools are separate work.
+  - The installed phase's ISO identity is traced through the same job rather than recorded in the phase itself.
+- **Required actions:** none. The integrator owns the task/status updates and integration.

@@ -1,0 +1,10 @@
+./
+./usr/
+./usr/bin/
+./usr/bin/libpostal_data
+./usr/share/
+./usr/share/doc/
+./usr/share/doc/libpostal-data/
+./usr/share/doc/libpostal-data/changelog.Debian.gz
+./usr/share/doc/libpostal-data/copyright
+./usr/share/libpostal

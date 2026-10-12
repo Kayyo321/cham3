@@ -67,6 +67,19 @@ FakeDpkgQueryMovingWorkDir = """#!/bin/sh
 mv -- "$FAULT_EXPECTED_WORK_DIR" "$FAULT_EXPECTED_WORK_DIR.moved"
 echo 0-fault-injection
 """
+# build_image.sh reads each staged .deb's Package field for per-profile staging.
+# The fixtures are not real .deb archives, so stub dpkg-deb to report the package
+# name from the file name (the part before the first underscore), e.g.
+# cham3-base_0.0.0~m0_all.deb -> cham3-base. This keeps the fault-injection tests
+# hermetic (no real dpkg-deb needed) and lets the wrapper reach the lb steps.
+FakeDpkgDeb = """#!/bin/sh
+if [ "$1" = "-f" ]; then
+    base=$(basename -- "$2")
+    echo "${base%%_*}"
+    exit 0
+fi
+exit 0
+"""
 
 
 class build_image_failure_paths_t(unittest.TestCase):
@@ -88,6 +101,7 @@ class build_image_failure_paths_t(unittest.TestCase):
         self.write_tool("id", FakeId % real_id)
         self.write_tool("debootstrap", FakeDebootstrap)
         self.write_tool("lb", FakeLb)
+        self.write_tool("dpkg-deb", FakeDpkgDeb)
         # Resolved, because the wrapper resolves its directories with realpath.
         self.out_dir = os.path.join(os.path.realpath(self.scratch.name), "out")
         self.image_dir = os.path.join(self.out_dir, "image")

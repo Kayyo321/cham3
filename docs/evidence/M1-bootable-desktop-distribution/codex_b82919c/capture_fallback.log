@@ -1,0 +1,3 @@
+capability_success exit 0 mode 0o754
+/tmp/codex-capture-probe/dumpcap cap_net_admin,cap_net_raw=eip
+capability_failure exit 0 mode 0o4754

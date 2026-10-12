@@ -1,0 +1,17 @@
+### mode=control target=radare2 extra_allow=
+### pin file:
+# RESEARCH ONLY (closure dry-run). mode=control target=radare2. Not an image configuration.
+Package: *
+Pin: release o=Kali
+Pin-Priority: -1
+
+### command: apt-get -s install --no-install-recommends -y radare2
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Package radare2 is not available, but is referred to by another package.
+This may mean that the package is missing, has been obsoleted, or
+is only available from another source
+
+E: Package 'radare2' has no installation candidate
+### exit=100

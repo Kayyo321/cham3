@@ -1,0 +1,23 @@
+# Debian 13 "contrib" archive area for the cham3 M1 image (F7).
+#
+# contrib is needed by exactly one package of the image, torbrowser-launcher
+# (a dependency of cham3-full). It is supplied here, from the official Debian
+# mirrors and authenticated with the Debian archive keyring, instead of through
+# lb config --archive-areas. The reason is the installer payload: live-build's
+# installer stage (installer_debian-installer, --firmware-binary true) adds to the
+# ISO every package of the configured archive areas whose Contents index lists a
+# path under lib/firmware. In Debian 13 the only such packages in contrib are
+# firmware-b43-installer and firmware-b43legacy-installer, which download
+# Broadcom blobs from external hosts when installed and are excluded by owner
+# decision. Keeping contrib out of --archive-areas removes exactly those two from
+# the installer payload; every firmware package of main, non-free and
+# non-free-firmware (the 42 names of cham3_firmware.list.chroot) is still
+# included, and the live root installs that same explicit list.
+#
+# live-build copies this file (no .chroot suffix) into the build chroot and into
+# the final image, so the installed system keeps receiving torbrowser-launcher
+# updates. Binary entries only. The name sorts before zz-sources.list and the
+# zzz_cham3_*.list foreign sources, like the other Debian sources.
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie contrib
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie-updates contrib
+deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://security.debian.org/debian-security trixie-security contrib

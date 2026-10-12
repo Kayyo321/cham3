@@ -1,0 +1,4 @@
+#!/usr/bin/make -f
+# Pure metapackage: debhelper defaults only, no payload beyond documentation.
+%:
+	dh $@

@@ -1,0 +1,5 @@
+# Locally built packages to stage into config/packages.chroot for the M0
+# development image. live-build installs every .deb staged here, so this file
+# lists exactly the M0 baseline and nothing else. Keep it in sync with
+# config/package-lists/. One binary package name per line; '#' comments ignored.
+cham3-base

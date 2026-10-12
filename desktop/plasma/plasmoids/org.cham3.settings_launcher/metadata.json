@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "cham3 developers"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Opens KDE System Settings. cham3 security sections are not present in M1.",
+        "EnabledByDefault": true,
+        "Icon": "preferences-system",
+        "Id": "org.cham3.settings_launcher",
+        "License": "AGPL-3.0-only",
+        "Name": "cham3 Settings Launcher",
+        "Version": "0.0.0-m1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

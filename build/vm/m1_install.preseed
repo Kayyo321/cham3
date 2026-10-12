@@ -1,0 +1,66 @@
+# Test preseed for the disposable M1 installation VM (build/vm/run_m1_vm_checks.py install).
+#
+# NOT part of the image: the harness appends it to a copy of the ISO's own
+# debian-installer initrd at test time, so the ISO's installer (live mode: it copies
+# the live root file system to the disk) runs unattended. The account and password
+# below are throwaway test values for a disposable virtual machine; they are not a
+# cham3 default, are never used on real hardware and give access to nothing else.
+#
+# Disk: the whole first virtio disk (/dev/vda), one ext4 root plus swap (recipe
+# "atomic"); BIOS boot with GRUB on /dev/vda. Network: DHCP from QEMU user-mode
+# networking; the official Debian mirror is configured so the installed system has
+# the Debian sources an ordinary installation has (contrib comes from the image's
+# cham3_debian_contrib.list). No package upgrade is run during installation, so the
+# installed packages are exactly the image's.
+d-i debian-installer/locale string en_US.UTF-8
+d-i localechooser/supported-locales multiselect en_US.UTF-8
+d-i keyboard-configuration/xkb-keymap select us
+d-i netcfg/choose_interface select auto
+d-i netcfg/get_hostname string cham3-vm-test
+d-i netcfg/get_domain string invalid
+d-i netcfg/hostname string cham3-vm-test
+d-i mirror/country string manual
+d-i mirror/http/hostname string deb.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+d-i passwd/root-login boolean false
+d-i passwd/user-fullname string cham3 VM test
+d-i passwd/username string cham3test
+d-i passwd/user-password password cham3-vm-test-only
+d-i passwd/user-password-again password cham3-vm-test-only
+d-i user-setup/allow-password-weak boolean true
+d-i user-setup/encrypt-home boolean false
+d-i clock-setup/utc boolean true
+d-i time/zone string Etc/UTC
+d-i clock-setup/ntp boolean false
+d-i partman-auto/disk string /dev/vda
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select atomic
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-md/device_remove_md boolean true
+d-i partman-efi/non_efi_system boolean true
+d-i apt-setup/use_mirror boolean true
+d-i apt-setup/non-free boolean true
+d-i apt-setup/non-free-firmware boolean true
+d-i apt-setup/contrib boolean false
+d-i apt-setup/cdrom/set-first boolean false
+d-i apt-setup/disable-cdrom-entries boolean true
+d-i apt-setup/services-select multiselect security, updates
+d-i apt-setup/security_host string security.debian.org
+d-i pkgsel/run_tasksel boolean false
+tasksel tasksel/first multiselect
+d-i pkgsel/upgrade select none
+d-i pkgsel/update-policy select none
+d-i pkgsel/include string
+popularity-contest popularity-contest/participate boolean false
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean false
+d-i grub-installer/bootdev string /dev/vda
+d-i debian-installer/add-kernel-opts string console=tty0 console=ttyS0,115200n8
+d-i cdrom-detect/eject boolean false
+d-i finish-install/reboot_in_progress note
+d-i debian-installer/exit/poweroff boolean true

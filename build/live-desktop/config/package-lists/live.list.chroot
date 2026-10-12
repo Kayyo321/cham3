@@ -1,0 +1,9 @@
+# Intentionally lists no package.
+#
+# When this file is absent, "lb config" (live-build 20250505+deb13u1) creates it with
+# live-boot, live-config, live-config-systemd and systemd-sysv. A *.list.chroot file is
+# installed in live-build's "install" pass, so those packages would stay on a disk
+# installed with the image's debian-installer: the installer removes only the packages
+# that the "live" pass added (live/filesystem.packages-remove). cham3 lists the live
+# session's packages in cham3_live.list.chroot_live instead (systemd-sysv is part of
+# the base system). Its presence keeps lb config from writing its own list.

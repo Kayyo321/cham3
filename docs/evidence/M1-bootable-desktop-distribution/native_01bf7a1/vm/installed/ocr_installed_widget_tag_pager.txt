@@ -1,0 +1,13 @@
+Tag pager
+
+tag navigation: unavailable - cham3 session services not present
+
+Tags 1-5 are shown as outlines with state unknown. Changing the viewed tag and moving windows to a tag are not available, and no window is moved by this control.
+
+M1 visual foundation only. This control performs no security action and reports no active security state.
+
+aA
+
+G
+
+Cham?

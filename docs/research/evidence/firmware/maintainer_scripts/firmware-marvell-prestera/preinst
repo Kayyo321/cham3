@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "upgrade" ] || [ "$1" = "install" ]; then
+	for f in mrvl/prestera/mvsw_prestera_fw-v2.0.img; do
+		dpkg-divert --package firmware-marvell-prestera --no-rename --quiet \
+			--divert "/lib/firmware/$f.usr-is-merged" \
+			--add "/lib/firmware/$f"
+	done
+fi
+
+
+
+exit 0

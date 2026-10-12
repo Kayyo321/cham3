@@ -1,0 +1,115 @@
+#!/bin/sh
+# Purpose: build the cham3 M1 desktop image (see auto/config). Invoked by "lb build";
+# build/scripts/build_image.sh wraps it, in a copy of build/live-desktop, and captures
+# the log.
+#
+# It runs the stages of "lb build" (live-build 20250505+deb13u1: bootstrap, chroot,
+# installer, binary, source) one by one, with a single difference: while the installer
+# stage runs, the two pinned foreign sources and their pins are moved out of
+# config/archives.
+#
+# Why. live-build's installer stage (installer_debian-installer) chooses between
+# alternative package names (libfuse3-4 or libfuse3-3, libefiboot1t64 or libefiboot1,
+# libefivar1t64 or libefivar1, libfuse2t64 or libfuse2) with Check_package_available,
+# which accepts a name only when "apt-cache show" prints exactly one Package stanza
+# for it. A package that exists in Debian and in Kali at different versions prints two
+# stanzas, whatever its pin priority, so live-build chose a name that does not exist
+# in trixie and the build failed ("Unable to locate package libfuse3-3"). The installer
+# payload must come from Debian only anyway.
+#
+# Scope. The installer stage works in a fresh chroot made from the bootstrap cache and
+# puts the live chroot back afterwards (installer_chroot / installer), so the live
+# root file system, its final apt sources and pins (written at the end of the chroot
+# stage) and its retained apt indices are not affected. The files are moved back
+# before the binary stage, also when the installer stage fails.
+#
+# One change the installer stage does make to the live root is undone here. For
+# --debian-installer live it prepends "deb [trusted=yes] file:/run/live/medium ..." to
+# the live root's /etc/apt/sources.list and copies that pool's Release and Packages
+# indices into its /var/lib/apt/lists, for installers started inside the live session
+# (Calamares). cham3 uses the image's debian-installer, which copies the live root and
+# reaches the pool through its own /cdrom entry, so the unsigned entry is not needed
+# and the final image keeps no trusted=yes source (first image built at 6685841 had it).
+#
+# Installer network mirror. live-build's default udeb exclusion list (its copy of
+# debian-cd's udeb_exclude) removes apt-mirror-setup from the ISO, so the image's
+# debian-installer queued it but never found it: apt-setup wrote only the (then
+# disabled) cdrom entry, its security generator failed, and installed systems had no
+# Debian sources at all (VM gate, scratch run 38206602622, installer syslog). Local
+# udebs in config/packages.binary are added to the ISO whatever the exclusion list
+# says, so the udeb is downloaded here, before the installer stage, from the signed
+# Debian archive with a private apt configuration (Signed-By the Debian archive
+# keyring; nothing is marked trusted). Its dependencies (choose-mirror-bin,
+# base-installer) are in the ISO's udeb pool and cdebconf-udeb is in the initrd.
+set -eu
+
+fetch_installer_udebs() {
+    udeb_root=$(mktemp -d)
+    mkdir -p "${udeb_root}/etc/apt.conf.d" "${udeb_root}/etc/sources.list.d" "${udeb_root}/etc/preferences.d" \
+        "${udeb_root}/etc/trusted.gpg.d" "${udeb_root}/state/lists/partial" "${udeb_root}/cache/archives/partial" \
+        "${udeb_root}/download"
+    printf '%s\n' "deb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie main/debian-installer" \
+        > "${udeb_root}/etc/sources.list"
+    {
+        printf 'Dir::Etc "%s/etc";\n' "${udeb_root}"
+        printf 'Dir::State "%s/state";\n' "${udeb_root}"
+        printf 'Dir::Cache "%s/cache";\n' "${udeb_root}"
+        printf 'Dir::State::status "/dev/null";\n'
+        printf 'APT::Sandbox::User "root";\n'
+        printf 'APT::Architecture "amd64";\nAPT::Architectures { "amd64"; };\nAcquire::Languages "none";\n'
+    } > "${udeb_root}/apt.conf"
+    APT_CONFIG="${udeb_root}/apt.conf" apt-get -q -o APT::Update::Error-Mode=any update
+    (cd "${udeb_root}/download" && APT_CONFIG="${udeb_root}/apt.conf" apt-get -q download apt-mirror-setup)
+    mkdir -p config/packages.binary
+    for udeb in "${udeb_root}"/download/apt-mirror-setup_*_all.udeb; do
+        [ -f "${udeb}" ] || { echo "auto/build: apt-mirror-setup was not downloaded" >&2; exit 1; }
+        cp "${udeb}" config/packages.binary/
+        echo "auto/build: added $(basename "${udeb}") to the installer udebs"
+    done
+    rm -rf "${udeb_root}"
+}
+
+foreign_names="zzz_cham3_kali.list zzz_cham3_librewolf.list cham3_kali.pref cham3_librewolf.pref"
+stash_dir=.cham3_installer_stash
+
+restore_foreign() {
+    if [ -d "${stash_dir}" ]; then
+        for name in ${foreign_names}; do
+            if [ -e "${stash_dir}/${name}" ]; then
+                mv "${stash_dir}/${name}" "config/archives/${name}"
+            fi
+        done
+        rmdir "${stash_dir}"
+    fi
+}
+
+lb bootstrap "${@}"
+lb chroot "${@}"
+fetch_installer_udebs
+
+[ ! -e "${stash_dir}" ] || { echo "auto/build: ${stash_dir} already exists" >&2; exit 1; }
+mkdir "${stash_dir}"
+trap restore_foreign EXIT
+trap 'restore_foreign; exit 1' INT TERM
+for name in ${foreign_names}; do
+    [ -e "config/archives/${name}" ] || { echo "auto/build: config/archives/${name} is missing" >&2; exit 1; }
+    mv "config/archives/${name}" "${stash_dir}/${name}"
+done
+echo "auto/build: installer stage without the pinned foreign sources (Debian only)"
+lb installer "${@}"
+restore_foreign
+trap - EXIT INT TERM
+for name in ${foreign_names}; do
+    [ -e "config/archives/${name}" ] || { echo "auto/build: config/archives/${name} was not restored" >&2; exit 1; }
+done
+
+sed -i '\|^deb \[trusted=yes\] file:/run/live/medium |d' chroot/etc/apt/sources.list
+rm -f chroot/var/lib/apt/lists/_run_live_medium_*
+if grep -q 'trusted=yes' chroot/etc/apt/sources.list; then
+    echo "auto/build: a trusted=yes entry remains in the live root's sources.list" >&2
+    exit 1
+fi
+echo "auto/build: removed the unsigned live-medium pool entry from the live root"
+
+lb binary "${@}"
+lb source "${@}"

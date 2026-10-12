@@ -1,0 +1,14 @@
+cham3-desktop (0.0.0~m1) UNRELEASED; urgency=low
+
+  * M1 visual and package foundation: Plasma 6 Wayland desktop defaults, dark
+    color scheme, wallpaper, branding, look-and-feel package, right-edge
+    panel layout and eight inert panel plasmoids.
+  * Backend-dependent panel features are reported unavailable; no security
+    action is performed by any shipped panel component.
+  * dumpcap capture policy (Codex review F3): a dpkg-statoverride, a dpkg
+    file trigger on /usr/bin/dumpcap and the postinst/postrm keep dumpcap out
+    of set-user-id root and fail closed when file capabilities cannot be set.
+    Adds libcap2-bin and adduser to Depends for the maintainer scripts.
+  * Maintainer address is a reserved placeholder pending an owner decision.
+
+ -- cham3 developers <maintainers@cham3.invalid>  Sun, 11 Oct 2026 00:00:00 +0000

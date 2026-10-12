@@ -1,0 +1,520 @@
+{
+  "source": "Independent rerun job 114823605947 console; not a copy of artifact results.json",
+  "checks": [
+    {
+      "result": "PASS",
+      "name": "live_boot_menu_to_kernel",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_serial_login",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_suite_installed",
+      "detail": "[]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_no_b43_installer",
+      "detail": "[]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_firmware_set_installed",
+      "detail": "43 installed firmware packages"
+    },
+    {
+      "result": "PASS",
+      "name": "live_no_trusted_yes",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_keys_only_signed_by",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_unlisted_kali_denied",
+      "detail": "{}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_foreign_roles_have_candidates",
+      "detail": "{\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_debian_base_from_debian",
+      "detail": "[\"deb.debian.org\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_dumpcap_no_setuid",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "live_dumpcap_group_restricted",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "live_dumpcap_capabilities",
+      "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']"
+    },
+    {
+      "result": "PASS",
+      "name": "live_dumpcap_override",
+      "detail": "[\"override=root root 750 /usr/bin/dumpcap\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_capture_harness_output_path_ok",
+      "detail": "Capturing on 'Loopback: lo' File: /tmp/cham3-capture-ve6zjE/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)"
+    },
+    {
+      "result": "PASS",
+      "name": "live_member_captures",
+      "detail": "rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-ve6zjE/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)"
+    },
+    {
+      "result": "PASS",
+      "name": "live_nonmember_denied",
+      "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied"
+    },
+    {
+      "result": "PASS",
+      "name": "live_plasma_session_running",
+      "detail": "{\"sessions\": [{\"Name\": \"user\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}, {\"Name\": \"user\", \"Desktop\": \"\", \"Type\": \"tty\", \"Class\": \"user\", \"Active\": \"yes\"}], \"plasmashell\": true, \"graphical\": [{\"Name\": \"user\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}]}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_session_is_wayland",
+      "detail": "[\"wayland\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_kwin_wayland_compositor",
+      "detail": "1108 /usr/bin/kwin_wayland_wrapper --xwayland"
+    },
+    {
+      "result": "PASS",
+      "name": "live_cham3_look_and_feel",
+      "detail": "ColorScheme=Cham3Dark"
+    },
+    {
+      "result": "PASS",
+      "name": "live_panel_state_read",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_panel_on_right_edge",
+      "detail": "[\"right\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_panel_vertical",
+      "detail": "vertical"
+    },
+    {
+      "result": "PASS",
+      "name": "live_panel_thickness",
+      "detail": "60"
+    },
+    {
+      "result": "PASS",
+      "name": "live_panel_component_order",
+      "detail": "[\"org.cham3.user_launcher\", \"org.cham3.alias_wheel\", \"org.cham3.tag_pager\", \"org.cham3.contract_dock\", \"org.cham3.netproto_launcher\", \"org.cham3.killswitch\", \"org.cham3.settings_launcher\", \"org.cham3.task_manager\", \"org.kde.plasma.systemtray\", \"org.kde.plasma.digitalclock\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_cham3_wallpaper",
+      "detail": "[\"file:///usr/share/wallpapers/Cham3\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_launcher_categories_rendered",
+      "detail": "[\"All Applications\", \"Development\", \"Graphics\", \"Internet\", \"Office\", \"System\", \"Utilities\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "live_launcher_key_id_unavailable",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_launcher_search_result",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "live_launcher_real_launch",
+      "detail": "wireshark process started from the launcher search"
+    },
+    {
+      "result": "PASS",
+      "name": "live_panel_captions_unavailable",
+      "detail": "4 state captions read in the panel strip"
+    },
+    {
+      "result": "PASS",
+      "name": "live_inert_alias_wheel",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_inert_tag_pager",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_inert_contract_dock",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_inert_netproto_launcher",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "live_inert_killswitch",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "install_completed_and_powered_off",
+      "detail": "{\"seconds\": 320, \"qemu_rc\": 0}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_boot_serial_login",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_live_packages_removed",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_debian_main_sources",
+      "detail": "{\"sources_list_deb_lines\": [\"deb http://deb.debian.org/debian trixie main non-free non-free-firmware\", \"deb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware\", \"deb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware\"]}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_suite_installed",
+      "detail": "[]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_no_b43_installer",
+      "detail": "[]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_firmware_set_installed",
+      "detail": "43 installed firmware packages"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_no_trusted_yes",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_keys_only_signed_by",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_unlisted_kali_denied",
+      "detail": "{}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_foreign_roles_have_candidates",
+      "detail": "{\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_debian_base_from_debian",
+      "detail": "[\"deb.debian.org\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_dumpcap_no_setuid",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_dumpcap_group_restricted",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_dumpcap_capabilities",
+      "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_dumpcap_override",
+      "detail": "[\"override=root root 750 /usr/bin/dumpcap\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_capture_harness_output_path_ok",
+      "detail": "Capturing on 'Loopback: lo' File: /tmp/cham3-capture-StSP4P/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_member_captures",
+      "detail": "rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-StSP4P/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_nonmember_denied",
+      "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_apt_update_authenticated",
+      "detail": "e lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 51%Reading package lists... 51%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 71%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... Done"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_after_update_unlisted_kali_denied",
+      "detail": "{}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_after_update_foreign_roles_have_candidates",
+      "detail": "{\"zaproxy\": [\"http.kali.org\"], \"exploitdb\": [\"http.kali.org\"], \"ghidra\": [\"http.kali.org\"], \"amass\": [\"http.kali.org\"], \"radare2\": [\"http.kali.org\"], \"librewolf\": [\"repo.librewolf.net\"]}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_after_update_debian_base_from_debian",
+      "detail": "[\"deb.debian.org\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_upgrade_origin_by_host",
+      "detail": "[]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_unlisted_kali_not_installable",
+      "detail": "0%Building dependency tree... 50%Building dependency tree... Done"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_lifecycle_reconfigure_upstream_ran",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_reconfigure_upstream_dumpcap_no_setuid",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_reconfigure_upstream_dumpcap_group_restricted",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_reconfigure_upstream_dumpcap_capabilities",
+      "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_reconfigure_upstream_dumpcap_override",
+      "detail": "[\"override=root root 750 /usr/bin/dumpcap\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_lifecycle_setcap_missing_ran",
+      "detail": "dpkg unpacked wireshark-common: True"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_dumpcap_no_setuid",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_dumpcap_group_restricted",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_dumpcap_override",
+      "detail": "[\"override=root root 750 /usr/bin/dumpcap\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_fails_closed",
+      "detail": "capabilities removed: True"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_capture_harness_output_path_ok",
+      "detail": "Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied."
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_member_cannot_capture_fail_closed",
+      "detail": "rc=1 bytes=0 log=Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied."
+    },
+    {
+      "result": "PASS",
+      "name": "installed_setcap_missing_nonmember_denied",
+      "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_lifecycle_recovery_ran",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_dumpcap_no_setuid",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_dumpcap_group_restricted",
+      "detail": "stat: '750 root wireshark'"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_dumpcap_capabilities",
+      "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_dumpcap_override",
+      "detail": "[\"override=root root 750 /usr/bin/dumpcap\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_capture_harness_output_path_ok",
+      "detail": "Capturing on 'Loopback: lo' File: /tmp/cham3-capture-P9pRIe/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_member_captures",
+      "detail": "rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-P9pRIe/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_recovered_nonmember_denied",
+      "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_plasma_session_running",
+      "detail": "{\"sessions\": [{\"Name\": \"cham3test\", \"Desktop\": \"\", \"Type\": \"tty\", \"Class\": \"user\", \"Active\": \"yes\"}, {\"Name\": \"cham3test\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}], \"plasmashell\": true, \"graphical\": [{\"Name\": \"cham3test\", \"Desktop\": \"KDE\", \"Type\": \"wayland\", \"Class\": \"user\", \"Active\": \"yes\"}]}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_session_is_wayland",
+      "detail": "[\"wayland\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_kwin_wayland_compositor",
+      "detail": "1283 /usr/bin/kwin_wayland_wrapper --xwayland"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_cham3_look_and_feel",
+      "detail": "ColorScheme=Cham3Dark"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_panel_state_read",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_panel_on_right_edge",
+      "detail": "[\"right\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_panel_vertical",
+      "detail": "vertical"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_panel_thickness",
+      "detail": "60"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_panel_component_order",
+      "detail": "[\"org.cham3.user_launcher\", \"org.cham3.alias_wheel\", \"org.cham3.tag_pager\", \"org.cham3.contract_dock\", \"org.cham3.netproto_launcher\", \"org.cham3.killswitch\", \"org.cham3.settings_launcher\", \"org.cham3.task_manager\", \"org.kde.plasma.systemtray\", \"org.kde.plasma.digitalclock\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_cham3_wallpaper",
+      "detail": "[\"file:///usr/share/wallpapers/Cham3\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_launcher_categories_rendered",
+      "detail": "[\"All Applications\", \"Development\", \"Graphics\", \"Internet\", \"Office\", \"System\", \"Utilities\"]"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_launcher_key_id_unavailable",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_launcher_search_result",
+      "detail": ""
+    },
+    {
+      "result": "PASS",
+      "name": "installed_launcher_real_launch",
+      "detail": "wireshark process started from the launcher search"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_panel_captions_unavailable",
+      "detail": "4 state captions read in the panel strip"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_inert_alias_wheel",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_inert_tag_pager",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_inert_contract_dock",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_inert_netproto_launcher",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    },
+    {
+      "result": "PASS",
+      "name": "installed_inert_killswitch",
+      "detail": "{\"baseline_clean\": true, \"state_word_after_click\": true}"
+    }
+  ]
+}

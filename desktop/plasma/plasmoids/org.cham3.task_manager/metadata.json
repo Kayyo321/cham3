@@ -1,0 +1,19 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "cham3 developers"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "M1 visual foundation: icons-only task display. Alias, tag and network attribution unavailable.",
+        "EnabledByDefault": true,
+        "Icon": "preferences-system-windows",
+        "Id": "org.cham3.task_manager",
+        "License": "AGPL-3.0-only",
+        "Name": "cham3 Task Manager",
+        "Version": "0.0.0-m1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
