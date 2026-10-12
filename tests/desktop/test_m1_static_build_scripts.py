@@ -90,9 +90,18 @@ def base_stubs(include_sha256_wrapper):
     return stubs
 
 
+def assert_stubs_resolve_first(bin_dir, path_value):
+    """Refuse to run unless every stub in bin_dir is what PATH resolves to (never a real lb or debootstrap)."""
+    for name in sorted(os.listdir(bin_dir)):
+        resolved = shutil.which(name, path=path_value)
+        if resolved != os.path.join(bin_dir, name):
+            raise AssertionError("refusing to run: %s would resolve to %s, not the stub" % (name, resolved))
+
+
 def run_script(script_rel, repo, env_extra, bin_dir, cwd=None):
     env = {key: value for key, value in os.environ.items() if not key.startswith("CHAM3_")}
     env["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")
+    assert_stubs_resolve_first(bin_dir, env["PATH"])
     env.update(env_extra)
     return subprocess.run(
         ["/bin/bash", os.path.join(repo, script_rel)],
@@ -150,6 +159,22 @@ def tree_listing(log_dir, package):
         return None
     with open(path, "r", encoding="utf-8") as handle:
         return handle.read()
+
+
+def staged_package_names(work_dir):
+    """Sorted Package fields of the .deb files in <work>/config/packages.chroot."""
+    chroot = os.path.join(work_dir, "config", "packages.chroot")
+    if not os.path.isdir(chroot):
+        raise AssertionError("live-build work tree has no config/packages.chroot: " + work_dir)
+    names = []
+    for filename in sorted(os.listdir(chroot)):
+        if not filename.endswith(".deb"):
+            continue
+        completed = m0_support.run_tool(["dpkg-deb", "-f", os.path.join(chroot, filename), "Package"])
+        if completed.returncode != 0:
+            raise AssertionError("staged file is not a readable deb: " + filename)
+        names.append(completed.stdout.strip())
+    return sorted(names)
 
 
 class build_packages_static_t(unittest.TestCase):
@@ -236,8 +261,10 @@ class build_image_behavior_t(unittest.TestCase):
         out_dir = os.path.join(temp, "out")
         packages_dir = os.path.join(out_dir, "packages")
         os.makedirs(packages_dir)
-        with open(os.path.join(packages_dir, m0_support.DebFileName), "w", encoding="utf-8") as handle:
-            handle.write("placeholder deb\n")
+        # build_image.sh reads each .deb's Package field (dpkg-deb -f), so every
+        # fixture must be a real archive: all three cham3 packages plus one unlisted.
+        for package in m1_support.LocalPackageNames + ("cham3-fixture-unlisted",):
+            m1_support.build_fixture_deb(packages_dir, package, package + "_0.0.0~fixture_all.deb")
         log_dir = os.path.join(temp, "stublog")
         os.makedirs(log_dir)
         bin_dir = os.path.join(temp, "bin")
@@ -247,6 +274,8 @@ class build_image_behavior_t(unittest.TestCase):
             "CHAM3_WORK_DIR": os.path.join(out_dir, "live-build-work"),
             "CHAM3_ALLOW_UNVERIFIED_HOST": "1",
             "STUB_LOG_DIR": log_dir,
+            # Fixed, so the run does not depend on the repository being a git checkout.
+            "SOURCE_DATE_EPOCH": "1700000000",
         }
         env.update(extra_env)
         completed = run_script(ImageScript, repo, env, bin_dir)
@@ -262,6 +291,9 @@ class build_image_behavior_t(unittest.TestCase):
             seen = open(os.path.join(log_dir, "lb_auto_config.txt"), encoding="utf-8").read()
             expected = m1_support.read_repo("build/live/auto/config")
             self.assertEqual(seen, expected, "default run did not use build/live/auto/config")
+            # F1: the M0 build stages exactly cham3-base into the live-build work tree.
+            staged = staged_package_names(os.path.join(out_dir, "live-build-work"))
+            self.assertEqual(staged, sorted(m1_support.M0StagedPackages))
 
     def test_m1_profile_builds_desktop_image_from_desktop_config(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -273,6 +305,9 @@ class build_image_behavior_t(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(out_dir, "image", m1_support.ImageDesktopIso)))
             seen = open(os.path.join(log_dir, "lb_auto_config.txt"), encoding="utf-8").read()
             self.assertEqual(seen, m1_support.read_repo(m1_support.LiveDesktopConfig))
+            # F1: the M1 desktop build stages exactly cham3-desktop and cham3-full.
+            staged = staged_package_names(os.path.join(out_dir, "live-build-work"))
+            self.assertEqual(staged, sorted(m1_support.M1StagedPackages))
 
     def test_live_dir_outside_repository_is_refused(self):
         with tempfile.TemporaryDirectory() as temp:
