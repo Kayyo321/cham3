@@ -250,7 +250,21 @@ def auto_build_problems(text):
     return problems
 
 
+LiveSessionList = m1_support.LiveDesktopDir + "/config/package-lists/cham3_live.list.chroot_live"
+LiveSessionRequired = ("user-setup",)
+
+
+def live_session_list_problems(text):
+    """The live pass installs user-setup, without which live-config creates no live account."""
+    names = package_list_names(text)
+    return ["live-session package list lacks %s (no live user, no SDDM autologin)" % name
+            for name in LiveSessionRequired if name not in names]
+
+
 class live_desktop_config_real_t(unittest.TestCase):
+    def test_live_session_creates_the_live_account(self):
+        self.assertEqual(live_session_list_problems(m1_support.read_repo(LiveSessionList)), [])
+
     def test_auto_build_hides_foreign_sources_only_for_the_installer_stage(self):
         self.assertEqual(auto_build_problems(m1_support.read_repo(AutoBuildPath)), [])
 
@@ -338,6 +352,13 @@ class live_desktop_config_fixture_t(unittest.TestCase):
     def test_package_list_with_gated_tool_is_rejected(self):
         problems = live_config_problems(self.good_config(), "cham3-full\nlibrewolf\n")
         self.assertTrue(any("librewolf" in p for p in problems), problems)
+
+
+class live_session_fixture_t(unittest.TestCase):
+    def test_missing_user_setup_is_rejected(self):
+        # Negative control: the first native M1 image had no live user (VM gate).
+        self.assertTrue(live_session_list_problems("# empty\n"))
+        self.assertEqual(live_session_list_problems("user-setup\n"), [])
 
 
 class auto_build_fixture_t(unittest.TestCase):

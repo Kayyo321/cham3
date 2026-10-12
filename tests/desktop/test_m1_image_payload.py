@@ -164,6 +164,15 @@ class image_payload_t(unittest.TestCase):
             names = m1_support.manifest_package_names(handle.read())
         self.assertEqual(manifest_firmware_problems(names), [])
 
+    def test_live_root_has_the_live_account_tooling(self):
+        # live-config creates the live account only when user-setup is installed.
+        path = m1_support.image_manifest_path()
+        m0_support.require_file(path, "build_image.sh M1 output")
+        with open(path, "r", encoding="utf-8", errors="replace") as handle:
+            names = m1_support.manifest_package_names(handle.read())
+        self.assertTrue({"user-setup", "live-config", "sudo"} <= names,
+                        sorted({"user-setup", "live-config", "sudo"} - names))
+
     def squashfs(self):
         target = os.path.join(self.scratch, "filesystem.squashfs")
         if not os.path.exists(target):

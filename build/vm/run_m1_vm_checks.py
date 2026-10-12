@@ -382,8 +382,8 @@ def choose_accel(requested):
     return "kvm" if usable else "tcg"
 
 
-def ocr(path, out_dir, label):
-    """Text that tesseract reads from a screenshot (preprocessed for the dark theme), or None."""
+def ocr(path, out_dir, label, box=None):
+    """Text that tesseract reads from a screenshot (optionally a box of it), or None."""
     if shutil.which("tesseract") is None:
         return None
     try:
@@ -391,6 +391,8 @@ def ocr(path, out_dir, label):
     except ImportError:
         return None
     image = Image.open(path).convert("L")
+    if box is not None:
+        image = image.crop(box)
     if sum(image.getdata()) / float(image.width * image.height) < 128:
         image = ImageOps.invert(image)
     image = ImageOps.autocontrast(image).resize((image.width * 2, image.height * 2))
@@ -787,7 +789,26 @@ def launcher_checks(vm, results, prefix, user, panel, state, screen_size):
 
 
 def inert_checks(vm, results, prefix, panel, state, screen_size):
+    """Each backend-dependent widget, opened on screen, shows an unavailable state.
+
+    Before each click the pointer is moved to the desktop centre and Escape closes any
+    popup, so neither a hover tooltip nor the previous popup is in the baseline. Only the
+    area beside the panel (where Plasma opens a vertical panel's popups) is read for the
+    popup; the panel strip is read separately for the widgets' own captions.
+    """
     width, height = screen_size
+    thickness = int(panel.get("height") or 60)
+    popup_box = (0, 0, max(1, width - thickness - 2), height)
+    panel_box = (width - thickness, 0, width, height)
+    vm.move(width / 2, height / 2, width, height)
+    vm.key("esc")
+    time.sleep(2)
+    strip = ocr(vm.screenshot("panel_strip"), results.out_dir, prefix + "_panel_strip", panel_box)
+    if strip is None:
+        results.blocked(prefix + "_panel_captions_unavailable", "tesseract or python3-pil is absent")
+    else:
+        results.check(prefix + "_panel_captions_unavailable", len(InertWords.findall(strip)) >= 3,
+                      "%d state captions read in the panel strip" % len(InertWords.findall(strip)))
     for widget_type in Cham3Widgets[1:]:
         center = widget_center(panel, state, widget_type, screen_size)
         short = widget_type.split(".")[-1]
@@ -795,22 +816,26 @@ def inert_checks(vm, results, prefix, panel, state, screen_size):
             results.check(prefix + "_inert_" + short, False, "widget geometry not reported")
             continue
         vm.key("esc")
-        time.sleep(1)
-        baseline = ocr(vm.screenshot("before_" + short), results.out_dir, prefix + "_before_" + short)
+        vm.move(width / 2, height / 2, width, height)
+        time.sleep(2)
+        baseline = ocr(vm.screenshot("before_" + short), results.out_dir, prefix + "_before_" + short, popup_box)
         vm.click(center[0], center[1], width, height)
         time.sleep(3)
         shot = vm.screenshot("widget_" + short)
-        text = ocr(shot, results.out_dir, prefix + "_widget_" + short)
+        text = ocr(shot, results.out_dir, prefix + "_widget_" + short, popup_box)
         vm.key("esc")
+        vm.move(width / 2, height / 2, width, height)
         time.sleep(1)
-        if text is None:
+        if text is None or baseline is None:
             results.blocked(prefix + "_inert_" + short, "tesseract or python3-pil is absent")
             continue
-        new_state = bool(InertWords.search(text)) and not InertWords.search(baseline or "")
+        clean_baseline = not InertWords.search(baseline)
+        new_state = bool(InertWords.search(text)) and clean_baseline
+        detail = {"baseline_clean": clean_baseline, "state_word_after_click": bool(InertWords.search(text))}
         if widget_type in InertWidgets:
-            results.check(prefix + "_inert_" + short, new_state, "OCR of the opened widget")
+            results.check(prefix + "_inert_" + short, new_state, detail)
         else:
-            results.facts[prefix + "_inert_" + short] = {"ocr_state_word": bool(InertWords.search(text))}
+            results.facts[prefix + "_inert_" + short] = detail
 
 
 # ---------------------------------------------------------------------------------
@@ -954,21 +979,43 @@ def installed_apt_gates(vm, results, password):
     results.check("installed_unlisted_kali_not_installable", status != 0, output[-400:])
 
 
+def installed_version(vm, package):
+    status, output = vm.serial.run("dpkg-query -W -f='${Version}' %s" % package, 60)
+    return output.strip() if status == 0 else None
+
+
 def installed_dumpcap_lifecycle(vm, results, password):
-    steps = (
-        ("reinstall", "apt-get install -y --reinstall wireshark-common", True),
-        ("reconfigure_upstream", "dpkg-reconfigure -f noninteractive wireshark-common", True),
-        ("setcap_missing", "mv /usr/sbin/setcap /usr/sbin/setcap.cham3-hidden && "
-                           "apt-get install -y --reinstall wireshark-common; rc=$?; "
-                           "mv /usr/sbin/setcap.cham3-hidden /usr/sbin/setcap; exit $rc", False),
-    )
-    for label, command, expect_caps in steps:
-        status, _ = guest(vm, results, "installed_lifecycle_" + label, root_command(command, password), timeout=900)
-        results.check("installed_lifecycle_%s_ran" % label, status == 0, "")
-        mode, caps = dumpcap_checks(vm, results, "installed_" + label, password, expect_caps=expect_caps)
-        if not expect_caps:
-            results.check("installed_%s_fails_closed" % label, not caps, "capabilities removed: %s" % (not caps))
-            capture_checks(vm, results, "installed_" + label, password, expect_capture=False)
+    """Upgrade, reconfigure, reinstall with setcap missing (fail closed), recovery.
+
+    Each package step must show dpkg actually unpacking wireshark-common; apt exits 0 when
+    it cannot download a reinstall, which would otherwise pass vacuously.
+    """
+    before = installed_version(vm, "wireshark-common")
+    status, output = guest(vm, results, "installed_lifecycle_upgrade", root_command(
+        "apt-get install -y --only-upgrade wireshark-common", password), timeout=1200)
+    after = installed_version(vm, "wireshark-common")
+    unpacked = "Unpacking wireshark-common" in output
+    results.facts["installed_wireshark_versions"] = {"before": before, "after": after}
+    if status == 0 and before == after and not unpacked:
+        results.facts["installed_lifecycle_upgrade_note"] = "no newer wireshark-common on the mirror"
+    else:
+        results.check("installed_lifecycle_upgrade_ran", status == 0 and unpacked and before != after,
+                      {"before": before, "after": after})
+        dumpcap_checks(vm, results, "installed_upgrade", password)
+        capture_checks(vm, results, "installed_upgrade", password)
+    status, _ = guest(vm, results, "installed_lifecycle_reconfigure_upstream",
+                      root_command("dpkg-reconfigure -f noninteractive wireshark-common", password), timeout=600)
+    results.check("installed_lifecycle_reconfigure_upstream_ran", status == 0, "")
+    dumpcap_checks(vm, results, "installed_reconfigure_upstream", password)
+    status, output = guest(vm, results, "installed_lifecycle_setcap_missing", root_command(
+        "mv /usr/sbin/setcap /usr/sbin/setcap.cham3-hidden && "
+        "apt-get install -y --reinstall wireshark-common; rc=$?; "
+        "mv /usr/sbin/setcap.cham3-hidden /usr/sbin/setcap; exit $rc", password), timeout=1200)
+    results.check("installed_lifecycle_setcap_missing_ran", status == 0 and "Unpacking wireshark-common" in output,
+                  "dpkg unpacked wireshark-common: %s" % ("Unpacking wireshark-common" in output))
+    mode, caps = dumpcap_checks(vm, results, "installed_setcap_missing", password, expect_caps=False)
+    results.check("installed_setcap_missing_fails_closed", not caps, "capabilities removed: %s" % (not caps))
+    capture_checks(vm, results, "installed_setcap_missing", password, expect_capture=False)
     status, _ = guest(vm, results, "installed_lifecycle_recovery",
                       root_command("dpkg-reconfigure -f noninteractive cham3-desktop", password), timeout=600)
     results.check("installed_lifecycle_recovery_ran", status == 0, "")
