@@ -18,8 +18,11 @@ check), an image's /etc/apt tree (Codex Remote image gate), and fixtures. Standa
 library only. Callers put tests/lib on sys.path first.
 """
 
+import base64
+import hashlib
 import os
 import re
+import struct
 
 import m1_support
 
@@ -255,3 +258,207 @@ def origin_problems(installed, debian_index, foreign_indexes, allowlists):
             if name not in allowlists.get(repo, ()):
                 problems.append("un-allowlisted %s-origin package installed: %s %s" % (repo, name, version))
     return problems
+
+
+# OpenPGP key checks (F2). The reviewed keys are ASCII-armored public keys. This reader
+# computes the primary fingerprint from the packets without gpg, so the static suite can
+# confirm the pinned fingerprints independently of build_archive_keyring.
+ArmorBegin = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+ArmorEnd = "-----END PGP PUBLIC KEY BLOCK-----"
+PrimaryKeyTag = 6
+SecretKeyTags = (5, 7)
+SignatureTag = 2
+KeyRevocationSignature = 0x20
+RevocationSignatureTypes = (0x20,)
+
+
+def crc24(data):
+    crc = 0xB704CE
+    for byte in data:
+        crc ^= byte << 16
+        for _ in range(8):
+            crc <<= 1
+            if crc & 0x1000000:
+                crc ^= 0x1864CFB
+    return crc & 0xFFFFFF
+
+
+def dearmor_blocks(text):
+    """Binary payloads of every ASCII-armored public key block; raises ValueError if malformed."""
+    blocks = []
+    lines = text.splitlines()
+    index = 0
+    while index < len(lines):
+        if lines[index].strip() != ArmorBegin:
+            index += 1
+            continue
+        index += 1
+        while index < len(lines) and lines[index].strip() != "":
+            index += 1          # armor headers, up to the separating blank line
+        index += 1
+        body, checksum = [], None
+        while index < len(lines) and lines[index].strip() != ArmorEnd:
+            line = lines[index].strip()
+            if line.startswith("="):
+                checksum = line[1:]
+            elif line:
+                body.append(line)
+            index += 1
+        if index >= len(lines):
+            raise ValueError("armored block has no END line")
+        try:
+            data = base64.b64decode("".join(body), validate=True)
+        except ValueError:
+            raise ValueError("armored block is not valid base64") from None
+        if checksum is None:
+            raise ValueError("armored block has no CRC24 line")
+        if crc24(data) != int.from_bytes(base64.b64decode(checksum), "big"):
+            raise ValueError("armored block CRC24 does not match")
+        blocks.append(data)
+        index += 1
+    if not blocks:
+        raise ValueError("no armored PGP public key block found")
+    return blocks
+
+
+def openpgp_packets(data):
+    """(tag, body) for each OpenPGP packet; partial and indeterminate lengths are refused."""
+    packets, index = [], 0
+    while index < len(data):
+        first = data[index]
+        if not first & 0x80:
+            raise ValueError("not an OpenPGP packet header")
+        if first & 0x40:
+            tag = first & 0x3F
+            index += 1
+            length_byte = data[index]
+            if length_byte < 192:
+                length, index = length_byte, index + 1
+            elif length_byte <= 223:
+                length, index = ((length_byte - 192) << 8) + data[index + 1] + 192, index + 2
+            elif length_byte == 255:
+                length, index = struct.unpack(">I", data[index + 1:index + 5])[0], index + 5
+            else:
+                raise ValueError("partial body lengths are not supported")
+        else:
+            tag = (first & 0x3C) >> 2
+            length_type = first & 0x03
+            index += 1
+            if length_type == 0:
+                length, index = data[index], index + 1
+            elif length_type == 1:
+                length, index = struct.unpack(">H", data[index:index + 2])[0], index + 2
+            elif length_type == 2:
+                length, index = struct.unpack(">I", data[index:index + 4])[0], index + 4
+            else:
+                raise ValueError("indeterminate packet length is not supported")
+        body = data[index:index + length]
+        if len(body) != length:
+            raise ValueError("truncated OpenPGP packet")
+        packets.append((tag, body))
+        index += length
+    return packets
+
+
+def v4_primary_fingerprint(body):
+    """OpenPGP v4 fingerprint: SHA-1 over 0x99, the two-octet length, and the key packet body."""
+    return hashlib.sha1(b"\x99" + struct.pack(">H", len(body)) + body).hexdigest().upper()
+
+
+def key_text_problems(text, expected_fingerprint):
+    """Problems with one armored key file (empty means it holds exactly the expected primary key).
+
+    Rejects: a file that does not parse, any number other than one primary key, secret key
+    material, a primary-key revocation signature, and a primary fingerprint other than the
+    expected one. Expiry is enforced at build time by build_archive_keyring (gpg); this check
+    does not depend on today's date.
+    """
+    problems = []
+    try:
+        blocks = dearmor_blocks(text)
+    except ValueError as error:
+        return ["key file does not parse: %s" % error]
+    primaries, secrets, revocations = [], 0, 0
+    for block in blocks:
+        try:
+            packets = openpgp_packets(block)
+        except (ValueError, IndexError, struct.error) as error:
+            return ["key packets do not parse: %s" % error]
+        for tag, body in packets:
+            if tag == PrimaryKeyTag:
+                primaries.append(body)
+            elif tag in SecretKeyTags:
+                secrets += 1
+            elif tag == SignatureTag and len(body) > 2:
+                signature_type = body[1] if body[0] == 4 else body[2] if body[0] == 3 else None
+                if signature_type in RevocationSignatureTypes:
+                    revocations += 1
+    if len(primaries) != 1:
+        problems.append("key file holds %d primary keys, expected exactly 1" % len(primaries))
+    if secrets:
+        problems.append("key file contains %d secret key packet(s)" % secrets)
+    if revocations:
+        problems.append("key file contains a primary-key revocation signature")
+    if len(primaries) == 1:
+        body = primaries[0]
+        if body[0] != 4:
+            problems.append("primary key is not an OpenPGP v4 key (version %d)" % body[0])
+        elif v4_primary_fingerprint(body) != expected_fingerprint:
+            problems.append("primary fingerprint is %s, expected %s"
+                            % (v4_primary_fingerprint(body), expected_fingerprint))
+    return problems
+
+
+KeyringScriptNamePattern = re.compile(r"(?m)^(kali|librewolf)_keyring_name=(\S+)\s*$")
+KeyringScriptHashPattern = re.compile(r"(?m)^(kali|librewolf)_sha256=([0-9a-f]{64})\s*$")
+KeyringScriptFingerprintPattern = re.compile(r"(?m)^(kali|librewolf)_fingerprint=([0-9A-F]{40})\s*$")
+KeyringScriptRequirements = (
+    ("SHA-256 check of each armored key", r"sha256sum"),
+    ("primary fingerprint check", r"check_primary"),
+    ("exactly one primary key", r'=\s*"1"\s*\]'),
+    ("secret key material rejection", r"contains secret key material"),
+    ("expired or revoked key rejection", r'\$2 == "e" \|\| \$2 == "r"'),
+    ("keyring dearmored under /usr/share/keyrings", r"usr/share/keyrings/"),
+    ("dearmor with gpg", r"--dearmor"),
+)
+AptKeyInvocation = re.compile(r"(?m)^[^#\n]*\bapt-key\s+(add|adv|del|update)\b")
+TrustedStoreWrite = re.compile(r"(?m)^[^#\n]*(>|\bcp\b|\binstall\b|\bmv\b)[^#\n]*trusted\.gpg")
+
+
+def keyring_script_names(text):
+    """{'kali': shipped keyring name, 'librewolf': ...} from the *_keyring_name= constants."""
+    return {match.group(1): match.group(2) for match in KeyringScriptNamePattern.finditer(text)}
+
+
+def keyring_script_problems(text):
+    """Text evidence that build_archive_keyring checks and rejects what it must (empty means present).
+
+    This is a requirement list over the script text. Behavior is asserted by the build itself,
+    which fails closed, and by the Codex Remote image gate.
+    """
+    problems = []
+    for label, pattern in KeyringScriptRequirements:
+        if not re.search(pattern, text):
+            problems.append("build_archive_keyring lacks: " + label)
+    pinned_hashes = {match.group(1): match.group(2) for match in KeyringScriptHashPattern.finditer(text)}
+    pinned_prints = {match.group(1): match.group(2) for match in KeyringScriptFingerprintPattern.finditer(text)}
+    for repo in ("kali", "librewolf"):
+        if repo not in pinned_hashes:
+            problems.append("build_archive_keyring does not pin the SHA-256 of the %s key" % repo)
+        if repo not in pinned_prints:
+            problems.append("build_archive_keyring does not pin the %s primary fingerprint" % repo)
+    if AptKeyInvocation.search(text):
+        problems.append("build_archive_keyring calls apt-key")
+    if TrustedStoreWrite.search(text):
+        problems.append("build_archive_keyring writes into a trusted.gpg store")
+    return problems
+
+
+def apt_key_invocation_problems(texts):
+    """Build-time scan: no apt-key add/adv/del/update is invoked (comments and prose are ignored)."""
+    problems = []
+    for path, text in sorted(texts.items()):
+        if AptKeyInvocation.search(text):
+            problems.append("apt-key is invoked in %s" % path)
+    return problems
+

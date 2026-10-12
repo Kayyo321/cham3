@@ -149,6 +149,21 @@ def apt_policy_problems(source_files, pref_files, keyring_names, key_files):
     return problems
 
 
+def image_trusted_sources(source_files):
+    """Installed sources that set trusted=yes (any repository, not only the foreign ones)."""
+    return sorted(path for path, entries in source_files.items() for entry in entries if entry["trusted"])
+
+
+def shipped_keyring_names():
+    """The keyring names build_archive_keyring ships (its *_keyring_name= constants, read from the repo)."""
+    return sorted(apt.keyring_script_names(m1_support.read_repo(m1_support.KeyringScript)).values())
+
+
+def image_keyring_problems(keyring_names, expected_names):
+    return ["shipped keyring missing from the image: " + name
+            for name in sorted(set(expected_names) - set(keyring_names))]
+
+
 def kali_source_present(source_files):
     return any(
         apt.KaliSpec["host"] in uri
@@ -195,6 +210,22 @@ class image_contents_t(unittest.TestCase):
         paths = rootfs_listing()
         source_files, pref_files, keyring_names, key_files = apt_inputs(paths, read_member)
         self.assertEqual(apt_policy_problems(source_files, pref_files, keyring_names, key_files), [])
+
+    def test_final_apt_sources_have_no_trusted_yes(self):
+        # The final-image state. The build chroot's own local repository uses trusted=yes
+        # transiently (live-build); that is build-only and is not checked here.
+        paths = rootfs_listing()
+        source_files, _, _, _ = apt_inputs(paths, read_member)
+        self.assertEqual(image_trusted_sources(source_files), [])
+
+    def test_keys_reach_apt_only_through_shipped_signed_by_keyrings(self):
+        # Final-image assertion: the reviewed keys are dearmored into /usr/share/keyrings by the
+        # cham3-archive-keyring package and nowhere in the global trust store.
+        paths = rootfs_listing()
+        _, _, keyring_names, key_files = apt_inputs(paths, read_member)
+        problems = image_keyring_problems(keyring_names, shipped_keyring_names())
+        problems += apt.key_problems(key_files)
+        self.assertEqual(problems, [])
 
     def test_no_unallowlisted_foreign_origin_package(self):
         paths = rootfs_listing()
@@ -329,6 +360,26 @@ class image_apt_policy_fixture_t(unittest.TestCase):
         self.assertEqual(sorted(prefs), ["etc/apt/preferences.d/cham3_kali.pref"])
         self.assertEqual(keyrings, {"cham3_kali_archive.gpg"})
         self.assertEqual(keys, ["etc/apt/trusted.gpg.d/extra.gpg"])
+
+
+class image_trust_fixture_t(unittest.TestCase):
+    """Controls for the final-image trust and keyring checks (no ISO needed)."""
+
+    def test_trusted_yes_in_the_final_image_is_rejected(self):
+        sources = {"etc/apt/sources.list.d/x.list": apt.parse_sources("deb [trusted=yes] http://deb.debian.org/debian trixie main\n")}
+        self.assertEqual(image_trusted_sources(sources), ["etc/apt/sources.list.d/x.list"])
+
+    def test_plain_signed_sources_are_not_trusted_yes(self):
+        sources = {"etc/apt/sources.list.d/x.list": apt.parse_sources("deb [signed-by=/usr/share/keyrings/x.gpg] http://deb.debian.org/debian trixie main\n")}
+        self.assertEqual(image_trusted_sources(sources), [])
+
+    def test_missing_shipped_keyring_is_rejected(self):
+        problems = image_keyring_problems({"cham3_kali_archive.gpg"}, {"cham3_kali_archive.gpg", "cham3_librewolf.gpg"})
+        self.assertEqual(problems, ["shipped keyring missing from the image: cham3_librewolf.gpg"])
+
+    def test_all_shipped_keyrings_present_is_accepted(self):
+        self.assertEqual(image_keyring_problems({"cham3_kali_archive.gpg", "cham3_librewolf.gpg"},
+                                                {"cham3_kali_archive.gpg", "cham3_librewolf.gpg"}), [])
 
 
 class image_origin_fixture_t(unittest.TestCase):

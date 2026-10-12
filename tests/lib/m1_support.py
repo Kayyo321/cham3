@@ -442,32 +442,76 @@ def build_fixture_deb(scratch, package, filename):
         shutil.rmtree(root, ignore_errors=True)
 
 
+# Safety guard for the staging dry run. A dry run must never start a live build: the
+# guard refuses a build_image.sh that reads the dry-run switch after the root check or
+# after any live-build step, and the run uses stub lb and debootstrap tools first on PATH
+# that record any call and fail. A short timeout backs both.
+DryRunCodeMarker = "CHAM3_STAGE_DRYRUN:-0"
+DryRunRootBarrier = '$(id -u)'
+DryRunBuildBarrier = "run_lb_step config"
+DryRunStubTools = ("lb", "debootstrap")
+DryRunTimeout = 60
+
+
+def dryrun_guard_problem(script_text):
+    """None when build_image.sh reads CHAM3_STAGE_DRYRUN before any root check or build step."""
+    marker = script_text.find(DryRunCodeMarker)
+    if marker < 0:
+        return "build_image.sh does not read CHAM3_STAGE_DRYRUN in code"
+    for barrier in (DryRunRootBarrier, DryRunBuildBarrier):
+        position = script_text.find(barrier)
+        if position >= 0 and position < marker:
+            return "build_image.sh reaches %r before it reads CHAM3_STAGE_DRYRUN" % barrier
+    return None
+
+
 def run_build_image_dryrun(repo, out_dir, live_dir=None):
     """Run the real build_image.sh in CHAM3_STAGE_DRYRUN mode; return the CompletedProcess.
 
-    The environment is scrubbed of CHAM3_* variables so only the values passed here apply.
-    A missing script or interpreter is a FAIL (not a skip).
+    Refuses (AssertionError) a script without the dry-run guard, before anything runs. The
+    environment is scrubbed of CHAM3_* variables so only the values passed here apply.
+    Fails (AssertionError) if a stub live-build or debootstrap was invoked, or the run did
+    not finish within DryRunTimeout seconds.
     """
     script = os.path.join(repo, BuildImageScript)
     m0_support.require_file(script, "build_image entry point")
-    env = {name: value for name, value in os.environ.items() if not name.startswith("CHAM3_")}
-    env["CHAM3_OUT_DIR"] = out_dir
-    env[StageDryRunVariable] = "1"
-    if live_dir is not None:
-        env["CHAM3_LIVE_DIR"] = live_dir
-    argv = ["/bin/bash", script]
+    with open(script, "r", encoding="utf-8") as handle:
+        problem = dryrun_guard_problem(handle.read())
+    if problem is not None:
+        raise AssertionError("refusing to run build_image.sh (a live build could start): " + problem)
+    stub_dir = tempfile.mkdtemp(prefix="cham3-dryrun-stubs-")
+    record = os.path.join(stub_dir, "invoked.txt")
     try:
-        return subprocess.run(
-            argv,
-            cwd=repo,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=180,
-        )
-    except subprocess.TimeoutExpired:
-        raise AssertionError("build_image.sh did not finish: " + " ".join(argv))
+        for tool in DryRunStubTools:
+            stub = os.path.join(stub_dir, tool)
+            with open(stub, "w", encoding="utf-8") as handle:
+                handle.write('#!/bin/sh\necho "%s $*" >> "%s"\nexit 99\n' % (tool, record))
+            os.chmod(stub, 0o755)
+        env = {name: value for name, value in os.environ.items() if not name.startswith("CHAM3_")}
+        env["PATH"] = stub_dir + os.pathsep + env.get("PATH", "/usr/bin:/bin")
+        env["CHAM3_OUT_DIR"] = out_dir
+        env[StageDryRunVariable] = "1"
+        if live_dir is not None:
+            env["CHAM3_LIVE_DIR"] = live_dir
+        argv = ["/bin/bash", script]
+        try:
+            completed = subprocess.run(
+                argv,
+                cwd=repo,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=DryRunTimeout,
+            )
+        except subprocess.TimeoutExpired:
+            raise AssertionError("dry run did not finish within %d s: %s" % (DryRunTimeout, " ".join(argv)))
+        if os.path.exists(record):
+            with open(record, "r", encoding="utf-8") as handle:
+                raise AssertionError("the dry run invoked a live-build step: " + handle.read().strip())
+        return completed
+    finally:
+        shutil.rmtree(stub_dir, ignore_errors=True)
 
 
 # F3 capture privilege state (agreed interface: wireshark group, file capabilities
@@ -595,6 +639,22 @@ WallpaperInstallList = PackageDesktopDir + "/debian/install"
 ArchivesDir = LiveDesktopDir + "/config/archives"
 KeyringIncludeDir = LiveDesktopDir + "/config/includes.chroot/usr/share/keyrings"
 TrustedKeyIncludeDir = LiveDesktopDir + "/config/includes.chroot/etc/apt/trusted.gpg.d"
+# F2 source and key layout (worker's implementation; discovery by content, not extension).
+# Sources are one-line .list files. The zzz_ prefix is a security requirement: it sorts the
+# foreign source after live-build's Debian sources (zz-sources.list), so Debian versions win
+# ties. Preferences are cham3_*.pref. Keys are reviewed armored files in keys/, and
+# auto/build_archive_keyring turns them into the cham3-archive-keyring package, so keys reach
+# apt only through Signed-By keyrings under /usr/share/keyrings.
+ArchiveNamePrefixes = ("zzz_cham3_kali.", "zzz_cham3_librewolf.", "cham3_kali.", "cham3_librewolf.")
+PinnedForeignArchives = tuple(ArchivesDir + "/" + prefix for prefix in ArchiveNamePrefixes)
+DebianSourcesListName = "zz-sources.list"
+ArchiveKeysDir = LiveDesktopDir + "/keys"
+ArchiveKeyFiles = {"kali": "kali_archive_key.asc", "librewolf": "librewolf_key.asc"}
+ArchiveKeyFingerprints = {
+    "kali": "827C8569F2518CC677FECA1AED65462EC8D5E4C5",
+    "librewolf": "662E3CDD6FE329002D0CA5BB40339DD82B12EF16",
+}
+KeyringScript = LiveDesktopDir + "/auto/build_archive_keyring"
 
 # F2 firmware (research section 5). With --firmware-chroot false the image installs this
 # explicit list. It is the self-contained set in docs/research/evidence/firmware/

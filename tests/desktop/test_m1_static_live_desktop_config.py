@@ -21,11 +21,14 @@ import m0_support  # noqa: E402
 import m1_support  # noqa: E402
 
 RequiredArchiveAreas = frozenset({"main", "contrib", "non-free", "non-free-firmware"})
+# trusted=yes is NOT forbidden in the build configuration: live-build's own local package
+# repository uses it transiently inside the build chroot. The final image is checked for it
+# (test_m1_image_contents.py, Codex Remote), and the cham3 sources must not use it (policy in
+# test_m1_static_foreign_sources.py).
 ForbiddenAptFragments = (
     "allow-unauthenticated",
     "allowunauthenticated",
     "allowinsecurerepositories",
-    "trusted=yes",
     "apt-secure false",
     "apt-secure=false",
 )

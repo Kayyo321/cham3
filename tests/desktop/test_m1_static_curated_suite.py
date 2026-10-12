@@ -19,12 +19,10 @@ import m1_support  # noqa: E402
 
 RelationFields = ("Depends", "Recommends", "Suggests", "Pre-Depends")
 KaliSourcePattern = re.compile(r"(?i)(https?://[^\s\"']*kali[^\s\"']*|kali-rolling|kali\.org)")
-# F2: Kali and LibreWolf sources are allowed only in the pinned archive files, whose
+# F2: Kali and LibreWolf references are allowed only in the pinned archive files (the
+# zzz_cham3_* sources and cham3_* preferences, see m1_support.PinnedForeignArchives), whose
 # policy is checked by test_m1_static_foreign_sources.py.
-PinnedForeignArchives = (
-    m1_support.ArchivesDir + "/cham3_kali.",
-    m1_support.ArchivesDir + "/cham3_librewolf.",
-)
+PinnedForeignArchives = m1_support.PinnedForeignArchives
 
 
 def relation_fields(stanza):
