@@ -1,0 +1,8 @@
+recovery_naming_interface []
+recovery_naming_anchor_failure_restart ["scenario recovery_naming_anchor_failure_restart step 17: key state {'named': True, 'min_key_epoch': 2, 'retired': ['9fa13c74f7b1b1d678d94539fe6faf3b32879ef0793493ddefd70e43ae5875df', 'b1f6985e70fd9b149d716948ebd0ca32c7824b0f8d939a8f62f496f63ac51cf7']}, expected {'min_key_epoch': 0, 'named': False, 'retired': []}", "scenario recovery_naming_anchor_failure_restart step 18: key state {'named': True, 'min_key_epoch': 2, 'retired': ['9fa13c74f7b1b1d678d94539fe6faf3b32879ef0793493ddefd70e43ae5875df', 'b1f6985e70fd9b149d716948ebd0ca32c7824b0f8d939a8f62f496f63ac51cf7']}, expected {'min_key_epoch': 0, 'named': False, 'retired': []}", "scenario recovery_naming_anchor_failure_restart step 19: key state {'named': True, 'min_key_epoch': 2, 'retired': ['9fa13c74f7b1b1d678d94539fe6faf3b32879ef0793493ddefd70e43ae5875df', 'b1f6985e70fd9b149d716948ebd0ca32c7824b0f8d939a8f62f496f63ac51cf7']}, expected {'min_key_epoch': 0, 'named': False, 'retired': []}"]
+Traceback (most recent call last):
+  File "/review/early_effect_probe.py", line 32, in <module>
+    assert not failures  # demonstrates the missing early-state observation
+           ^^^^^^^^^^^^
+AssertionError
+exit 1

@@ -1,0 +1,15 @@
+PASS environment - tests
+PASS cargo-suite 36 tests
+PASS cargo-suite 36 tests
+   Compiling cham3_provider_probe v0.1.0 (/work/core/probes/provider_probe)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.20s
+PASS provider-oracle - tests
+== m2 unit summary (/work/out/m2/runs/unit_20261012T215046Z_1599)
+PASS source_identity
+PASS environment
+PASS cargo_test_debug
+PASS cargo_test_release
+PASS build_probe
+PASS provider_oracle
+PASS ecr_vector_oracle
+m2 unit: PASS

@@ -1,0 +1,28 @@
+$ git diff --exit-code --stat 9b1aa2b9d1435fb33c303ca7fe01ce7afcb2964a 28a8595e627bcd092acaff4b8161522cf5d38f7f -- core Cargo.toml Cargo.lock build .github PROJECT.md docs/decisions docs/specs tests/m2/run_m2_tests.sh tests/m2/lib
+exit 0
+
+$ git diff --stat 70c431c 28a8595   # the revision-4.1 candidate commit alone
+ docs/reviews/M2-001-002-finding-resolutions-r4.md | 40 +++++++++++++++++
+ tests/m2/harness/test_m2_review_regressions.py    | 36 +++++++++++++++
+ tests/m2/oracle/ecr_oracle.py                     | 39 ++++++++++++----
+ tests/m2/test_inventory.txt                       |  1 +
+ tests/m2/vectors/ecr_v1/vectors.json              | 54 +++++++++++++++++++++++
+ tests/m2/vectors/ecr_v1/vectors_readme.md         |  2 +-
+ 6 files changed, 162 insertions(+), 10 deletions(-)
+
+$ vectors.json comparison 9b1aa2b -> 28a8595
+admission_invalid identical
+constants identical
+format identical
+invalid identical
+journal_scenarios changed
+keys identical
+limits identical
+lineage identical
+specification identical
+status identical
+valid identical
+scenario recovery_naming_interface steps [33, 34] only 'keys' observations added: True
+scenario recovery_naming_anchor_failure_restart steps [17, 18, 19, 20] only 'keys' observations added: True
+scenario recovery_naming_anchor_failure_retry steps [17, 18, 19] only 'keys' observations added: True
+scenarios unchanged: 19 of 22

@@ -132,3 +132,14 @@ Do not update this status based on plans, generated code claims, or chat summari
   - Native amd64 qualification PASS (author VM, UID 1000, clean clone). GitHub Actions `m2_checks`, `m1_checks` and `m0_checks` PASS on that commit.
   - See the [revision-4 finding resolutions](reviews/M2-001-002-finding-resolutions-r3.md) and the [revision-4 handoff](handoffs/M2-001-002-rereview-r4.md).
 - **Still no gate is approved**: M2-003..M2-008 remain DRAFT, no M2 domain logic exists, and design mechanisms remain NOT_RUN.
+- Independent re-review of revision 4 (`review/m2-001-002-r4-security` at 3a3b5d17ddc44b96c3fcc8265c5b337066aff0fb, not merged):
+  - **APPROVE for owner consideration** for G2–G6 (design recommendations, not owner approval).
+  - **CHANGES_REQUESTED** for M2-001 and G1, only because the reviewer's own Debian tracker retrieval was BLOCKED.
+  - Low, nonblocking note I04.
+- **Revision 4.1** candidate 28a8595e627bcd092acaff4b8161522cf5d38f7f answers I04 with test and oracle changes only.
+  - Native amd64 qualification PASS (author VM).
+  - GitHub Actions m2/m1/m0 PASS.
+  - See the [revision-4.1 response](reviews/M2-001-002-finding-resolutions-r4.md) and the [handoff](handoffs/M2-001-002-rereview-r5.md).
+- The independent Debian check is to be run by the reviewer from the owner's desktop.
+- **No gate is owner-approved**; M2-003..M2-008 remain DRAFT.
+- The owner will run the final M2 review with the Codex Security plugin skill (recorded in the M2 task file).

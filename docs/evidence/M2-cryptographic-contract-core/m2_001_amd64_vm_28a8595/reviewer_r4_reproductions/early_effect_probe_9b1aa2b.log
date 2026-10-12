@@ -1,0 +1,4 @@
+recovery_naming_interface []
+recovery_naming_anchor_failure_restart []
+recovery_naming_anchor_failure_retry []
+exit 0
