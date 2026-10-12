@@ -12,8 +12,18 @@ set -eu
 # and are kept on purpose. APT verifies the signed InRelease files with
 # debian-archive-keyring and authentication is not disabled (--apt-secure true).
 # Archive areas: contrib and non-free are needed for torbrowser-launcher (contrib)
-# and nikto (non-free); non-free-firmware serves --firmware-chroot/--firmware-binary
-# so real hardware and VM graphics/network work on the live and installed system.
+# and nikto (non-free); non-free-firmware serves the explicit firmware list
+# (config/package-lists/cham3_firmware.list.chroot) so real hardware and VM graphics
+# and network work on the live and installed system.
+#
+# Firmware (F2): --firmware-chroot false. With true, live-build installs every package
+# whose Contents entry lists a firmware path, which includes firmware-b43-installer and
+# firmware-b43legacy-installer; their postinst scripts download blobs from GitHub and
+# OpenWrt inside the chroot and fail the build when those hosts are unreachable. The
+# explicit list replaces that selection (the same set minus those two installers and the
+# ARM-only packages), so the build contacts no firmware host. The b43 and b43legacy
+# adapters are therefore not supported out of the box. --firmware-binary stays true
+# (installer-side firmware).
 #
 # --apt-recommends false (decision, differs from stock KDE installs): recommends
 # would roughly double the package count and pull in services this image must not
@@ -34,7 +44,7 @@ lb config noauto \
     --debian-installer live \
     --binary-image iso-hybrid \
     --bootloaders syslinux,grub-efi \
-    --firmware-chroot true \
+    --firmware-chroot false \
     --firmware-binary true \
     --security true \
     --updates true \

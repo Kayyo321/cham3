@@ -1,0 +1,67 @@
+# Explicit firmware package list for the cham3 M1 desktop image (F2, owner-approved).
+#
+# This list replaces live-build's automatic firmware selection
+# (--firmware-chroot true in earlier revisions). That selection installs every
+# package whose Contents entry lists a path under lib/firmware, which includes
+# firmware-b43-installer and firmware-b43legacy-installer. Their postinst scripts
+# download Broadcom firmware from GitHub and OpenWrt while the image is built and
+# fail the build when those hosts are not reachable. They are deliberately not
+# listed: Broadcom b43 and b43legacy SoftMAC wireless adapters are not supported
+# out of the box (an explicit, owner-approved reduction). brcmfmac and brcmsmac
+# firmware (firmware-brcm80211) is present. On an installed system with network
+# access, "apt install firmware-b43-installer" remains available to a user.
+#
+# The 42 names are the previous automatic selection for amd64 (47 packages from
+# the main, contrib, non-free and non-free-firmware indices, plus firmware-linux,
+# minus the two b43 installers and the ARM-only packages firmware-qcom-soc,
+# firmware-samsung, firmware-ti-connectivity and raspi-firmware). Every package is
+# fetched from the signed Debian archive. Five of them are not Wi-Fi firmware
+# (indi-dsi, libsbig4t64, libfishcamp1t64, alsa-topology-conf, wireless-regdb) and
+# are kept only to preserve the previous hardware coverage.
+#
+# Source: docs/research/M1_package_disposition.md section 6 and
+# docs/research/evidence/firmware/proposed_set_without_b43_installers_42.txt.
+# --firmware-binary stays true (installer-side firmware); that it contains no b43
+# installer package is checked on the built image, not here.
+alsa-topology-conf
+amd64-microcode
+atmel-firmware
+bluez-firmware
+dahdi-firmware-nonfree
+firmware-amd-graphics
+firmware-ast
+firmware-ath9k-htc
+firmware-atheros
+firmware-bnx2
+firmware-bnx2x
+firmware-brcm80211
+firmware-carl9170
+firmware-cavium
+firmware-cirrus
+firmware-intel-graphics
+firmware-intel-misc
+firmware-intel-sound
+firmware-ipw2x00
+firmware-ivtv
+firmware-iwlwifi
+firmware-libertas
+firmware-linux
+firmware-linux-free
+firmware-marvell-prestera
+firmware-mediatek
+firmware-misc-nonfree
+firmware-myricom
+firmware-netronome
+firmware-netxen
+firmware-nvidia-graphics
+firmware-nvidia-tesla-535-gsp
+firmware-qlogic
+firmware-realtek
+firmware-siano
+firmware-sof-signed
+firmware-zd1211
+indi-dsi
+intel-microcode
+libfishcamp1t64
+libsbig4t64
+wireless-regdb
