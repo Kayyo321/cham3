@@ -1,0 +1,241 @@
+Get:1 http://deb.debian.org/debian trixie InRelease [140 kB]
+Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+Get:4 http://deb.debian.org/debian trixie/main amd64 Packages [9678 kB]
+Get:5 http://deb.debian.org/debian trixie/main amd64 Components [5175 kB]
+Get:6 http://deb.debian.org/debian trixie-updates/main amd64 Packages [4412 B]
+Get:7 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [266 kB]
+Fetched 15.4 MB in 2s (8381 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  dirmngr gnupg-l10n gpg-agent gpgsm pinentry-curses
+Suggested packages:
+  dbus-user-session libpam-systemd pinentry-gnome3 tor gpg-wks-server
+  parcimonie xloadimage scdaemon tpm2daemon pinentry-doc
+Recommended packages:
+  gnupg-utils gpg-wks-client gpgv
+The following NEW packages will be installed:
+  desktop-file-utils dirmngr gnupg gnupg-l10n gpg-agent gpgsm pinentry-curses
+0 upgraded, 7 newly installed, 0 to remove and 0 not upgraded.
+Need to get 2275 kB of archives.
+After this operation, 8644 kB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main amd64 desktop-file-utils amd64 0.28-1 [91.7 kB]
+Get:2 http://deb.debian.org/debian trixie/main amd64 dirmngr amd64 2.4.7-21+deb13u1+b5 [384 kB]
+Get:3 http://deb.debian.org/debian trixie/main amd64 gnupg-l10n all 2.4.7-21+deb13u1 [749 kB]
+Get:4 http://deb.debian.org/debian trixie/main amd64 pinentry-curses amd64 1.3.1-2 [86.4 kB]
+Get:5 http://deb.debian.org/debian trixie/main amd64 gpg-agent amd64 2.4.7-21+deb13u1+b5 [271 kB]
+Get:6 http://deb.debian.org/debian trixie/main amd64 gpgsm amd64 2.4.7-21+deb13u1+b5 [276 kB]
+Get:7 http://deb.debian.org/debian trixie/main amd64 gnupg all 2.4.7-21+deb13u1 [417 kB]
+Fetched 2275 kB in 0s (10.4 MB/s)
+Selecting previously unselected package desktop-file-utils.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 26105 files and directories currently installed.)
+Preparing to unpack .../0-desktop-file-utils_0.28-1_amd64.deb ...
+Unpacking desktop-file-utils (0.28-1) ...
+Selecting previously unselected package dirmngr.
+Preparing to unpack .../1-dirmngr_2.4.7-21+deb13u1+b5_amd64.deb ...
+Unpacking dirmngr (2.4.7-21+deb13u1+b5) ...
+Selecting previously unselected package gnupg-l10n.
+Preparing to unpack .../2-gnupg-l10n_2.4.7-21+deb13u1_all.deb ...
+Unpacking gnupg-l10n (2.4.7-21+deb13u1) ...
+Selecting previously unselected package pinentry-curses.
+Preparing to unpack .../3-pinentry-curses_1.3.1-2_amd64.deb ...
+Unpacking pinentry-curses (1.3.1-2) ...
+Selecting previously unselected package gpg-agent.
+Preparing to unpack .../4-gpg-agent_2.4.7-21+deb13u1+b5_amd64.deb ...
+Unpacking gpg-agent (2.4.7-21+deb13u1+b5) ...
+Selecting previously unselected package gpgsm.
+Preparing to unpack .../5-gpgsm_2.4.7-21+deb13u1+b5_amd64.deb ...
+Unpacking gpgsm (2.4.7-21+deb13u1+b5) ...
+Selecting previously unselected package gnupg.
+Preparing to unpack .../6-gnupg_2.4.7-21+deb13u1_all.deb ...
+Unpacking gnupg (2.4.7-21+deb13u1) ...
+Setting up pinentry-curses (1.3.1-2) ...
+Setting up gpg-agent (2.4.7-21+deb13u1+b5) ...
+Setting up desktop-file-utils (0.28-1) ...
+Setting up gpgsm (2.4.7-21+deb13u1+b5) ...
+Setting up dirmngr (2.4.7-21+deb13u1+b5) ...
+Setting up gnupg-l10n (2.4.7-21+deb13u1) ...
+Setting up gnupg (2.4.7-21+deb13u1) ...
+Processing triggers for man-db (2.13.1-1) ...
+== tests/apt (apt, repo: /workspace/cham3-review-m1, out: /workspace/cham3-review-m1/out) ==
+test_control_kali_index_signed_by_another_key_is_rejected (test_m1_apt_pin_identity.pin_identity_t.test_control_kali_index_signed_by_another_key_is_rejected) ... ok
+test_control_kali_pin_is_bound_to_the_configured_host (test_m1_apt_pin_identity.pin_identity_t.test_control_kali_pin_is_bound_to_the_configured_host) ... ok
+test_control_librewolf_index_signed_by_another_key_is_rejected (test_m1_apt_pin_identity.pin_identity_t.test_control_librewolf_index_signed_by_another_key_is_rejected) ... ok
+test_control_librewolf_pin_is_bound_to_the_configured_host (test_m1_apt_pin_identity.pin_identity_t.test_control_librewolf_pin_is_bound_to_the_configured_host) ... ok
+test_control_superseded_kali_release_pin_fails_open (test_m1_apt_pin_identity.pin_identity_t.test_control_superseded_kali_release_pin_fails_open) ... ok
+test_control_superseded_librewolf_release_pin_fails_open (test_m1_apt_pin_identity.pin_identity_t.test_control_superseded_librewolf_release_pin_fails_open) ... ok
+test_kali_changed_codename_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_kali_changed_codename_still_denies_unlisted) ... ok
+test_kali_changed_label_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_kali_changed_label_still_denies_unlisted) ... ok
+test_kali_changed_origin_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_kali_changed_origin_still_denies_unlisted) ... ok
+test_kali_changed_suite_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_kali_changed_suite_still_denies_unlisted) ... ok
+test_kali_expected_identity_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_kali_expected_identity_denies_unlisted) ... ok
+test_kali_removed_identity_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_kali_removed_identity_still_denies_unlisted) ... ok
+test_librewolf_changed_codename_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_librewolf_changed_codename_still_denies_unlisted) ... ok
+test_librewolf_changed_label_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_librewolf_changed_label_still_denies_unlisted) ... ok
+test_librewolf_changed_origin_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_librewolf_changed_origin_still_denies_unlisted) ... ok
+test_librewolf_changed_suite_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_librewolf_changed_suite_still_denies_unlisted) ... ok
+test_librewolf_expected_identity_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_librewolf_expected_identity_denies_unlisted) ... ok
+test_librewolf_removed_identity_still_denies_unlisted (test_m1_apt_pin_identity.pin_identity_t.test_librewolf_removed_identity_still_denies_unlisted) ... ok
+test_candidate_and_priority_are_read (test_m1_apt_pin_identity.policy_parser_fixture_t.test_candidate_and_priority_are_read) ... ok
+test_denied_package_has_no_candidate (test_m1_apt_pin_identity.policy_parser_fixture_t.test_denied_package_has_no_candidate) ... ok
+test_unknown_package_is_empty (test_m1_apt_pin_identity.policy_parser_fixture_t.test_unknown_package_is_empty) ... ok
+test_variant_identity_changes_one_field (test_m1_apt_pin_identity.policy_parser_fixture_t.test_variant_identity_changes_one_field) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 1.151s
+
+OK
+== building cham3-base
+dpkg-buildpackage: info: source package cham3-base
+dpkg-buildpackage: info: source version 0.0.0~m0
+dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source changed by cham3 developers <maintainers@cham3.invalid>
+ dpkg-source --before-build .
+dpkg-buildpackage: info: host architecture amd64
+ debian/rules clean
+dh clean
+   dh_clean
+ debian/rules binary
+dh binary
+   dh_update_autotools_config
+   dh_autoreconf
+   create-stamp debian/debhelper-build-stamp
+   dh_prep
+   dh_auto_install --destdir=debian/cham3-base/
+   dh_installdocs
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_missing
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'cham3-base' in '../cham3-base_0.0.0~m0_all.deb'.
+ dpkg-genbuildinfo --build=binary -O../cham3-base_0.0.0~m0_amd64.buildinfo
+ dpkg-genchanges --build=binary -O../cham3-base_0.0.0~m0_amd64.changes
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source --after-build .
+dpkg-buildpackage: info: binary-only upload (no source included)
+== building cham3-desktop
+dpkg-buildpackage: info: source package cham3-desktop
+dpkg-buildpackage: info: source version 0.0.0~m1
+dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source changed by cham3 developers <maintainers@cham3.invalid>
+dpkg-buildpackage: info: host architecture amd64
+ dpkg-source --before-build .
+ debian/rules clean
+dh clean
+   dh_clean
+ debian/rules binary
+dh binary
+   dh_update_autotools_config
+   dh_autoreconf
+   debian/rules override_dh_auto_build
+make[1]: Entering directory '/tmp/tmp.T1nF55U5bT/cham3-desktop'
+set -e; for plasmoid in desktop/plasma/plasmoids/org.cham3.*; do \
+    cmp -s desktop/plasma/shared/cham3_shared.js "$plasmoid/contents/code/cham3_shared.js" || \
+    { echo "cham3_shared.js drift in $plasmoid" >&2; exit 1; }; \
+done
+make[1]: Leaving directory '/tmp/tmp.T1nF55U5bT/cham3-desktop'
+   create-stamp debian/debhelper-build-stamp
+   dh_prep
+   dh_auto_install --destdir=debian/cham3-desktop/
+   debian/rules override_dh_install
+make[1]: Entering directory '/tmp/tmp.T1nF55U5bT/cham3-desktop'
+dh_install
+# Wallpaper image: KDE image-wallpaper layout, resolution-named file.
+install -D -m 0644 assets/wallpapers/cham3_minimal_charcoal.png \
+    debian/cham3-desktop/usr/share/wallpapers/Cham3/contents/images/3840x2160.png
+# Layout template org.cham3.panel: the panel script keeps its repo name and
+# is installed under the name Plasma requires (contents/layout.js).
+install -D -m 0644 desktop/plasma/layout-templates/org.cham3.panel/metadata.json \
+    debian/cham3-desktop/usr/share/plasma/layout-templates/org.cham3.panel/metadata.json
+install -D -m 0644 desktop/plasma/layout/cham3_panel_layout.js \
+    debian/cham3-desktop/usr/share/plasma/layout-templates/org.cham3.panel/contents/layout.js
+# System-wide defaults (lowest precedence, overridden by user config):
+# make the cham3 look-and-feel the default for new profiles and carry the
+# color scheme values, because KDE reads colors from kdeglobals.
+install -d debian/cham3-desktop/etc/xdg
+sed -e 's/^contrast=4$/contrast=4\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze/' \
+    -e '/^\[Cham3Accents\]$/,$d' \
+    desktop/plasma/color-schemes/Cham3Dark.colors > debian/cham3-desktop/etc/xdg/kdeglobals
+printf '\n[Icons]\nTheme=breeze-dark\n' >> debian/cham3-desktop/etc/xdg/kdeglobals
+printf '[Theme]\nname=breeze-dark\n' > debian/cham3-desktop/etc/xdg/plasmarc
+make[1]: Leaving directory '/tmp/tmp.T1nF55U5bT/cham3-desktop'
+   dh_installdocs
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_missing
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'cham3-desktop' in '../cham3-desktop_0.0.0~m1_all.deb'.
+ dpkg-genbuildinfo --build=binary -O../cham3-desktop_0.0.0~m1_amd64.buildinfo
+ dpkg-genchanges --build=binary -O../cham3-desktop_0.0.0~m1_amd64.changes
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source --after-build .
+dpkg-buildpackage: info: binary-only upload (no source included)
+== building cham3-full
+dpkg-buildpackage: info: source package cham3-full
+dpkg-buildpackage: info: source version 0.0.0~m1
+dpkg-buildpackage: info: source distribution UNRELEASED
+dpkg-buildpackage: info: source changed by cham3 developers <maintainers@cham3.invalid>
+dpkg-buildpackage: info: host architecture amd64
+ dpkg-source --before-build .
+ debian/rules clean
+dh clean
+   dh_clean
+ debian/rules binary
+dh binary
+   dh_update_autotools_config
+   dh_autoreconf
+   create-stamp debian/debhelper-build-stamp
+   dh_prep
+   dh_auto_install --destdir=debian/cham3-full/
+   dh_installdocs
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+   dh_fixperms
+   dh_missing
+   dh_installdeb
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'cham3-full' in '../cham3-full_0.0.0~m1_all.deb'.
+ dpkg-genbuildinfo --build=binary -O../cham3-full_0.0.0~m1_amd64.buildinfo
+ dpkg-genchanges --build=binary -O../cham3-full_0.0.0~m1_amd64.changes
+dpkg-genchanges: info: binary-only upload (no source code included)
+ dpkg-source --after-build .
+dpkg-buildpackage: info: binary-only upload (no source included)
+== lintian
+# lintian exit status: 0
+build_packages: PASS (packages in /workspace/cham3-review-m1/out/packages)
+== tests/packaging (packages, repo: /workspace/cham3-review-m1, out: /workspace/cham3-review-m1/out) ==
+test_defective_package_is_rejected (test_cham3_base_package.cham3_base_package_t.test_defective_package_is_rejected) ... ok
+test_real_package_passes_checker (test_cham3_base_package.cham3_base_package_t.test_real_package_passes_checker) ... ok
+test_well_formed_fixture_is_accepted (test_cham3_base_package.cham3_base_package_t.test_well_formed_fixture_is_accepted) ... ok
+test_wrong_expected_version_is_rejected (test_cham3_base_package.cham3_base_package_t.test_wrong_expected_version_is_rejected) ... ok
+test_deb_version_matches_changelog_version (test_packages_output.packages_output_t.test_deb_version_matches_changelog_version) ... ok
+test_exactly_the_expected_debs_are_built (test_packages_output.packages_output_t.test_exactly_the_expected_debs_are_built) ... ok
+test_lintian_report_has_no_errors (test_packages_output.packages_output_t.test_lintian_report_has_no_errors) ... ok
+test_sha256sums_verify_and_cover_build_outputs (test_packages_output.packages_output_t.test_sha256sums_verify_and_cover_build_outputs) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.066s
+
+OK

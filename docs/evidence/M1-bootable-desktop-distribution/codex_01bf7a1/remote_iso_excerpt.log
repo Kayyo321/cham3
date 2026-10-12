@@ -1,0 +1,71 @@
+2026-10-12T12:44:52.3576542Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +01bf7a1f1066fae15ab51a56a5212c0a69780ab8:refs/remotes/origin/task/M1-bootable-desktop
+2026-10-12T12:44:52.8246278Z  * [new ref]         01bf7a1f1066fae15ab51a56a5212c0a69780ab8 -> origin/task/M1-bootable-desktop
+2026-10-12T12:44:52.8901677Z 01bf7a1f1066fae15ab51a56a5212c0a69780ab8
+2026-10-12T12:51:44.2155320Z auto/build: added apt-mirror-setup_1%3a0.198_all.udeb to the installer udebs
+2026-10-12T12:51:44.2217687Z auto/build: installer stage without the pinned foreign sources (Debian only)
+2026-10-12T12:53:06.9179992Z auto/build: removed the unsigned live-medium pool entry from the live root
+2026-10-12T13:01:39.6687856Z build_image: PASS (artifacts in /work/out/image)
+2026-10-12T13:01:39.8250567Z test_apt_inputs_classify_files_by_location_not_extension (test_m1_image_contents.image_apt_policy_fixture_t.test_apt_inputs_classify_files_by_location_not_extension) ... ok
+2026-10-12T13:01:39.8254351Z test_debian_owned_archive_keys_are_accepted (test_m1_image_contents.image_apt_policy_fixture_t.test_debian_owned_archive_keys_are_accepted) ... ok
+2026-10-12T13:01:39.8256575Z test_kali_key_in_trusted_gpg_d_fails_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_kali_key_in_trusted_gpg_d_fails_the_image_policy) ... ok
+2026-10-12T13:01:39.8259681Z test_pinned_foreign_sources_pass_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_pinned_foreign_sources_pass_the_image_policy) ... ok
+2026-10-12T13:01:39.8262460Z test_release_field_pins_fail_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_release_field_pins_fail_the_image_policy) ... ok
+2026-10-12T13:01:39.8264919Z test_unowned_key_named_like_debian_is_rejected (test_m1_image_contents.image_apt_policy_fixture_t.test_unowned_key_named_like_debian_is_rejected) ... ok
+2026-10-12T13:01:39.8266952Z test_unpinned_kali_source_fails_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_unpinned_kali_source_fails_the_image_policy) ... ok
+2026-10-12T13:01:39.8268885Z test_missing_metapackage_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_metapackage_is_caught) ... ok
+2026-10-12T13:01:39.8269744Z test_missing_plasmoid_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_plasmoid_is_caught) ... ok
+2026-10-12T13:01:39.8270609Z test_missing_real_session_file_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_real_session_file_is_caught) ... ok
+2026-10-12T13:01:39.8271527Z test_missing_real_wallpaper_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_real_wallpaper_is_caught) ... ok
+2026-10-12T13:01:39.8272448Z test_missing_wallpaper_metadata_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_wallpaper_metadata_is_caught) ... ok
+2026-10-12T13:01:39.8273310Z test_positive_control_accepted (test_m1_image_contents.image_contents_fixture_t.test_positive_control_accepted) ... ok
+2026-10-12T13:01:39.8274136Z test_shipped_backend_binary_is_caught (test_m1_image_contents.image_contents_fixture_t.test_shipped_backend_binary_is_caught) ... ok
+2026-10-12T13:01:39.8274987Z test_shipped_systemd_unit_is_caught (test_m1_image_contents.image_contents_fixture_t.test_shipped_systemd_unit_is_caught) ... ok
+2026-10-12T13:01:39.8275893Z test_superseded_names_do_not_satisfy_the_gate (test_m1_image_contents.image_contents_fixture_t.test_superseded_names_do_not_satisfy_the_gate) ... ok
+2026-10-12T13:01:43.9274199Z test_contents_match_m1_contract (test_m1_image_contents.image_contents_t.test_contents_match_m1_contract) ... ok
+2026-10-12T13:01:44.0889789Z test_final_apt_sources_have_no_trusted_yes (test_m1_image_contents.image_contents_t.test_final_apt_sources_have_no_trusted_yes) ... ok
+2026-10-12T13:01:44.2667813Z test_image_apt_policy_pins_foreign_sources (test_m1_image_contents.image_contents_t.test_image_apt_policy_pins_foreign_sources) ... ok
+2026-10-12T13:01:44.4662131Z test_keys_reach_apt_only_through_shipped_signed_by_keyrings (test_m1_image_contents.image_contents_t.test_keys_reach_apt_only_through_shipped_signed_by_keyrings) ... ok
+2026-10-12T13:01:47.2876688Z test_no_unallowlisted_foreign_origin_package (test_m1_image_contents.image_contents_t.test_no_unallowlisted_foreign_origin_package) ... ok
+2026-10-12T13:01:47.2878943Z test_allowlisted_kali_origin_package_is_accepted (test_m1_image_contents.image_origin_fixture_t.test_allowlisted_kali_origin_package_is_accepted) ... ok
+2026-10-12T13:01:47.2881071Z test_missing_debian_index_fails_closed (test_m1_image_contents.image_origin_fixture_t.test_missing_debian_index_fails_closed) ... ok
+2026-10-12T13:01:47.2883165Z test_missing_kali_index_fails_closed_when_kali_is_configured (test_m1_image_contents.image_origin_fixture_t.test_missing_kali_index_fails_closed_when_kali_is_configured) ... ok
+2026-10-12T13:01:47.2884846Z test_non_allowlisted_kali_origin_package_is_rejected (test_m1_image_contents.image_origin_fixture_t.test_non_allowlisted_kali_origin_package_is_rejected) ... ok
+2026-10-12T13:01:47.2885784Z test_unknown_origin_fails_closed (test_m1_image_contents.image_origin_fixture_t.test_unknown_origin_fails_closed) ... ok
+2026-10-12T13:01:47.2886654Z test_all_shipped_keyrings_present_is_accepted (test_m1_image_contents.image_trust_fixture_t.test_all_shipped_keyrings_present_is_accepted) ... ok
+2026-10-12T13:01:47.2887722Z test_missing_shipped_keyring_is_rejected (test_m1_image_contents.image_trust_fixture_t.test_missing_shipped_keyring_is_rejected) ... ok
+2026-10-12T13:01:47.2888822Z test_plain_signed_sources_are_not_trusted_yes (test_m1_image_contents.image_trust_fixture_t.test_plain_signed_sources_are_not_trusted_yes) ... ok
+2026-10-12T13:01:47.2889815Z test_trusted_yes_in_the_final_image_is_rejected (test_m1_image_contents.image_trust_fixture_t.test_trusted_yes_in_the_final_image_is_rejected) ... ok
+2026-10-12T13:01:47.2890802Z test_included_f2_packages_are_expected_not_gated (test_m1_image_manifest.image_manifest_fixture_t.test_included_f2_packages_are_expected_not_gated) ... ok
+2026-10-12T13:01:47.2891767Z test_manifest_name_parsing_strips_versions (test_m1_image_manifest.image_manifest_fixture_t.test_manifest_name_parsing_strips_versions) ... ok
+2026-10-12T13:01:47.2892649Z test_missing_cham3_full_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_missing_cham3_full_is_caught) ... ok
+2026-10-12T13:01:47.2893549Z test_positive_control_clean_manifest_accepted (test_m1_image_manifest.image_manifest_fixture_t.test_positive_control_clean_manifest_accepted) ... ok
+2026-10-12T13:01:47.2894495Z test_transitive_deferred_tool_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_transitive_deferred_tool_is_caught) ... ok
+2026-10-12T13:01:47.2895342Z test_transitive_thunar_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_transitive_thunar_is_caught) ... ok
+2026-10-12T13:01:49.8242837Z test_image_checksums_verify (test_m1_image_manifest.image_manifest_t.test_image_checksums_verify) ... ok
+2026-10-12T13:01:49.8251330Z test_manifest_has_required_and_no_forbidden_packages (test_m1_image_manifest.image_manifest_t.test_manifest_has_required_and_no_forbidden_packages) ... ok
+2026-10-12T13:01:49.8253190Z test_provenance_records_m1_profile (test_m1_image_manifest.image_manifest_t.test_provenance_records_m1_profile) ... ok
+2026-10-12T13:01:49.8255641Z test_b43_in_contents_firmware_is_rejected (test_m1_image_payload.image_payload_fixture_t.test_b43_in_contents_firmware_is_rejected) ... ok
+2026-10-12T13:01:49.8257365Z test_b43_installer_in_pool_is_rejected (test_m1_image_payload.image_payload_fixture_t.test_b43_installer_in_pool_is_rejected) ... ok
+2026-10-12T13:01:49.8259143Z test_deb_names_parse_pool_paths (test_m1_image_payload.image_payload_fixture_t.test_deb_names_parse_pool_paths) ... ok
+2026-10-12T13:01:49.8260511Z test_debconf_answer_parsing (test_m1_image_payload.image_payload_fixture_t.test_debconf_answer_parsing) ... ok
+2026-10-12T13:01:49.8269742Z test_dropped_reviewed_firmware_is_rejected (test_m1_image_payload.image_payload_fixture_t.test_dropped_reviewed_firmware_is_rejected) ... ok
+2026-10-12T13:01:49.8271593Z test_dumpcap_listing_controls (test_m1_image_payload.image_payload_fixture_t.test_dumpcap_listing_controls) ... ok
+2026-10-12T13:01:49.8273060Z test_manifest_with_b43_is_rejected (test_m1_image_payload.image_payload_fixture_t.test_manifest_with_b43_is_rejected) ... ok
+2026-10-12T13:01:49.8274503Z test_positive_control_accepted (test_m1_image_payload.image_payload_fixture_t.test_positive_control_accepted) ... ok
+2026-10-12T13:01:52.5904503Z test_image_dumpcap_has_no_set_id_and_is_group_restricted (test_m1_image_payload.image_payload_t.test_image_dumpcap_has_no_set_id_and_is_group_restricted) ... ok
+2026-10-12T13:01:52.5966739Z test_image_preseeds_install_setuid_false (test_m1_image_payload.image_payload_t.test_image_preseeds_install_setuid_false) ... ok
+2026-10-12T13:01:52.6027573Z test_image_registers_the_dumpcap_statoverride (test_m1_image_payload.image_payload_t.test_image_registers_the_dumpcap_statoverride) ... ok
+2026-10-12T13:01:52.6438971Z test_installer_has_the_network_mirror_udeb (test_m1_image_payload.image_payload_t.test_installer_has_the_network_mirror_udeb) ... ok
+2026-10-12T13:01:52.7051943Z test_installer_payload_has_no_b43_installer_and_all_reviewed_firmware (test_m1_image_payload.image_payload_t.test_installer_payload_has_no_b43_installer_and_all_reviewed_firmware) ... ok
+2026-10-12T13:01:52.7057874Z test_live_root_has_the_live_account_tooling (test_m1_image_payload.image_payload_t.test_live_root_has_the_live_account_tooling) ... ok
+2026-10-12T13:01:52.7064432Z test_live_root_manifest_firmware (test_m1_image_payload.image_payload_t.test_live_root_manifest_firmware) ... ok
+2026-10-12T13:01:54.0346246Z Ran 54 tests in 14.210s
+2026-10-12T13:01:54.0346534Z OK
+2026-10-12T13:02:35.8870233Z SHA256 digest of uploaded artifact zip is b04e03601b5b47f517d337241d03cd7f580db63e61eff1028f8f97025d2c6646
+2026-10-12T13:02:36.3278424Z Artifact m1_iso.zip successfully finalized. Artifact ID 11748821992
+2026-10-12T13:02:36.3279759Z Artifact m1_iso has been successfully uploaded! Final size is 3607101606 bytes. Artifact ID is 11748821992
+2026-10-12T13:02:36.3289294Z Artifact download URL: https://github.com/Kayyo321/cham3/actions/runs/38207816363/artifacts/11748821992
+2026-10-12T13:02:37.6920429Z SHA256 digest of uploaded artifact zip is c6ddfeabe91fbdb9174d0c8295d8bd88e6c4da0b9299ef0c141cab0c81ff2d7b
+2026-10-12T13:02:37.9717632Z Artifact m1_iso_evidence.zip successfully finalized. Artifact ID 11749106921
+2026-10-12T13:02:37.9719282Z Artifact m1_iso_evidence has been successfully uploaded! Final size is 274546 bytes. Artifact ID is 11749106921
+2026-10-12T13:02:37.9726254Z Artifact download URL: https://github.com/Kayyo321/cham3/actions/runs/38207816363/artifacts/11749106921

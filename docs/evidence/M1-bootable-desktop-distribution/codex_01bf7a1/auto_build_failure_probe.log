@@ -1,0 +1,6 @@
+PASS mocked auto/build stage=bootstrap rc=23 stages=bootstrap foreign files restored
+PASS mocked auto/build stage=chroot rc=23 stages=bootstrap,chroot foreign files restored
+PASS mocked auto/build stage=installer rc=23 stages=bootstrap,chroot,installer foreign files restored
+PASS mocked auto/build stage=binary rc=23 stages=bootstrap,chroot,installer,binary foreign files restored
+PASS mocked auto/build stage=source rc=23 stages=bootstrap,chroot,installer,binary,source foreign files restored
+PASS mocked auto/build stage=success rc=0 stages=bootstrap,chroot,installer,binary,source foreign files restored

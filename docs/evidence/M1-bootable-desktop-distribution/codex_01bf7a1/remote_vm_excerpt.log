@@ -1,0 +1,114 @@
+2026-10-12T13:02:45.7734120Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +01bf7a1f1066fae15ab51a56a5212c0a69780ab8:refs/remotes/origin/task/M1-bootable-desktop
+2026-10-12T13:02:46.9642746Z  * [new ref]         01bf7a1f1066fae15ab51a56a5212c0a69780ab8 -> origin/task/M1-bootable-desktop
+2026-10-12T13:02:47.0263544Z 01bf7a1f1066fae15ab51a56a5212c0a69780ab8
+2026-10-12T13:04:32.5783506Z - m1_iso (ID: 11748821992, Size: 3607101606, Expected Digest: sha256:b04e03601b5b47f517d337241d03cd7f580db63e61eff1028f8f97025d2c6646)
+2026-10-12T13:13:08.9734246Z SHA256 digest of downloaded artifact is b04e03601b5b47f517d337241d03cd7f580db63e61eff1028f8f97025d2c6646
+2026-10-12T13:14:04.8451979Z PASS live_boot_menu_to_kernel 
+2026-10-12T13:14:18.4062089Z PASS live_serial_login 
+2026-10-12T13:14:19.3075576Z PASS live_suite_installed []
+2026-10-12T13:14:19.6080019Z PASS live_no_b43_installer []
+2026-10-12T13:14:19.6081327Z PASS live_firmware_set_installed 43 installed firmware packages
+2026-10-12T13:14:19.9084725Z PASS live_no_trusted_yes 
+2026-10-12T13:14:19.9085266Z PASS live_keys_only_signed_by 
+2026-10-12T13:14:25.6144224Z PASS live_unlisted_kali_denied {}
+2026-10-12T13:14:25.6146984Z PASS live_foreign_roles_have_candidates {"zaproxy": ["http.kali.org"], "exploitdb": ["http.kali.org"], "ghidra": ["http.kali.org"], "amass": ["http.kali.org"], "radare2": ["http.kali.org"], "librewolf": ["repo.librewolf.net"]}
+2026-10-12T13:14:25.6148712Z PASS live_debian_base_from_debian ["deb.debian.org"]
+2026-10-12T13:14:25.9150291Z PASS live_dumpcap_no_setuid stat: '750 root wireshark'
+2026-10-12T13:14:25.9152030Z PASS live_dumpcap_group_restricted stat: '750 root wireshark'
+2026-10-12T13:14:25.9153384Z PASS live_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']
+2026-10-12T13:14:25.9154760Z PASS live_dumpcap_override ["override=root root 750 /usr/bin/dumpcap"]
+2026-10-12T13:14:29.2244984Z PASS live_capture_harness_output_path_ok Capturing on 'Loopback: lo' File: /tmp/cham3-capture-ve6zjE/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+2026-10-12T13:14:29.2248454Z PASS live_member_captures rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-ve6zjE/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+2026-10-12T13:14:29.2250886Z PASS live_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied
+2026-10-12T13:14:29.5236004Z PASS live_plasma_session_running {"sessions": [{"Name": "user", "Desktop": "KDE", "Type": "wayland", "Class": "user", "Active": "yes"}, {"Name": "user", "Desktop": "", "Type": "tty", "Class": "user", "Active": "yes"}], "plasmashell": true, "graphical": [{"Name": "user", "Desktop": "KDE", "Type": "wayland", "Class": "user", "Active": "yes"}]}
+2026-10-12T13:14:29.5254009Z PASS live_session_is_wayland ["wayland"]
+2026-10-12T13:14:29.8268469Z PASS live_kwin_wayland_compositor 1108 /usr/bin/kwin_wayland_wrapper --xwayland
+2026-10-12T13:14:30.1264882Z PASS live_cham3_look_and_feel ColorScheme=Cham3Dark
+2026-10-12T13:15:02.2295888Z PASS live_panel_state_read 
+2026-10-12T13:15:02.2296556Z PASS live_panel_on_right_edge ["right"]
+2026-10-12T13:15:02.2296987Z PASS live_panel_vertical vertical
+2026-10-12T13:15:02.2297374Z PASS live_panel_thickness 60
+2026-10-12T13:15:02.2299057Z PASS live_panel_component_order ["org.cham3.user_launcher", "org.cham3.alias_wheel", "org.cham3.tag_pager", "org.cham3.contract_dock", "org.cham3.netproto_launcher", "org.cham3.killswitch", "org.cham3.settings_launcher", "org.cham3.task_manager", "org.kde.plasma.systemtray", "org.kde.plasma.digitalclock"]
+2026-10-12T13:15:02.2303095Z PASS live_cham3_wallpaper ["file:///usr/share/wallpapers/Cham3"]
+2026-10-12T13:15:07.6117165Z PASS live_launcher_categories_rendered ["All Applications", "Development", "Graphics", "Internet", "Office", "System", "Utilities"]
+2026-10-12T13:15:07.6117822Z PASS live_launcher_key_id_unavailable 
+2026-10-12T13:15:13.6223453Z PASS live_launcher_search_result 
+2026-10-12T13:15:27.4146167Z PASS live_launcher_real_launch wireshark process started from the launcher search
+2026-10-12T13:15:32.0579159Z PASS live_panel_captions_unavailable 4 state captions read in the panel strip
+2026-10-12T13:15:39.6294908Z PASS live_inert_alias_wheel {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:15:47.1136620Z PASS live_inert_tag_pager {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:15:54.4691330Z PASS live_inert_contract_dock {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:16:01.9528181Z PASS live_inert_netproto_launcher {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:16:09.4588183Z PASS live_inert_killswitch {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:16:24.1187856Z M1 VM live: PASS
+2026-10-12T13:21:47.3183290Z PASS install_completed_and_powered_off {"seconds": 320, "qemu_rc": 0}
+2026-10-12T13:21:47.3186128Z M1 VM install: PASS
+2026-10-12T13:22:02.9226271Z PASS installed_boot_serial_login 
+2026-10-12T13:22:03.5247530Z PASS installed_live_packages_removed 
+2026-10-12T13:22:05.6288790Z PASS installed_debian_main_sources {"sources_list_deb_lines": ["deb http://deb.debian.org/debian trixie main non-free non-free-firmware", "deb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware", "deb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware"]}
+2026-10-12T13:22:06.2295589Z PASS installed_suite_installed []
+2026-10-12T13:22:06.5299693Z PASS installed_no_b43_installer []
+2026-10-12T13:22:06.5300411Z PASS installed_firmware_set_installed 43 installed firmware packages
+2026-10-12T13:22:06.8303987Z PASS installed_no_trusted_yes 
+2026-10-12T13:22:06.8307657Z PASS installed_keys_only_signed_by 
+2026-10-12T13:22:07.1316997Z PASS installed_unlisted_kali_denied {}
+2026-10-12T13:22:07.1318900Z PASS installed_foreign_roles_have_candidates {"zaproxy": ["http.kali.org"], "exploitdb": ["http.kali.org"], "ghidra": ["http.kali.org"], "amass": ["http.kali.org"], "radare2": ["http.kali.org"], "librewolf": ["repo.librewolf.net"]}
+2026-10-12T13:22:07.1321140Z PASS installed_debian_base_from_debian ["deb.debian.org"]
+2026-10-12T13:22:07.4321575Z PASS installed_dumpcap_no_setuid stat: '750 root wireshark'
+2026-10-12T13:22:07.4322675Z PASS installed_dumpcap_group_restricted stat: '750 root wireshark'
+2026-10-12T13:22:07.4324041Z PASS installed_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']
+2026-10-12T13:22:07.4325261Z PASS installed_dumpcap_override ["override=root root 750 /usr/bin/dumpcap"]
+2026-10-12T13:22:10.4362305Z PASS installed_capture_harness_output_path_ok Capturing on 'Loopback: lo' File: /tmp/cham3-capture-StSP4P/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+2026-10-12T13:22:10.4365233Z PASS installed_member_captures rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-StSP4P/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+2026-10-12T13:22:10.4366673Z PASS installed_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied
+2026-10-12T13:22:12.5381087Z PASS installed_apt_update_authenticated e lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 51%Reading package lists... 51%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 71%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... Done
+2026-10-12T13:22:12.8381147Z PASS installed_after_update_unlisted_kali_denied {}
+2026-10-12T13:22:12.8383894Z PASS installed_after_update_foreign_roles_have_candidates {"zaproxy": ["http.kali.org"], "exploitdb": ["http.kali.org"], "ghidra": ["http.kali.org"], "amass": ["http.kali.org"], "radare2": ["http.kali.org"], "librewolf": ["repo.librewolf.net"]}
+2026-10-12T13:22:12.8385300Z PASS installed_after_update_debian_base_from_debian ["deb.debian.org"]
+2026-10-12T13:22:13.7387953Z PASS installed_upgrade_origin_by_host []
+2026-10-12T13:22:15.2400715Z PASS installed_unlisted_kali_not_installable 0%Building dependency tree... 50%Building dependency tree... Done
+2026-10-12T13:22:16.7416717Z PASS installed_lifecycle_reconfigure_upstream_ran 
+2026-10-12T13:22:17.0421642Z PASS installed_reconfigure_upstream_dumpcap_no_setuid stat: '750 root wireshark'
+2026-10-12T13:22:17.0423262Z PASS installed_reconfigure_upstream_dumpcap_group_restricted stat: '750 root wireshark'
+2026-10-12T13:22:17.0424957Z PASS installed_reconfigure_upstream_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']
+2026-10-12T13:22:17.0426504Z PASS installed_reconfigure_upstream_dumpcap_override ["override=root root 750 /usr/bin/dumpcap"]
+2026-10-12T13:22:21.2445331Z PASS installed_lifecycle_setcap_missing_ran dpkg unpacked wireshark-common: True
+2026-10-12T13:22:21.5449509Z PASS installed_setcap_missing_dumpcap_no_setuid stat: '750 root wireshark'
+2026-10-12T13:22:21.5451734Z PASS installed_setcap_missing_dumpcap_group_restricted stat: '750 root wireshark'
+2026-10-12T13:22:21.5453687Z PASS installed_setcap_missing_dumpcap_override ["override=root root 750 /usr/bin/dumpcap"]
+2026-10-12T13:22:21.5455191Z PASS installed_setcap_missing_fails_closed capabilities removed: True
+2026-10-12T13:22:24.2484392Z PASS installed_setcap_missing_capture_harness_output_path_ok Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied.
+2026-10-12T13:22:24.2488142Z PASS installed_setcap_missing_member_cannot_capture_fail_closed rc=1 bytes=0 log=Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied.
+2026-10-12T13:22:24.2490995Z PASS installed_setcap_missing_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied
+2026-10-12T13:22:24.5486770Z PASS installed_lifecycle_recovery_ran 
+2026-10-12T13:22:24.8491976Z PASS installed_recovered_dumpcap_no_setuid stat: '750 root wireshark'
+2026-10-12T13:22:24.8493244Z PASS installed_recovered_dumpcap_group_restricted stat: '750 root wireshark'
+2026-10-12T13:22:24.8494565Z PASS installed_recovered_dumpcap_capabilities getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']
+2026-10-12T13:22:24.8495877Z PASS installed_recovered_dumpcap_override ["override=root root 750 /usr/bin/dumpcap"]
+2026-10-12T13:22:27.8530977Z PASS installed_recovered_capture_harness_output_path_ok Capturing on 'Loopback: lo' File: /tmp/cham3-capture-P9pRIe/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+2026-10-12T13:22:27.8535329Z PASS installed_recovered_member_captures rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-P9pRIe/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)
+2026-10-12T13:22:27.8537788Z PASS installed_recovered_nonmember_denied rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied
+2026-10-12T13:22:41.3569954Z PASS installed_plasma_session_running {"sessions": [{"Name": "cham3test", "Desktop": "", "Type": "tty", "Class": "user", "Active": "yes"}, {"Name": "cham3test", "Desktop": "KDE", "Type": "wayland", "Class": "user", "Active": "yes"}], "plasmashell": true, "graphical": [{"Name": "cham3test", "Desktop": "KDE", "Type": "wayland", "Class": "user", "Active": "yes"}]}
+2026-10-12T13:22:41.3572834Z PASS installed_session_is_wayland ["wayland"]
+2026-10-12T13:22:41.6571808Z PASS installed_kwin_wayland_compositor 1283 /usr/bin/kwin_wayland_wrapper --xwayland
+2026-10-12T13:22:41.9575996Z PASS installed_cham3_look_and_feel ColorScheme=Cham3Dark
+2026-10-12T13:23:14.0606600Z PASS installed_panel_state_read 
+2026-10-12T13:23:14.0607234Z PASS installed_panel_on_right_edge ["right"]
+2026-10-12T13:23:14.0607835Z PASS installed_panel_vertical vertical
+2026-10-12T13:23:14.0608375Z PASS installed_panel_thickness 60
+2026-10-12T13:23:14.0610907Z PASS installed_panel_component_order ["org.cham3.user_launcher", "org.cham3.alias_wheel", "org.cham3.tag_pager", "org.cham3.contract_dock", "org.cham3.netproto_launcher", "org.cham3.killswitch", "org.cham3.settings_launcher", "org.cham3.task_manager", "org.kde.plasma.systemtray", "org.kde.plasma.digitalclock"]
+2026-10-12T13:23:14.0613291Z PASS installed_cham3_wallpaper ["file:///usr/share/wallpapers/Cham3"]
+2026-10-12T13:23:19.4632464Z PASS installed_launcher_categories_rendered ["All Applications", "Development", "Graphics", "Internet", "Office", "System", "Utilities"]
+2026-10-12T13:23:19.4633253Z PASS installed_launcher_key_id_unavailable 
+2026-10-12T13:23:25.4871961Z PASS installed_launcher_search_result 
+2026-10-12T13:23:39.2785956Z PASS installed_launcher_real_launch wireshark process started from the launcher search
+2026-10-12T13:23:43.9207851Z PASS installed_panel_captions_unavailable 4 state captions read in the panel strip
+2026-10-12T13:23:51.4885087Z PASS installed_inert_alias_wheel {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:23:58.9699914Z PASS installed_inert_tag_pager {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:24:06.3187422Z PASS installed_inert_contract_dock {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:24:13.8403898Z PASS installed_inert_netproto_launcher {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:24:21.3426117Z PASS installed_inert_killswitch {"baseline_clean": true, "state_word_after_click": true}
+2026-10-12T13:24:36.0376274Z M1 VM installed: PASS
+2026-10-12T13:24:39.8120589Z SHA256 digest of uploaded artifact zip is 36d25e1337912bc49a9030f13b19e37b64d63f4150ce99757c240b688057b746
+2026-10-12T13:24:40.1052347Z Artifact m1_vm_evidence.zip successfully finalized. Artifact ID 11749592083
+2026-10-12T13:24:40.1054215Z Artifact m1_vm_evidence has been successfully uploaded! Final size is 2929730 bytes. Artifact ID is 11749592083
