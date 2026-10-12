@@ -621,9 +621,63 @@ def panel_state(vm, results, prefix):
     try:
         reply = json.loads(output.strip().splitlines()[-1])
         state = json.loads(reply["data"][0])
+        state["source"] = "plasmashell evaluateScript"
     except (ValueError, KeyError, IndexError):
         state = None
+    if state is None:
+        status, appletsrc = guest(vm, results, prefix + "_appletsrc",
+                                  "cat ~/.config/plasma-org.kde.plasma.desktop-appletsrc")
+        _, shellrc = guest(vm, results, prefix + "_plasmashellrc", "cat ~/.config/plasmashellrc")
+        if status == 0 and "org.kde.panel" in appletsrc:
+            state = state_from_config(appletsrc, shellrc)
+    results.facts[prefix + "_panel_source"] = None if state is None else state.get("source")
     return status, state
+
+
+PlasmaLocations = {"3": "top", "4": "bottom", "5": "left", "6": "right"}
+PlasmaFormFactors = {"0": "planar", "2": "horizontal", "3": "vertical"}
+
+
+def parse_ini_groups(text):
+    """{('Containments', '2', ...): {key: value}} for a KDE config file."""
+    groups, current = {}, None
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("[") and line.endswith("]"):
+            current = tuple(re.findall(r"\[([^\]]*)\]", line))
+            groups.setdefault(current, {})
+        elif current is not None and "=" in line and not line.startswith("#"):
+            key, _, value = line.partition("=")
+            groups[current][key.strip()] = value.strip()
+    return groups
+
+
+def state_from_config(appletsrc, shellrc):
+    """Panel state reconstructed from the configuration plasmashell wrote (no geometry)."""
+    groups = parse_ini_groups(appletsrc)
+    shell = parse_ini_groups(shellrc)
+    state = {"panels": [], "desktops": [], "screens": [], "source": "plasma configuration files"}
+    for key, values in sorted(groups.items()):
+        if len(key) != 2 or key[0] != "Containments":
+            continue
+        containment = key[1]
+        if values.get("plugin") == "org.kde.panel":
+            applets = {group[3]: entries.get("plugin") for group, entries in groups.items()
+                       if len(group) == 4 and group[:3] == ("Containments", containment, "Applets")}
+            order = groups.get(("Containments", containment, "General"), {}).get("AppletOrder", "")
+            ids = [item for item in order.split(";") if item in applets] or sorted(applets, key=int)
+            thickness = shell.get(("PlasmaViews", "Panel %s" % containment, "Defaults"), {}).get("thickness")
+            state["panels"].append({
+                "location": PlasmaLocations.get(values.get("location"), values.get("location")),
+                "form_factor": PlasmaFormFactors.get(values.get("formfactor"), values.get("formfactor")),
+                "height": int(thickness) if thickness and thickness.isdigit() else None,
+                "offset": 0,
+                "widgets": [{"type": applets[item], "id": item, "geometry": None} for item in ids],
+            })
+        elif values.get("wallpaperplugin"):
+            image = groups.get(("Containments", containment, "Wallpaper", "org.kde.image", "General"), {})
+            state["desktops"].append({"wallpaper_plugin": values.get("wallpaperplugin"), "image": image.get("Image")})
+    return state
 
 
 def panel_checks(results, prefix, state):

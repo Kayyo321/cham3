@@ -219,7 +219,37 @@ def contrib_source_problems(text):
     return problems
 
 
+AutoBuildPath = m1_support.LiveDesktopDir + "/auto/build"
+BuildStages = ("bootstrap", "chroot", "installer", "binary", "source")
+ForeignArchiveNames = ("zzz_cham3_kali.list", "zzz_cham3_librewolf.list", "cham3_kali.pref", "cham3_librewolf.pref")
+
+
+def auto_build_problems(text):
+    """auto/build runs the five lb build stages in order, with the pinned foreign sources and
+    pins moved out of config/archives for the installer stage only (and restored)."""
+    code = "\n".join(line for line in text.splitlines() if not line.lstrip().startswith("#"))
+    problems = []
+    stages = re.findall(r"(?m)^\s*lb\s+(\w+)\b", code)
+    if tuple(stages) != BuildStages:
+        problems.append("auto/build must run lb %s in this order, found %r" % (", ".join(BuildStages), stages))
+    names = re.search(r'(?m)^foreign_names="([^"]*)"', code)
+    if names is None or set(names.group(1).split()) != set(ForeignArchiveNames):
+        problems.append("auto/build does not move exactly the four foreign source and pin files")
+    installer = code.find("lb installer")
+    moved = code.find('mv "config/archives/${name}" "${stash_dir}/${name}"')
+    restored = code.find("restore_foreign\n", installer)
+    binary = code.find("lb binary")
+    if not (0 <= moved < installer < restored < binary):
+        problems.append("the foreign files are not moved out before lb installer and restored before lb binary")
+    if "trap restore_foreign EXIT" not in code:
+        problems.append("auto/build does not restore the foreign files when the installer stage fails")
+    return problems
+
+
 class live_desktop_config_real_t(unittest.TestCase):
+    def test_auto_build_hides_foreign_sources_only_for_the_installer_stage(self):
+        self.assertEqual(auto_build_problems(m1_support.read_repo(AutoBuildPath)), [])
+
     def test_contrib_comes_from_the_signed_debian_contrib_source(self):
         self.assertEqual(contrib_source_problems(m1_support.read_repo(ContribSourceFile)), [])
 
@@ -304,6 +334,19 @@ class live_desktop_config_fixture_t(unittest.TestCase):
     def test_package_list_with_gated_tool_is_rejected(self):
         problems = live_config_problems(self.good_config(), "cham3-full\nlibrewolf\n")
         self.assertTrue(any("librewolf" in p for p in problems), problems)
+
+
+class auto_build_fixture_t(unittest.TestCase):
+    def test_plain_lb_build_is_rejected(self):
+        # Negative control: the 0fec3a0 auto/build, whose installer stage saw the Kali index.
+        problems = auto_build_problems("#!/bin/sh\nset -eu\nlb build noauto \"${@}\"\n")
+        self.assertTrue(any("order" in p for p in problems), problems)
+
+    def test_restoring_after_binary_is_rejected(self):
+        text = m1_support.read_repo(AutoBuildPath)
+        broken = text.replace("lb installer \"${@}\"\nrestore_foreign\n", "lb installer \"${@}\"\n")
+        self.assertNotEqual(broken, text)
+        self.assertTrue(auto_build_problems(broken))
 
 
 class wireshark_capture_fixture_t(unittest.TestCase):

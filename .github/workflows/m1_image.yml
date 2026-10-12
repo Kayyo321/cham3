@@ -14,14 +14,17 @@
 # ISO pool / installer payload audit) and m1_vm (live graphical session, disk install,
 # installed system). They take hours, so they run on pushes to the M1 task branch that
 # change more than documentation, and by hand (workflow_dispatch, once this file is on
-# the default branch). Results are development evidence only and prove no M2-M4
-# security enforcement.
+# the default branch). A push to a scratch branch ci/m1-vm-* runs only the VM job
+# against the ISO of an earlier run named in .github/m1_reuse_iso_run_id on that branch
+# (harness iteration without rebuilding the ISO; never the evidence for a target).
+# Results are development evidence only and prove no M2-M4 security enforcement.
 name: m1_image
 
 on:
   push:
     branches:
       - task/M1-bootable-desktop
+      - "ci/m1-vm-*"
     paths-ignore:
       - "docs/**"
   workflow_dispatch:
@@ -43,7 +46,44 @@ env:
   DEBIAN_FRONTEND: noninteractive
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      reuse_iso_run_id: ${{ steps.plan.outputs.reuse_iso_run_id }}
+      vm_phases: ${{ steps.plan.outputs.vm_phases }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Decide whether this run builds the ISO or reuses one
+        id: plan
+        env:
+          INPUT_REUSE: ${{ inputs.reuse_iso_run_id }}
+          INPUT_PHASES: ${{ inputs.vm_phases }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          reuse="${INPUT_REUSE:-}"
+          phases="${INPUT_PHASES:-live install installed}"
+          case "${REF_NAME}" in
+            ci/m1-vm-*)
+              reuse=$(tr -cd '0-9' < .github/m1_reuse_iso_run_id)
+              [ -n "${reuse}" ] || { echo "ci/m1-vm-* needs .github/m1_reuse_iso_run_id" >&2; exit 1; }
+              if [ -f .github/m1_vm_phases ]; then
+                phases=$(tr -cd 'a-z ' < .github/m1_vm_phases)
+              fi
+              ;;
+          esac
+          echo "vm_phases=${phases}" >> "$GITHUB_OUTPUT"
+          case "${reuse}" in
+            '' | *[!0-9]*) [ -z "${reuse}" ] || { echo "invalid run id: ${reuse}" >&2; exit 1; } ;;
+          esac
+          echo "reuse_iso_run_id=${reuse}" >> "$GITHUB_OUTPUT"
+          echo "reuse_iso_run_id=${reuse:-<build in this run>}"
+
   f2_native:
+    needs: [plan]
+    if: ${{ needs.plan.outputs.reuse_iso_run_id == '' }}
     runs-on: ubuntu-latest
     container: debian:trixie
     timeout-minutes: 120
@@ -81,7 +121,8 @@ jobs:
           retention-days: 30
 
   m1_iso:
-    if: ${{ inputs.reuse_iso_run_id == '' }}
+    needs: [plan]
+    if: ${{ needs.plan.outputs.reuse_iso_run_id == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
@@ -124,8 +165,10 @@ jobs:
           retention-days: 30
 
   m1_vm:
-    needs: [m1_iso]
-    if: ${{ !cancelled() && (needs.m1_iso.result == 'success' || inputs.reuse_iso_run_id != '') }}
+    needs: [plan, m1_iso]
+    if: >-
+      ${{ !cancelled() && needs.plan.result == 'success'
+      && (needs.m1_iso.result == 'success' || needs.plan.outputs.reuse_iso_run_id != '') }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
@@ -152,23 +195,23 @@ jobs:
             echo "no /dev/kvm on this runner: QEMU uses TCG"
           fi
       - name: Download the ISO built in this run
-        if: ${{ inputs.reuse_iso_run_id == '' }}
+        if: ${{ needs.plan.outputs.reuse_iso_run_id == '' }}
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
         with:
           name: m1_iso
           path: out/image
       - name: Download the ISO of an earlier run
-        if: ${{ inputs.reuse_iso_run_id != '' }}
+        if: ${{ needs.plan.outputs.reuse_iso_run_id != '' }}
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0  # v5.0.0
         with:
           name: m1_iso
           path: out/image
-          run-id: ${{ inputs.reuse_iso_run_id }}
+          run-id: ${{ needs.plan.outputs.reuse_iso_run_id }}
           github-token: ${{ github.token }}
       # SECURITY: --privileged is acceptable only on GitHub-hosted ephemeral runners.
       - name: VM gates (privileged Debian 13 container)
         env:
-          CHAM3_VM_PHASES: ${{ inputs.vm_phases || 'live install installed' }}
+          CHAM3_VM_PHASES: ${{ needs.plan.outputs.vm_phases }}
         run: >-
           docker run --rm --privileged ${CHAM3_KVM_DEVICE:-}
           --env CHAM3_VM_PHASES

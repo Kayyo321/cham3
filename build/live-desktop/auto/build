@@ -1,6 +1,61 @@
 #!/bin/sh
-# Purpose: run "lb build" for the cham3 M1 desktop image (see auto/config).
-# build/scripts/build_image.sh wraps this and captures the log.
+# Purpose: build the cham3 M1 desktop image (see auto/config). Invoked by "lb build";
+# build/scripts/build_image.sh wraps it, in a copy of build/live-desktop, and captures
+# the log.
+#
+# It runs the stages of "lb build" (live-build 20250505+deb13u1: bootstrap, chroot,
+# installer, binary, source) one by one, with a single difference: while the installer
+# stage runs, the two pinned foreign sources and their pins are moved out of
+# config/archives.
+#
+# Why. live-build's installer stage (installer_debian-installer) chooses between
+# alternative package names (libfuse3-4 or libfuse3-3, libefiboot1t64 or libefiboot1,
+# libefivar1t64 or libefivar1, libfuse2t64 or libfuse2) with Check_package_available,
+# which accepts a name only when "apt-cache show" prints exactly one Package stanza
+# for it. A package that exists in Debian and in Kali at different versions prints two
+# stanzas, whatever its pin priority, so live-build chose a name that does not exist
+# in trixie and the build failed ("Unable to locate package libfuse3-3"). The installer
+# payload must come from Debian only anyway.
+#
+# Scope. The installer stage works in a fresh chroot made from the bootstrap cache and
+# puts the live chroot back afterwards (installer_chroot / installer), so the live
+# root file system, its final apt sources and pins (written at the end of the chroot
+# stage) and its retained apt indices are not affected. The files are moved back
+# before the binary stage, also when the installer stage fails.
 set -eu
 
-lb build noauto "${@}"
+foreign_names="zzz_cham3_kali.list zzz_cham3_librewolf.list cham3_kali.pref cham3_librewolf.pref"
+stash_dir=.cham3_installer_stash
+
+restore_foreign() {
+    if [ -d "${stash_dir}" ]; then
+        for name in ${foreign_names}; do
+            if [ -e "${stash_dir}/${name}" ]; then
+                mv "${stash_dir}/${name}" "config/archives/${name}"
+            fi
+        done
+        rmdir "${stash_dir}"
+    fi
+}
+
+lb bootstrap "${@}"
+lb chroot "${@}"
+
+[ ! -e "${stash_dir}" ] || { echo "auto/build: ${stash_dir} already exists" >&2; exit 1; }
+mkdir "${stash_dir}"
+trap restore_foreign EXIT
+trap 'restore_foreign; exit 1' INT TERM
+for name in ${foreign_names}; do
+    [ -e "config/archives/${name}" ] || { echo "auto/build: config/archives/${name} is missing" >&2; exit 1; }
+    mv "config/archives/${name}" "${stash_dir}/${name}"
+done
+echo "auto/build: installer stage without the pinned foreign sources (Debian only)"
+lb installer "${@}"
+restore_foreign
+trap - EXIT INT TERM
+for name in ${foreign_names}; do
+    [ -e "config/archives/${name}" ] || { echo "auto/build: config/archives/${name} was not restored" >&2; exit 1; }
+done
+
+lb binary "${@}"
+lb source "${@}"

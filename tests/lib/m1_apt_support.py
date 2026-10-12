@@ -501,4 +501,3 @@ def apt_key_invocation_problems(texts):
         if AptKeyInvocation.search(text):
             problems.append("apt-key is invoked in %s" % path)
     return problems
-
