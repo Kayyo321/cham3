@@ -1,0 +1,146 @@
+{
+  "build_finished_utc": "2026-10-12T05:42:18Z",
+  "build_host": {
+    "dpkg_architecture": "amd64",
+    "in_container": true,
+    "kernel_release": "6.17.0-1022-azure",
+    "machine": "x86_64",
+    "os_id": "debian",
+    "os_version_codename": "trixie",
+    "os_version_id": "13",
+    "unverified_host_override": false
+  },
+  "build_started_utc": "2026-10-12T05:27:41Z",
+  "inputs": {
+    "apt_release_files": [
+      {
+        "date": "Mon, 12 Oct 2026 05:41:37 +0000",
+        "file": "_packages_._Release",
+        "sha256": "3207978012ea7f576bfe6fe5b2030b6723a7c85947cd27d94f7f110a2431dc39"
+      },
+      {
+        "date": "Mon, 12 Oct 2026 02:15:03 UTC",
+        "file": "deb.debian.org_debian_dists_trixie-updates_InRelease",
+        "sha256": "1590ff21f2a04eb02df490dc26d0c0167dbbe0df34775f9d7cae2c23d9f5fdf7"
+      },
+      {
+        "date": "Sat, 12 Sep 2026 07:55:41 UTC",
+        "file": "deb.debian.org_debian_dists_trixie_InRelease",
+        "sha256": "0584fba32e13e0ab8285fb16c27adea1ec03a73669c18702821094fd6ca86675"
+      },
+      {
+        "date": "Mon, 12 Oct 2026 00:22:28 UTC",
+        "file": "http.kali.org_kali_dists_kali-rolling_InRelease",
+        "sha256": "c2d61f14a2d66a58d36ae7f50eba151605c5e35926a372632b92502fc4cf1c6b"
+      },
+      {
+        "date": "Thu, 08 Oct 2026 03:30:38 +0000",
+        "file": "repo.librewolf.net_dists_librewolf_InRelease",
+        "sha256": "4ba01e8e032d3babb22cb09e655d22fb1c2990d5bb4717d016793f384db52a20"
+      },
+      {
+        "date": "Sun, 11 Oct 2026 12:12:11 UTC",
+        "file": "security.debian.org_debian-security_dists_trixie-security_InRelease",
+        "sha256": "3aa9ba8fc86be9eb335aaa82d06b91f8d1ba8c2a9319b5ef9793b565a3a1c28f"
+      },
+      {
+        "date": "Sun, 11 Oct 2026 12:12:11 UTC",
+        "file": "security.debian.org_dists_trixie-security_InRelease",
+        "sha256": "3aa9ba8fc86be9eb335aaa82d06b91f8d1ba8c2a9319b5ef9793b565a3a1c28f"
+      }
+    ],
+    "apt_release_files_unavailable_reason": null,
+    "architecture": "amd64",
+    "archive_areas": "main non-free non-free-firmware",
+    "distribution": "trixie",
+    "lb_config_command": "lb config noauto --mode debian --distribution trixie --architecture amd64 --archive-areas \"main non-free non-free-firmware\" --debian-installer live --binary-image iso-hybrid --bootloaders syslinux,grub-efi --debootstrap-options \"--include=ca-certificates\" --firmware-chroot false --firmware-binary true --security true --updates true --apt-secure true --apt-indices true --apt-recommends false --cache false --mirror-bootstrap http://deb.debian.org/debian/ --mirror-chroot http://deb.debian.org/debian/ --mirror-chroot-security http://security.debian.org/ --mirror-binary http://deb.debian.org/debian/ --mirror-binary-security http://security.debian.org/ --bootappend-live \"boot=live components console=tty0 console=ttyS0,115200n8\" --image-name cham3-m1-desktop --iso-application \"cham3 M1 desktop image\" --iso-publisher \"cham3 project; M1 development build, not a release\" --iso-preparer \"cham3 M1 build via live-build\" --iso-volume \"CHAM3_M1_DESKTOP\"",
+    "live_config_file_sha256": {
+      "build/live-desktop/auto/build": "3d3543747a7255e267ecd8f46d0c346cba498ce838afa95418c61d065e8245fb",
+      "build/live-desktop/auto/build_archive_keyring": "1203569a9a631375dee91e9b77c8d3af5fe325f765b90cbcbeb8ddfd89f78ee2",
+      "build/live-desktop/auto/clean": "470955edaac33ea4684962ea853e31fcd178e111152938799c6654bca2978ad2",
+      "build/live-desktop/auto/config": "1b80337b6dc44ba6ccbf380e14915ff2a85ed06eafe3fad82f032bc8d4551992",
+      "build/live-desktop/cham3-local-packages": "f569ba00e4b493d76bbed3af4b2d6fd9103e467cf38415e5671609f7dc231fab",
+      "build/live-desktop/config/archives/cham3_debian_contrib.list": "30bbb27f1efd30a03e3a2dd84f9fd0a55c612754a68dd6b24bbb28d92537936b",
+      "build/live-desktop/config/archives/cham3_kali.pref": "80f88f7d8d53fcd5d295f6ce62ed0e03df84f7ed2d971a9089aeb1899e14fafb",
+      "build/live-desktop/config/archives/cham3_librewolf.pref": "374dc4f7c39cf5ba5646f9b13b2ce80ecc93ae56c399b898f45088fdacd90d4a",
+      "build/live-desktop/config/archives/zzz_cham3_kali.list": "d8c9f1e4498e75114fc7a48870a24cfc03e8960066f1bc76679ad65053dacc43",
+      "build/live-desktop/config/archives/zzz_cham3_librewolf.list": "9638f910dbf62cfa1117bd505d58e32e2a8ad7ecf15a576882dec423f6eec0ec",
+      "build/live-desktop/config/includes.chroot/usr/lib/live/config/0086-cham3-sddm-wayland": "e0f7dd13412072c6abdd75ea7029e21ab48426e188abebf795353263573e1b71",
+      "build/live-desktop/config/package-lists/cham3_desktop.list.chroot": "7e8ef5f09e7b17a6bc4656cab847fefcaa4c73061fe85cb658960867e33e4dcd",
+      "build/live-desktop/config/package-lists/cham3_firmware.list.chroot": "daf3520108e13833fbad789820e39e4ac11470ec1184990b12ed91c5025b8e07",
+      "build/live-desktop/config/package-lists/cham3_live.list.chroot_live": "55070529910a9a80c2668d5f4550f95592271dd4495353914caf8022593f22a0",
+      "build/live-desktop/config/package-lists/live.list.chroot": "fcc5639d720dce9fc17437f765e47780fe375c8dff6895c46c2d60457d6a0604",
+      "build/live-desktop/config/preseed/cham3_firmware_licenses.cfg.chroot": "7cd5f2653baed4d1a023bba8a95cc3a5a76dd00e5e362fe5459fb4d7b2121082",
+      "build/live-desktop/config/preseed/cham3_wireshark.cfg.chroot": "d3eef0439e1447ef46632960fec0ceadc1d1a4460caba25caede323f017f2589",
+      "build/live-desktop/keys/README": "cbebe8163e472b655f89acae0a54b0f880d1c9a60c673d93ce0fcc380ffe0dcc",
+      "build/live-desktop/keys/kali_archive_key.asc": "bbaef4b375fdae6d361d648355c9a003b081d421a40f39440f296cbd458071b1",
+      "build/live-desktop/keys/librewolf_key.asc": "cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad"
+    },
+    "mirrors": {
+      "binary": "http://deb.debian.org/debian/",
+      "binary_security": "http://security.debian.org/",
+      "bootstrap": "http://deb.debian.org/debian/",
+      "chroot": "http://deb.debian.org/debian/",
+      "chroot_security": "http://security.debian.org/"
+    },
+    "package_versions_note": "installed package versions of the image are listed in the .packages manifest",
+    "security_updates_enabled": "true",
+    "source_date_epoch": "1791782683",
+    "updates_enabled": "true"
+  },
+  "local_packages": [
+    {
+      "file": "cham3-base_0.0.0~m0_all.deb",
+      "package": "cham3-base",
+      "sha256": "19b33e909c7f6f3d7f8e8955a9cbff6fdeb1c716508702059ea7dc7db3fa5fbc",
+      "version": "0.0.0~m0"
+    },
+    {
+      "file": "cham3-desktop_0.0.0~m1_all.deb",
+      "package": "cham3-desktop",
+      "sha256": "0a42d66f052c9f1a15fb7ada23b2e7930dfdf6d4b29b4a892892b2b3e2802471",
+      "version": "0.0.0~m1"
+    },
+    {
+      "file": "cham3-full_0.0.0~m1_all.deb",
+      "package": "cham3-full",
+      "sha256": "9c629678713c346bcf451ee9e648b5a7ed6d7434be5801ba066b26afbce9fac7",
+      "version": "0.0.0~m1"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "cham3-m1-desktop-amd64.iso",
+      "sha256": "f25bf75eb6357f76b787cd7a0630a457f7e30519438ba139ea1fa4e7ca4afd16",
+      "size_bytes": 3607101440
+    },
+    {
+      "file": "cham3-m1-desktop-amd64.packages",
+      "sha256": "d9a6cd26242fbf8409a16caaf8eb6fe7e08b57a30c1626d305152410717f7999",
+      "size_bytes": 41732
+    },
+    {
+      "file": "build.log",
+      "sha256": "981c348935657b22aa28dfbe4ff02daad05f4b47f1d6363ff72b07178d8a3135",
+      "size_bytes": 754107
+    }
+  ],
+  "provenance_format": "cham3_m0_provenance_v1",
+  "reproducibility": "not_claimed",
+  "source": {
+    "git_commit": "01bf7a1f1066fae15ab51a56a5212c0a69780ab8",
+    "git_tree_dirty": false
+  },
+  "tools": {
+    "debhelper": "13.24.2",
+    "debian-archive-keyring": "2025.1",
+    "debootstrap": "1.0.141",
+    "dpkg-dev": "1.22.22",
+    "lintian": "2.122.0",
+    "live-build": "1:20250505+deb13u1",
+    "qemu-system-x86": "1:10.0.13+ds-0+deb13u1",
+    "squashfs-tools": "1:4.6.1-1",
+    "xorriso": "1.5.6-1.2+b1"
+  },
+  "written_utc": "2026-10-12T05:42:30Z"
+}

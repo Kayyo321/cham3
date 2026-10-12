@@ -1,0 +1,638 @@
+{
+ "checks": [
+  {
+   "detail": "",
+   "name": "installed_boot_serial_login",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_live_packages_removed",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "sources_list_deb_lines": [
+     "deb http://deb.debian.org/debian trixie main non-free non-free-firmware",
+     "deb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware",
+     "deb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware"
+    ]
+   },
+   "name": "installed_debian_main_sources",
+   "result": "PASS"
+  },
+  {
+   "detail": [],
+   "name": "installed_suite_installed",
+   "result": "PASS"
+  },
+  {
+   "detail": [],
+   "name": "installed_no_b43_installer",
+   "result": "PASS"
+  },
+  {
+   "detail": "43 installed firmware packages",
+   "name": "installed_firmware_set_installed",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_no_trusted_yes",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_keys_only_signed_by",
+   "result": "PASS"
+  },
+  {
+   "detail": {},
+   "name": "installed_unlisted_kali_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "amass": [
+     "http.kali.org"
+    ],
+    "exploitdb": [
+     "http.kali.org"
+    ],
+    "ghidra": [
+     "http.kali.org"
+    ],
+    "librewolf": [
+     "repo.librewolf.net"
+    ],
+    "radare2": [
+     "http.kali.org"
+    ],
+    "zaproxy": [
+     "http.kali.org"
+    ]
+   },
+   "name": "installed_foreign_roles_have_candidates",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "deb.debian.org"
+   ],
+   "name": "installed_debian_base_from_debian",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_dumpcap_no_setuid",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_dumpcap_group_restricted",
+   "result": "PASS"
+  },
+  {
+   "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+   "name": "installed_dumpcap_capabilities",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "override=root root 750 /usr/bin/dumpcap"
+   ],
+   "name": "installed_dumpcap_override",
+   "result": "PASS"
+  },
+  {
+   "detail": "Capturing on 'Loopback: lo' File: /tmp/cham3-capture-cLkSrV/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+   "name": "installed_capture_harness_output_path_ok",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-cLkSrV/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+   "name": "installed_member_captures",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+   "name": "installed_nonmember_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": "e lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 51%Reading package lists... 51%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 61%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... Done\n",
+   "name": "installed_apt_update_authenticated",
+   "result": "PASS"
+  },
+  {
+   "detail": {},
+   "name": "installed_after_update_unlisted_kali_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "amass": [
+     "http.kali.org"
+    ],
+    "exploitdb": [
+     "http.kali.org"
+    ],
+    "ghidra": [
+     "http.kali.org"
+    ],
+    "librewolf": [
+     "repo.librewolf.net"
+    ],
+    "radare2": [
+     "http.kali.org"
+    ],
+    "zaproxy": [
+     "http.kali.org"
+    ]
+   },
+   "name": "installed_after_update_foreign_roles_have_candidates",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "deb.debian.org"
+   ],
+   "name": "installed_after_update_debian_base_from_debian",
+   "result": "PASS"
+  },
+  {
+   "detail": [],
+   "name": "installed_upgrade_origin_by_host",
+   "result": "PASS"
+  },
+  {
+   "detail": "0%Building dependency tree... 50%Building dependency tree... Done\nReading state information... 0% Reading state information... 0%Reading state information... Done\nPackage ghidra-data is not available, but is referred to by another package.\nThis may mean that the package is missing, has been obsoleted, or\nis only available from another source\n\nE: Package 'ghidra-data' has no installation candidate\n",
+   "name": "installed_unlisted_kali_not_installable",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_lifecycle_reconfigure_upstream_ran",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_reconfigure_upstream_dumpcap_no_setuid",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_reconfigure_upstream_dumpcap_group_restricted",
+   "result": "PASS"
+  },
+  {
+   "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+   "name": "installed_reconfigure_upstream_dumpcap_capabilities",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "override=root root 750 /usr/bin/dumpcap"
+   ],
+   "name": "installed_reconfigure_upstream_dumpcap_override",
+   "result": "PASS"
+  },
+  {
+   "detail": "dpkg unpacked wireshark-common: True",
+   "name": "installed_lifecycle_setcap_missing_ran",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_setcap_missing_dumpcap_no_setuid",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_setcap_missing_dumpcap_group_restricted",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "override=root root 750 /usr/bin/dumpcap"
+   ],
+   "name": "installed_setcap_missing_dumpcap_override",
+   "result": "PASS"
+  },
+  {
+   "detail": "capabilities removed: True",
+   "name": "installed_setcap_missing_fails_closed",
+   "result": "PASS"
+  },
+  {
+   "detail": "Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied.",
+   "name": "installed_setcap_missing_capture_harness_output_path_ok",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=1 bytes=0 log=Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied.",
+   "name": "installed_setcap_missing_member_cannot_capture_fail_closed",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+   "name": "installed_setcap_missing_nonmember_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_lifecycle_recovery_ran",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_recovered_dumpcap_no_setuid",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "installed_recovered_dumpcap_group_restricted",
+   "result": "PASS"
+  },
+  {
+   "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+   "name": "installed_recovered_dumpcap_capabilities",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "override=root root 750 /usr/bin/dumpcap"
+   ],
+   "name": "installed_recovered_dumpcap_override",
+   "result": "PASS"
+  },
+  {
+   "detail": "Capturing on 'Loopback: lo' File: /tmp/cham3-capture-dwlIPp/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+   "name": "installed_recovered_capture_harness_output_path_ok",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-dwlIPp/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+   "name": "installed_recovered_member_captures",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+   "name": "installed_recovered_nonmember_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "graphical": [
+     {
+      "Active": "yes",
+      "Class": "user",
+      "Desktop": "KDE",
+      "Name": "cham3test",
+      "Type": "wayland"
+     }
+    ],
+    "plasmashell": true,
+    "sessions": [
+     {
+      "Active": "yes",
+      "Class": "user",
+      "Desktop": "",
+      "Name": "cham3test",
+      "Type": "tty"
+     },
+     {
+      "Active": "yes",
+      "Class": "user",
+      "Desktop": "KDE",
+      "Name": "cham3test",
+      "Type": "wayland"
+     }
+    ]
+   },
+   "name": "installed_plasma_session_running",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "wayland"
+   ],
+   "name": "installed_session_is_wayland",
+   "result": "PASS"
+  },
+  {
+   "detail": "1284 /usr/bin/kwin_wayland_wrapper --xwayland\n1290 /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-0 --xwayland-fd 8 --xwayland-fd 9 --xwayland-display :1 --xwayland-xauthority /run/user/1000/xauth_aGPJrn --xwayland\n1344 /usr/bin/Xwayland :1 -auth /run/user/1000/xauth_aGPJrn -listenfd 8 -listenfd 9 -displayfd 66 -wm 68 -rootless\n1412 /usr/bin/plasmashell --no-respawn\nWAYLAND_DISPLAY=wayland-0\nXDG_SESSION_TYPE=wayland\n",
+   "name": "installed_kwin_wayland_compositor",
+   "result": "PASS"
+  },
+  {
+   "detail": "ColorScheme=Cham3Dark\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze\n",
+   "name": "installed_cham3_look_and_feel",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_panel_state_read",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "right"
+   ],
+   "name": "installed_panel_on_right_edge",
+   "result": "PASS"
+  },
+  {
+   "detail": "vertical",
+   "name": "installed_panel_vertical",
+   "result": "PASS"
+  },
+  {
+   "detail": 60,
+   "name": "installed_panel_thickness",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "org.cham3.user_launcher",
+    "org.cham3.alias_wheel",
+    "org.cham3.tag_pager",
+    "org.cham3.contract_dock",
+    "org.cham3.netproto_launcher",
+    "org.cham3.killswitch",
+    "org.cham3.settings_launcher",
+    "org.cham3.task_manager",
+    "org.kde.plasma.systemtray",
+    "org.kde.plasma.digitalclock"
+   ],
+   "name": "installed_panel_component_order",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "file:///usr/share/wallpapers/Cham3"
+   ],
+   "name": "installed_cham3_wallpaper",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "All Applications",
+    "Development",
+    "Graphics",
+    "Internet",
+    "Office",
+    "System",
+    "Utilities"
+   ],
+   "name": "installed_launcher_categories_rendered",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_launcher_key_id_unavailable",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "installed_launcher_search_result",
+   "result": "PASS"
+  },
+  {
+   "detail": "wireshark process started from the launcher search",
+   "name": "installed_launcher_real_launch",
+   "result": "PASS"
+  },
+  {
+   "detail": "4 state captions read in the panel strip",
+   "name": "installed_panel_captions_unavailable",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "installed_inert_alias_wheel",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "installed_inert_tag_pager",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "installed_inert_contract_dock",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "installed_inert_netproto_launcher",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "installed_inert_killswitch",
+   "result": "PASS"
+  }
+ ],
+ "facts": {
+  "accel": "kvm",
+  "installed_after_update_apt_policy": {
+   "command": "apt-cache policy zaproxy exploitdb ghidra amass radare2 librewolf ghidra-data kali-defaults burpsuite metasploit-framework libc6",
+   "output": "zaproxy:\n  Installed: 2.17.0-0kali1\n  Candidate: 2.17.0-0kali1\n  Version table:\n *** 2.17.0-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nexploitdb:\n  Installed: 20260904-0kali1\n  Candidate: 20260904-0kali1\n  Version table:\n *** 20260904-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nghidra:\n  Installed: 12.1.4+ds-0kali1\n  Candidate: 12.1.4+ds-0kali1\n  Version table:\n *** 12.1.4+ds-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\namass:\n  Installed: 5.1.1-0kali3\n  Candidate: 5.1.1-0kali3\n  Version table:\n *** 5.1.1-0kali3 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nradare2:\n  Installed: 6.0.4+dfsg-1\n  Candidate: 6.0.4+dfsg-1\n  Version table:\n *** 6.0.4+dfsg-1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nlibrewolf:\n  Installed: 157.0.1-1\n  Candidate: 157.0.1-1\n  Version table:\n *** 157.0.1-1 500\n         -1 https://repo.librewolf.net librewolf/main amd64 Packages\n        100 /var/lib/dpkg/status\n     157.0-1 500\n         -1 https://repo.librewolf.net librewolf/main amd64 Packages\nghidra-data:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     10.5-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nkali-defaults:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     2026.3.2 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nburpsuite:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     2026.8-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nmetasploit-framework:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     6.5.3-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nlibc6:\n  Installed: 2.41-12+deb13u4\n  Candidate: 2.41-12+deb13u4\n  Version table:\n     2.43-6 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n *** 2.41-12+deb13u4 500\n        500 http://deb.debian.org/debian trixie/main amd64 Packages\n        100 /var/lib/dpkg/status\n",
+   "status": 0
+  },
+  "installed_apt_policy": {
+   "command": "apt-cache policy zaproxy exploitdb ghidra amass radare2 librewolf ghidra-data kali-defaults burpsuite metasploit-framework libc6",
+   "output": "zaproxy:\n  Installed: 2.17.0-0kali1\n  Candidate: 2.17.0-0kali1\n  Version table:\n *** 2.17.0-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nexploitdb:\n  Installed: 20260904-0kali1\n  Candidate: 20260904-0kali1\n  Version table:\n *** 20260904-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nghidra:\n  Installed: 12.1.4+ds-0kali1\n  Candidate: 12.1.4+ds-0kali1\n  Version table:\n *** 12.1.4+ds-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\namass:\n  Installed: 5.1.1-0kali3\n  Candidate: 5.1.1-0kali3\n  Version table:\n *** 5.1.1-0kali3 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nradare2:\n  Installed: 6.0.4+dfsg-1\n  Candidate: 6.0.4+dfsg-1\n  Version table:\n *** 6.0.4+dfsg-1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nlibrewolf:\n  Installed: 157.0.1-1\n  Candidate: 157.0.1-1\n  Version table:\n *** 157.0.1-1 500\n         -1 https://repo.librewolf.net librewolf/main amd64 Packages\n        100 /var/lib/dpkg/status\n     157.0-1 500\n         -1 https://repo.librewolf.net librewolf/main amd64 Packages\nghidra-data:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     10.5-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nkali-defaults:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     2026.3.2 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nburpsuite:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     2026.8-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nmetasploit-framework:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     6.5.3-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nlibc6:\n  Installed: 2.41-12+deb13u4\n  Candidate: 2.41-12+deb13u4\n  Version table:\n     2.43-6 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n *** 2.41-12+deb13u4 500\n        500 http://deb.debian.org/debian trixie/main amd64 Packages\n        100 /var/lib/dpkg/status\n",
+   "status": 0
+  },
+  "installed_apt_trust": {
+   "command": "ls -1 /etc/apt/trusted.gpg.d/ 2>/dev/null; ls -1 /usr/share/keyrings/ | grep cham3; grep -rh '^deb' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null",
+   "output": "debian-archive-bookworm-automatic.asc\ndebian-archive-bookworm-security-automatic.asc\ndebian-archive-bookworm-stable.asc\ndebian-archive-bullseye-automatic.asc\ndebian-archive-bullseye-security-automatic.asc\ndebian-archive-bullseye-stable.asc\ndebian-archive-trixie-automatic.asc\ndebian-archive-trixie-security-automatic.asc\ndebian-archive-trixie-stable.asc\ncham3_kali_archive.gpg\ncham3_librewolf.gpg\ndeb http://deb.debian.org/debian trixie main non-free non-free-firmware\ndeb-src http://deb.debian.org/debian trixie main non-free non-free-firmware\ndeb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware\ndeb-src http://security.debian.org/debian-security trixie-security main non-free non-free-firmware\ndeb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware\ndeb-src http://deb.debian.org/debian trixie-updates main non-free non-free-firmware\ndeb [arch=amd64 signed-by=/usr/share/keyrings/cham3_librewolf.gpg] https://repo.librewolf.net librewolf main\ndeb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie contrib\ndeb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie-updates contrib\ndeb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://security.debian.org/debian-security trixie-security contrib\ndeb [arch=amd64 signed-by=/usr/share/keyrings/cham3_kali_archive.gpg] http://http.kali.org/kali/ kali-rolling main\n",
+   "status": 0
+  },
+  "installed_apt_update": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'apt-get -o APT::Update::Error-Mode=any update'",
+   "output": "0% [Working]            Hit:1 http://deb.debian.org/debian trixie InRelease\n0% [Waiting for headers] [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]                                                                                                         Hit:2 http://deb.debian.org/debian trixie-updates InRelease\n                                                                                                         Hit:3 http://security.debian.org/debian-security trixie-security InRelease\n                                                                                                         0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]0% [Connecting to http.kali.org (54.39.128.230)] [Connecting to repo.librewolf.net]                                                                                   Hit:4 http://http.kali.org/kali kali-rolling InRelease\n                                                                                   0% [Connecting to repo.librewolf.net]0% [Connecting to repo.librewolf.net (15.204.58.112)]                                                     Get:5 https://repo.librewolf.net librewolf InRelease [5649 B]\n                                                     0% [5 InRelease 5649 B/5649 B 100%]                                   0% [Working]100% [Working]              Fetched 5649 B in 0s (17.4 kB/s)\nReading package lists... 0%Reading package lists... 0%Reading package lists... 0%Reading package lists... 31%Reading package lists... 31%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 50%Reading package lists... 51%Reading package lists... 51%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 52%Reading package lists... 61%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... 99%Reading package lists... Done\n",
+   "status": 0
+  },
+  "installed_branding_config": {
+   "command": "grep -hE '^(LookAndFeelPackage|ColorScheme|widgetStyle)=' /etc/xdg/kdeglobals ~/.config/kdeglobals 2>/dev/null",
+   "output": "ColorScheme=Cham3Dark\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze\n",
+   "status": 0
+  },
+  "installed_capture": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'bash /tmp/cham3_capture_probe.sh'",
+   "output": "member_rc=0\nmember_bytes=436\nnonmember_rc=126\nmember_log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-cLkSrV/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%) \nnonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied \n",
+   "status": 0
+  },
+  "installed_dumpcap": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'stat -c '\"'\"'%a %U %G'\"'\"' /usr/bin/dumpcap; getcap /usr/bin/dumpcap; echo override=$(dpkg-statoverride --list /usr/bin/dumpcap); debconf-show wireshark-common | grep install-setuid'",
+   "output": "750 root wireshark\n/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip\noverride=root root 750 /usr/bin/dumpcap\n* wireshark-common/install-setuid: false\n",
+   "status": 0
+  },
+  "installed_firmware": {
+   "command": "dpkg-query -W -f='${Package} ${Status}\\n' 'firmware-*' amd64-microcode intel-microcode alsa-topology-conf wireless-regdb indi-dsi libsbig4t64 libfishcamp1t64 atmel-firmware bluez-firmware dahdi-firmware-nonfree 2>/dev/null | grep 'install ok installed'",
+   "output": "alsa-topology-conf install ok installed\namd64-microcode install ok installed\natmel-firmware install ok installed\nbluez-firmware install ok installed\ndahdi-firmware-nonfree install ok installed\nfirmware-amd-graphics install ok installed\nfirmware-ast install ok installed\nfirmware-ath9k-htc install ok installed\nfirmware-atheros install ok installed\nfirmware-bnx2 install ok installed\nfirmware-bnx2x install ok installed\nfirmware-brcm80211 install ok installed\nfirmware-carl9170 install ok installed\nfirmware-cavium install ok installed\nfirmware-cirrus install ok installed\nfirmware-intel-graphics install ok installed\nfirmware-intel-misc install ok installed\nfirmware-intel-sound install ok installed\nfirmware-ipw2x00 install ok installed\nfirmware-ivtv install ok installed\nfirmware-iwlwifi install ok installed\nfirmware-libertas install ok installed\nfirmware-linux install ok installed\nfirmware-linux-free install ok installed\nfirmware-linux-nonfree install ok installed\nfirmware-marvell-prestera install ok installed\nfirmware-mediatek install ok installed\nfirmware-misc-nonfree install ok installed\nfirmware-myricom install ok installed\nfirmware-netronome install ok installed\nfirmware-netxen install ok installed\nfirmware-nvidia-graphics install ok installed\nfirmware-nvidia-tesla-535-gsp install ok installed\nfirmware-qlogic install ok installed\nfirmware-realtek install ok installed\nfirmware-siano install ok installed\nfirmware-sof-signed install ok installed\nfirmware-zd1211 install ok installed\nindi-dsi install ok installed\nintel-microcode install ok installed\nlibfishcamp1t64 install ok installed\nlibsbig4t64 install ok installed\nwireless-regdb install ok installed\n",
+   "status": 0
+  },
+  "installed_identity": {
+   "command": "uname -a; cat /proc/cmdline; grep -E '^(PRETTY_NAME|VERSION_CODENAME)=' /etc/os-release",
+   "output": "Linux cham3-vm-test 6.12.111+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.111-1 (2026-09-28) x86_64 GNU/Linux\nBOOT_IMAGE=/boot/vmlinuz-6.12.111+deb13-amd64 root=UUID=14e16d3a-ffb4-4d61-99a5-10e35520233f ro console=ttyS0,115200n8 console=tty0 console=ttyS0,115200n8 quiet\nPRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nVERSION_CODENAME=trixie\n",
+   "status": 0
+  },
+  "installed_inert_settings_launcher": {
+   "baseline_clean": true,
+   "state_word_after_click": false
+  },
+  "installed_inert_task_manager": {
+   "baseline_clean": true,
+   "state_word_after_click": false
+  },
+  "installed_installer_syslog": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'ls -la /var/log/installer/; grep -E '\"'\"'apt-setup|live-installer|choose-mirror|apt-mirror-setup|packages-remove|mirror/'\"'\"' /var/log/installer/syslog | tail -n 200'",
+   "output": "total 360\ndrwxr-xr-x 3 root root   4096 Oct 12 05:57 .\ndrwxr-xr-x 6 root root   4096 Oct 12 05:57 ..\ndrwxr-xr-x 2 root root   4096 Oct 12 05:57 cdebconf\n-rw-r--r-- 1 root root     62 Oct 12 05:57 firmware-summary\n-rw-r--r-- 1 root root  28450 Oct 12 05:57 hardware-summary\n-rw-r--r-- 1 root root    160 Oct 12 05:57 lsb-release\n-rw------- 1 root root  83861 Oct 12 05:57 partman\n-rw-r--r-- 1 root root  62584 Oct 12 05:57 status\n-rw------- 1 root root 164414 Oct 12 05:57 syslog\nOct 12 05:52:12 anna-install: Queueing udeb apt-mirror-setup for later installation\nOct 12 05:52:12 anna[3028]: DEBUG: retrieving apt-mirror-setup 1:0.198\nOct 12 05:52:12 anna[3028]: DEBUG: retrieving apt-setup-udeb 1:0.198\nOct 12 05:52:13 anna[3028]: DEBUG: retrieving choose-mirror-bin 2.133\nOct 12 05:52:15 anna[3028]: DEBUG: retrieving live-installer 58\nOct 12 05:52:54 main-menu[2177]: INFO: Menu item 'live-installer' selected\nOct 12 05:56:10 /usr/lib/live-installer.d/openssh-server: warning: /target/etc/mtab won't be updated since it is a symlink.\nOct 12 05:56:13 /usr/lib/post-base-installer.d/25live-installer-console-setup: warning: /target/etc/mtab won't be updated since it is a symlink.\nOct 12 05:56:13 live-installer: locale: Cannot set LC_CTYPE to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_MESSAGES to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_ALL to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_CTYPE to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_MESSAGES to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_ALL to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_CTYPE to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_MESSAGES to default locale: No such file or directory\nOct 12 05:56:13 live-installer: locale: Cannot set LC_ALL to default locale: No such file or directory\nOct 12 05:56:21 main-menu[2177]: INFO: Menu item 'apt-setup-udeb' selected\nOct 12 05:56:21 apt-setup: umount: can't unmount /target/media/cdrom0: Invalid argument\nOct 12 05:56:21 apt-setup: umount: can't unmount /target/media/cdrom1: Invalid argument\nOct 12 05:56:21 /usr/lib/apt-setup/generators/40cdrom: warning: /target/etc/mtab won't be updated since it is a symlink.\nOct 12 05:56:22 apt-setup: Using CD-ROM mount point /media/cdrom/\nOct 12 05:56:22 apt-setup: Identifying... \nOct 12 05:56:22 apt-setup: [8d68a99992ba5abf7d433f0ede7037b2-2]\nOct 12 05:56:22 apt-setup: Scanning disc for index files...\nOct 12 05:56:22 apt-setup: Found 3 package indexes, 0 source indexes, 0 translation indexes and 0 signatures\nOct 12 05:56:22 apt-setup: This disc is called: \nOct 12 05:56:22 apt-setup: 'Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24'\nOct 12 05:56:22 apt-setup: Copying package lists...\nOct 12 05:56:22 apt-setup: ^MReading Package Indexes... 0%^M^MReading Package Indexes... 0%^M\nOct 12 05:56:22 apt-setup: ^MReading Package Indexes... Done^M\nOct 12 05:56:22 apt-setup: Writing new source list\nOct 12 05:56:22 apt-setup: Source list entries for this disc are:\nOct 12 05:56:22 apt-setup: deb cdrom:[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24]/ trixie main non-free non-free-firmware\nOct 12 05:56:22 apt-setup: Repeat this process for the rest of the CDs in your set.\nOct 12 05:56:22 apt-setup: W: Failed to mount '/dev/sr1' to '/media/cdrom/'\nOct 12 05:56:22 apt-setup: W: Failed to mount '/dev/sr1' to '/media/cdrom/'\nOct 12 05:56:23 choose-mirror[9634]: DEBUG: command: wget --no-verbose http://deb.debian.org/debian/dists/trixie/Release -O - | grep -E '^(Suite|Codename|Architectures):'\nOct 12 05:56:23 choose-mirror[9634]: DEBUG: command: wget --no-verbose http://deb.debian.org/debian/dists/stable/Release -O - | grep -E '^(Suite|Codename|Architectures):'\nOct 12 05:56:23 choose-mirror[9634]: INFO: suite/codename set to: stable/trixie\nOct 12 05:56:23 choose-mirror[9634]: DEBUG: command: wget --no-verbose http://deb.debian.org/debian/dists/trixie/main/binary-amd64/Release -O - | grep ^Architecture:\n",
+   "status": 0
+  },
+  "installed_lifecycle_reconfigure_upstream": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'dpkg-reconfigure -f noninteractive wireshark-common'",
+   "output": "root root 750 /usr/bin/dumpcap\n",
+   "status": 0
+  },
+  "installed_lifecycle_recovery": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'dpkg-reconfigure -f noninteractive cham3-desktop'",
+   "output": "",
+   "status": 0
+  },
+  "installed_lifecycle_setcap_missing": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'mv /usr/sbin/setcap /usr/sbin/setcap.cham3-hidden && apt-get install -y --reinstall wireshark-common; rc=$?; mv /usr/sbin/setcap.cham3-hidden /usr/sbin/setcap; exit $rc'",
+   "output": "Reading package lists... 0%Reading package lists... 100%Reading package lists... Done\nBuilding dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done\nReading state information... 0% Reading state information... 0%Reading state information... Done\n0 upgraded, 0 newly installed, 1 reinstalled, 0 to remove and 0 not upgraded.\nNeed to get 608 kB of archives.\nAfter this operation, 0 B of additional disk space will be used.\n0% [Working]            Get:1 http://security.debian.org/debian-security trixie-security/main amd64 wireshark-common amd64 4.4.19-0+deb13u1 [608 kB]\n5% [1 wireshark-common 36.9 kB/608 kB 6%]                                         100% [Working]              Fetched 608 kB in 0s (2039 kB/s)\ndebconf: unable to initialize frontend: Dialog\ndebconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)\ndebconf: falling back to frontend: Readline\nPreconfiguring packages ...\n(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 179586 files and directories currently installed.)\nPreparing to unpack .../wireshark-common_4.4.19-0+deb13u1_amd64.deb ...\nUnpacking wireshark-common (4.4.19-0+deb13u1) over (4.4.19-0+deb13u1) ...\ndebconf: unable to initialize frontend: Dialog\ndebconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)\ndebconf: falling back to frontend: Readline\ndebconf: unable to initialize frontend: Readline\ndebconf: (This frontend requires a controlling tty.)\ndebconf: falling back to frontend: Teletype\ndebconf: unable to initialize frontend: Teletype\ndebconf: (This frontend requires a controlling tty.)\ndebconf: falling back to frontend: Noninteractive\nSetting up wireshark-common (4.4.19-0+deb13u1) ...\ndebconf: unable to initialize frontend: Dialog\ndebconf: (Dialog frontend will not work on a dumb terminal, an emacs shell buffer, or without a controlling terminal.)\ndebconf: falling back to frontend: Readline\ndebconf: unable to initialize frontend: Readline\ndebconf: (This frontend requires a controlling tty.)\ndebconf: falling back to frontend: Teletype\ndebconf: unable to initialize frontend: Teletype\ndebconf: (This frontend requires a controlling tty.)\ndebconf: falling back to frontend: Noninteractive\nroot root 750 /usr/bin/dumpcap\nProcessing triggers for cham3-desktop (0.0.0~m1) ...\ncham3-desktop: WARNING: file capabilities were not set on /usr/bin/dumpcap.\ncham3-desktop: Packet capture by non-root users is unavailable (fail closed); the set-user-id fallback is not used.\ncham3-desktop: Fix the cause (capability support on the file system) and run: dpkg-reconfigure cham3-desktop\nProcessing triggers for shared-mime-info (2.4-5+b2) ...\nProcessing triggers for hicolor-icon-theme (0.18-2) ...\n",
+   "status": 0
+  },
+  "installed_lifecycle_upgrade": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'apt-get install -y --only-upgrade wireshark-common'",
+   "output": "Reading package lists... 0%Reading package lists... 100%Reading package lists... Done\nBuilding dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done\nReading state information... 0% Reading state information... 0%Reading state information... Done\nwireshark-common is already the newest version (4.4.19-0+deb13u1).\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n",
+   "status": 0
+  },
+  "installed_lifecycle_upgrade_note": "no newer wireshark-common on the mirror",
+  "installed_live_packages_removed": {
+   "command": "dpkg-query -W -f='${Package} ${Status}\\n' live-boot live-config 2>&1 | grep 'install ok installed' || echo none",
+   "output": "none\n",
+   "status": 0
+  },
+  "installed_packages": {
+   "command": "dpkg-query -W -f='${Package} ${Version} ${Status}\\n' cham3-desktop cham3-full cham3-archive-keyring wireshark-common torbrowser-launcher zaproxy exploitdb ghidra amass radare2 librewolf 2>&1",
+   "output": "amass 5.1.1-0kali3 install ok installed\ncham3-archive-keyring 0.0.0~m1 install ok installed\ncham3-desktop 0.0.0~m1 install ok installed\ncham3-full 0.0.0~m1 install ok installed\nexploitdb 20260904-0kali1 install ok installed\nghidra 12.1.4+ds-0kali1 install ok installed\nlibrewolf 157.0.1-1 install ok installed\nradare2 6.0.4+dfsg-1 install ok installed\ntorbrowser-launcher 0.3.7-3 install ok installed\nwireshark-common 4.4.19-0+deb13u1 install ok installed\nzaproxy 2.17.0-0kali1 install ok installed\n",
+   "status": 0
+  },
+  "installed_panel_source": "plasmashell evaluateScript",
+  "installed_panel_state": {
+   "command": "busctl --user --json=short call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s \"$(cat /tmp/cham3_panel_state.js)\"",
+   "output": "{\"type\":\"s\",\"data\":[\"{\\\"panels\\\":[{\\\"location\\\":\\\"right\\\",\\\"form_factor\\\":\\\"vertical\\\",\\\"height\\\":60,\\\"length\\\":783,\\\"alignment\\\":\\\"left\\\",\\\"hiding\\\":\\\"none\\\",\\\"offset\\\":0,\\\"screen\\\":0,\\\"widgets\\\":[{\\\"type\\\":\\\"org.cham3.user_launcher\\\",\\\"id\\\":3,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":8,\\\"width\\\":52,\\\"height\\\":52}},{\\\"type\\\":\\\"org.cham3.alias_wheel\\\",\\\"id\\\":4,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":64,\\\"width\\\":52,\\\"height\\\":58}},{\\\"type\\\":\\\"org.cham3.tag_pager\\\",\\\"id\\\":5,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":126,\\\"width\\\":52,\\\"height\\\":128}},{\\\"type\\\":\\\"org.cham3.contract_dock\\\",\\\"id\\\":6,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":258,\\\"width\\\":52,\\\"height\\\":88}},{\\\"type\\\":\\\"org.cham3.netproto_launcher\\\",\\\"id\\\":7,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":350,\\\"width\\\":52,\\\"height\\\":40}},{\\\"type\\\":\\\"org.cham3.killswitch\\\",\\\"id\\\":8,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":394,\\\"width\\\":52,\\\"height\\\":68}},{\\\"type\\\":\\\"org.cham3.settings_launcher\\\",\\\"id\\\":9,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":466,\\\"width\\\":52,\\\"height\\\":52}},{\\\"type\\\":\\\"org.cham3.task_manager\\\",\\\"id\\\":10,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":522,\\\"width\\\":52,\\\"height\\\":52}},{\\\"type\\\":\\\"org.kde.plasma.systemtray\\\",\\\"id\\\":11,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":578,\\\"width\\\":52,\\\"height\\\":86}},{\\\"type\\\":\\\"org.kde.plasma.digitalclock\\\",\\\"id\\\":21,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":668,\\\"width\\\":52,\\\"height\\\":103}}]}],\\\"desktops\\\":[{\\\"wallpaper_plugin\\\":\\\"org.kde.image\\\",\\\"image\\\":\\\"file:///usr/share/wallpapers/Cham3\\\",\\\"screen\\\":0}],\\\"screens\\\":[{\\\"x\\\":0,\\\"y\\\":0,\\\"width\\\":1280,\\\"height\\\":800}]}\"]}\n",
+   "status": 0
+  },
+  "installed_reconfigure_upstream_dumpcap": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'stat -c '\"'\"'%a %U %G'\"'\"' /usr/bin/dumpcap; getcap /usr/bin/dumpcap; echo override=$(dpkg-statoverride --list /usr/bin/dumpcap); debconf-show wireshark-common | grep install-setuid'",
+   "output": "750 root wireshark\n/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip\noverride=root root 750 /usr/bin/dumpcap\n* wireshark-common/install-setuid: false\n",
+   "status": 0
+  },
+  "installed_recovered_capture": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'bash /tmp/cham3_capture_probe.sh'",
+   "output": "member_rc=0\nmember_bytes=436\nnonmember_rc=126\nmember_log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-dwlIPp/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%) \nnonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied \n",
+   "status": 0
+  },
+  "installed_recovered_dumpcap": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'stat -c '\"'\"'%a %U %G'\"'\"' /usr/bin/dumpcap; getcap /usr/bin/dumpcap; echo override=$(dpkg-statoverride --list /usr/bin/dumpcap); debconf-show wireshark-common | grep install-setuid'",
+   "output": "750 root wireshark\n/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip\noverride=root root 750 /usr/bin/dumpcap\n* wireshark-common/install-setuid: false\n",
+   "status": 0
+  },
+  "installed_screen_size": [
+   1280,
+   800
+  ],
+  "installed_session": {
+   "graphical": [
+    {
+     "Active": "yes",
+     "Class": "user",
+     "Desktop": "KDE",
+     "Name": "cham3test",
+     "Type": "wayland"
+    }
+   ],
+   "plasmashell": true,
+   "sessions": [
+    {
+     "Active": "yes",
+     "Class": "user",
+     "Desktop": "",
+     "Name": "cham3test",
+     "Type": "tty"
+    },
+    {
+     "Active": "yes",
+     "Class": "user",
+     "Desktop": "KDE",
+     "Name": "cham3test",
+     "Type": "wayland"
+    }
+   ]
+  },
+  "installed_session_processes": {
+   "command": "pgrep -a -u cham3test 'kwin_wayland|plasmashell|Xwayland' ; tr '\\0' '\\n' < /proc/$(pgrep -u cham3test -x plasmashell | head -1)/environ | grep -E '^(XDG_SESSION_TYPE|WAYLAND_DISPLAY|QT_QPA_PLATFORM)='",
+   "output": "1284 /usr/bin/kwin_wayland_wrapper --xwayland\n1290 /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-0 --xwayland-fd 8 --xwayland-fd 9 --xwayland-display :1 --xwayland-xauthority /run/user/1000/xauth_aGPJrn --xwayland\n1344 /usr/bin/Xwayland :1 -auth /run/user/1000/xauth_aGPJrn -listenfd 8 -listenfd 9 -displayfd 66 -wm 68 -rootless\n1412 /usr/bin/plasmashell --no-respawn\nWAYLAND_DISPLAY=wayland-0\nXDG_SESSION_TYPE=wayland\n",
+   "status": 0
+  },
+  "installed_setcap_missing_capture": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'bash /tmp/cham3_capture_probe.sh'",
+   "output": "member_rc=1\nmember_bytes=0\nnonmember_rc=126\nmember_log=Capturing on 'Loopback: lo' dumpcap: The capture session could not be initiated due to error getting information on pipe or socket: Permission denied. \nnonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied \n",
+   "status": 0
+  },
+  "installed_setcap_missing_dumpcap": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'stat -c '\"'\"'%a %U %G'\"'\"' /usr/bin/dumpcap; getcap /usr/bin/dumpcap; echo override=$(dpkg-statoverride --list /usr/bin/dumpcap); debconf-show wireshark-common | grep install-setuid'",
+   "output": "750 root wireshark\noverride=root root 750 /usr/bin/dumpcap\n* wireshark-common/install-setuid: false\n",
+   "status": 0
+  },
+  "installed_sources_list": {
+   "command": "cat /etc/apt/sources.list; echo ====; ls -1 /etc/apt/sources.list.d/",
+   "output": "#deb cdrom:[Debian GNU/Linux 13 _Trixie_ - Snapshot amd64 LIVE/INSTALL Binary 20261012-05:24]/ trixie main non-free non-free-firmware\n\ndeb http://deb.debian.org/debian trixie main non-free non-free-firmware\ndeb-src http://deb.debian.org/debian trixie main non-free non-free-firmware\n\ndeb http://security.debian.org/debian-security trixie-security main non-free non-free-firmware\ndeb-src http://security.debian.org/debian-security trixie-security main non-free non-free-firmware\n\n# trixie-updates, to get updates before a point release is made;\n# see https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_updates_and_backports\ndeb http://deb.debian.org/debian trixie-updates main non-free non-free-firmware\ndeb-src http://deb.debian.org/debian trixie-updates main non-free non-free-firmware\n\n# This system was installed using removable media.\n# The matching \"deb cdrom\" entries were disabled at the end\n# of the installation process by preseed.\n# For information about how to configure apt package sources,\n# see the sources.list(5) manual.\n====\ncham3_debian_contrib.list\nzzz_cham3_kali.list\nzzz_cham3_librewolf.list\n",
+   "status": 0
+  },
+  "installed_unlisted_install": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'apt-get -s -y install ghidra-data'",
+   "output": "Reading package lists... 0%Reading package lists... 100%Reading package lists... Done\nBuilding dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done\nReading state information... 0% Reading state information... 0%Reading state information... Done\nPackage ghidra-data is not available, but is referred to by another package.\nThis may mean that the package is missing, has been obsoleted, or\nis only available from another source\n\nE: Package 'ghidra-data' has no installation candidate\n",
+   "status": 100
+  },
+  "installed_upgrade_simulation": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'apt-get -s -y dist-upgrade'",
+   "output": "Reading package lists... 0%Reading package lists... 100%Reading package lists... Done\nBuilding dependency tree... 0%Building dependency tree... 0%Building dependency tree... 50%Building dependency tree... 50%Building dependency tree... Done\nReading state information... 0% Reading state information... 0%Reading state information... Done\nCalculating upgrade... 0%Calculating upgrade... 10%Calculating upgrade... Done\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n",
+   "status": 0
+  },
+  "installed_upgrade_uris": {
+   "command": "printf '%s\\n' cham3-vm-test-only | sudo -S -p '' -- sh -c 'apt-get --print-uris -qq -y dist-upgrade'",
+   "output": "",
+   "status": 0
+  },
+  "installed_wireshark_versions": {
+   "after": "4.4.19-0+deb13u1",
+   "before": "4.4.19-0+deb13u1"
+  },
+  "qemu_version": "QEMU emulator version 10.0.13 (Debian 1:10.0.13+ds-0+deb13u1)"
+ },
+ "phase": "installed"
+}

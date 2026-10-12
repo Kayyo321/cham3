@@ -1,0 +1,6 @@
+debootstrap 1.0.141
+live-build 1:20250505+deb13u1
+qemu-system-x86 1:10.0.13+ds-0+deb13u1
+qemu-utils 
+squashfs-tools 1:4.6.1-1
+xorriso 1.5.6-1.2+b1

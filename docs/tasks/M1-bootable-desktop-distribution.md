@@ -1,8 +1,8 @@
 # Task: M1 — Bootable desktop distribution
 
-- **State:** IN_PROGRESS (repair cycle). Independent Codex review of `b82919c` returned **CHANGES_REQUESTED** on 2026-10-11 (`docs/reviews/M1-bootable-desktop-distribution-codex.md`). Repairing findings F1–F5 and the full-suite/firmware items against the reviewed commit; a new immutable implementation target will be recorded and resubmitted to Codex. Not approved; not merged; M1 is not complete.
-- **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER; `m1_worker` (Sonnet 5.5) IMPLEMENTER; `m1_test_reviewer` (Haiku 5.5) TEST_ENGINEER/internal REVIEWER; `m1_docs_research` (Haiku 5.5) docs/research. Independent REVIEWER/SECURITY REVIEWER: Codex (OpenAI) — completed first review of `b82919c` (CHANGES_REQUESTED); re-review pending at the new target.
-- **Created / updated:** 2026-10-11
+- **State:** IN_PROGRESS (repair cycle 2). Independent Codex re-review of `0fec3a0` returned **CHANGES_REQUESTED** on 2026-10-11 (F6, F3, F7, F8; `review/M1-codex-0fec3a0`, `docs/reviews/M1-bootable-desktop-distribution-codex-rereview.md`). Repaired at implementation target `01bf7a1f1066fae15ab51a56a5212c0a69780ab8`, with native heavy-gate evidence in `docs/evidence/M1-bootable-desktop-distribution/native_01bf7a1/`; resubmitted for independent re-review. Not approved; not merged; M1 is not complete.
+- **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER. Cycles 0–1 used the subagents `m1_worker` (Sonnet 5.5), `m1_test_reviewer` (Haiku 5.5) and `m1_docs_research` (Haiku 5.5); in repair cycle 2 the owner asked for direct implementation without them. Independent REVIEWER/SECURITY REVIEWER: Codex (OpenAI) — CHANGES_REQUESTED on `b82919c` and `0fec3a0`; re-review of `01bf7a1` pending.
+- **Created / updated:** 2026-10-11 / 2026-10-12
 - **Base commit (M1 implementation baseline):** `401c6cf9a550c81decf832cbc346f6908b9c95ef` (current `main`; includes approved ADR 0002 and current branding assets). The older historical base `3f4690d80c87f4d1a2da88a9bbc1ba7bacb1dedc` recorded at drafting is superseded as the implementation baseline and kept as context only.
 
 ## Objective
@@ -140,7 +140,7 @@ Package lists and metapackages must avoid desktop conflicts, document unavailabl
   - `test/M1` — `/Users/jessicabruce/cham3-worktrees/M1-test` (test owner; `tests/`).
   - `docs/M1-research` — `/Users/jessicabruce/cham3-worktrees/M1-docs` (package disposition matrix and readiness packet under `docs/research/`).
 - **Persistent subagent definitions:** `.claude/agents/m1_worker.md`, `.claude/agents/m1_test_reviewer.md`, `.claude/agents/m1_docs_research.md`.
-- **Target commit:** `b82919c6ddbdb1f84f8db35e3ded8559c40b242f` on `task/M1-bootable-desktop`. Handoff: `docs/handoffs/M1-bootable-desktop-distribution.md`.
+- **Target commit:** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `task/M1-bootable-desktop` (supersedes `0fec3a0` and `b82919c`). Handoff: `docs/handoffs/M1-bootable-desktop-distribution.md`. Heavy/native gates: `.github/workflows/m1_image.yml` on GitHub-hosted x86-64 runners (declared environment in `docs/evidence/M1-bootable-desktop-distribution/codex_remote_verification.md`).
 - **Historical specification record:** `task/M1-bootable-desktop-spec` at `7ccbfe7bd6fb71eb3027504e4b34afb6560434dd` (worktree removed during reconciliation).
 
 ## Decisions / blockers

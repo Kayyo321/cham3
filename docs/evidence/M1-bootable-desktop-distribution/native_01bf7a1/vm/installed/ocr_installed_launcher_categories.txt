@@ -1,0 +1,121 @@
+cham3 user launcher
+
+°
+
+key_id: unavailable
+
+No cham3 identity service is present, so no identity or key is enrolled,
+
+authenticated or validated. The avatar is a generic placeholder.
+
+¢
+
+| Q Search applications
+
+| unavailable
+
+Ark
+
+@
+
+84 All Applications
+
+Work with file archives
+
+@
+
+f Development
+
+@
+
+w= Dolphin
+
+File Manager
+
+(9)
+
+© Graphics
+
+Emoji Selector
+
+unavailable
+
+©
+
+($) Internet
+
+Copy emojis to the clipboard
+
+ane)
+
+[B)) Office
+
+Gwenview
+
+Asimple image viewer
+
+Vale -6
+
+* System
+
+Hardware Locality Istopo
+
+Show hardware topology
+
+unavailable
+
+i
+
+©) Utilities
+
+Kate
+
+KDE Advanced Text Editor
+
+—
+
+Konsole
+
+>
+
+Command line access
+
+unavailable
+
+LibreWolf
+
+Rrowcse the World Wide Weh
+
+CJ
+
+© session
+
+I
+
+Cham
+
+SB Lock
+
+< Log Out
+
+© Reboot
+
+© Power Off
+
+Applications start as from any KDE menu. No contract badges are shown (M5), so
+
+applications launched here are not contract-verified: unverified. M1 visual
+
+foundation only. This control performs no security action and reports no active
+
+security state.
+
+te
+
+05:59
+
+12
+
+Oct
+
+2026

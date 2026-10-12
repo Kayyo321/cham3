@@ -1,0 +1,238 @@
+[
+ {
+  "gate": "signatures",
+  "result": "PASS",
+  "detail": {
+   "update_rc": 0,
+   "signature_errors": [],
+   "global_trust_entries": [],
+   "keyrings": [
+    "cham3_kali_archive.gpg",
+    "cham3_librewolf.gpg"
+   ]
+  }
+ },
+ {
+  "gate": "identity",
+  "result": "PASS",
+  "detail": {
+   "http.kali.org_kali_dists_kali-rolling_InRelease": {
+    "Origin": "Kali",
+    "Label": null,
+    "Suite": "kali-rolling",
+    "Codename": "kali-rolling"
+   },
+   "repo.librewolf.net_dists_librewolf_InRelease": {
+    "Origin": "LibreWolf Software Repository",
+    "Label": "LibreWolf Software Repository",
+    "Suite": "librewolf",
+    "Codename": "librewolf"
+   }
+  }
+ },
+ {
+  "gate": "policy",
+  "result": "PASS",
+  "detail": {
+   "foreign_only_packages": 9945,
+   "denied_foreign_only_packages": 9936,
+   "escaped": [],
+   "escaped_count": 0,
+   "allowlisted": {
+    "zaproxy": {
+     "version": "2.17.0-0kali1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "exploitdb": {
+     "version": "20260904-0kali1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "ghidra": {
+     "version": "12.1.4+ds-0kali1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "amass": {
+     "version": "5.1.1-0kali3",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "libpostal-data": {
+     "version": "1.1.4-0kali1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "radare2": {
+     "version": "6.0.4+dfsg-1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "libradare2-6.0.0t64": {
+     "version": "6.0.4+dfsg-1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "libradare2-common": {
+     "version": "6.0.4+dfsg-1",
+     "sites": [
+      "http.kali.org"
+     ]
+    },
+    "librewolf": {
+     "version": "157.0.1-1",
+     "sites": [
+      "repo.librewolf.net"
+     ]
+    }
+   },
+   "missing_allowlisted": [],
+   "unlisted_probes": {
+    "ghidra-data": null,
+    "kali-defaults": null,
+    "kali-linux-core": null,
+    "burpsuite": null,
+    "metasploit-framework": null
+   }
+  }
+ },
+ {
+  "gate": "closure_uri",
+  "result": "PASS",
+  "detail": {
+   "rc": 0,
+   "downloads": 1045,
+   "hosts": {
+    "deb.debian.org": 1002,
+    "http.kali.org": 8,
+    "repo.librewolf.net": 1,
+    "security.debian.org": 34
+   },
+   "kali_packages": [
+    "amass",
+    "exploitdb",
+    "ghidra",
+    "libpostal-data",
+    "libradare2-6.0.0t64",
+    "libradare2-common",
+    "radare2",
+    "zaproxy"
+   ],
+   "librewolf_packages": [
+    "librewolf"
+   ],
+   "roles": {
+    "zaproxy": [
+     "http.kali.org"
+    ],
+    "exploitdb": [
+     "http.kali.org"
+    ],
+    "ghidra": [
+     "http.kali.org"
+    ],
+    "amass": [
+     "http.kali.org"
+    ],
+    "radare2": [
+     "http.kali.org"
+    ],
+    "librewolf": [
+     "repo.librewolf.net"
+    ]
+   },
+   "absent_roles": [],
+   "problems": []
+  }
+ },
+ {
+  "gate": "control_deny",
+  "result": "PASS",
+  "detail": {
+   "simulate_rc": {
+    "zaproxy": 100,
+    "exploitdb": 100,
+    "ghidra": 100,
+    "amass": 100,
+    "radare2": 100,
+    "librewolf": 100
+   }
+  }
+ },
+ {
+  "gate": "control_leak",
+  "result": "PASS",
+  "detail": {
+   "unallowlisted_kali_downloads_without_pins": 1155,
+   "examples": [
+    "un-allowlisted package downloaded from Kali: libc-gconv-modules-extra_2.43-6_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libc6_2.43-6_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libc-bin_2.43-6_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libc-dev-bin_2.43-6_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libc6-dev_2.43-6_amd64.deb",
+    "un-allowlisted package downloaded from Kali: gcc-16-base_16.2.0-3_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libgcc-s1_16.2.0-3_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libncursesw6_6.6+20260608-2_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libtinfo6_6.6+20260608-2_amd64.deb",
+    "un-allowlisted package downloaded from Kali: ncurses-bin_6.6+20260608-2_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libxml2-16_2.15.4+dfsg-1_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libxml-libxml-perl_2.0207+dfsg+really+2.0134-8+b1_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libunicode-utf8-perl_0.75-1+b1_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libnet-ssleay-perl_1.96-2_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libhtml-parser-perl_3.83-2+b2_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libdevel-callchecker-perl_0.009-3+b1_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libdata-messagepack-perl_1.02-3+b1_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libcpanel-json-xs-perl_4.51-1_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libclass-xsaccessor-perl_1.19-4+b7_amd64.deb",
+    "un-allowlisted package downloaded from Kali: libapt-pkg-perl_0.1.43+b1_amd64.deb"
+   ]
+  }
+ },
+ {
+  "gate": "upgrade",
+  "result": "PASS",
+  "detail": {
+   "install_rc": 0,
+   "installed": {
+    "radare2": {
+     "version": "6.0.4+dfsg-1",
+     "sites": [
+      "",
+      "http.kali.org"
+     ]
+    },
+    "libradare2-6.0.0t64": {
+     "version": "6.0.4+dfsg-1",
+     "sites": [
+      "",
+      "http.kali.org"
+     ]
+    },
+    "libradare2-common": {
+     "version": "6.0.4+dfsg-1",
+     "sites": [
+      "",
+      "http.kali.org"
+     ]
+    },
+    "librewolf": {
+     "version": "157.0.1-1",
+     "sites": [
+      "",
+      "repo.librewolf.net"
+     ]
+    }
+   },
+   "dist_upgrade_problems": [],
+   "unlisted_after_install_rc": 100
+  }
+ }
+]

@@ -1,0 +1,13 @@
+™™
+
+Full Isolation Kill
+
+Full Isolation Kill unavailable - no trusted enforcement present
+
+Requested position: none. Enforcement state: unknown (unavailable). This control does not change the firewall, network interfaces or radios and cannot start or simulate a kill. Network connectivity is
+
+not affected by this panel.
+
+M1 visual foundation only. This control performs no security action and reports no active security state.
+
+Cham:

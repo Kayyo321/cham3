@@ -1,0 +1,10 @@
+date_utc=2026-10-12T05:49:24Z
+commit=01bf7a1f1066fae15ab51a56a5212c0a69780ab8
+kernel=Linux 6.17.0-1022-azure x86_64
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+VERSION_ID="13"
+dpkg_architecture=amd64
+kvm=usable
+nproc=4
+Mem:           15989        1216        7475          47        7692       14773
+/dev/root       145G   40G  106G  28% /work

@@ -1,0 +1,376 @@
+{
+ "checks": [
+  {
+   "detail": "",
+   "name": "live_boot_menu_to_kernel",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "live_serial_login",
+   "result": "PASS"
+  },
+  {
+   "detail": [],
+   "name": "live_suite_installed",
+   "result": "PASS"
+  },
+  {
+   "detail": [],
+   "name": "live_no_b43_installer",
+   "result": "PASS"
+  },
+  {
+   "detail": "43 installed firmware packages",
+   "name": "live_firmware_set_installed",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "live_no_trusted_yes",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "live_keys_only_signed_by",
+   "result": "PASS"
+  },
+  {
+   "detail": {},
+   "name": "live_unlisted_kali_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "amass": [
+     "http.kali.org"
+    ],
+    "exploitdb": [
+     "http.kali.org"
+    ],
+    "ghidra": [
+     "http.kali.org"
+    ],
+    "librewolf": [
+     "repo.librewolf.net"
+    ],
+    "radare2": [
+     "http.kali.org"
+    ],
+    "zaproxy": [
+     "http.kali.org"
+    ]
+   },
+   "name": "live_foreign_roles_have_candidates",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "deb.debian.org"
+   ],
+   "name": "live_debian_base_from_debian",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "live_dumpcap_no_setuid",
+   "result": "PASS"
+  },
+  {
+   "detail": "stat: '750 root wireshark'",
+   "name": "live_dumpcap_group_restricted",
+   "result": "PASS"
+  },
+  {
+   "detail": "getcap: ['/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip']",
+   "name": "live_dumpcap_capabilities",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "override=root root 750 /usr/bin/dumpcap"
+   ],
+   "name": "live_dumpcap_override",
+   "result": "PASS"
+  },
+  {
+   "detail": "Capturing on 'Loopback: lo' File: /tmp/cham3-capture-hbu6Xg/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+   "name": "live_capture_harness_output_path_ok",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=0 bytes=436 log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-hbu6Xg/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%)",
+   "name": "live_member_captures",
+   "result": "PASS"
+  },
+  {
+   "detail": "rc=126 log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied",
+   "name": "live_nonmember_denied",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "graphical": [
+     {
+      "Active": "yes",
+      "Class": "user",
+      "Desktop": "KDE",
+      "Name": "user",
+      "Type": "wayland"
+     }
+    ],
+    "plasmashell": true,
+    "sessions": [
+     {
+      "Active": "yes",
+      "Class": "user",
+      "Desktop": "KDE",
+      "Name": "user",
+      "Type": "wayland"
+     },
+     {
+      "Active": "yes",
+      "Class": "user",
+      "Desktop": "",
+      "Name": "user",
+      "Type": "tty"
+     }
+    ]
+   },
+   "name": "live_plasma_session_running",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "wayland"
+   ],
+   "name": "live_session_is_wayland",
+   "result": "PASS"
+  },
+  {
+   "detail": "1109 /usr/bin/kwin_wayland_wrapper --xwayland\n1112 /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-0 --xwayland-fd 8 --xwayland-fd 9 --xwayland-display :0 --xwayland-xauthority /run/user/1000/xauth_znZEVx --xwayland\n1200 /usr/bin/Xwayland :0 -auth /run/user/1000/xauth_znZEVx -listenfd 8 -listenfd 9 -displayfd 65 -wm 68 -rootless\n1269 /usr/bin/plasmashell --no-respawn\nWAYLAND_DISPLAY=wayland-0\nXDG_SESSION_TYPE=wayland\n",
+   "name": "live_kwin_wayland_compositor",
+   "result": "PASS"
+  },
+  {
+   "detail": "ColorScheme=Cham3Dark\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze\n",
+   "name": "live_cham3_look_and_feel",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "live_panel_state_read",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "right"
+   ],
+   "name": "live_panel_on_right_edge",
+   "result": "PASS"
+  },
+  {
+   "detail": "vertical",
+   "name": "live_panel_vertical",
+   "result": "PASS"
+  },
+  {
+   "detail": 60,
+   "name": "live_panel_thickness",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "org.cham3.user_launcher",
+    "org.cham3.alias_wheel",
+    "org.cham3.tag_pager",
+    "org.cham3.contract_dock",
+    "org.cham3.netproto_launcher",
+    "org.cham3.killswitch",
+    "org.cham3.settings_launcher",
+    "org.cham3.task_manager",
+    "org.kde.plasma.systemtray",
+    "org.kde.plasma.digitalclock"
+   ],
+   "name": "live_panel_component_order",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "file:///usr/share/wallpapers/Cham3"
+   ],
+   "name": "live_cham3_wallpaper",
+   "result": "PASS"
+  },
+  {
+   "detail": [
+    "All Applications",
+    "Development",
+    "Graphics",
+    "Internet",
+    "Office",
+    "System",
+    "Utilities"
+   ],
+   "name": "live_launcher_categories_rendered",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "live_launcher_key_id_unavailable",
+   "result": "PASS"
+  },
+  {
+   "detail": "",
+   "name": "live_launcher_search_result",
+   "result": "PASS"
+  },
+  {
+   "detail": "wireshark process started from the launcher search",
+   "name": "live_launcher_real_launch",
+   "result": "PASS"
+  },
+  {
+   "detail": "4 state captions read in the panel strip",
+   "name": "live_panel_captions_unavailable",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "live_inert_alias_wheel",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "live_inert_tag_pager",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "live_inert_contract_dock",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "live_inert_netproto_launcher",
+   "result": "PASS"
+  },
+  {
+   "detail": {
+    "baseline_clean": true,
+    "state_word_after_click": true
+   },
+   "name": "live_inert_killswitch",
+   "result": "PASS"
+  }
+ ],
+ "facts": {
+  "accel": "kvm",
+  "iso_sha256": "f25bf75eb6357f76b787cd7a0630a457f7e30519438ba139ea1fa4e7ca4afd16",
+  "live_apt_policy": {
+   "command": "apt-cache policy zaproxy exploitdb ghidra amass radare2 librewolf ghidra-data kali-defaults burpsuite metasploit-framework libc6",
+   "output": "zaproxy:\n  Installed: 2.17.0-0kali1\n  Candidate: 2.17.0-0kali1\n  Version table:\n *** 2.17.0-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nexploitdb:\n  Installed: 20260904-0kali1\n  Candidate: 20260904-0kali1\n  Version table:\n *** 20260904-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nghidra:\n  Installed: 12.1.4+ds-0kali1\n  Candidate: 12.1.4+ds-0kali1\n  Version table:\n *** 12.1.4+ds-0kali1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\namass:\n  Installed: 5.1.1-0kali3\n  Candidate: 5.1.1-0kali3\n  Version table:\n *** 5.1.1-0kali3 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nradare2:\n  Installed: 6.0.4+dfsg-1\n  Candidate: 6.0.4+dfsg-1\n  Version table:\n *** 6.0.4+dfsg-1 500\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n        100 /var/lib/dpkg/status\nlibrewolf:\n  Installed: 157.0.1-1\n  Candidate: 157.0.1-1\n  Version table:\n *** 157.0.1-1 500\n         -1 https://repo.librewolf.net librewolf/main amd64 Packages\n        100 /var/lib/dpkg/status\n     157.0-1 500\n         -1 https://repo.librewolf.net librewolf/main amd64 Packages\nghidra-data:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     10.5-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nkali-defaults:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     2026.3.2 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nburpsuite:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     2026.8-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nmetasploit-framework:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n     6.5.3-0kali1 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\nlibc6:\n  Installed: 2.41-12+deb13u4\n  Candidate: 2.41-12+deb13u4\n  Version table:\n     2.43-6 -1\n         -1 http://http.kali.org/kali kali-rolling/main amd64 Packages\n *** 2.41-12+deb13u4 500\n        500 http://deb.debian.org/debian trixie/main amd64 Packages\n        100 /var/lib/dpkg/status\n",
+   "status": 0
+  },
+  "live_apt_trust": {
+   "command": "ls -1 /etc/apt/trusted.gpg.d/ 2>/dev/null; ls -1 /usr/share/keyrings/ | grep cham3; grep -rh '^deb' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null",
+   "output": "debian-archive-bookworm-automatic.asc\ndebian-archive-bookworm-security-automatic.asc\ndebian-archive-bookworm-stable.asc\ndebian-archive-bullseye-automatic.asc\ndebian-archive-bullseye-security-automatic.asc\ndebian-archive-bullseye-stable.asc\ndebian-archive-trixie-automatic.asc\ndebian-archive-trixie-security-automatic.asc\ndebian-archive-trixie-stable.asc\ncham3_kali_archive.gpg\ncham3_librewolf.gpg\ndeb http://deb.debian.org/debian/ trixie main non-free non-free-firmware\ndeb-src http://deb.debian.org/debian/ trixie main non-free non-free-firmware\ndeb http://security.debian.org/ trixie-security main non-free non-free-firmware\ndeb-src http://security.debian.org/ trixie-security main non-free non-free-firmware\ndeb http://deb.debian.org/debian/ trixie-updates main non-free non-free-firmware\ndeb-src http://deb.debian.org/debian/ trixie-updates main non-free non-free-firmware\ndeb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie contrib\ndeb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://deb.debian.org/debian/ trixie-updates contrib\ndeb [signed-by=/usr/share/keyrings/debian-archive-keyring.pgp] http://security.debian.org/debian-security trixie-security contrib\ndeb [arch=amd64 signed-by=/usr/share/keyrings/cham3_kali_archive.gpg] http://http.kali.org/kali/ kali-rolling main\ndeb [arch=amd64 signed-by=/usr/share/keyrings/cham3_librewolf.gpg] https://repo.librewolf.net librewolf main\n",
+   "status": 0
+  },
+  "live_branding_config": {
+   "command": "grep -hE '^(LookAndFeelPackage|ColorScheme|widgetStyle)=' /etc/xdg/kdeglobals ~/.config/kdeglobals 2>/dev/null",
+   "output": "ColorScheme=Cham3Dark\nLookAndFeelPackage=org.cham3.desktop\nwidgetStyle=Breeze\n",
+   "status": 0
+  },
+  "live_capture": {
+   "command": "sudo -n -- sh -c 'bash /tmp/cham3_capture_probe.sh'",
+   "output": "member_rc=0\nmember_bytes=436\nnonmember_rc=126\nmember_log=Capturing on 'Loopback: lo' File: /tmp/cham3-capture-hbu6Xg/member.pcapng Packets: 1 Packets captured: 1 Packets received/dropped on interface 'Loopback: lo': 1/0 (pcap:0/dumpcap:0/flushed:0/ps_ifdrop:0) (100.0%) \nnonmember_log=/usr/bin/dumpcap: 1: exec: /usr/bin/dumpcap: Permission denied \n",
+   "status": 0
+  },
+  "live_dumpcap": {
+   "command": "sudo -n -- sh -c 'stat -c '\"'\"'%a %U %G'\"'\"' /usr/bin/dumpcap; getcap /usr/bin/dumpcap; echo override=$(dpkg-statoverride --list /usr/bin/dumpcap); debconf-show wireshark-common | grep install-setuid'",
+   "output": "750 root wireshark\n/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip\noverride=root root 750 /usr/bin/dumpcap\n* wireshark-common/install-setuid: false\n",
+   "status": 0
+  },
+  "live_firmware": {
+   "command": "dpkg-query -W -f='${Package} ${Status}\\n' 'firmware-*' amd64-microcode intel-microcode alsa-topology-conf wireless-regdb indi-dsi libsbig4t64 libfishcamp1t64 atmel-firmware bluez-firmware dahdi-firmware-nonfree 2>/dev/null | grep 'install ok installed'",
+   "output": "alsa-topology-conf install ok installed\namd64-microcode install ok installed\natmel-firmware install ok installed\nbluez-firmware install ok installed\ndahdi-firmware-nonfree install ok installed\nfirmware-amd-graphics install ok installed\nfirmware-ast install ok installed\nfirmware-ath9k-htc install ok installed\nfirmware-atheros install ok installed\nfirmware-bnx2 install ok installed\nfirmware-bnx2x install ok installed\nfirmware-brcm80211 install ok installed\nfirmware-carl9170 install ok installed\nfirmware-cavium install ok installed\nfirmware-cirrus install ok installed\nfirmware-intel-graphics install ok installed\nfirmware-intel-misc install ok installed\nfirmware-intel-sound install ok installed\nfirmware-ipw2x00 install ok installed\nfirmware-ivtv install ok installed\nfirmware-iwlwifi install ok installed\nfirmware-libertas install ok installed\nfirmware-linux install ok installed\nfirmware-linux-free install ok installed\nfirmware-linux-nonfree install ok installed\nfirmware-marvell-prestera install ok installed\nfirmware-mediatek install ok installed\nfirmware-misc-nonfree install ok installed\nfirmware-myricom install ok installed\nfirmware-netronome install ok installed\nfirmware-netxen install ok installed\nfirmware-nvidia-graphics install ok installed\nfirmware-nvidia-tesla-535-gsp install ok installed\nfirmware-qlogic install ok installed\nfirmware-realtek install ok installed\nfirmware-siano install ok installed\nfirmware-sof-signed install ok installed\nfirmware-zd1211 install ok installed\nindi-dsi install ok installed\nintel-microcode install ok installed\nlibfishcamp1t64 install ok installed\nlibsbig4t64 install ok installed\nwireless-regdb install ok installed\n",
+   "status": 0
+  },
+  "live_identity": {
+   "command": "uname -a; cat /proc/cmdline; grep -E '^(PRETTY_NAME|VERSION_CODENAME)=' /etc/os-release",
+   "output": "Linux debian 6.12.111+deb13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.111-1 (2026-09-28) x86_64 GNU/Linux\nBOOT_IMAGE=/live/vmlinuz boot=live components console=tty0 console=ttyS0,115200n8 initrd=/live/initrd.img\nPRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"\nVERSION_CODENAME=trixie\n",
+   "status": 0
+  },
+  "live_inert_settings_launcher": {
+   "baseline_clean": true,
+   "state_word_after_click": false
+  },
+  "live_inert_task_manager": {
+   "baseline_clean": true,
+   "state_word_after_click": false
+  },
+  "live_packages": {
+   "command": "dpkg-query -W -f='${Package} ${Version} ${Status}\\n' cham3-desktop cham3-full cham3-archive-keyring wireshark-common torbrowser-launcher zaproxy exploitdb ghidra amass radare2 librewolf 2>&1",
+   "output": "amass 5.1.1-0kali3 install ok installed\ncham3-archive-keyring 0.0.0~m1 install ok installed\ncham3-desktop 0.0.0~m1 install ok installed\ncham3-full 0.0.0~m1 install ok installed\nexploitdb 20260904-0kali1 install ok installed\nghidra 12.1.4+ds-0kali1 install ok installed\nlibrewolf 157.0.1-1 install ok installed\nradare2 6.0.4+dfsg-1 install ok installed\ntorbrowser-launcher 0.3.7-3 install ok installed\nwireshark-common 4.4.19-0+deb13u1 install ok installed\nzaproxy 2.17.0-0kali1 install ok installed\n",
+   "status": 0
+  },
+  "live_panel_source": "plasmashell evaluateScript",
+  "live_panel_state": {
+   "command": "busctl --user --json=short call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s \"$(cat /tmp/cham3_panel_state.js)\"",
+   "output": "{\"type\":\"s\",\"data\":[\"{\\\"panels\\\":[{\\\"location\\\":\\\"right\\\",\\\"form_factor\\\":\\\"vertical\\\",\\\"height\\\":60,\\\"length\\\":783,\\\"alignment\\\":\\\"left\\\",\\\"hiding\\\":\\\"none\\\",\\\"offset\\\":0,\\\"screen\\\":0,\\\"widgets\\\":[{\\\"type\\\":\\\"org.cham3.user_launcher\\\",\\\"id\\\":3,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":8,\\\"width\\\":52,\\\"height\\\":52}},{\\\"type\\\":\\\"org.cham3.alias_wheel\\\",\\\"id\\\":4,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":64,\\\"width\\\":52,\\\"height\\\":58}},{\\\"type\\\":\\\"org.cham3.tag_pager\\\",\\\"id\\\":5,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":126,\\\"width\\\":52,\\\"height\\\":128}},{\\\"type\\\":\\\"org.cham3.contract_dock\\\",\\\"id\\\":6,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":258,\\\"width\\\":52,\\\"height\\\":88}},{\\\"type\\\":\\\"org.cham3.netproto_launcher\\\",\\\"id\\\":7,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":350,\\\"width\\\":52,\\\"height\\\":40}},{\\\"type\\\":\\\"org.cham3.killswitch\\\",\\\"id\\\":8,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":394,\\\"width\\\":52,\\\"height\\\":68}},{\\\"type\\\":\\\"org.cham3.settings_launcher\\\",\\\"id\\\":9,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":466,\\\"width\\\":52,\\\"height\\\":52}},{\\\"type\\\":\\\"org.cham3.task_manager\\\",\\\"id\\\":10,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":522,\\\"width\\\":52,\\\"height\\\":52}},{\\\"type\\\":\\\"org.kde.plasma.systemtray\\\",\\\"id\\\":11,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":578,\\\"width\\\":52,\\\"height\\\":86}},{\\\"type\\\":\\\"org.kde.plasma.digitalclock\\\",\\\"id\\\":21,\\\"geometry\\\":{\\\"x\\\":4,\\\"y\\\":668,\\\"width\\\":52,\\\"height\\\":103}}]}],\\\"desktops\\\":[{\\\"wallpaper_plugin\\\":\\\"org.kde.image\\\",\\\"image\\\":\\\"file:///usr/share/wallpapers/Cham3\\\",\\\"screen\\\":0}],\\\"screens\\\":[{\\\"x\\\":0,\\\"y\\\":0,\\\"width\\\":1280,\\\"height\\\":800}]}\"]}\n",
+   "status": 0
+  },
+  "live_screen_size": [
+   1280,
+   800
+  ],
+  "live_session": {
+   "graphical": [
+    {
+     "Active": "yes",
+     "Class": "user",
+     "Desktop": "KDE",
+     "Name": "user",
+     "Type": "wayland"
+    }
+   ],
+   "plasmashell": true,
+   "sessions": [
+    {
+     "Active": "yes",
+     "Class": "user",
+     "Desktop": "KDE",
+     "Name": "user",
+     "Type": "wayland"
+    },
+    {
+     "Active": "yes",
+     "Class": "user",
+     "Desktop": "",
+     "Name": "user",
+     "Type": "tty"
+    }
+   ]
+  },
+  "live_session_processes": {
+   "command": "pgrep -a -u user 'kwin_wayland|plasmashell|Xwayland' ; tr '\\0' '\\n' < /proc/$(pgrep -u user -x plasmashell | head -1)/environ | grep -E '^(XDG_SESSION_TYPE|WAYLAND_DISPLAY|QT_QPA_PLATFORM)='",
+   "output": "1109 /usr/bin/kwin_wayland_wrapper --xwayland\n1112 /usr/bin/kwin_wayland --wayland-fd 7 --socket wayland-0 --xwayland-fd 8 --xwayland-fd 9 --xwayland-display :0 --xwayland-xauthority /run/user/1000/xauth_znZEVx --xwayland\n1200 /usr/bin/Xwayland :0 -auth /run/user/1000/xauth_znZEVx -listenfd 8 -listenfd 9 -displayfd 65 -wm 68 -rootless\n1269 /usr/bin/plasmashell --no-respawn\nWAYLAND_DISPLAY=wayland-0\nXDG_SESSION_TYPE=wayland\n",
+   "status": 0
+  },
+  "qemu_version": "QEMU emulator version 10.0.13 (Debian 1:10.0.13+ds-0+deb13u1)"
+ },
+ "phase": "live"
+}

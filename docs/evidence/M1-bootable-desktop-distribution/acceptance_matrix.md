@@ -1,61 +1,60 @@
-# M1 acceptance-to-evidence matrix (repair cycle)
+# M1 acceptance-to-evidence matrix (repair cycle 2)
 
-Task: `docs/tasks/M1-bootable-desktop-distribution.md`. Baseline `401c6cf`. This
-matrix is filled only with evidence actually produced. Statuses are PASS, FAIL,
-NOT_RUN, or BLOCKED — no "PARTIAL". Where a criterion has a static/package part
-that is verified and a runtime/native part that is not, both parts are named with
-their own status. A build/boot result is never described as proof of M2–M4
-security enforcement.
+Task: `docs/tasks/M1-bootable-desktop-distribution.md`. Baseline `401c6cf`.
+Implementation target `01bf7a1f1066fae15ab51a56a5212c0a69780ab8`. This matrix holds
+only evidence actually produced. Statuses are PASS, FAIL, NOT_RUN or BLOCKED. A
+build/boot/VM result is never described as proof of M2–M4 security enforcement. All
+evidence below was produced by the implementation owner and awaits independent Codex
+review (A15).
 
-Evidence stages: **static** (host/container, no build) · **container** (amd64
-`debian:trixie`, unprivileged) · **native** (x86-64 Debian 13 solver, Codex
-Remote) · **VM** (disposable Debian 13 amd64, QEMU) · **install+boot**.
-
-This repair cycle addresses Codex findings F1–F5 and the firmware blocker. Fast
-gates were re-verified in-container/at agent level; the real ISO build, graphical
-boot, disk install, and native closure/origin gates are assigned to Codex Remote
-(`codex_remote_verification.md`) and are NOT_RUN here by design.
+Evidence stages: **static** (repository content) · **native** (x86-64 Debian 13
+containers on GitHub-hosted runners; real archives) · **image** (the built ISO) ·
+**VM** (QEMU/KVM: live session, installation, installed system). Native evidence for
+the target: [native_01bf7a1/](native_01bf7a1/README.md) (runs 38207816363,
+38207816376, 38207816428). Environment and re-run recipe:
+[codex_remote_verification.md](codex_remote_verification.md).
 
 | # | Acceptance criterion (abridged) | Stage / method | Status | Evidence |
 |---|---|---|---|---|
-| A1 | Dedicated task branch/worktree on recorded baseline; exact branch/worktree + target recorded | static | PASS | Task "Assignment and Git"; `git worktree list`; baseline `401c6cf`, target recorded in the handoff |
-| A2 | Documented Debian 13 amd64 live-build path produces a bootable, installable ISO from declared inputs; no prod creds/undocumented host state | static (config) + VM | config PASS; real build NOT_RUN → Codex Remote §2–§3 | `build/live-desktop` + `build_image.sh` per-profile staging (F1) documented; firmware fetch removed (F2); real M0 and M1 builds pending |
-| A3 | In a disposable VM the ISO boots into Plasma 6 Wayland and completes the documented install path | install+boot | NOT_RUN → Codex Remote §4,§5 | QEMU VNC screendump recipe provided; capture pending |
-| A4 | Installed desktop uses cham3 branding defaults; 56–64 logical-px vertical panel on the right edge | static + install+boot | static PASS; render NOT_RUN → Remote §4 | layout/branding sources + packaged wallpaper path verified statically (F4 fix: `Cham3/contents/images/3840x2160.png`); screenshot pending |
-| A5 | Panel contains the nine components in ADR-0002 order/presentation (M1 = visual/package foundation) | static + install+boot | static PASS; render NOT_RUN → Remote §4 | panel-layout + plasmoid tests PASS (right edge, height 60, exact order); on-screen render pending |
-| A6 | M2–M4-dependent functions visibly report unavailable/disconnected/unverified; no implied active contracts/aliases/modes/kill/identity | static + install+boot | static PASS; render NOT_RUN → Remote §4 | honest-state tests PASS; render pending |
-| A7 | Desktop preserves desired/signed/pending/enforced distinction; absent/stale/failed backend → visible unavailable, no false success | static + install+boot | static PASS; render NOT_RUN → Remote §4 | inert-state tests + plasmoid review; render pending |
-| A8 | `cham3-desktop`/`cham3-full` valid metadata + dependency relationships; curated suite in default `cham3-full` | container + native | metadata/relations PASS; native suite verification NOT_RUN → Remote §7 | package build + lintian exit 0; curated-suite test PASS. Per the 2026-10-11 owner scope amendment the suite = the Debian-available tools + six foreign roles (LibreWolf, ZAP, amass, searchsploit, ghidra, radare2) via pinned sources; three roles (mitmproxy, wpscan, metasploit-framework) are explicitly deferred and documented. Native closure/real-image presence pending |
-| A9 | Manifests prefer Debian 13; Debian-native equivalents where unavailable; Kali only via reviewed narrow pinning; substitutions/omissions documented; no unreviewed foreign repo | static + native | pin/relation design PASS; native closure NOT_RUN → Remote §7 | disposition matrix; a **narrowly pinned** Kali source (Pin -1 + 8-package allowlist) + LibreWolf own repo, both documented and owner-approved; deferrals recorded. No global Kali repo. Native transitive/closure pending |
-| A10 | Package-source config authenticates origin/signatures; Kali limited to reviewed allowlist+closure; update behavior documented without silent origin change | static + native | key/pin design PASS; native closure/update NOT_RUN → Remote §7 | keys verified (Kali `827C…E4C5`, LibreWolf `662E…EF16`) and trusted only via `Signed-By` (0 keys in `trusted.gpg.d`, verified in a chroot run); strict `-1` pin; simulated `dist-upgrade` migrates nothing to Kali. Native re-confirmation pending |
-| A11 | Installed `.desktop` entries in correct categories, pass desktop-file validation; launch checks resolve to installed apps | static + install+boot | static PASS; installed-launch NOT_RUN → Remote §4 | desktop-file tests PASS; **F5**: the user-launcher presents categorized installed apps + search via the maintained KDE kicker model (plasmoidviewer confirmed categories + a real Wireshark launch); installed/live categories+launch pending |
-| A12 | Debian KDE utilities present as designed; named redundant alternatives absent (incl. transitive) | container + VM | package-relation PASS; transitive image NOT_RUN → Remote §3 | duplicate-exclusion tests PASS on deps; transitive absence in the real image manifest pending |
-| A13 | Image/package/desktop-file/ISO-boot/install evidence recorded with exact commands/env + PASS/FAIL/NOT_RUN/BLOCKED; build/boot not called M2–M4 proof | all | PASS (for work done); Remote adds ISO/boot/install | this matrix + `container_checks.md` + `codex_b82919c/` review transcripts + handoff; Remote recipe updated |
-| A14 | `docs/STATUS.md` updated only with evidence-backed results after verification; no promotion of planned work | n/a | PASS | STATUS updated with fast-gate results and heavy/native-gate NOT_RUN only |
-| A15 | Independent reviewer examines exact target; security review required before READY_TO_MERGE/DONE | review | NOT_RUN (re-review pending) | first Codex review returned CHANGES_REQUESTED on `b82919c`; re-review of the new target pending |
+| A1 | Dedicated task branch on the recorded baseline; exact branch and target recorded | static | PASS | `task/M1-bootable-desktop` from `401c6cf`; target recorded in the handoff |
+| A2 | Documented Debian 13 amd64 live-build path produces a bootable, installable ISO from declared inputs; no production credentials or undocumented host state | native + image | PASS | `ci_m1_heavy.sh iso` in a privileged `debian:trixie` container: ISO `f25bf75e…fd16`, manifest, provenance and checksums; image-m1 54/54; no firmware fetch in the build log; inputs: `build/live-desktop`, built packages, official Debian mirrors and the two pinned sources |
+| A3 | In a disposable VM the ISO boots into Plasma 6 Wayland and completes the documented install path | VM | PASS | live: autologin session `Type=wayland`, `kwin_wayland` (37/37); install: the ISO's own debian-installer completed and powered off (330 s); installed: SDDM login → `Type=wayland` (65/65) |
+| A4 | Installed desktop uses cham3 branding defaults; 56–64 logical-px vertical panel on the right edge | VM | PASS | running shell (plasmashell `evaluateScript`): location right, vertical, thickness 60; wallpaper `Cham3`; `LookAndFeelPackage=org.cham3.desktop`, `ColorScheme=Cham3Dark`; screenshots `installed_02_desktop.png`, `live_02_desktop.png` |
+| A5 | Panel contains the nine components in ADR 0002 order/presentation (M1 = visual/package foundation) | static + VM | PASS | live and installed panel widgets in order: the eight `org.cham3.*` components, system tray, digital clock |
+| A6 | M2–M4-dependent functions visibly report unavailable/disconnected/unverified; no implied active contracts/aliases/modes/kill/identity | static + VM | PASS | honest-state static suite; on screen: panel captions read as unavailable, and alias wheel, tag pager, contract dock, network protocol launcher and kill switch each show an unavailable state when opened (clean baseline), launcher `key_id: unavailable`, launches "not contract-verified: unverified" (screenshots `*_widget_*.png`, `*_launcher_categories.png`) |
+| A7 | Desired/signed/pending/enforced distinction preserved; absent/stale/failed backend → visible unavailable, no false success | static + VM | PASS | inert-state static suite; no backend exists, and every backend-dependent widget renders unavailable in the live and installed sessions; no widget claims an active state (OCR text in `vm/*/ocr_*.txt`) |
+| A8 | `cham3-desktop`/`cham3-full` valid metadata and dependency relationships; curated suite in default `cham3-full` | native + image | PASS | package build, lintian exit 0, package tests 8; F2 closure installs all six foreign roles; image manifest required/forbidden checks; the suite is installed in the live and installed systems. Deferred by owner amendment: mitmproxy, wpscan, metasploit-framework |
+| A9 | Debian 13 preferred; Debian-native equivalents where unavailable; Kali only via reviewed narrow pinning; substitutions documented; no unreviewed foreign repository | static + native + image | PASS | host-bound pins (F6) with the 8-name Kali and `librewolf` allowlists; F2 `policy` (0 escaped of 9 945), `closure_uri` (8 Kali downloads = allowlist), retained-index origin audit in the image; no other foreign source (static and image policy) |
+| A10 | Source configuration authenticates origin/signatures; Kali limited to the allowlist and its closure; update behaviour documented without silent origin change | native + VM | PASS | F2 `signatures`, `upgrade`; F6 synthetic signed-identity controls; installed system: authenticated `apt-get update`, upgrade origin by download host clean, unlisted Kali package not installable |
+| A11 | Installed `.desktop` entries in correct categories, pass validation; launches resolve to installed applications | static + VM | PASS | desktop-file suite; launcher shows seven menu categories; search for Wireshark and Enter started a real `wireshark` process in the live and installed sessions |
+| A12 | Debian KDE utilities present; named redundant alternatives absent (including transitive) | static + image | PASS | relation tests; image manifest has the KDE core utilities and none of the excluded duplicates, gated tools or desktop conflicts |
+| A13 | Evidence recorded with exact commands/environment and PASS/FAIL/NOT_RUN/BLOCKED; build/boot not called M2–M4 proof | all | PASS | `native_01bf7a1/` (commands, environment, run URLs, artifact hashes, `SHA256SUMS`), this matrix, the handoff |
+| A14 | `docs/STATUS.md` updated only with evidence-backed results | n/a | PASS | STATUS records the target and these results as owner-produced evidence pending review |
+| A15 | Independent reviewer examines the exact target; security review required before READY_TO_MERGE/DONE | review | NOT_RUN (re-review pending) | Codex returned CHANGES_REQUESTED on `b82919c` and `0fec3a0`; re-review of `01bf7a1` pending. F2 and F3 security approval is Codex's |
 
-## Finding dispositions (Codex review of `b82919c`)
+## Finding dispositions (Codex re-review of `0fec3a0`)
 
-| Finding | Disposition | Where |
+| Finding | Disposition | Native evidence at the target |
 |---|---|---|
-| F1 — M0 build broken by the new package set | FIXED | `build_image.sh` stages per-profile via `cham3-local-packages` (M0 → cham3-base only); fail-closed; `CHAM3_STAGE_DRYRUN`; regression tests (`staging`, 11) + CI gate. Real M0 build → Remote §2 |
-| F2 — full metapackage omits required roles | RESOLVED PER OWNER AMENDMENT | 6 roles added via narrowly pinned authenticated sources (LibreWolf own repo; ZAP, searchsploit, ghidra, amass, radare2 from Kali, strict `-1` pin + allowlist); 3 roles (mitmproxy, wpscan, metasploit-framework) deferred by recorded scope amendment. Native closure/origin → Remote §7 |
-| F3 — setuid-root dumpcap fallback | FIXED | `dpkg-statoverride` (root root 0750) pins no-setuid across install/upgrade/reconfigure; cham3-desktop postinst/trigger sets group+caps or fails closed (no caps, no setuid). Failure-path + member/nonmember tests; privileged member capture → Remote §6 |
-| F4 — image test expected two files not shipped | FIXED | `test_m1_image_contents.py` now checks `plasma.desktop` and `Cham3/contents/images/3840x2160.png` (derived from packaging), with negative controls retained |
-| F5 — launcher cannot present the curated suite | FIXED | user-launcher uses the maintained KDE kicker model for categorized apps + search; no hardcoded list; contract badges remain M5. Live categories/launch → Remote §4 |
-| Firmware/proxy blocker | FIXED | `--firmware-chroot false` + explicit 42-package self-contained firmware list; no build-time fetch of Broadcom blobs; legacy b43/b43legacy coverage dropped by recorded owner decision |
+| F6 — foreign default-deny fails open with changed signed Release identity | FIXED: pins bound to the configured source host | `apt` suite 22/22 (changed Origin/Label/Suite/Codename and removed identity still deny; superseded pins fail open as control); F2 7/7 on real archives; image and VM apt policy |
+| F3 — first-install setuid gap; override failure only warned | FIXED: preinst registers the override at unpack and fails if it cannot; postinst fails instead of warning; image preseed `install-setuid false` | privileged suite 77/77, 0 skipped (both unpack orders with interrupted runs, apt order, preseed-false order, found setuid, preinst/postinst override failures, set-id override, lifecycle, real version change); image squashfs state; installed lifecycle with fail-closed reinstall and recovery |
+| F7 — installer payload selects the b43 installers | FIXED: contrib out of the lb archive areas, supplied by a signed source file | image-m1 payload audit: no b43 installer in the ISO pool, `/firmware` or `Contents-firmware`; all 42 reviewed firmware packages present and linked; installed and live systems have no b43 installer |
+| F8 — invalid privileged capture controls | FIXED: execution after credential drop, member-owned output, no skips in privileged mode | privileged suite 0 skipped; VM member capture (436-byte pcapng) and nonmember exit 126 in live and installed systems |
+| F1, F4, F5 | Preserved | M0 build/boot regression PASS; image paths PASS; live/installed categories, search and real launch PASS |
+
+Defects the native gates found and this cycle repaired (detail in the handoff):
+firmware licence answers for `firmware-ipw2x00`/`firmware-ivtv` (owner decision
+2026-10-12), Kali index confusing live-build's installer stage, the installer stage's
+`trusted=yes` live-medium entry, the missing live account (`user-setup`), live
+packages kept on installed systems, and installed systems without Debian sources
+(`apt-mirror-setup`).
 
 ## Notes
 
-- The included foreign roles are present only through a narrowly pinned,
-  separately-reviewed source (owner scope amendment, 2026-10-11). Their actual
-  installation and clean closure are confirmed natively on Codex Remote before any
-  merge; the strict `-1` pin + allowlist is the enforcement, the native gates are
-  the verification.
-- The deferred roles (mitmproxy, wpscan, metasploit-framework) and the omitted
-  alternatives (Cutter/rizin in favour of radare2; Burp in favour of ZAP) are
-  documented in `cham3-full` and the disposition matrix. Their absence is an
-  explicit, recorded scope decision, not a silent omission.
-- `dumpcap` capture privilege is resolved through the Debian `wireshark` group +
-  file capabilities with **no setuid fallback** (F3); no user is added to the
-  group by the image.
+- The six foreign roles come only from the two narrowly pinned, authenticated
+  sources (owner scope amendment, 2026-10-11). The deferred roles (mitmproxy, wpscan,
+  metasploit-framework) and the omitted alternatives (Cutter/rizin, Burp) are
+  recorded scope decisions.
+- `dumpcap` capture privilege is the Debian `wireshark` group plus file capabilities
+  with no set-user-id fallback on any tested path; the image adds no group members.
+- VM evidence covers q35/BIOS/virtio-vga in QEMU with KVM, not real hardware or UEFI.

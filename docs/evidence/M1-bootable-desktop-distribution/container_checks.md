@@ -1,5 +1,8 @@
 # M1 fast-gate verification (container), integrated candidate
 
+> Historical record for `b82919c` (repair cycle 0). Superseded for the current target by
+> [native_01bf7a1/](native_01bf7a1/README.md), which ran every gate natively at `01bf7a1`.
+
 - **Commit:** `b82919c6ddbdb1f84f8db35e3ded8559c40b242f` on `task/M1-bootable-desktop`.
 - **Environment:** a disposable, unprivileged `debian:trixie` `linux/amd64` container
   (Docker Desktop with x86-64 emulation on a macOS arm64 host, Apple M2 Pro). The
