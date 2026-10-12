@@ -195,5 +195,76 @@ class staging_profile_t(unittest.TestCase):
         self.assertIn("cham3-not-built", completed.stderr)
 
 
+class staging_guard_t(unittest.TestCase):
+    """Safety controls for the dry-run helper. They need no dpkg-deb and never start a build.
+
+    A dry run must not be able to start a live build. The guard refuses a build_image.sh that
+    does not read CHAM3_STAGE_DRYRUN before the root check and the live-build steps, and the
+    helper records any call to the stub lb or debootstrap that runs first on PATH.
+    """
+
+    def synthetic_tree(self, script):
+        """A temporary tree whose build_image.sh is the given text (independent of the repository)."""
+        root = tempfile.mkdtemp(prefix="cham3_guard_")
+        self.addCleanup(shutil.rmtree, root, True)
+        scripts = os.path.join(root, "build", "scripts")
+        os.makedirs(scripts)
+        with open(os.path.join(scripts, "build_image.sh"), "w", encoding="utf-8") as handle:
+            handle.write(script)
+        return root
+
+    def test_guard_refuses_a_script_that_never_reads_the_dryrun_switch(self):
+        root = self.synthetic_tree(
+            "#!/bin/bash\nif [ \"${CHAM3_NO_SWITCH:-0}\" = \"1\" ]; then exit 0; fi\n"
+            "[ \"$(id -u)\" -eq 0 ] || exit 1\n"
+        )
+        out_dir = tempfile.mkdtemp(prefix="cham3_guard_out_")
+        self.addCleanup(shutil.rmtree, out_dir, True)
+        with self.assertRaises(AssertionError) as raised:
+            m1_support.run_build_image_dryrun(root, out_dir, m1_support.M0ProfileDir)
+        self.assertIn("refusing to run build_image.sh", str(raised.exception))
+        self.assertIn("does not read CHAM3_STAGE_DRYRUN", str(raised.exception))
+
+    def test_guard_refuses_a_root_check_placed_before_the_dryrun_switch(self):
+        root = self.synthetic_tree(
+            "#!/bin/bash\n[ \"$(id -u)\" -eq 0 ] || exit 1\n"
+            "if [ \"${CHAM3_STAGE_DRYRUN:-0}\" = \"1\" ]; then exit 0; fi\n"
+        )
+        out_dir = tempfile.mkdtemp(prefix="cham3_guard_out_")
+        self.addCleanup(shutil.rmtree, out_dir, True)
+        with self.assertRaises(AssertionError) as raised:
+            m1_support.run_build_image_dryrun(root, out_dir, m1_support.M0ProfileDir)
+        self.assertIn("before it reads CHAM3_STAGE_DRYRUN", str(raised.exception))
+
+    def test_stub_live_build_invocation_is_detected(self):
+        # A script that reads the switch but then runs lb anyway: the stub lb records the call.
+        script = (
+            "#!/bin/bash\n"
+            "if [ \"${CHAM3_STAGE_DRYRUN:-0}\" = \"1\" ]; then :; fi\n"
+            "lb config\n"
+        )
+        root = tempfile.mkdtemp(prefix="cham3_guard_stub_")
+        self.addCleanup(shutil.rmtree, root, True)
+        os.makedirs(os.path.join(root, "build", "scripts"))
+        with open(os.path.join(root, m1_support.BuildImageScript), "w", encoding="utf-8") as handle:
+            handle.write(script)
+        out_dir = tempfile.mkdtemp(prefix="cham3_guard_out_")
+        self.addCleanup(shutil.rmtree, out_dir, True)
+        with self.assertRaises(AssertionError) as raised:
+            m1_support.run_build_image_dryrun(root, out_dir, None)
+        self.assertIn("invoked a live-build step", str(raised.exception))
+        self.assertIn("lb config", str(raised.exception))
+
+    def test_guard_accepts_a_script_that_reads_the_switch_first(self):
+        self.assertIsNone(m1_support.dryrun_guard_problem(
+            "#!/bin/bash\nif [ \"${CHAM3_STAGE_DRYRUN:-0}\" = \"1\" ]; then exit 0; fi\n"
+            "[ \"$(id -u)\" -eq 0 ] || exit 1\n"))
+
+    def test_real_build_script_passes_the_dryrun_guard(self):
+        # Contract: the coordinator's build_image.sh reads the switch before any root check.
+        text = m1_support.read_repo(m1_support.BuildImageScript)
+        self.assertIsNone(m1_support.dryrun_guard_problem(text))
+
+
 if __name__ == "__main__":
     unittest.main()

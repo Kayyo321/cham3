@@ -90,9 +90,18 @@ def base_stubs(include_sha256_wrapper):
     return stubs
 
 
+def assert_stubs_resolve_first(bin_dir, path_value):
+    """Refuse to run unless every stub in bin_dir is what PATH resolves to (never a real lb or debootstrap)."""
+    for name in sorted(os.listdir(bin_dir)):
+        resolved = shutil.which(name, path=path_value)
+        if resolved != os.path.join(bin_dir, name):
+            raise AssertionError("refusing to run: %s would resolve to %s, not the stub" % (name, resolved))
+
+
 def run_script(script_rel, repo, env_extra, bin_dir, cwd=None):
     env = {key: value for key, value in os.environ.items() if not key.startswith("CHAM3_")}
     env["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "/usr/bin:/bin")
+    assert_stubs_resolve_first(bin_dir, env["PATH"])
     env.update(env_extra)
     return subprocess.run(
         ["/bin/bash", os.path.join(repo, script_rel)],
