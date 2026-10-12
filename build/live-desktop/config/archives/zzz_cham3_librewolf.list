@@ -1,0 +1,12 @@
+# cham3 LibreWolf source (F2, owner-approved): the official LibreWolf repository,
+# used only for the librewolf package (see cham3_librewolf.pref). Authentication:
+# signed-by names the single pinned key (fingerprint
+# 662E3CDD6FE329002D0CA5BB40339DD82B12EF16) shipped by the cham3-archive-keyring
+# package; extrepo is not used at build or install time. The source uses HTTPS, so
+# the chroot needs ca-certificates before its first apt-get update (see
+# --debootstrap-options in auto/config). live-build copies this file (no .chroot
+# suffix) into the build chroot and into the final image so LibreWolf keeps
+# receiving updates from the same authenticated source and pin. The zzz_ file name
+# keeps this source after the Debian sources in apt's source order, as explained in
+# zzz_cham3_kali.list.
+deb [arch=amd64 signed-by=/usr/share/keyrings/cham3_librewolf.gpg] https://repo.librewolf.net librewolf main

@@ -1,0 +1,45 @@
+Pinned apt archive keys for the cham3 M1 desktop image (F2)
+============================================================
+
+These two files are the public keys of the only two non-Debian apt sources the
+M1 image uses. They are the exact bytes whose SHA-256 is recorded below, and
+auto/build_archive_keyring checks that hash and the primary key fingerprint at
+every build before it turns them into the keyring package cham3-archive-keyring
+(installed under /usr/share/keyrings, used only through signed-by). A mismatch,
+an extra primary key, secret key material or an expired key stops the build.
+
+kali_archive_key.asc
+  Source        the Kali project's published archive key, fetched over HTTPS with
+                certificate verification (URL and retrieval recorded in
+                docs/research/evidence/f2_keys/)
+  SHA-256       bbaef4b375fdae6d361d648355c9a003b081d421a40f39440f296cbd458071b1
+  Fingerprint   827C8569F2518CC677FECA1AED65462EC8D5E4C5
+  Key           RSA 4096, created 2025-04-17, expires 2028-04-17
+  UID           Kali Linux Archive Automatic Signing Key (2025)
+  Cross-check   the same key is in the Kali-signed kali-archive-keyring 2025.2
+                package, which also carries a legacy key (44C6513A8E4FB3D30875F758ED444FF07D8D0BF6,
+                expires 2027-02-04). That legacy key is deliberately NOT shipped.
+  Used by       config/archives/zzz_cham3_kali.list, config/archives/cham3_kali.pref
+
+librewolf_key.asc
+  Source        extrepo-offline-data 1.0.6~deb13u1 (Debian archive), librewolf.asc;
+                byte-identical to https://repo.librewolf.net/pubkey.gpg
+  SHA-256       cd1c45ebf33b42191af369b5ea901508eb7dff3dd5086abcb601b25121bc70ad
+                (the gpg-key-checksum extrepo records for the key)
+  Fingerprint   662E3CDD6FE329002D0CA5BB40339DD82B12EF16, the fingerprint printed on
+                https://repo.librewolf.net/
+  Key           RSA 4096, created 2022-05-14, no expiry; signing subkey
+                4DD4BBECABD32E798CC77A4047981EA73D0E1C63
+  UID           LibreWolf Maintainers <gpg@librewolf.net>
+  Used by       config/archives/zzz_cham3_librewolf.list, config/archives/cham3_librewolf.pref
+
+Provenance and the closure, pin and origin-preservation simulations are recorded in
+docs/research/M1_package_disposition.md (sections 1.2, 3.1, 3.3 and 7) and
+docs/research/evidence/f2_keys/, f2_librewolf/ and f2_origin/. The LibreWolf key
+is served from the same host as the repository it signs; no second LibreWolf channel
+for the fingerprint was found, so an independent confirmation of it is NOT_RUN.
+
+To refresh a key: replace the file, update the SHA-256 and fingerprint in
+auto/build_archive_keyring and in this README together, and have the change
+reviewed. Do not add keys to the global apt trust store (/etc/apt/trusted.gpg.d) or
+use the deprecated apt key tool, and do not mark a source as trusted without a key.

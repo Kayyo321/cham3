@@ -1,16 +1,43 @@
 #!/bin/sh
 # Purpose: live-build configuration for the cham3 M1 desktop image.
 # Invoked by "lb config". Written against live-build 20250505+deb13u1 (Debian 13).
-# Limits: M1 visual and package foundation. Debian 13 amd64 with KDE Plasma 6 on
-# Wayland, cham3 desktop defaults, an installable image and the curated Debian
-# application suite (package cham3-full). No cham3 security backend exists in M1:
-# the panel reports those services as unavailable, so the result is a
-# development artifact, not a hardened distribution and not a release.
+# Limits: M1 visual and package foundation only. Debian 13 amd64 with KDE Plasma 6 on
+# Wayland, cham3 desktop defaults, an installable image and the curated application
+# suite (package cham3-full). No cham3 security backend exists in M1: the panel
+# reports those services as unavailable, so the result is a development artifact,
+# not a hardened distribution and not a release.
 set -eu
+
+# Pinned apt archive keys (F2). Verify the keys shipped in keys/ against their
+# pinned SHA-256 and fingerprint and build the keyring package that live-build
+# installs before its first "apt-get update" (see auto/build_archive_keyring). A
+# mismatch stops the build before anything is installed.
+sh auto/build_archive_keyring
 
 # Mirrors: as in M0, the plain-HTTP official Debian mirrors are the Debian default
 # and are kept on purpose. APT verifies the signed InRelease files with
 # debian-archive-keyring and authentication is not disabled (--apt-secure true).
+#
+# Non-Debian sources (F2, owner-approved, config/archives): two NARROW pinned
+# sources, each with its own preferences file and its own pinned key. They are
+# plain files in config/archives (no .chroot suffix), so live-build activates them
+# before the chroot package installation and keeps them in the final image. The
+# source files are named zzz_cham3_*.list so that apt reads the Debian sources first
+# (live-build moves those to sources.list.d/zz-sources.list during the build); a
+# version that exists in both Debian and Kali is then downloaded from Debian.
+#   cham3_kali:      the Kali archive, main component only (URL and suite in
+#                    config/archives/zzz_cham3_kali.list). Every Kali package has priority -1
+#                    except eight allowlisted names (zaproxy, exploitdb, ghidra, amass,
+#                    radare2 and the Kali-only libraries libpostal-data, libradare2-6.0.0t64
+#                    and libradare2-common), so Kali can never replace a Debian package.
+#                    This is not a general Kali repository.
+#   cham3_librewolf: https://repo.librewolf.net librewolf main, priority -1 except librewolf.
+# Both name their key with signed-by (keyrings under /usr/share/keyrings from the
+# cham3-archive-keyring package) and neither key is in the global apt trust store.
+# The LibreWolf source uses HTTPS and the minimal chroot has no CA certificates
+# before its first apt-get update, so debootstrap installs ca-certificates (from
+# the signed Debian archive) with --debootstrap-options.
+#
 # Archive areas: contrib and non-free are needed for torbrowser-launcher (contrib)
 # and nikto (non-free); non-free-firmware serves the explicit firmware list
 # (config/package-lists/cham3_firmware.list.chroot) so real hardware and VM graphics
@@ -31,7 +58,8 @@ set -eu
 # components. The Plasma runtime pieces that are only "Recommends" upstream
 # (kio-extras, kscreen, powerdevil, the xdg portal, SDDM theme, fonts, ...) are
 # listed as hard Depends of cham3-desktop instead, so the dependency closure is
-# explicit and reviewable.
+# explicit and reviewable. The same applies to the foreign tools: the Recommends of
+# ghidra and the others (for example the Kali-only ghidra-data) are not installed.
 #
 # Session: SDDM comes from cham3-desktop. The live user is auto-logged-in by
 # live-config; the config component 0086-cham3-sddm-wayland makes that
@@ -44,6 +72,7 @@ lb config noauto \
     --debian-installer live \
     --binary-image iso-hybrid \
     --bootloaders syslinux,grub-efi \
+    --debootstrap-options "--include=ca-certificates" \
     --firmware-chroot false \
     --firmware-binary true \
     --security true \
