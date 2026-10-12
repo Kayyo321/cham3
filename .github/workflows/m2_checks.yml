@@ -1,0 +1,56 @@
+# M2 Rust qualification and test suites on GitHub-hosted amd64 runners.
+#
+# Builds the pinned Debian 13 container (build/m2/dev_container.dockerfile, base
+# image pinned by digest, exact package versions) and runs, unprivileged inside it:
+# build/scripts/qualify_m2_rust.sh --record (toolchain/package pins and locks, crate
+# source manifest, dependency inventory, rustfmt/clippy/naming, debug and release
+# builds, backend selection, valgrind, unit and harness suites). --record keeps the
+# observed amd64 package locks as artifacts for review when no committed amd64 lock
+# exists yet; the run still FAILs until the reviewed locks are committed.
+# No secrets, no production keys, read-only repository permissions. Results are
+# development evidence for the exact commit only and establish no M3-M6 enforcement.
+name: m2_checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify_amd64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Build pinned Debian 13 qualification container
+        run: docker build -f build/m2/dev_container.dockerfile -t cham3-m2-dev build/m2
+      - name: Qualify M2 Rust toolchain and run M2 suites (unprivileged)
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e HOME=/tmp/cham3_home \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/work \
+            -v "${GITHUB_WORKSPACE}:/work" \
+            -w /work \
+            cham3-m2-dev \
+            bash build/scripts/qualify_m2_rust.sh --record
+      - name: Upload qualification evidence
+        if: always()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
+        with:
+          name: m2_qualification_amd64
+          path: |
+            out/m2/qualification/
+            out/m2/runs/*/summary.txt
+            out/m2/runs/*/*.json
+            out/m2/runs/*/*.log
+          retention-days: 14
+          if-no-files-found: error

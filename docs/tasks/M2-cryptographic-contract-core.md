@@ -202,3 +202,13 @@ Owner-authorized scope: memory-safe compiled core; Rust selected for the impleme
 Pending: G1–G6 detailed designs and Debian-specific Rust/dependency qualification. Historical Stasha/Ubuntu receipts qualify neither Rust nor M2.
 
 Next: Claude begins M2-001/M2-002 on this branch, preserving preparation commits; produce useful qualification/probes/designs, present exact independently reviewed choices for owner approval, then continue each admitted dependency through M2-008 without inventing approval or reducing the full milestone.
+
+## Implementation progress (Claude Code, 2026-10-12)
+
+Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch head after the Rust-transition review). Exact candidate commits and evidence are in the [M2-001/M2-002 handoff](../handoffs/M2-001-002-qualification-design.md).
+
+| Package | State | Output | Gate / next |
+|---|---|---|---|
+| M2-001 | IMPLEMENTED → IN_REVIEW | Cargo workspace on Debian 13 Rust 1.85.1 with Debian-packaged offline crates; pinned qualification container and arm64 locks; per-file crate source manifest; domain skeletons with `#![forbid(unsafe_code)]`; `core/native/secure_memory` (only unsafe) and safe `core/native/os_adapter`; provider probe with published KATs and an independent OpenSSL/libsodium/libargon2 oracle; strict dispatcher with inventory-exact validation, harness canaries, lint controls, deployed-profile probes, naming checker, dependency/unsafe inventory, `qualify_m2_rust.sh`, `build_m2_core.sh`, `m2_checks.yml`. arm64 development qualification PASS; **amd64 qualification NOT_RUN** (owner instruction: reviewer runs it in the cloud). | Independent review + amd64 qualification; G1 approval. |
+| M2-002 | IMPLEMENTED → IN_REVIEW | PROPOSED ADRs [0003 (G1)](../decisions/0003_m2_rust_toolchain_dependencies.md), [0004 (G2)](../decisions/0004_m2_wire_schema_hash.md), [0005 (G3)](../decisions/0005_m2_identity_vault_ipc.md), [0006 (G4)](../decisions/0006_m2_storage_anchor_recovery.md), [0007 (G5)](../decisions/0007_m2_lifecycle_time_consumption.md), [0008 (G6)](../decisions/0008_m2_retention_privacy_update_identity.md); [wire format](../specs/m2_wire_format_v1.md), [CDDL](../specs/m2_ecr_v1.cddl), [service IPC](../specs/m2_service_ipc_v1.md); [ECR v1 vectors](../../tests/m2/vectors/ecr_v1/vectors_readme.md) from an independent oracle. | Independent review of each gate; then owner decisions, including the explicit choices in ADR 0006 §5, 0007 §4, 0008 §3. |
+| M2-003 … M2-008 | DRAFT | — | Not READY: every dependency gate is PROPOSED, none approved. |

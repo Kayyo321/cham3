@@ -1,0 +1,189 @@
+; cham3 ECR wire schema, version 1 (CDDL, RFC 8610).
+;
+; Status: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md). Not approved;
+; implementation (M2-003) is gated on independent review and owner approval.
+; Normative prose, limits and validation order: docs/specs/m2_wire_format_v1.md.
+; Every item is encoded with the cham3_dcbor_v1 deterministic profile; maps are closed
+; (unknown keys rejected) and optional keys are omitted, never null.
+
+; ---------------------------------------------------------------- envelope
+; COSE_Sign1 (RFC 9052 section 4.2), tagged, attached payload.
+signed_object = #6.18([
+    protected: bstr .cbor protected_header,
+    unprotected: {},                      ; must be exactly the empty map (0xa0)
+    payload: bstr,                        ; .cbor of the kind selected by typ
+    signature: bstr .size 64,             ; Ed25519 (RFC 8032), pure, no context
+])
+
+protected_header = {
+    1 => -19,                             ; alg: Ed25519 (RFC 9864); -8 (EdDSA) rejected
+    4 => key_id,                          ; kid: signing key identifier
+    16 => object_type,                    ; typ (RFC 9596): explicit object kind
+}
+
+object_type = "application/vnd.cham3.ecr-commit.v1+cose"
+            / "application/vnd.cham3.identity-enrollment.v1+cose"
+            / "application/vnd.cham3.key-certificate.v1+cose"
+            / "application/vnd.cham3.key-invalidation.v1+cose"
+
+; Sig_structure (RFC 9052 section 4.4) signed bytes:
+;   ["Signature1", protected, external_aad, payload]
+; external_aad is the ASCII domain string for the kind (wire_format section 4):
+;   "cham3/ecr-commit/v1", "cham3/identity-enrollment/v1",
+;   "cham3/key-certificate/v1", "cham3/key-invalidation/v1".
+
+; ---------------------------------------------------------------- scalars
+key_id = bstr .size 32                    ; domain_hash("cham3/key-id/ed25519/v1", public key)
+user_id = key_id                          ; key_id of the user's identity key
+commit_id = bstr .size 32                 ; SHA-256 of the complete stored envelope
+state_hash = bstr .size 32
+lineage_id = bstr .size 32
+random_id = bstr .size 16                 ; 128 random bits from the Linux CSPRNG
+sha256_digest = bstr .size 32
+public_key = bstr .size 32                ; Ed25519 compressed point, validated
+uid = uint .le 4294967294                 ; Linux UID (not 4294967295)
+epoch = uint .le 18446744073709551615
+utc_time = tstr .size 20                  ; "YYYY-MM-DDTHH:MM:SSZ", see wire_format 3.4
+app_id = tstr .size (1..255)              ; [a-z0-9][a-z0-9._-]*
+ascii_label = tstr .size (1..64)          ; [a-z0-9][a-z0-9._-]*
+display_text = tstr .size (0..1024)       ; restricted UTF-8, wire_format 3.5
+operation = tstr .size (1..32)            ; [a-z][a-z0-9_]*
+
+; ---------------------------------------------------------------- commit
+commit_payload = {
+    "schema_version" => 1,
+    "commit_type" => commit_type,
+    "timestamp" => utc_time,
+    "actor" => actor,
+    "key_id" => key_id,                   ; must equal protected kid
+    "authority_class" => authority_class,
+    "authorization" => authorization,
+    "policy" => policy_binding,
+    "subject" => subject,
+    "initiating_program" => initiating_program,
+    "lineage_id" => lineage_id,
+    "parents" => [* commit_id],           ; strictly ascending bytewise, 0..8
+    "base_state_hash" => state_hash,
+    ? "merge_base" => commit_id,          ; merge only; one of parents
+    ? "restore_reference" => commit_id,   ; restore only
+    "message" => display_text,
+    "delta" => delta,
+    "result_state" => contract_state,
+}
+
+commit_type = "genesis" / "revision" / "revocation" / "temporary_grant" / "merge" / "restore"
+            / "identity_transition"
+authority_class = "persistent" / "temporary"
+initiating_program = "cham3_authui" / "cham3_inspector" / "cham3_portal_broker" / "cham3_dev_cli"
+
+actor = {
+    "uid" => uid,
+    "user_id" => user_id,
+}
+
+authorization = {
+    "request_id" => random_id,            ; unique per user; replay rejected
+    "session_id" => random_id,            ; authenticated authorization session
+}
+
+policy_binding = {
+    "epoch" => epoch,                     ; must equal the current policy epoch at admission
+    "version" => ascii_label,
+    "security_profile" => ascii_label,
+    "mandatory_constraints" => [* ascii_label],   ; strictly ascending, unique, 0..32
+}
+
+subject = {
+    "owner_uid" => uid,
+    "owner_user_id" => user_id,
+    "app_id" => app_id,
+    "installation_id" => random_id,
+    "package_identity" => tstr .size (1..255),    ; printable ASCII, no spaces
+    "executable_sha256" => sha256_digest,
+    ? "runtime_scope" => ascii_label,
+}
+
+delta = {
+    "add_grants" => [* grant],            ; ascending grant_id, 0..64
+    "remove_grant_ids" => [* random_id],  ; strictly ascending, 0..64
+    ? "network_mode" => network_change,
+}
+
+network_change = {
+    "from" => network_mode,
+    "to" => network_mode,                 ; must differ from "from"
+}
+
+network_mode = "offline" / "tor" / "direct"
+
+contract_state = {
+    "network_mode" => network_mode,
+    "grants" => [* grant],                ; strictly ascending grant_id, 0..256
+}
+
+grant = {
+    "grant_id" => random_id,
+    "contract_type" => "resource_access",
+    "lifetime" => lifetime,
+    "resource" => resource,
+    "delegation" => delegation,
+}
+
+lifetime = {
+    "kind" => "persistent" / "timed" / "session" / "one_shot",
+    "effective_start" => utc_time,
+    ? "expiration" => utc_time,           ; required for timed
+    ? "session_id" => random_id,          ; required for session
+    ? "usage_limit" => 1,                 ; required (exactly 1) for one_shot only
+}
+
+resource = {
+    "category" => resource_category,
+    "resource_id" => tstr .size (1..512), ; restricted UTF-8, no controls
+    "resource_owner_uid" => uid,
+    "operations" => [+ operation],        ; strictly ascending, 1..32
+}
+
+resource_category = "filesystem" / "device" / "audio_input" / "camera" / "screen_capture"
+                  / "clipboard" / "portal" / "ipc" / "notification"
+
+delegation = {
+    "permitted" => bool,
+    "max_depth" => uint .le 8,            ; 0 when not permitted
+    "max_operations" => [* operation],    ; strictly ascending subset of operations
+    ? "parent_grant_id" => random_id,     ; delegated grants only
+}
+
+; ---------------------------------------------------------------- identity objects
+identity_enrollment_payload = {            ; self-signed by the identity key (kid = user_id)
+    "schema_version" => 1,
+    "user_id" => user_id,
+    "public_key" => public_key,
+    "owner_uid" => uid,
+    "enrolled" => utc_time,
+    "identity_epoch" => epoch,
+}
+
+key_certificate_payload = {               ; signed by the identity key (kid = user_id)
+    "schema_version" => 1,
+    "certificate_id" => random_id,
+    "issued" => utc_time,
+    "owner_uid" => uid,
+    "owner_user_id" => user_id,
+    "subject_key_id" => key_id,
+    "subject_public_key" => public_key,
+    "authority_class" => authority_class,
+    "key_epoch" => epoch,
+    "not_before" => utc_time,
+    ? "not_after" => utc_time,            ; required for temporary authority
+    ? "supersedes_key_id" => key_id,      ; rotation
+}
+
+key_invalidation_payload = {              ; signed by the identity key (kid = user_id)
+    "schema_version" => 1,
+    "invalidation_id" => random_id,
+    "issued" => utc_time,
+    "owner_user_id" => user_id,
+    "target_key_id" => key_id,
+    "reason" => "compromised" / "rotated" / "retired",
+}

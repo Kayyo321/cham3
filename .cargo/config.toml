@@ -15,10 +15,18 @@ directory = "/usr/share/cargo/registry"
 offline = true
 
 [build]
-# Formally verified fiat-crypto field arithmetic for curve25519-dalek: no SIMD
-# intrinsics/unsafe backend and no curve25519-dalek-derive procedural macro.
-# Do not override with RUSTFLAGS; build scripts verify the selected backend.
-rustflags = ["--cfg", "curve25519_dalek_backend=\"fiat\""]
+# Backend selection (PROPOSED G1) to minimize audited unsafe code; performance is not
+# a constraint at M2's data volumes:
+# * curve25519-dalek: formally verified fiat-crypto field arithmetic, no SIMD
+#   intrinsics and no curve25519-dalek-derive procedural macro;
+# * chacha20 and poly1305: portable software backends (no SSE2/AVX2/NEON paths).
+# sha2 uses its "force-soft" feature (Cargo.toml). Do not override with RUSTFLAGS;
+# build/scripts/qualify_m2_rust.sh verifies these flags reach each crate.
+rustflags = [
+    "--cfg", "curve25519_dalek_backend=\"fiat\"",
+    "--cfg", "chacha20_force_soft",
+    "--cfg", "poly1305_force_soft",
+]
 
 [term]
 color = "never"

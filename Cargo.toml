@@ -30,7 +30,7 @@ publish = false
 # offline build, and Cargo.lock records the resolution.
 [workspace.dependencies]
 ed25519-dalek = { version = "=2.1.1", default-features = false, features = ["std", "zeroize"] }
-sha2 = { version = "=0.10.8", default-features = false, features = ["std"] }
+sha2 = { version = "=0.10.8", default-features = false, features = ["std", "force-soft"] }
 chacha20poly1305 = { version = "=0.10.1", default-features = false }
 argon2 = { version = "=0.5.3", default-features = false, features = ["zeroize"] }
 zeroize = { version = "=1.8.1", default-features = false }
@@ -46,7 +46,7 @@ ciborium = { version = "=0.2.2", default-features = false, features = ["std"] }
 # Naming: the repository requires snake_case_t type names and PascalCase constants
 # (AGENTS.md). rustc's non_camel_case_types and non_upper_case_globals lints contradict
 # that convention, so exactly those two lints are allowed; non_snake_case stays a hard
-# error and tests/m2/naming/check_rust_naming.py enforces the repository rule instead.
+# error and build/scripts/check_rust_naming.py enforces the repository rule instead.
 [workspace.lints.rust]
 unsafe_code = "forbid"
 non_camel_case_types = "allow"

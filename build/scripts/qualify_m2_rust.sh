@@ -191,7 +191,19 @@ PYTHON
 # Fresh debug and release builds.
 build_dir=${run_dir}/build_target
 check build_debug env CARGO_TARGET_DIR="${build_dir}" cargo build --workspace --frozen
-check build_release env CARGO_TARGET_DIR="${build_dir}" cargo build --workspace --release --frozen
+check build_release env CARGO_TARGET_DIR="${build_dir}" cargo build --workspace --release --frozen --verbose
+backend_problems=""
+for expected in "--crate-name chacha20 .*--cfg chacha20_force_soft" "--crate-name poly1305 .*--cfg poly1305_force_soft" \
+    "--crate-name sha2 .*feature=\\\"force-soft\\\"" "--crate-name curve25519_dalek .*curve25519_dalek_backend=\\\"fiat\\\""; do
+    if ! grep -Eq -- "${expected}" "${run_dir}/build_release.log"; then
+        backend_problems="${backend_problems} [${expected}]"
+    fi
+done
+if [ -z "${backend_problems}" ]; then
+    record PASS soft_backends "chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat"
+else
+    record FAIL soft_backends "missing in verbose build:${backend_problems}"
+fi
 backend_files=$(grep -l 'curve25519_dalek_backend="fiat"' "${build_dir}"/*/build/curve25519-dalek-*/output 2> /dev/null | wc -l)
 if [ "${backend_files}" -ge 2 ]; then
     record PASS curve25519_fiat_backend "${backend_files} build-script outputs"

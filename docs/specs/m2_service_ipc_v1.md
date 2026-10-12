@@ -1,0 +1,88 @@
+# cham3 M2 service interfaces and IPC, version 1
+
+- **Status:** PROPOSED under G3 ([ADR 0005](../decisions/0005_m2_identity_vault_ipc.md)), with storage/lifecycle operations from [ADR 0006](../decisions/0006_m2_storage_anchor_recovery.md) and [ADR 0007](../decisions/0007_m2_lifecycle_time_consumption.md). Not approved; M2-004..M2-007 are gated.
+- Wire encoding of every message: `cham3_dcbor_v1` ([wire format §2](m2_wire_format_v1.md)). Canonical service names keep PROJECT §14's hyphenated spelling at the process/package boundary.
+
+## 1. Transport and peer authentication
+
+- One `AF_UNIX` `SOCK_SEQPACKET` socket per service, systemd socket-activated: `/run/cham3/<service>.sock` (`identityd`, `vaultd`, `contractd`, `policyd`, `registryd`). Socket mode `0660`, owner the service user, group `_cham3-ipc`; `/run/cham3` is `0750 root:_cham3-ipc`.
+- Each service runs as its own system user (`_cham3-identityd`, `_cham3-vaultd`, `_cham3-contractd`, `_cham3-policyd`, `_cham3-registryd`); service users are members of `_cham3-ipc`.
+- The trusted development client `cham3-ctl` is installed `root:_cham3-ipc` mode `2755` (setgid). Its effective GID is `_cham3-ipc`; it never passes connected sockets to other processes. Setgid execution makes the process non-dumpable, so same-UID processes cannot ptrace it without `CAP_SYS_PTRACE`.
+- On accept, the server reads `SO_PEERCRED` (PID, effective UID, effective GID at connect time) and maps it to exactly one role. Anything else is closed without a response:
+
+| Role | Condition | Acts for |
+|---|---|---|
+| `service:<name>` | peer UID is that service's system user | the service |
+| `trusted_client` | peer UID in the regular-user range (login.defs UID_MIN..UID_MAX, default 1000..60000) **and** peer GID is `_cham3-ipc` | the human UID = peer UID |
+| `admin` | peer UID 0 | administrative operations only; never signing |
+| `fixture_consumer` | peer UID is `_cham3-fixture` (installed only by the test-only package `cham3-core-test-fixtures`) | labeled M2 stand-in for launcherd/netd/brokers/sessiond |
+
+A caller-supplied UID, user id, key id, program name or role field is never authentication. Ordinary same-UID processes fail at `connect()` (no `_cham3-ipc` permission) and, if they obtain a socket some other way, at role mapping.
+
+## 2. Framing and limits
+
+- One request per datagram, one response per datagram, at most 65 536 bytes; larger, malformed or non-canonical messages close the connection.
+- Request: `{"op": tstr, "request_id": bstr .size 16, "args": {…}}`. Response: `{"request_id": …, "status": "ok" / "denied" / "error", ? "result": {…}, ? "error": tstr}`. `denied` is a policy/authorization outcome; `error` is a malformed or failed operation. Both are final; nothing is retried implicitly.
+- Per service: at most 64 connections, 8 per peer UID, 30 s idle timeout, 10 s per-request deadline (vault signing: 60 s), bounded worker pool. Excess connections are refused (flooding denial).
+- The vault receives datagrams into a locked secret region; passphrase bytes are never copied into ordinary buffers and are zeroized after use.
+
+## 3. Operations
+
+Arguments are closed maps; unknown arguments are errors. "Owner" means the request's `owner_uid` must equal the trusted client's peer UID.
+
+### cham3-identityd
+
+| Operation | Allowed roles | Behavior |
+|---|---|---|
+| `register_enrollment` | `service:vaultd` | Register a self-signed identity enrollment, its persistent and temporary key certificates for `owner_uid`. First enrollment for a UID only; a UID with a live identity is refused (identity replacement is `admin` `replace_identity`). |
+| `register_certificate` / `register_invalidation` | `service:vaultd` | Rotation/invalidation signed by the user's current identity key. |
+| `resolve_key` | `service:*`, `fixture_consumer` | `key_id` → public key, owner `user_id`/UID, authority class, certificate validity window, key epoch, invalidation state. Unknown → `denied`. |
+| `user_identity` | `service:*`, `trusted_client` (own UID) | UID → `user_id`, current key ids, identity epoch. |
+| `replace_identity` | `admin` | Marks the old identity replaced; a new enrollment creates a new `user_id`. Old grants are not carried over. |
+
+### cham3-vaultd
+
+| Operation | Allowed roles | Behavior |
+|---|---|---|
+| `create_user_keys` | `trusted_client` | Owner supplies a new passphrase. Generates identity, persistent and temporary keys in locked memory, writes encrypted key objects, signs enrollment and certificates, registers them with identityd. |
+| `register_proposal` | `service:contractd` | Registers exact payload bytes for one signing operation: `proposal_id`, `owner_uid`, object kind, `key_id`, expected head, policy epoch, expiry (≤ 120 s). The vault decodes and checks the payload itself (schema, intrinsic rules, `actor.uid == owner_uid`, `key_id` is the owner's key of the class the commit type needs). Returns `approval_digest = SHA-256(to_be_signed)`. |
+| `approve_and_sign` | `trusted_client` (owner) | `proposal_id`, `approval_digest` the client computed from the bytes it displayed, passphrase. Checks owner, unexpired, unused, digest equality, attempt limit; derives the KEK, decrypts the key into a secret region, signs the Sig_structure it builds itself, zeroizes, marks the proposal used, returns the envelope. |
+| `rotate_key` / `invalidate_key` | `trusted_client` (owner) | Identity-key-signed certificate or invalidation after passphrase authentication; registered with identityd. |
+| `cancel_proposal` | `trusted_client` (owner), `service:contractd` | Discards a pending proposal. |
+
+There is no operation that signs caller-chosen bytes, exports a private key or keeps a key unlocked between operations.
+
+### cham3-contractd
+
+| Operation | Allowed roles | Behavior |
+|---|---|---|
+| `prepare_proposal` | `trusted_client` (owner); later `service:portald`/`authui` | Builds the canonical payload from a structured request and the current registry head/state/epoch: trusted timestamp, random `request_id`, `initiating_program` from the caller role, actor/subject/key ids from identityd. Asks policyd for mandatory-policy eligibility; registers the proposal with vaultd. Returns `proposal_id`, exact protected header and payload bytes, `approval_digest`. Subject identity is an M2 **fixture** supplied by the trusted client until M3 attribution exists. |
+| `submit_signed` | `trusted_client` (owner) | Verifies the envelope through all byte layers and key authority, then asks registryd to admit it against the expected head/epoch. Returns `commit_id` and `pending` status. |
+| `verify_object` | `service:*`, `trusted_client` | Reports the byte-layer and key-authority result for an envelope; never an authorization decision. |
+| `request_revocation` | `trusted_client` (owner) | Immediately asks registryd for a restriction of the named grants (ADR 0007), then prepares the signed revocation proposal. Restriction does not wait for approval. |
+
+### cham3-policyd
+
+| Operation | Allowed roles | Behavior |
+|---|---|---|
+| `evaluate` | `service:*`, `fixture_consumer` | Runtime identity (owner UID, `app_id`, installation, package identity, executable hash, session), resource category/id/operation. Returns `eligible` (with grant id and commit id), `denied` (with reason) or `unknown` (treated as denied). Never reports enforcement. Missing network policy evaluates Offline eligibility only. |
+| `check_proposal` | `service:contractd` | Mandatory-policy check of a proposed state/delta before approval. |
+| `policy_status` | `service:*`, `trusted_client` | Current epoch, minimum valid epoch, emergency restriction state, rollback-protection mode. |
+| `set_policy_epoch` / `set_emergency_restriction` | `admin` | Raise epoch / minimum valid epoch; set emergency restriction. Releasing an emergency restriction restores no grant by itself. |
+
+### cham3-registryd
+
+| Operation | Allowed roles | Behavior |
+|---|---|---|
+| `lineage_head` | `service:contractd`, `service:policyd` | Current trunk head, live temporary heads, states, epoch. |
+| `admit` | `service:contractd` | Atomic admission (ADR 0006): expected head/epoch, parents, base state, delta, uniqueness, delegation; durable before reply; admitted as `pending`. |
+| `restrict` | `service:contractd`, `service:policyd`, `admin` | Durable restrictive lifecycle record before reply (ADR 0007); denies immediately in memory first. |
+| `reserve_use` / `complete_use` | `fixture_consumer` (M2), later brokers | One-shot reservation and outcome (ADR 0007). |
+| `confirm_enforcement` | `fixture_consumer` (M2), later launcherd/netd/brokers | Pending → confirmed/failed for one domain, bound to `commit_id`, runtime id, domain and epoch. |
+| `session_event` | `fixture_consumer` (M2), later sessiond | Session start/end. |
+| `history` | `trusted_client` (own UID only), `admin` | Read-only lineage history, lifecycle records and audit gaps. |
+| `recover_user` | `admin` | Explicit recovery ceremony after quarantine (ADR 0006). |
+
+## 4. Error vocabulary
+
+Byte-layer verification errors are the codes of [wire format §7](m2_wire_format_v1.md). IPC/service errors: `malformed_request`, `unknown_operation`, `role_denied`, `owner_mismatch`, `proposal_unknown`, `proposal_expired`, `proposal_used`, `approval_mismatch`, `authentication_failed`, `attempts_exhausted`, `protection_unavailable`, `stale_head`, `stale_epoch`, `duplicate_identifier`, `quota_exhausted`, `storage_unavailable`, `quarantined`, `deadline_exceeded`.

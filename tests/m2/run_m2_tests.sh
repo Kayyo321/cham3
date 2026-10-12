@@ -6,7 +6,8 @@
 # Suites:
 #   unit       cargo test (debug and release, overflow checks on in both), each
 #              validated against tests/m2/test_inventory.txt, then the provider
-#              probe compared with the independent oracle.
+#              probe compared with the independent oracle, and the published ECR v1
+#              vectors regenerated and re-verified by the independent ECR oracle.
 #   harness    harness sensitivity, safe-core lint controls, naming checker and
 #              deployed-profile (panic=abort, overflow trap, hardening) probes.
 #   integration, recovery, packaging
@@ -98,6 +99,13 @@ step() { # name command...
     fi
 }
 
+# Invoked indirectly through step "$@", which shellcheck cannot follow.
+# shellcheck disable=SC2317
+run_ecr_oracle() {
+    python3 -I "$CHAM3_REPO_ROOT/tests/m2/oracle/ecr_oracle.py" check \
+        "$CHAM3_REPO_ROOT/tests/m2/vectors/ecr_v1/vectors.json" > "$run_dir/ecr_vector_oracle.log" 2>&1
+}
+
 step environment python3 -I "$harness" environment --run-dir "$run_dir"
 
 case "$suite" in
@@ -109,6 +117,7 @@ case "$suite" in
             cargo build --frozen -p cham3_provider_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step provider_oracle python3 -I "$harness" provider-oracle \
             --probe "$run_dir/target_debug/debug/cham3_provider_probe" --run-dir "$run_dir"
+        step ecr_vector_oracle run_ecr_oracle
         ;;
     harness)
         profile_dir=$run_dir/profile_target
