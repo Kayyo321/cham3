@@ -1,13 +1,13 @@
 # Handoff: M1 — Bootable desktop distribution (repair cycle 2)
 
-- **State:** IN_PROGRESS (repair cycle 2). Repaired candidate for independent Codex **re-review** after CHANGES_REQUESTED on `0fec3a0`. Not approved; not merged; M1 is not complete.
+- **State:** READY_TO_MERGE. Codex independently **APPROVED** `01bf7a1` on 2026-10-12, with F2 and F3 security approval GRANTED (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`). The owner authorized the merge; DONE follows the merge and passing post-merge checks (recorded in the task).
 - **Role:** Claude Code (Opus 5.5), implementation owner and coordinator/integrator. In this cycle the owner asked for the repairs to be coded directly rather than through the three subagents, so `m1_worker`, `m1_test_reviewer` and `m1_docs_research` were not used; their definitions remain in `.claude/agents/`. Independent REVIEWER and SECURITY REVIEWER: Codex (OpenAI).
 - **Model/provider:** Claude Opus 5.5 / Anthropic.
 - **Working directory / branch:** `/Users/jessicabruce/cham3`, branch `task/M1-bootable-desktop` (pushed to `origin`). The earlier contributor worktrees are unchanged and unused this cycle.
 - **Task specification:** `docs/tasks/M1-bootable-desktop-distribution.md`.
 - **Baseline commit:** `401c6cf9a550c81decf832cbc346f6908b9c95ef`.
 - **Prior reviewed commit:** `0fec3a01c18b95fc238d2168ed0d97e0d3831865` — Codex **CHANGES_REQUESTED** (`review/M1-codex-0fec3a0` at `026d606`: `docs/reviews/M1-bootable-desktop-distribution-codex-rereview.md`, evidence `docs/evidence/M1-bootable-desktop-distribution/codex_0fec3a0/`).
-- **Implementation target (resubmit):** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `origin/task/M1-bootable-desktop` (see "Implementation target" below).
+- **Implementation target (approved):** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `origin/task/M1-bootable-desktop` (see "Implementation target" below).
 
 Product authority: `PROJECT.md` §§8, 12, 13, 18; approved ADR 0002; SEC-01–18. ADR 0001 remains PROPOSED (ECR Explorer reserved, shown unavailable). Owner-approved sourcing, deferrals and firmware scope are preserved.
 
@@ -57,17 +57,19 @@ All rows ran at the implementation target `01bf7a1` in the declared environment 
 | Installed system | `run_m1_vm_checks.py installed` (network) | PASS (65/65) | Debian sources, live packages removed, apt update/upgrade origin, dumpcap lifecycle incl. fail-closed reinstall and recovery, member/nonmember capture, SDDM → Wayland, panel, launcher, inert widgets; 20 screenshots |
 | `git diff --check 401c6cf` | local | PASS | captured evidence declared `-whitespace` in `.gitattributes` |
 
-Not run and why: real hardware and UEFI boot (outside the declared VM gate); the installed-system wireshark-common upgrade step was not applicable because the mirror carries no newer version (a real version change is in the privileged suite); Codex independent re-review (pending).
+Not run and why: real hardware and UEFI boot (outside the declared VM gate); the installed-system wireshark-common upgrade step was not applicable because the mirror carries no newer version (a real version change is in the privileged suite).
+
+Independent reruns by Codex (all PASS, evidence `docs/evidence/M1-bootable-desktop-distribution/codex_01bf7a1/`): static/desktop/staging 82/261/16, F6 22, packages and lintian, F2 7/7, privileged capture 77 with no skips, an ISO rebuilt from `01bf7a1` with image-m1 54/54, VM live/install/installed 37/1/65 against the rebuilt ISO.
 
 ## Review
-- **Reviewer and exact commit:** Codex — independent re-review of `01bf7a1` pending. Prior verdicts: CHANGES_REQUESTED on `b82919c` and on `0fec3a0`.
+- **Reviewer and exact commit:** Codex — **APPROVE** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` (2026-10-12; `551266e` on `review/M1-codex-01bf7a1`). F2 and F3 security approval GRANTED; no required actions. Prior verdicts: CHANGES_REQUESTED on `b82919c` and on `0fec3a0`. All three review records are merged into the task branch as documentation.
 - **Internal review (not approval):** none independent this cycle (the owner asked for direct implementation, so the test-reviewer subagent was not used); the author does not approve its own security-sensitive work.
 
 ## Remaining
-- **Known issues/risks:** All evidence above was produced by the implementation owner in an environment it declared; it needs independent review and may be re-run by Codex from the scripted recipe. VM evidence is QEMU (q35, BIOS, virtio-vga, software rendering), not real hardware or UEFI. OCR-based checks read rendered text and can miss words (a miss fails). The firmware licence acceptance for `firmware-ipw2x00`/`firmware-ivtv` is an owner decision for the development image, to revisit before any release. The three deferred tools remain absent pending a separate reviewed task. The Kali archive key expires 2028-04-17 (fail-closed). LibreWolf has no independent second trust channel. Package maintainer/copyright/licence placeholders remain owner decisions before publication. Scratch branches `ci/m1-vm-1` and `ci/m1-vm-2` (VM-harness iteration against earlier ISOs, not evidence) remain on `origin` and can be deleted.
+- **Known issues/risks:** The evidence above was produced by the implementation owner in an environment it declared; Codex reran the gates independently from the scripted recipe. VM evidence is QEMU (q35, BIOS, virtio-vga, software rendering), not real hardware or UEFI. OCR-based checks read rendered text and can miss words (a miss fails). The firmware licence acceptance for `firmware-ipw2x00`/`firmware-ivtv` is an owner decision for the development image, to revisit before any release. The three deferred tools remain absent pending a separate reviewed task. The Kali archive key expires 2028-04-17 (fail-closed). LibreWolf has no independent second trust channel. Package maintainer/copyright/licence placeholders remain owner decisions before publication. Scratch branches `ci/m1-vm-1` and `ci/m1-vm-2` (VM-harness iteration against earlier ISOs, not evidence) remain on `origin` and can be deleted.
 - **Uncommitted paths or dirty state:** none at handoff.
-- **Required next action and owner:** Codex (REVIEWER/SECURITY REVIEWER) independently re-reviews the exact implementation target, the F2/F3 security design and the recorded native evidence, and may re-run the scripted gates. On APPROVE: the integrator merges through the owner-approved process. On CHANGES_REQUESTED: the coordinator repairs against the exact reviewed commit.
+- **Required next action and owner:** Claude Code (INTEGRATOR) merges into `main` with `--no-ff` (owner-authorized 2026-10-12), publishes it, runs the post-merge checks and then records DONE in the task and `docs/STATUS.md`.
 
 ## Implementation target
-- **Target (resubmit to Codex):** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `origin/task/M1-bootable-desktop`, the complete repaired implementation (F6, F3, F7, F8 and the native-gate defects; all tests and verification code). The branch HEAD is this target plus documentation-only commits that record the evidence (`docs/**` only; the heavy workflow ignores them).
+- **Target (approved by Codex):** `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on `origin/task/M1-bootable-desktop`, the complete repaired implementation (F6, F3, F7, F8 and the native-gate defects; all tests and verification code). The branch HEAD is this target plus documentation-only commits that record the evidence (`docs/**` only; the heavy workflow ignores them).
 - **Baseline:** `401c6cf9a550c81decf832cbc346f6908b9c95ef`. **Supersedes** `0fec3a0`.

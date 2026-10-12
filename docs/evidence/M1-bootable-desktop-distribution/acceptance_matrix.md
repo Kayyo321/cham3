@@ -3,9 +3,10 @@
 Task: `docs/tasks/M1-bootable-desktop-distribution.md`. Baseline `401c6cf`.
 Implementation target `01bf7a1f1066fae15ab51a56a5212c0a69780ab8`. This matrix holds
 only evidence actually produced. Statuses are PASS, FAIL, NOT_RUN or BLOCKED. A
-build/boot/VM result is never described as proof of M2–M4 security enforcement. All
-evidence below was produced by the implementation owner and awaits independent Codex
-review (A15).
+build/boot/VM result is never described as proof of M2–M4 security enforcement. The
+evidence below was produced by the implementation owner. Codex independently reviewed
+the target and reran the native, privileged, image and VM gates (A15: APPROVE, F2/F3
+security approval GRANTED; [codex_01bf7a1/](codex_01bf7a1/README.md)).
 
 Evidence stages: **static** (repository content) · **native** (x86-64 Debian 13
 containers on GitHub-hosted runners; real archives) · **image** (the built ISO) ·
@@ -29,10 +30,10 @@ the target: [native_01bf7a1/](native_01bf7a1/README.md) (runs 38207816363,
 | A11 | Installed `.desktop` entries in correct categories, pass validation; launches resolve to installed applications | static + VM | PASS | desktop-file suite; launcher shows seven menu categories; search for Wireshark and Enter started a real `wireshark` process in the live and installed sessions |
 | A12 | Debian KDE utilities present; named redundant alternatives absent (including transitive) | static + image | PASS | relation tests; image manifest has the KDE core utilities and none of the excluded duplicates, gated tools or desktop conflicts |
 | A13 | Evidence recorded with exact commands/environment and PASS/FAIL/NOT_RUN/BLOCKED; build/boot not called M2–M4 proof | all | PASS | `native_01bf7a1/` (commands, environment, run URLs, artifact hashes, `SHA256SUMS`), this matrix, the handoff |
-| A14 | `docs/STATUS.md` updated only with evidence-backed results | n/a | PASS | STATUS records the target and these results as owner-produced evidence pending review |
-| A15 | Independent reviewer examines the exact target; security review required before READY_TO_MERGE/DONE | review | NOT_RUN (re-review pending) | Codex returned CHANGES_REQUESTED on `b82919c` and `0fec3a0`; re-review of `01bf7a1` pending. F2 and F3 security approval is Codex's |
+| A14 | `docs/STATUS.md` updated only with evidence-backed results | n/a | PASS | STATUS records the target, the owner-produced evidence and the independent approval |
+| A15 | Independent reviewer examines the exact target; security review required before READY_TO_MERGE/DONE | review | PASS | Codex **APPROVE** on `01bf7a1` (2026-10-12) with F2 and F3 security approval GRANTED: `docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`. Independent reruns: F6 22, F2 7/7, privileged capture 77, rebuilt ISO with image-m1 54/54, VM 37/1/65 (`codex_01bf7a1/`). Earlier CHANGES_REQUESTED on `b82919c` and `0fec3a0` |
 
-## Finding dispositions (Codex re-review of `0fec3a0`)
+## Finding dispositions (Codex re-review of `0fec3a0`; all closed by the `01bf7a1` review)
 
 | Finding | Disposition | Native evidence at the target |
 |---|---|---|

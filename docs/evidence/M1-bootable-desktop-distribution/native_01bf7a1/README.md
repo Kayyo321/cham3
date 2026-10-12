@@ -29,8 +29,11 @@ authentication on.
 | `provenance.json` (`iso/`) | `c8c90a6c9f7e66670b5b2a2a0363bf8f755c83460f8bda15abb398926be9022e` |
 | `build.log` (`iso/`) | `981c348935657b22aa28dfbe4ff02daad05f4b47f1d6363ff72b07178d8a3135` |
 
-The VM phases record the ISO hash they booted (`vm/*/results.json`, `iso_sha256`);
-it equals the value above. `SHA256SUMS` in this directory binds every committed file.
+The live and install phases record the ISO hash they booted (`iso_sha256` in
+`vm/live/results.json` and `vm/install/results.json`); it equals the value above. The
+installed phase boots the disk the install phase wrote in the same job and does not
+record an ISO hash itself (wording corrected after the Codex review of `01bf7a1`).
+`SHA256SUMS` in this directory binds every committed file.
 
 ## Results
 
