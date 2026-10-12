@@ -6,8 +6,8 @@
 set -eu
 export DEBIAN_FRONTEND=noninteractive
 export PYTHONDONTWRITEBYTECODE=1
-export CHAM3_REPO_ROOT=${CHAM3_REPO_ROOT:-/src}
-export CHAM3_OUT_DIR=${CHAM3_OUT_DIR:-/out}
+export CHAM3_REPO_ROOT="${CHAM3_REPO_ROOT:-/src}"
+export CHAM3_OUT_DIR="${CHAM3_OUT_DIR:-/out}"
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "in_container: must run as root (capture and staging checks change system state)" >&2
