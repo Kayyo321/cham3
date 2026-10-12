@@ -57,10 +57,12 @@ Packet capture (dumpcap)
   The override names group root, not "wireshark", because wireshark-common
   deletes the wireshark group when it is purged and dpkg aborts on an override
   naming an unknown group. The postrm removes the override when cham3-desktop
-  is removed, but only if it is exactly this one. An override set by the
-  administrator is respected: only the set-id bits are cleared, and
-  capabilities are set only if the file is root:wireshark with no access for
-  others.
+  is purged, but only if it is exactly this one; removing the package without
+  purging it keeps the override, so a reinstalled or upgraded wireshark-common
+  still cannot create a set-user-id dumpcap (capture stays unavailable until
+  cham3-desktop is installed again). An override set by the administrator is
+  respected: only the set-id bits are cleared, and capabilities are set only if
+  the file is root:wireshark with no access for others.
   Membership of the "wireshark" group is NOT granted by installation. Adding a
   user to the group is a deliberate administrative step that lets that user
   capture the network traffic visible to the host, so treat it as a privilege.

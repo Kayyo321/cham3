@@ -1,8 +1,15 @@
 #!/bin/sh
-# cham3-desktop postrm: drop the dpkg-statoverride that debian/postinst pins on
-# /usr/bin/dumpcap, but only when it is exactly the one this package adds. An
-# override set by the administrator is never touched. The file's ownership,
-# mode and capabilities are left as they are.
+# cham3-desktop postrm: on purge only, drop the dpkg-statoverride that
+# debian/postinst pins on /usr/bin/dumpcap, and only when it is exactly the one
+# this package adds. An override set by the administrator is never touched. The
+# file's ownership, mode and capabilities are left as they are.
+#
+# The override is deliberately kept when the package is merely removed: it is the
+# part of the policy that stops wireshark-common's postinst from creating a
+# set-user-id dumpcap, so the no-setuid protection persists through a temporary
+# removal of cham3-desktop. Until the package is installed again, a reinstalled
+# or upgraded wireshark-common leaves dumpcap root-owned without capabilities
+# (capture unavailable, never set-user-id).
 set -e
 
 dumpcap_default_path=/usr/bin/dumpcap
@@ -17,10 +24,10 @@ remove_dumpcap_override() {
 }
 
 case "$1" in
-    remove | purge)
+    purge)
         remove_dumpcap_override
         ;;
-    upgrade | failed-upgrade | abort-install | abort-upgrade | disappear) ;;
+    remove | upgrade | failed-upgrade | abort-install | abort-upgrade | disappear) ;;
     *)
         echo "postrm called with unknown argument '$1'" >&2
         exit 1
