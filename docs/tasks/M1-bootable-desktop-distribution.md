@@ -1,7 +1,7 @@
 # Task: M1 — Bootable desktop distribution
 
-- **State:** READY_TO_MERGE. Independent Codex re-review **APPROVED** implementation target `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` on 2026-10-12 with F2 and F3 security approval **GRANTED** (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`, evidence `docs/evidence/M1-bootable-desktop-distribution/codex_01bf7a1/`). All acceptance criteria have evidence. The owner authorized the merge on 2026-10-12; DONE follows the merge and passing post-merge checks.
-- **Next owner / action:** Claude Code (INTEGRATOR) merges into `main` with `--no-ff`, publishes it, and records the post-merge checks.
+- **State:** DONE (owner-authorized merge `50e0ee2c16b2db619d106f969df90c84b88e67ae` published to `origin/main`; all acceptance criteria and post-merge GitHub Actions PASS). Implementation target `01bf7a1f1066fae15ab51a56a5212c0a69780ab8` was independently **APPROVED** by Codex with F2 and F3 security approval **GRANTED** (`docs/reviews/M1-bootable-desktop-distribution-codex-01bf7a1.md`, evidence `docs/evidence/M1-bootable-desktop-distribution/codex_01bf7a1/`).
+- **Next owner / action:** Owner/coordinator plans the next milestone. M1 is complete within its development scope. The three deferred tools, the firmware licence decision and package publication metadata remain open before any public release.
 - **Owner / role / provider:** Claude Code (Opus 5.5) COORDINATOR/INTEGRATOR + IMPLEMENTER. Cycles 0–1 used the subagents `m1_worker` (Sonnet 5.5), `m1_test_reviewer` (Haiku 5.5) and `m1_docs_research` (Haiku 5.5); in repair cycle 2 the owner asked for direct implementation without them. Independent REVIEWER/SECURITY REVIEWER: Codex (OpenAI) — CHANGES_REQUESTED on `b82919c` and `0fec3a0`; **APPROVE** on `01bf7a1`.
 - **Created / updated:** 2026-10-11 / 2026-10-12
 - **Base commit (M1 implementation baseline):** `401c6cf9a550c81decf832cbc346f6908b9c95ef` (current `main`; includes approved ADR 0002 and current branding assets). The older historical base `3f4690d80c87f4d1a2da88a9bbc1ba7bacb1dedc` recorded at drafting is superseded as the implementation baseline and kept as context only.
@@ -177,3 +177,24 @@ Status at `01bf7a1` (2026-10-12): every criterion below has evidence, mapped row
   - Key rotation, release licence/publication readiness and the three deferred tools are separate work.
   - The installed phase's ISO identity is traced through the same job rather than recorded in the phase itself.
 - **Required actions:** none. The integrator owns the task/status updates and integration.
+
+### Owner-authorized integration (2026-10-12)
+
+- **Authorization:** on 2026-10-12, after the Codex approval, the owner asked to "make its status complete and merge".
+- **Records added to the task branch:** the three Codex review records (`review/M1-codex-b82919c` at `cde8039`, `review/M1-codex-0fec3a0` at `026d606`, `review/M1-codex-01bf7a1` at `551266e`), plus READY_TO_MERGE commit `75f586aed8644293d8d74de2e9f1cb91fe0918a6`. These changes are documentation only. `git diff --quiet 01bf7a1 75f586a -- ':!docs'` PASS: the approved implementation is unchanged.
+- **Merge:** `git merge --no-ff task/M1-bootable-desktop` on `main` produced `50e0ee2c16b2db619d106f969df90c84b88e67ae`. Its first parent is `401c6cf9a550c81decf832cbc346f6908b9c95ef`; its second parent is `75f586a`. There were no conflicts. Its tree equals `75f586a`.
+- **Publication:** `git push origin refs/heads/task/M1-bootable-desktop:refs/heads/task/M1-bootable-desktop refs/heads/main:refs/heads/main` advanced `origin/main` from `401c6cf` to `50e0ee2` (fast-forward, no force push). `git ls-remote --heads origin main` confirmed the remote tip.
+- **Post-merge verification: PASS at `50e0ee2`.** All runs used disposable GitHub-hosted x86-64 runners with `debian:trixie` containers.
+  - [m1_checks 38256907579](https://github.com/Kayyo321/cham3/actions/runs/38256907579):
+    - static checks;
+    - static/desktop/staging/apt 82/261/16/22;
+    - packages 8 with lintian exit 0;
+    - privileged capture 77.
+  - [m0_checks 38256907472](https://github.com/Kayyo321/cham3/actions/runs/38256907472): M0 image build, 17 image tests, QEMU boot, 18 boot tests.
+  - [m1_image 38256914419](https://github.com/Kayyo321/cham3/actions/runs/38256914419), via `gh workflow run m1_image.yml --ref main`:
+    - F2 real-archive gates 7/7: 9 947 foreign-only packages with 0 escaped; closure of 8 Kali and 1 LibreWolf downloads;
+    - M1 ISO built from `50e0ee2` with a clean tree, sha256 `477153203491984ca4326744a9563e1a998ce994e3065908b476421eaf81dd10`;
+    - image-m1 54 tests, and no firmware host in the build log;
+    - VM: live 37/37, install completed in 335 s, installed 65/65.
+  - Evidence (run and job metadata, artifact digests, log summary lines, commands): `docs/evidence/M1-bootable-desktop-distribution/postmerge_ci_50e0ee2.json`.
+- **Completion:** after post-merge success, this documentation-only record sets DONE. M1 completion establishes the development desktop image, packages and installer path. It does not establish M2–M4 enforcement, UEFI or hardware compatibility, a reproducible ISO, or release readiness.

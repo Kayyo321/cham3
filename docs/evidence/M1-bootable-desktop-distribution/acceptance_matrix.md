@@ -50,6 +50,13 @@ firmware licence answers for `firmware-ipw2x00`/`firmware-ivtv` (owner decision
 packages kept on installed systems, and installed systems without Debian sources
 (`apt-mirror-setup`).
 
+## Post-merge verification
+
+Merge `50e0ee2` on `main` (owner-authorized, 2026-10-12): `m1_checks` 38256907579,
+`m0_checks` 38256907472 and `m1_image` 38256914419 all PASS, including an ISO
+rebuilt from the merge commit (sha256 `47715320…dd10`), image-m1 54, VM 37/1/65.
+Evidence: [postmerge_ci_50e0ee2.json](postmerge_ci_50e0ee2.json). M1 is DONE.
+
 ## Notes
 
 - The six foreign roles come only from the two narrowly pinned, authenticated
