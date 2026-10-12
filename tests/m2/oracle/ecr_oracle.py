@@ -1957,6 +1957,16 @@ def build_journal_scenarios(keys, kate, ids, payloads):
     def restart(note=""):
         return with_check({"restart": True}, "admitted", None, note)
 
+    def keys_observed(step, named):
+        """Revision 4.1 (I04): key-authority state after the step. Unnamed: no recovery key
+        in scope, minimum signing epoch unchanged, nothing retired. Named: the ceremony's
+        keys in scope, minimum epoch 2, the pre-ceremony contract keys retired."""
+        if named:
+            step["keys"] = {"named": True, "min_key_epoch": 2, "retired": sorted([persistent.key_id.hex(), temporary.key_id.hex()])}
+        else:
+            step["keys"] = {"named": False, "min_key_epoch": 0, "retired": []}
+        return step
+
     def scenario(name, finding, description, steps, key_authority=False):
         scenarios.append({"name": name, "finding": finding, "description": description,
                           "key_authority": key_authority, "steps": steps})
@@ -2356,8 +2366,8 @@ def build_journal_scenarios(keys, kate, ids, payloads):
                  name_keys(fails("admission", "recovery_rule"), named=(keys["user_1002_persistent"], None), note="key not certified for this user"),
                  name_keys(fails("admission", "recovery_rule"), named=(persistent, temporary), note="pre-ceremony keys below the ceremony epoch"),
                  commit(kate_recovered, fails("key_authority", "recovery_key_required"), note="certified but unnamed keys sign nothing"),
-                 counted(status(named_status(None)), 17),
-                 counted(name_keys(result={"named": True, "already_named": False}, check={"ended": suspended}), 18),
+                 keys_observed(counted(status(named_status(None)), 17), named=False),
+                 keys_observed(counted(name_keys(result={"named": True, "already_named": False}, check={"ended": suspended}), 18), named=True),
                  counted(name_keys(result={"named": True, "already_named": True}, note="retry after a lost reply: no second record"), 18),
                  name_keys(fails("admission", "recovery_rule"), named=(abandoned, None), note="a ceremony names its keys once"),
                  status(named_status()),
@@ -2371,10 +2381,12 @@ def build_journal_scenarios(keys, kate, ids, payloads):
     scenario("recovery_naming_anchor_failure_restart", "R14",
              "The naming record is durable but its anchor update fails: it takes effect only once anchored, nothing is served past the unanchored tail, and a restart rolls it forward; vaultd's retry then reconciles without a second record",
              certified + [
-                 counted(faulted(name_keys(fails("ipc", "storage_unavailable"))), 18),
-                 counted(faulted(commit(kate_recovered, fails("ipc", "storage_unavailable"), note="no admission while the user's tail is unanchored")), 18),
-                 faulted(status(None, expect=fails("ipc", "storage_unavailable"), note="vaultd keeps its key objects on an unknown status")),
-                 restart("startup roll-forward of the complete, durable tail (ADR 0006 section 4)"),
+                 keys_observed(counted(faulted(name_keys(fails("ipc", "storage_unavailable"))), 18), named=False),
+                 keys_observed(counted(faulted(commit(kate_recovered, fails("ipc", "storage_unavailable"),
+                                                      note="no admission while the user's tail is unanchored")), 18), named=False),
+                 keys_observed(faulted(status(None, expect=fails("ipc", "storage_unavailable"), note="vaultd keeps its key objects on an unknown status")),
+                               named=False),
+                 keys_observed(restart("startup roll-forward of the complete, durable tail (ADR 0006 section 4)"), named=True),
                  status(named_status(), note="vaultd keeps the named keys"),
                  counted(identity_step(recovery_persistent_certificate, "key_certificate",
                                        note="identityd re-registration of an identical certificate is idempotent"), 18),
@@ -2384,9 +2396,9 @@ def build_journal_scenarios(keys, kate, ids, payloads):
     scenario("recovery_naming_anchor_failure_retry", "R14",
              "Same-run retry after an anchor failure: the next call first completes the anchor update of the durable tail, then reports the keys as already named",
              certified + [
-                 counted(faulted(name_keys(fails("ipc", "storage_unavailable"))), 18),
-                 faulted(name_keys(fails("ipc", "storage_unavailable"), note="the anchor still fails: no second record")),
-                 counted(name_keys(result={"named": True, "already_named": True}), 18),
+                 keys_observed(counted(faulted(name_keys(fails("ipc", "storage_unavailable"))), 18), named=False),
+                 keys_observed(faulted(name_keys(fails("ipc", "storage_unavailable"), note="the anchor still fails: no second record")), named=False),
+                 keys_observed(counted(name_keys(result={"named": True, "already_named": True}), 18), named=True),
                  name_keys(fails("admission", "recovery_rule"), named=(abandoned, None)),
                  counted(commit(kate_recovered, check={"current": renewed_ids}), 19)],
              key_authority=True)
@@ -2429,6 +2441,15 @@ def run_scenario(scenario, valid_by_name, resolver):
         if "result" in step and (result is None or encode_record(result) != step["result"]):
             failures.append("scenario %s step %d: result %s, expected %s" % (scenario["name"], index,
                                                                              None if result is None else encode_record(result), step["result"]))
+        if "keys" in step:
+            # Revision 4.1 (I04): observe key-authority state directly, independent of the
+            # step's response, so an early (pre-anchor) effect cannot hide behind a
+            # correct error code.
+            recovery = journal.recovery
+            observed = {"named": recovery is not None and "persistent_key_id" in recovery, "min_key_epoch": journal.min_key_epoch,
+                        "retired": sorted(key_id.hex() for key_id, key in journal.keys.items() if key.retired)}
+            if observed != step["keys"]:
+                failures.append("scenario %s step %d: key state %s, expected %s" % (scenario["name"], index, observed, step["keys"]))
         if "records" in step and service.durable_records() != step["records"]:
             failures.append("scenario %s step %d: %d durable records, expected %d" % (scenario["name"], index,
                                                                                      service.durable_records(), step["records"]))

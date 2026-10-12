@@ -302,6 +302,42 @@ class review_regressions_t(unittest.TestCase):
                                             {"recovery_naming_anchor_failure_restart", "recovery_naming_anchor_failure_retry"})
         self.assertTrue(any("recovery_naming_anchor_failure_restart" in failure for failure in failures), failures)
 
+    def test_defect_naming_effective_before_anchor_with_preserved_responses_is_detected(self):
+        # I04 (re-review 3a3b5d1): the reviewer's mutant applies the naming scope, epoch
+        # floor and retirement before the anchor update, yet keeps every response
+        # (storage_unavailable), the pending-tail block and the retry result. Only the
+        # scenarios' direct key-state observations can detect it.
+        oracle = self.oracle
+        original = oracle.registry_service_t.op_name_recovery_keys
+
+        def early(service, args, anchor_fault):
+            if not anchor_fault:
+                return original(service, args, False)
+            original(service, args, False)
+            service.journal.sequence -= 1
+            service.pending = {"record": "recovery_keys", "recovery_id": args["recovery_id"],
+                               "persistent_key_id": args["persistent_key_id"], "temporary_key_id": args["temporary_key_id"]}
+            oracle.ipc_error("storage_unavailable")
+
+        def settle(service, anchor_fault=False):
+            if service.pending is None:
+                return
+            if anchor_fault:
+                oracle.ipc_error("storage_unavailable")
+            service.pending = None
+            service.journal.sequence += 1
+        names = {"recovery_naming_anchor_failure_restart", "recovery_naming_anchor_failure_retry"}
+        saved = (oracle.registry_service_t.op_name_recovery_keys, oracle.registry_service_t.settle)
+        oracle.registry_service_t.op_name_recovery_keys, oracle.registry_service_t.settle = early, settle
+        try:
+            failures = self.scenario_failures(names)
+        finally:
+            oracle.registry_service_t.op_name_recovery_keys, oracle.registry_service_t.settle = saved
+        for name in names:
+            self.assertTrue(any(name in failure and "key state" in failure for failure in failures), failures)
+        self.assertFalse(any("expected" in failure and "key state" not in failure for failure in failures),
+                         "responses and record counts are preserved by this mutant: %s" % failures)
+
     def test_defect_lost_durable_tail_is_detected(self):
         def drop_tail(service, anchor_fault=False):
             if anchor_fault and service.pending is not None:
