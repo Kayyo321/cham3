@@ -23,9 +23,13 @@ This source-specific CoreGraphics recipe retains all opaque foreground colors fr
 
 ## Imagegen prompt and disposition
 
-Built-in imagegen was used in background-extraction edit mode with the owner attachment and transparent output. Prompt:
+Built-in imagegen was used in background-extraction edit mode with the owner attachment and transparent output. Exact prompt:
 
-> Remove only the dark background, including dark negative spaces inside the emblem and letter counters. Keep the three curled chameleons exactly as drawn, with their original position, orientation, shape, texture and colors: purple top, coral pink lower left, off-white lower right. Preserve the exact Cham3 wordmark, white Cham and coral pink 3, lettering and layout. Preserve the dark circular eye rings and colored pupil centers. Spaces between animals and within curled tails become transparent. No redesign, approximation, shadow, glow, outline, new shapes, font changes or extra text. Output the complete emblem and wordmark on genuine transparency.
+```text
+Use case: background-extraction
+Asset type: cham3 OS canonical transparent logo, full emblem and wordmark.
+Input image 1: EDIT TARGET and exact owner approved artwork. Remove only the dark background, including dark negative spaces inside the emblem and letter counters and eye rings. Keep the three flat curled chameleons EXACTLY as drawn, in their same position, orientation, shape, texture and colors: purple top, coral pink lower left, off-white lower right. Preserve the exact wordmark 'Cham3' including white Cham and coral pink 3, exact lettering and layout. Preserve circular dark eye rings as opaque near-black artwork, with colored pupil centers unchanged; spaces between animals and within their curled tails become transparent. No redesign, no vector approximation, no shadow, no glow, no outline, no new shapes, no change of font, no added text. Output the complete emblem plus wordmark on genuine transparent background, tightly bounded with small clear padding, high quality clean edges. Only background changes.
+```
 
 The generated draft had extraction artifacts and changed source colors; it was rejected. Final local finishing uses the supplied raster pixels instead. The opaque source remains byte-identical to the attachment. The generated draft is not a project asset.
 

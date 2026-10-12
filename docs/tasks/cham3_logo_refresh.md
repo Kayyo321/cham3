@@ -1,6 +1,6 @@
 # Task: cham3_logo_refresh — Replace logo artwork and wallpaper
 
-- **State:** IMPLEMENTED
+- **State:** READY_TO_MERGE
 - **Owner / role / provider:** Codex / COORDINATOR and IMPLEMENTER / OpenAI
 - **Created / updated:** 2026-10-12
 - **Base commit:** `bfe7de93072b4dd8816785f9c9d60e21a2da0226`
@@ -25,7 +25,7 @@ Replace the three PNGs in `assets/branding/` and the one PNG in `assets/wallpape
 - [x] Full transparent logo and emblem-only transparent icon show the new artwork and clear negative space, with no old stacked mascot.
 - [x] Wallpaper shows the new full logo at the established size, centered on uniform charcoal, without added effects.
 - [x] All current artwork consumers resolve to the replacement assets; historical evidence stays intact.
-- [ ] Dimensions, alpha, hashes, visual QA, packaging-path checks and independent review have evidence.
+- [x] Dimensions, alpha, hashes, visual QA, packaging-path checks and independent review have evidence.
 
 ## Security and verification
 
@@ -35,6 +35,6 @@ Static artwork only; no authority or security boundary changes. Security review 
 
 - Implementer: Codex, branch `codex/cham3_logo_refresh`, worktree `/Users/jessicabruce/cham3`.
 - Startup working tree: clean, on `codex/m2-cryptographic-contract-core`; its HEAD is the base above.
-- Independent reviewer: to be assigned after an immutable implementation commit; read-only review per `docs/agents/ORCHESTRATION.md`.
-- Target commit: pending.
+- Independent reviewer: Codex `review_logo_refresh`, read-only review per `docs/agents/ORCHESTRATION.md`; APPROVE, no findings. See `docs/reviews/cham3_logo_refresh.md`.
+- Target commit: `a2993749bd174bfff18394e2c109b01d036fef42`.
 - Open owner decisions/blockers: none.
