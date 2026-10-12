@@ -1,0 +1,10 @@
+PASS ed25519_rfc8032_vectors
+PASS ed25519_strict_noncanonical_s
+PASS xchacha20poly1305_draft_vector
+PASS argon2id_rfc9106_vector
+PASS sha256_fips180_vectors
+PASS subtle_constant_time_eq
+PASS linux_getrandom
+ARGON2ID_ORACLE_CASE d5bce1e8bcf1a2727ac0ec5e24a1a6e45283490b4a6c6006c948a2ce5e375c38
+==1593==     in use at exit: 0 bytes in 0 blocks
+==1593== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

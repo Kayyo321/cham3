@@ -1,0 +1,6 @@
+PASS environment
+PASS cargo_test_debug
+PASS cargo_test_release
+PASS build_probe
+PASS provider_oracle
+PASS ecr_vector_oracle

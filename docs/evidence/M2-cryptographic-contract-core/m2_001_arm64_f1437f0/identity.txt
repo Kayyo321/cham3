@@ -1,0 +1,8 @@
+commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd
+tree cffec4381e9ecde0ac827735e4d2f632fd37b768
+dirty_tracked 0
+architecture arm64
+debian_version 13.7
+uname Linux 6.12.72-linuxkit aarch64 GNU/Linux
+euid 1000
+cargo_lock_sha256 fc87901c5e58acdba21a33fe516871e45a81072585bfa2ae82aa8e60c40310f6
