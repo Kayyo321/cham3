@@ -66,5 +66,5 @@ Recorded in `docs/tasks/M1-bootable-desktop-distribution.md`: include six foreig
   3. On CHANGES_REQUESTED/BLOCKED: coordinator returns the task to the same three subagents against the exact reviewed commit.
 
 ## Repaired implementation target
-- **Target (resubmit to Codex):** `__REPAIR_TARGET__` on `origin/task/M1-bootable-desktop`.
+- **Target (resubmit to Codex):** `0fec3a01c18b95fc238d2168ed0d97e0d3831865` on `origin/task/M1-bootable-desktop`. This commit is the complete repaired implementation (F1–F5 + firmware + all tests and docs; fast gates PASS on a fresh clone). The branch HEAD is this target plus a single documentation-only commit that records this target line (analogous to the prior cycle's docs tip on `b82919c`).
 - **Baseline:** `401c6cf9a550c81decf832cbc346f6908b9c95ef`. **Supersedes** prior candidate `b82919c`.
