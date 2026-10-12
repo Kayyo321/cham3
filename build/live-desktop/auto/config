@@ -52,6 +52,21 @@ sh auto/build_archive_keyring
 # adapters are therefore not supported out of the box. --firmware-binary stays true
 # (installer-side firmware).
 #
+# Apt indices (F2): --apt-indices true keeps /var/lib/apt/lists in the final image. That
+# is live-build's default; it is stated here so that a changed default or an accidental
+# "false" cannot silently remove them. The image origin gate reads the Debian, Kali and
+# LibreWolf Packages indices from there: a Kali version string such as radare2
+# 6.0.4+dfsg-1 carries no marker, so the index is the only record of which archive a
+# package version comes from (supply-chain auditability), and the installed system has
+# ready apt metadata. live-build's chroot_archives "remove" stage deletes the build-time
+# lists and runs apt-get update again against the final sources (the Debian mirrors below
+# plus the persistent zzz_cham3_*.list files), so the kept indices describe exactly the
+# sources the installed system uses. The cost, measured in a staged run on 2026-10-12, is
+# about 233 MiB of index files uncompressed (Packages 138, Sources 60, Translation 35) and
+# about 51 MiB inside the xz-compressed squashfs; the Kali Packages file alone is 81 MiB.
+# --apt-source-archives false would drop the Sources part but also the deb-src entries, and
+# is not set.
+#
 # --apt-recommends false (decision, differs from stock KDE installs): recommends
 # would roughly double the package count and pull in services this image must not
 # ship by default, for example kdeconnect (a LAN-listening daemon) and VLC
@@ -78,6 +93,7 @@ lb config noauto \
     --security true \
     --updates true \
     --apt-secure true \
+    --apt-indices true \
     --apt-recommends false \
     --cache false \
     --mirror-bootstrap http://deb.debian.org/debian/ \
