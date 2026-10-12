@@ -1,6 +1,6 @@
 # ADR 0007: M2 lifecycle evidence, time and consumption (G5)
 
-- **Status:** PROPOSED (revision 4) — awaiting independent re-review and owner approval. Nothing here is approved. Contains two explicit owner choices (§4, §8).
+- **Status:** APPROVED (revision 4) — owner-approved 2026-10-12 (G5) after the independent revision-5 re-review, with the owner choices **§4 Option A** and **§8 Option B**; the §8 forward-error question is deferred (no M2 operation lowers trusted time).
 - **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R04, R07, R09); revision 3 on 2026-10-12 after the re-review at 336f13be6a19bb871ea956d64f9cacb0936fe028 (CHANGES_REQUESTED: R07-r2 network uniqueness across live branches, R09-r2 trusted-time rebasing and persistence); revision 4 on 2026-10-12 after the re-review at f451f2e346e6981b24802a7e9070ba09303c40d3 (CHANGES_REQUESTED: R15 — two stated clock limits were false) / cham3 project owner. Revision-3 responses: [M2-001-002-finding-resolutions-r2.md](../reviews/M2-001-002-finding-resolutions-r2.md); revision-4 responses: [M2-001-002-finding-resolutions-r3.md](../reviews/M2-001-002-finding-resolutions-r3.md).
 - **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G5, M2-006, A06, A09, A11, A13; PROJECT.md §§3.2–3.3, 5.2, 5.3, 5.5, 5.6, 11.4; [ADR 0001](0001_eternal_contract_repository.md) approved lifecycle decision; [ADR 0002](0002_default_right_taskbar_layout.md) emergency denial; SEC-03, SEC-06, SEC-14. Finding resolutions: [M2-001-002-finding-resolutions.md](../reviews/M2-001-002-finding-resolutions.md).
 
@@ -49,6 +49,8 @@ Every rule is evaluated at request time; nothing waits for a new signature or hi
 
 Concurrent consumers serialize on the user lock; exactly one obtains the reservation. A failed reservation write still consumes in memory and in the ledger, and denies the operation.
 
+**Owner decision (2026-10-12): Option A** — the reservation consumes. Option B is not adopted.
+
 ### 5. Trusted time (R09, R09-r2)
 
 Revision 3 replaces revision 2's lower bounds, which stopped advancing after a forward sample followed by a backward correction and persisted raw realtime floors (R09-r2). One rule, stated in terms of the **offset** `trusted − CLOCK_BOOTTIME`:
@@ -77,7 +79,9 @@ After the run-marker, ledger and anchor decisions (ADR 0006 §3–4) and replay:
 
 ### 8. Strength of the time bounds — owner choice (revision 4, R15)
 
-The §5 rule, which is unchanged, keeps trusted time monotonic within a boot and across restarts. The §5.7 limits remain. The owner decides whether M2 accepts them or adds a mechanism. The reviewer selected no option, and none is selected here.
+The §5 rule, which is unchanged, keeps trusted time monotonic within a boot and across restarts. The §5.7 limits remain. The owner decides whether M2 accepts them or adds a mechanism. The reviewer selected no option.
+
+**Owner decision (2026-10-12): Option B** — observed-time start eligibility, implemented in M2-006 as described below. Options A and C are not adopted for M2; an authenticated time source would need its own ADR. **Forward-error recovery is deferred:** M2 never lowers trusted time (an accepted forward error makes expirations early, which fails closed, and under Option B no longer advances an admitted start); recovery from a large accepted forward error stays an open question for a later ADR, and nothing is designed in M2.
 
 - **Option A: accept the §5.7 limits for M2.** No further mechanism. The limits are documented here and will be shown with the rollback/time status in M5.
 - **Option B (recommended): observed-time start eligibility.** registryd keeps an **observed-time counter**: the CLOCK_BOOTTIME seconds observed by cham3. It is persisted with every `time_floor` and ledger entry (`{boot_id, boottime, trusted, observed}`), resumed in the same boot from the maximum and at a new boot from the last persisted value. Powered-off time and wall-clock samples never advance it. The `commit_admitted` journal record (registry metadata, not the signed commit) stores the trusted time and the observed time at admission. A future `effective_start` is eligible only when rule 5 holds **and** the observed time since admission is at least `effective_start − trusted time at admission`. A forward error accepted after admission can then no longer advance a start, and acceleration is bounded by any forward error already present at admission. Cost: powered-off time never counts, so a future start is delayed by the time the machine is off between admission and the start. B does not address the lag of §5.7.1.
@@ -118,6 +122,6 @@ All planned; nothing has run except the oracle network-slot scenarios (wire form
 
 ## Approval and supersession
 
-- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R04, R07, R09). Revision 2 CHANGES_REQUESTED at 336f13b (R07-r2, R09-r2; R04 passed at design level). Revision 3 CHANGES_REQUESTED at f451f2e (R15; R07-r2 and R09-r2 passed at design/model level, R04 intact). Revision 4 requires re-review.
-- **Owner approval evidence:** none. Requires independent re-review, then an explicit owner decision including §4 and §8.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R04, R07, R09). Revision 2 CHANGES_REQUESTED at 336f13b (R07-r2, R09-r2; R04 passed at design level). Revision 3 CHANGES_REQUESTED at f451f2e (R15; R07-r2 and R09-r2 passed at design/model level, R04 intact). Revision 4 APPROVE for owner consideration at 3a3b5d1 (R15 PASS); revision 4.1 (candidate 28a8595e627bcd092acaff4b8161522cf5d38f7f, test/oracle-only; docs-only ed2ba0d, 87c9cbc) **APPROVE** at bd081df26bc31636b01bf470bd9b1fea9be7d20d on `review/m2-001-002-r5-security` (`docs/reviews/M2-001-002-codex-security-rereview-r5.md`, SHA-256 `77ec6d5f2c0c86102304b2227830b21f664fd78e6518cde3af502468bdb178af`, verified; parent 9cf8825, adds only that file).
+- **Owner approval evidence:** On 2026-10-12, after the independent revision-5 re-review recommended APPROVE for M2-001 and every gate G1–G6, the project owner (requesting user) answered the concrete approval question for G1–G6 with **“Approve all six”**, chose §4 **Option A** (reservation consumes), §8 **Option B** (observed-time start eligibility), and for the §8 open question chose **“Defer; never lower”** (no M2 operation lowers trusted time; recovery from a large accepted forward error is left to a later ADR).
 - **Supersedes / is superseded by:** revision 4 supersedes revision 3 (commit 84fa6ef172b3fad21bb079549776252bb65624d6), which superseded revision 2 (commit a2bbb370c867da57fdc72274fb17ca19a23426e4), which superseded revision 1 (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd). Implements ADR 0001's approved lifecycle decision.

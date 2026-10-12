@@ -114,7 +114,7 @@ Do not update this status based on plans, generated code claims, or chat summari
 - Current [task](tasks/M2-cryptographic-contract-core.md), [Claude prompt](prompts/m2_claude_implementation.md), [Rust research](research/M2_rust_readiness.md) and [transition handoff](handoffs/M2-rust-transition.md) supersede earlier Stasha instructions. Previous research/receipts/reviews remain historical at their stated exact commits.
 - Preparation revision DONE: [independent review](reviews/M2-rust-transition.md) APPROVED exact candidate a4f7b15948757906b63a90a584df6ad39bfa10a0; documentation/Git/removal checks PASS. Full M2 remains DRAFT; M2-001/M2-002 remain READY. Rust/Debian/provider/product verification is NOT_RUN; ECR scope, security requirements and G1–G6 design approvals are unchanged.
 
-## M2 qualification and design gates — 2026-10-12 (in review)
+## M2 qualification and design gates — 2026-10-12 (G1–G6 owner-approved; M2-003 in progress)
 
 - Claude Code implemented M2-001 and prepared M2-002 on codex/m2-cryptographic-contract-core from baseline a4bc0c4371f2298787f0876d81c0c6fd21150ea6. Exact commits, commands and results: [M2-001/M2-002 handoff](handoffs/M2-001-002-qualification-design.md).
 - M2-001: Rust workspace, pinned Debian 13 inputs, provider probes, the single reviewed unsafe adapter and the strict M2 harness. Native **arm64** development qualification PASS in a disposable Debian 13.7 container; **amd64 target qualification NOT_RUN** pending the independent reviewer's cloud run.
@@ -143,3 +143,6 @@ Do not update this status based on plans, generated code claims, or chat summari
 - The independent Debian check is to be run by the reviewer from the owner's desktop.
 - **No gate is owner-approved**; M2-003..M2-008 remain DRAFT.
 - The owner will run the final M2 review with the Codex Security plugin skill (recorded in the M2 task file).
+- Independent re-review of revision 4.1 (`review/m2-001-002-r5-security` at bd081df26bc31636b01bf470bd9b1fea9be7d20d, not merged), run on the owner's desktop: **APPROVE** for M2-001 and G1–G6. The reviewer's own Debian/RustSec advisory check PASS (0 behind, 23 triaged open items agreed, 0 RustSec affected); its own amd64 qualification PASS.
+- **Owner decisions, 2026-10-12:** G1–G6 approved (ADRs 0003–0008 APPROVED). Choices: ADR 0006 §9.1 A (same_volume degraded default), §9.2 C1 (user opens the ceremony); ADR 0007 §4 A (reservation consumes), §8 B (observed-time start eligibility; trusted time never lowered, forward-error recovery deferred); ADR 0008 §3 A (whole-account deletion).
+- M2-001 and M2-002 **DONE** ([completion handoff](handoffs/M2-001-002-completion.md)). **M2-003** (strict schema/COSE verifier) is READY and in progress; M2-004..M2-008 not started. No product M2 service behavior exists yet; design mechanisms remain NOT_RUN until their packages implement them.

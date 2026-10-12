@@ -1,6 +1,6 @@
 # ADR 0008: M2 retention, privacy and update identity (G6)
 
-- **Status:** PROPOSED (revision 4) — awaiting independent re-review and owner approval. Nothing here is approved. Contains one explicit owner choice (§3).
+- **Status:** APPROVED (revision 4) — owner-approved 2026-10-12 (G6) after the independent revision-5 re-review, with the owner choice **§3 Option A** (whole-account deletion only).
 - **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R05, R06, R11); revision 3 on 2026-10-12 after the re-review at 336f13be6a19bb871ea956d64f9cacb0936fe028 (CHANGES_REQUESTED: R12 restore validation, R13 coordinated recovery path); revision 4 on 2026-10-12 after the re-review at f451f2e346e6981b24802a7e9070ba09303c40d3 (CHANGES_REQUESTED: R14 — the coordinated recovery ceremony lacked its key-naming route; ADR 0006 §10 now specifies it, nothing else in this ADR changes) / cham3 project owner. Finding resolutions: [revision 2](../reviews/M2-001-002-finding-resolutions.md), [revision 3](../reviews/M2-001-002-finding-resolutions-r2.md), [revision 4](../reviews/M2-001-002-finding-resolutions-r3.md).
 - **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G6, M2-004, M2-006, A14; PROJECT.md §§4.3, 4.7, 6.1, 10, 12.4; [ADR 0001](0001_eternal_contract_repository.md) retention and privacy gate; SEC-15, SEC-18.
 
@@ -28,6 +28,8 @@ Per-user quota 64 MiB (configurable 16 MiB–1 GiB) and the 1 MiB restrictive re
 - **Option B: per-lineage deletion** (all history of one application installation); history of the remaining lineages stays verifiable. More privacy control, more recovery complexity: it needs a per-lineage variant of the tombstone-first ceremony (§4) and lineage tombstones in the anchor so that a deleted lineage's restored records are never replayed, and its grant ids stay reserved.
 
 Per-commit erasure is rejected in both options because it breaks lineage verification and could hide revocations.
+
+**Owner decision (2026-10-12): Option A** — whole-account deletion only. Option B is not adopted.
 
 ### 4. Account and key deletion (R11)
 
@@ -78,6 +80,6 @@ Restore of historical session/timed/one-shot scope (rejected) versus persistent 
 
 ## Approval and supersession
 
-- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R05, R06, R11). Revision 2 CHANGES_REQUESTED at 336f13b (R12, R13; R05, R06, R11 passed at design level). Revision 3 CHANGES_REQUESTED at f451f2e (R14 via the ceremony; persistent-only restore and tombstone rules intact). Revision 4 requires re-review.
-- **Owner approval evidence:** none. Requires independent re-review, then an explicit owner decision including §3.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R05, R06, R11). Revision 2 CHANGES_REQUESTED at 336f13b (R12, R13; R05, R06, R11 passed at design level). Revision 3 CHANGES_REQUESTED at f451f2e (R14 via the ceremony; persistent-only restore and tombstone rules intact). Revision 4 APPROVE for owner consideration at 3a3b5d1; revision 4.1 (candidate 28a8595e627bcd092acaff4b8161522cf5d38f7f, test/oracle-only; docs-only ed2ba0d, 87c9cbc) **APPROVE** at bd081df26bc31636b01bf470bd9b1fea9be7d20d on `review/m2-001-002-r5-security` (`docs/reviews/M2-001-002-codex-security-rereview-r5.md`, SHA-256 `77ec6d5f2c0c86102304b2227830b21f664fd78e6518cde3af502468bdb178af`, verified; parent 9cf8825, adds only that file).
+- **Owner approval evidence:** On 2026-10-12, after the independent revision-5 re-review recommended APPROVE for M2-001 and every gate G1–G6, the project owner (requesting user) answered the concrete approval question for G1–G6 with **“Approve all six”**, and chose §3 **Option A** (whole-account deletion only).
 - **Supersedes / is superseded by:** revision 4 supersedes revision 3 (commit 84fa6ef172b3fad21bb079549776252bb65624d6), which superseded revision 2 (commit a2bbb370c867da57fdc72274fb17ca19a23426e4), which superseded revision 1 (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd).

@@ -1,6 +1,6 @@
 # ADR 0004: M2 wire schema, deterministic encoding and hashes (G2)
 
-- **Status:** PROPOSED (revision 3) — awaiting independent re-review and owner approval. Nothing here is approved.
+- **Status:** APPROVED (revision 3) — owner-approved 2026-10-12 (G2) after the independent revision-5 re-review.
 - **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R06, R07, R08); revision 3 on 2026-10-12 after the re-review at 336f13be6a19bb871ea956d64f9cacb0936fe028 (CHANGES_REQUESTED: R07-r2, R12) / cham3 project owner. Finding resolutions: [revision 2](../reviews/M2-001-002-finding-resolutions.md), [revision 3](../reviews/M2-001-002-finding-resolutions-r2.md).
 - **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G2, M2-003, A03, A07; PROJECT.md §§4.2, 5.1–5.7, 6.1, 15.1; [ADR 0001](0001_eternal_contract_repository.md) canonical commit; SEC-03, SEC-04, SEC-15.
 
@@ -73,6 +73,6 @@ The oracle ([tests/m2/oracle/ecr_oracle.py](../../tests/m2/oracle/ecr_oracle.py)
 
 ## Approval and supersession
 
-- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R06–R08). Revision 2 CHANGES_REQUESTED at 336f13b (R07-r2, R12; R06 and R08 passed). Revision 3 **APPROVE for owner consideration** at f451f2e (independent recommendation, not owner approval). Revision 4 changes no normative text of this ADR or of the wire format; only the scenario counts above and the vector-layout description of wire format §9 were updated for the R14 scenarios.
-- **Owner approval evidence:** none. Requires independent re-review of the exact proposal, specification and vectors, then an explicit owner decision.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R06–R08). Revision 2 CHANGES_REQUESTED at 336f13b (R07-r2, R12; R06 and R08 passed). Revision 3 **APPROVE for owner consideration** at f451f2e (independent recommendation, not owner approval). Revision 4 changes no normative text of this ADR or of the wire format; only the scenario counts above and the vector-layout description of wire format §9 were updated for the R14 scenarios. Revision 4 APPROVE for owner consideration at 3a3b5d1; revision 4.1 (candidate 28a8595e627bcd092acaff4b8161522cf5d38f7f, test/oracle-only; docs-only ed2ba0d, 87c9cbc) **APPROVE** at bd081df26bc31636b01bf470bd9b1fea9be7d20d on `review/m2-001-002-r5-security` (`docs/reviews/M2-001-002-codex-security-rereview-r5.md`, SHA-256 `77ec6d5f2c0c86102304b2227830b21f664fd78e6518cde3af502468bdb178af`, verified; parent 9cf8825, adds only that file).
+- **Owner approval evidence:** On 2026-10-12, after the independent revision-5 re-review recommended APPROVE for M2-001 and every gate G1–G6, the project owner (requesting user) answered the concrete approval question for G1–G6 with **“Approve all six”**. The approval covers this ADR, `docs/specs/m2_wire_format_v1.md`, `docs/specs/m2_ecr_v1.cddl` and the ECR v1 vectors at 28a8595.
 - **Supersedes / is superseded by:** none. Refines ADR 0001's proposed schema details within its approved scope.
