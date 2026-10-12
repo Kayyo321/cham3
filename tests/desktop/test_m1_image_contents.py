@@ -140,12 +140,38 @@ def apt_inputs(paths, read):
     return source_files, pref_files, keyring_names, key_files
 
 
-def apt_policy_problems(source_files, pref_files, keyring_names, key_files):
+DebianKeyringFileList = "var/lib/dpkg/info/debian-archive-keyring.list"
+DebianKeyringPrefix = "debian-archive-"
+
+
+def debian_owned_trust_files(file_list_text):
+    """Paths under etc/apt/trusted.gpg.d/ that the debian-archive-keyring package installed."""
+    owned = set()
+    for line in file_list_text.splitlines():
+        path = line.strip().lstrip("/")
+        if path.startswith(ImageTrustedKeyPaths[0]) and path != ImageTrustedKeyPaths[0].rstrip("/"):
+            owned.add(path)
+    return owned
+
+
+def foreign_trust_files(key_files, debian_owned):
+    """Global-trust key files other than Debian's own archive keys (debian-archive-keyring).
+
+    Debian 13's debian-archive-keyring package installs the Debian archive keys under
+    /etc/apt/trusted.gpg.d; that is Debian's default trust for the Debian archives. Every
+    other file there (a Kali or LibreWolf key above all) is a policy violation: those keys
+    must reach apt only through Signed-By.
+    """
+    return [path for path in key_files
+            if not (path in debian_owned and os.path.basename(path).startswith(DebianKeyringPrefix))]
+
+
+def apt_policy_problems(source_files, pref_files, keyring_names, key_files, debian_owned=frozenset()):
     """Problems with the image's apt policy for the two foreign repositories (F2)."""
     problems = []
     for spec in apt.RepoSpecs:
         problems += apt.repo_policy_problems(spec, source_files, pref_files, keyring_names)
-    problems += apt.key_problems(key_files)
+    problems += apt.key_problems(foreign_trust_files(key_files, debian_owned))
     return problems
 
 
@@ -209,7 +235,8 @@ class image_contents_t(unittest.TestCase):
     def test_image_apt_policy_pins_foreign_sources(self):
         paths = rootfs_listing()
         source_files, pref_files, keyring_names, key_files = apt_inputs(paths, read_member)
-        self.assertEqual(apt_policy_problems(source_files, pref_files, keyring_names, key_files), [])
+        owned = debian_owned_trust_files(read_member(DebianKeyringFileList))
+        self.assertEqual(apt_policy_problems(source_files, pref_files, keyring_names, key_files, owned), [])
 
     def test_final_apt_sources_have_no_trusted_yes(self):
         # The final-image state. The build chroot's own local repository uses trusted=yes
@@ -224,7 +251,8 @@ class image_contents_t(unittest.TestCase):
         paths = rootfs_listing()
         _, _, keyring_names, key_files = apt_inputs(paths, read_member)
         problems = image_keyring_problems(keyring_names, shipped_keyring_names())
-        problems += apt.key_problems(key_files)
+        owned = debian_owned_trust_files(read_member(DebianKeyringFileList))
+        problems += apt.key_problems(foreign_trust_files(key_files, owned))
         self.assertEqual(problems, [])
 
     def test_no_unallowlisted_foreign_origin_package(self):
@@ -317,12 +345,12 @@ class image_apt_policy_fixture_t(unittest.TestCase):
     Keyrings = {"cham3_kali_archive.gpg", "cham3_librewolf.gpg"}
 
     def pinned(self):
-        pref = "Package: *\nPin: release o=Kali\nPin-Priority: -1\n"
+        pref = "Package: *\nPin: origin \"http.kali.org\"\nPin-Priority: -1\n"
         for package in m1_support.KaliAllowlist:
-            pref += "\nPackage: %s\nPin: release o=Kali\nPin-Priority: 500\n" % package
+            pref += "\nPackage: %s\nPin: origin \"http.kali.org\"\nPin-Priority: 500\n" % package
         lw_pref = (
-            "Package: *\nPin: release n=librewolf\nPin-Priority: -1\n\n"
-            "Package: librewolf\nPin: release n=librewolf\nPin-Priority: 500\n"
+            "Package: *\nPin: origin \"repo.librewolf.net\"\nPin-Priority: -1\n\n"
+            "Package: librewolf\nPin: origin \"repo.librewolf.net\"\nPin-Priority: 500\n"
         )
         sources = {
             "etc/apt/sources.list.d/cham3_kali.sources": apt.parse_sources(self.KaliSource),
@@ -348,12 +376,36 @@ class image_apt_policy_fixture_t(unittest.TestCase):
         problems = apt_policy_problems(sources, prefs, self.Keyrings, ["etc/apt/trusted.gpg.d/kali.gpg"])
         self.assertTrue(any("apt-key or trusted.gpg.d" in p for p in problems), problems)
 
+    def test_release_field_pins_fail_the_image_policy(self):
+        # Negative control (Codex F6): the 0fec3a0 pin form in an image.
+        sources, prefs = self.pinned()
+        prefs["etc/apt/preferences.d/cham3_kali.pref"] = apt.parse_preferences(
+            "Package: *\nPin: release o=Kali\nPin-Priority: -1\n")
+        problems = apt_policy_problems(sources, prefs, self.Keyrings, [])
+        self.assertTrue(any("bound to a field of the signed Release file" in p for p in problems), problems)
+
+    DebianList = ("/.\n/etc\n/etc/apt\n/etc/apt/trusted.gpg.d\n"
+                  "/etc/apt/trusted.gpg.d/debian-archive-trixie-stable.asc\n"
+                  "/usr/share/keyrings/debian-archive-keyring.pgp\n")
+
+    def test_debian_owned_archive_keys_are_accepted(self):
+        owned = debian_owned_trust_files(self.DebianList)
+        self.assertEqual(owned, {"etc/apt/trusted.gpg.d/debian-archive-trixie-stable.asc"})
+        sources, prefs = self.pinned()
+        keys = ["etc/apt/trusted.gpg.d/debian-archive-trixie-stable.asc"]
+        self.assertEqual(apt_policy_problems(sources, prefs, self.Keyrings, keys, owned), [])
+
+    def test_unowned_key_named_like_debian_is_rejected(self):
+        owned = debian_owned_trust_files(self.DebianList)
+        keys = ["etc/apt/trusted.gpg.d/debian-archive-kali-masquerade.asc", "etc/apt/trusted.gpg.d/kali.gpg"]
+        self.assertEqual(foreign_trust_files(keys, owned), keys)
+
     def test_apt_inputs_classify_files_by_location_not_extension(self):
         paths = {"etc/apt/sources.list.d/cham3_kali.sources", "etc/apt/preferences.d/cham3_kali.pref",
                  "usr/share/keyrings/cham3_kali_archive.gpg", "etc/apt/trusted.gpg.d/extra.gpg"}
         texts = {
             "etc/apt/sources.list.d/cham3_kali.sources": self.KaliSource,
-            "etc/apt/preferences.d/cham3_kali.pref": "Package: *\nPin: release o=Kali\nPin-Priority: -1\n",
+            "etc/apt/preferences.d/cham3_kali.pref": "Package: *\nPin: origin \"http.kali.org\"\nPin-Priority: -1\n",
         }
         sources, prefs, keyrings, keys = apt_inputs(paths, texts.__getitem__)
         self.assertEqual(sorted(sources), ["etc/apt/sources.list.d/cham3_kali.sources"])

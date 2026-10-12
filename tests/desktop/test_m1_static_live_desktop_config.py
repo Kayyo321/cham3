@@ -243,6 +243,10 @@ def auto_build_problems(text):
         problems.append("the foreign files are not moved out before lb installer and restored before lb binary")
     if "trap restore_foreign EXIT" not in code:
         problems.append("auto/build does not restore the foreign files when the installer stage fails")
+    removal = code.find("file:/run/live/medium |d' chroot/etc/apt/sources.list")
+    if not (installer < removal < binary) or "rm -f chroot/var/lib/apt/lists/_run_live_medium_*" not in code:
+        problems.append("auto/build does not remove the installer stage's trusted=yes live-medium entry "
+                        "and its indices from the live root before lb binary")
     return problems
 
 
@@ -341,6 +345,12 @@ class auto_build_fixture_t(unittest.TestCase):
         # Negative control: the 0fec3a0 auto/build, whose installer stage saw the Kali index.
         problems = auto_build_problems("#!/bin/sh\nset -eu\nlb build noauto \"${@}\"\n")
         self.assertTrue(any("order" in p for p in problems), problems)
+
+    def test_keeping_the_live_medium_entry_is_rejected(self):
+        text = m1_support.read_repo(AutoBuildPath)
+        broken = re.sub(r"(?m)^sed -i .*live/medium.*\n", "", text)
+        self.assertNotEqual(broken, text)
+        self.assertTrue(any("live-medium" in p for p in auto_build_problems(broken)))
 
     def test_restoring_after_binary_is_rejected(self):
         text = m1_support.read_repo(AutoBuildPath)
