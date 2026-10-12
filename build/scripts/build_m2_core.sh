@@ -5,7 +5,7 @@
 #   (build/m2/dev_container.dockerfile). Builds debug and release (deployment) profiles
 #   into a fresh target directory and records the toolchain, Cargo.lock digest and the
 #   SHA-256 of every produced executable.
-# Output: $CHAM3_OUT_DIR/m2/build/<arch>_<UTC time>_<pid>/ with target/, toolchain.txt
+# Output: $CHAM3_OUT_DIR/m2/build/<arch>_<UTC time>_<pid>/ with target/, identity.txt, toolchain.txt
 #   and executables.sha256. Exit 0 only if both builds succeed.
 # Limits: building proves compilation of the frozen inputs only. Service binaries and
 #   Debian packages are added by gated work package M2-007.
@@ -26,12 +26,15 @@ fi
 mkdir -p "${run_dir}"
 export CARGO_TARGET_DIR=${run_dir}/target
 
-{
-    rustc -Vv
-    cargo -V
-    echo "Cargo.lock sha256 $(sha256sum Cargo.lock | cut -d' ' -f1)"
-    echo "commit $(git -c safe.directory="${repo_root}" rev-parse HEAD)"
-} > "${run_dir}/toolchain.txt"
+# Source identity (commit, tree, Cargo.lock digest) comes from the fail-closed
+# collector (review findings R01, R01-r2); a failed collection fails the build record.
+if ! sh "${script_dir}/m2_source_identity.sh" "${run_dir}/identity.txt"; then
+    echo "source identity failed; see ${run_dir}/identity.txt" >&2
+    exit 1
+fi
+rustc_identity=$(rustc -Vv)
+cargo_identity=$(cargo -V)
+printf '%s\n%s\n' "${rustc_identity}" "${cargo_identity}" > "${run_dir}/toolchain.txt"
 
 cargo build --workspace --frozen
 cargo build --workspace --release --frozen

@@ -1,9 +1,11 @@
-"""Source-identity evidence must fail closed (review finding R01).
+"""Source-identity evidence must fail closed (review findings R01, R01-r2).
 
-Covers build/scripts/m2_source_identity.sh (used by qualify_m2_rust.sh and the
-dispatcher) and the harness environment collector: a tree without Git metadata, a
-failing identity command and a dirty tree under --require-clean must FAIL; the real
-checkout and a clean temporary repository are positive controls.
+Covers build/scripts/m2_source_identity.sh (used by qualify_m2_rust.sh,
+build_m2_core.sh and the dispatcher) and the harness environment collector: a tree
+without Git metadata, a failing identity command, a failing or malformed Cargo.lock
+hash (synthetic sha256sum first in PATH, under both sh and bash), an unreadable
+Cargo.lock and a dirty tree under --require-clean must FAIL; the real checkout and a
+clean temporary repository with a well-formed digest are positive controls.
 """
 
 import json
@@ -85,6 +87,84 @@ class source_identity_t(unittest.TestCase):
         self.assertEqual(status, 1, text)
         self.assertIn("cargo_lock_sha256 MISSING", text)
 
+    def fake_tool(self, name, body):
+        """A directory holding one synthetic tool, to be put first in PATH."""
+        tool_dir = tempfile.mkdtemp(prefix="cham3_m2_fake_tool_")
+        self.addCleanup(shutil.rmtree, tool_dir, True)
+        path = os.path.join(tool_dir, name)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("#!/bin/sh\n" + body + "\n")
+        os.chmod(path, 0o755)
+        return tool_dir + os.pathsep + os.environ.get("PATH", "")
+
+    def identity_with_path(self, root, interpreter, path, *arguments):
+        output = os.path.join(root, "identity_out.txt")
+        status, log = run([interpreter, os.path.join(root, IdentityScript), output] + list(arguments),
+                          env=dict(os.environ, PATH=path))
+        with open(output, "r", encoding="utf-8") as handle:
+            return status, handle.read() + log
+
+    def test_failed_hash_tool_fails_under_sh_and_bash(self):
+        # R01-r2 reproduction: a sha256sum that fails without output must not yield PASS.
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        path = self.fake_tool("sha256sum", "printf '%s\\n' 'injected sha256sum failure' >&2\nexit 7")
+        for interpreter in ("sh", "bash"):
+            status, text = self.identity_with_path(root, interpreter, path, "--require-clean")
+            self.assertEqual(status, 1, interpreter + ": " + text)
+            self.assertIn("cargo_lock_sha256 FAILED", text)
+            self.assertIn("sha256sum of Cargo.lock failed", text)
+            self.assertNotIn("identity PASS", text)
+
+    def test_malformed_hash_output_fails(self):
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        path = self.fake_tool("sha256sum", "printf '%s  %s\\n' 'not-a-digest' \"$2\"\nexit 0")
+        status, text = self.identity_with_path(root, "sh", path)
+        self.assertEqual(status, 1, text)
+        self.assertIn("cargo_lock_sha256 INVALID", text)
+        self.assertIn("Cargo.lock digest malformed", text)
+
+    def test_short_hex_hash_output_fails(self):
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        path = self.fake_tool("sha256sum", "printf '%s  %s\\n' 'abc123' \"$2\"\nexit 0")
+        status, text = self.identity_with_path(root, "sh", path)
+        self.assertEqual(status, 1, text)
+        self.assertIn("cargo_lock_sha256 INVALID", text)
+
+    def test_unreadable_lock_fails(self):
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        lock = os.path.join(root, "Cargo.lock")
+        os.chmod(lock, 0)
+        self.addCleanup(os.chmod, lock, 0o644)
+        # A readable result here means the fixture is not exercising the defect (for
+        # example when run as root, which the dispatcher refuses): fail, never skip.
+        self.assertFalse(os.access(lock, os.R_OK), "cannot create an unreadable Cargo.lock (running as root?)")
+        status, text = self.identity(root)
+        self.assertEqual(status, 1, text)
+        self.assertIn("cargo_lock_sha256 FAILED", text)
+        self.assertIn("sha256sum of Cargo.lock failed", text)
+
+    def test_failed_architecture_tool_fails(self):
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        path = self.fake_tool("dpkg", "exit 3")
+        status, text = self.identity_with_path(root, "sh", path)
+        self.assertEqual(status, 1, text)
+        self.assertIn("architecture FAILED", text)
+        self.assertIn("dpkg --print-architecture failed", text)
+
+    def test_clean_identity_records_well_formed_digest(self):
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        status, text = self.identity(root, "--require-clean")
+        self.assertEqual(status, 0, text)
+        self.assertRegex(text, r"(?m)^cargo_lock_sha256 [0-9a-f]{64}$")
+        self.assertRegex(text, r"(?m)^tree [0-9a-f]{40}$")
+        self.assertRegex(text, r"(?m)^euid [0-9]+$")
+
     def environment(self, repo_root, path=None):
         run_dir = tempfile.mkdtemp(prefix="cham3_m2_env_")
         self.addCleanup(shutil.rmtree, run_dir, True)
@@ -111,6 +191,19 @@ class source_identity_t(unittest.TestCase):
         self.assertEqual(record["result"], "FAIL")
         self.assertIn("git_head", record["error"])
         self.assertIsNone(record["environment"]["git_dirty"])
+
+    def test_environment_collector_fails_with_unreadable_lock(self):
+        root = exported_tree(with_git=True)
+        self.addCleanup(shutil.rmtree, root, True)
+        lock = os.path.join(root, "Cargo.lock")
+        os.chmod(lock, 0)
+        self.addCleanup(os.chmod, lock, 0o644)
+        self.assertFalse(os.access(lock, os.R_OK), "cannot create an unreadable Cargo.lock (running as root?)")
+        status, record, output = self.environment(root)
+        self.assertEqual(status, 1, output)
+        self.assertEqual(record["result"], "FAIL")
+        self.assertIn("Cargo.lock digest failed", record["error"])
+        self.assertIsNone(record["environment"]["cargo_lock_sha256"])
 
     def test_environment_collector_fails_when_rustc_is_missing(self):
         tool_dir = tempfile.mkdtemp(prefix="cham3_m2_tools_")

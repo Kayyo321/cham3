@@ -2,7 +2,8 @@
 
 The committed vectors must regenerate byte for byte and verify; controlled corruptions
 of a copy (a flipped valid-envelope byte, a changed expected error code, a removed
-invalid vector) must make the check fail.
+invalid vector, a journal-scenario step whose expected outcome or grant standing is
+changed) must make the check fail.
 """
 
 import json
@@ -44,7 +45,13 @@ class ecr_oracle_t(unittest.TestCase):
             document = json.load(handle)
         self.assertGreaterEqual(len(document["valid"]), 16)
         self.assertGreaterEqual(len(document["invalid"]), 70)
-        self.assertGreaterEqual(len(document["admission_invalid"]), 6)
+        self.assertGreaterEqual(len(document["admission_invalid"]), 18)
+        self.assertGreaterEqual(len(document["journal_scenarios"]), 15)
+        findings = {scenario["finding"] for scenario in document["journal_scenarios"]}
+        self.assertEqual(findings, {"R07-r2", "R12", "R13"})
+        expectations = [step["expect"] for scenario in document["journal_scenarios"] for step in scenario["steps"]]
+        self.assertIn("admitted", expectations)
+        self.assertTrue(any(isinstance(expect, dict) for expect in expectations))
         layers = {item["layer"] for item in document["invalid"]}
         self.assertEqual(layers, {"envelope_decode", "envelope", "signature", "payload_decode", "schema", "intrinsic"})
 
@@ -66,6 +73,28 @@ class ecr_oracle_t(unittest.TestCase):
 
     def test_removed_vector_fails(self):
         status, output = check(self.corrupted_copy(lambda document: document["invalid"].pop()))
+        self.assertEqual(status, 1, output)
+
+    def test_changed_scenario_expectation_fails(self):
+        def change(document):
+            for scenario in document["journal_scenarios"]:
+                for step in scenario["steps"]:
+                    if isinstance(step["expect"], dict) and step["expect"]["error"] == "network_grant_conflict":
+                        step["expect"] = "admitted"
+                        return
+
+        status, output = check(self.corrupted_copy(change))
+        self.assertEqual(status, 1, output)
+
+    def test_changed_grant_standing_fails(self):
+        def change(document):
+            for scenario in document["journal_scenarios"]:
+                for step in scenario["steps"]:
+                    if "ended" in step.get("check", {}):
+                        step["check"]["current"] = step["check"].pop("ended")
+                        return
+
+        status, output = check(self.corrupted_copy(change))
         self.assertEqual(status, 1, output)
 
 

@@ -99,15 +99,31 @@ else
     record INFO target_architecture "${arch}: development evidence only, not target qualification"
 fi
 
-# Toolchain identity.
-{
-    rustc -Vv
-    cargo -V
-    cc --version | head -n 1
-    ld --version | head -n 1
-    ldd --version | head -n 1
-} > "${run_dir}/toolchain.txt" 2>&1 || true
-if grep -qx 'release: 1.85.1' "${run_dir}/toolchain.txt" && grep -q '^cargo 1\.85\.1' "${run_dir}/toolchain.txt"; then
+# Toolchain identity. Each command's own exit status is checked (review finding
+# R01-r2: no identity value from an unchecked command or pipeline).
+: > "${run_dir}/toolchain.txt"
+toolchain_problems=""
+toolchain_entry() { # first_line_only label command...
+    local first_only=$1 label=$2 output
+    shift 2
+    if output=$("$@" 2>&1) && [ -n "${output}" ]; then
+        if [ "${first_only}" = 1 ]; then
+            output=${output%%$'\n'*}
+        fi
+        printf '%s\n' "${output}" >> "${run_dir}/toolchain.txt"
+    else
+        printf '%s FAILED\n' "${label}" >> "${run_dir}/toolchain.txt"
+        toolchain_problems="${toolchain_problems} ${label}"
+    fi
+}
+toolchain_entry 0 rustc rustc -Vv
+toolchain_entry 0 cargo cargo -V
+toolchain_entry 1 cc cc --version
+toolchain_entry 1 ld ld --version
+toolchain_entry 1 ldd ldd --version
+if [ -n "${toolchain_problems}" ]; then
+    record FAIL toolchain_identity "failed:${toolchain_problems}"
+elif grep -qx 'release: 1.85.1' "${run_dir}/toolchain.txt" && grep -q '^cargo 1\.85\.1' "${run_dir}/toolchain.txt"; then
     record PASS toolchain_identity "rustc/cargo 1.85.1"
 else
     record FAIL toolchain_identity "expected rustc and cargo 1.85.1"
@@ -132,7 +148,10 @@ else
 fi
 
 # Full installed set and downloaded .deb digests, per architecture.
-dpkg-query -W -f '${Package}:${Architecture}=${Version}\n' | LC_ALL=C sort > "${run_dir}/installed_packages.txt"
+# pipefail makes a failed dpkg-query fail this pipeline; it is recorded, not masked.
+if ! dpkg-query -W -f '${Package}:${Architecture}=${Version}\n' | LC_ALL=C sort > "${run_dir}/installed_packages.txt"; then
+    record FAIL installed_packages_query "dpkg-query or sort failed"
+fi
 cp /usr/local/share/cham3/m2/downloaded_debs.sha256 "${run_dir}/downloaded_debs.sha256" 2> /dev/null \
     || : > "${run_dir}/downloaded_debs.sha256"
 for lock in "installed_packages:debian_lock_${arch}.txt" "downloaded_debs:debian_debs_${arch}.sha256"; do
@@ -210,7 +229,16 @@ if [ -z "${backend_problems}" ]; then
 else
     record FAIL soft_backends "missing in verbose build:${backend_problems}"
 fi
-backend_files=$(grep -l 'curve25519_dalek_backend="fiat"' "${build_dir}"/*/build/curve25519-dalek-*/output 2> /dev/null | wc -l)
+# grep exits 0 only when it matched and read every file; 1 (no match) or 2 (error) is
+# FAIL. The count is taken from grep's own output, not from a pipeline.
+backend_files=0
+if backend_list=$(grep -l 'curve25519_dalek_backend="fiat"' "${build_dir}"/*/build/curve25519-dalek-*/output 2> /dev/null); then
+    while IFS= read -r backend_line; do
+        if [ -n "${backend_line}" ]; then
+            backend_files=$((backend_files + 1))
+        fi
+    done <<< "${backend_list}"
+fi
 if [ "${backend_files}" -ge 2 ]; then
     record PASS curve25519_fiat_backend "${backend_files} build-script outputs"
 else

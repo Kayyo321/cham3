@@ -266,6 +266,7 @@ def sha256_file(path):
 
 
 HexObjectPattern = re.compile(r"^[0-9a-f]{40}$")
+Sha256HexPattern = re.compile(r"^[0-9a-f]{64}$")
 
 
 def environment_record():
@@ -302,14 +303,26 @@ def environment_record():
         problems.append("rustc: no release line")
     if record["cargo"]["status"] == 0 and not record["cargo"]["output"].startswith("cargo "):
         problems.append("cargo: unexpected version output")
+    for name in ("uname", "debian_version", "dpkg_architecture"):
+        if record[name]["status"] == 0 and not record[name]["output"]:
+            problems.append("%s: empty output" % name)
     # Dirty state is only meaningful when the status command itself succeeded.
     record["git_dirty"] = bool(record["git_status"]["output"]) if record["git_status"]["status"] == 0 else None
+    # R01-r2: an unreadable lock or a failed/malformed digest is a problem, never a value.
     lock = os.path.join(RepoRoot, "Cargo.lock")
-    if os.path.isfile(lock):
-        record["cargo_lock_sha256"] = sha256_file(lock)
-    else:
-        record["cargo_lock_sha256"] = None
+    record["cargo_lock_sha256"] = None
+    if not os.path.isfile(lock):
         problems.append("Cargo.lock missing")
+    else:
+        try:
+            digest = sha256_file(lock)
+        except OSError as error:
+            problems.append("Cargo.lock digest failed: %s" % error.strerror)
+        else:
+            if Sha256HexPattern.match(digest):
+                record["cargo_lock_sha256"] = digest
+            else:
+                problems.append("Cargo.lock digest malformed")
     record["euid"] = os.geteuid()
     return record, problems
 

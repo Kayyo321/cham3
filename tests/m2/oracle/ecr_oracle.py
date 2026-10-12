@@ -734,11 +734,23 @@ def verify(data, expected_kind, resolver):
     return payload
 
 
-# ------------------------------------------------------------------ lineage admission (subset)
+# ------------------------------------------------------------------ registry journal model (admission subset)
+#
+# Revision 3 (review r2: R07-r2, R12, R13). One user's journal: signed identity objects
+# and commits plus the unsigned registry records that only narrow authority (lifecycle,
+# containment, recovery, deletion). Wire format sections 6.6, 6.7, 6.10, 6.11 and 6.12;
+# ADR 0006 sections 3, 4 and 10; ADR 0007 sections 1-3. A rejected entry changes
+# nothing. This is a model of admission and key-authority decisions for vectors; it is
+# not the registry, policy or identity service, and it does not evaluate time,
+# sessions, mandatory policy or policy epochs.
 
 
 def admission_error(code, detail=""):
     raise oracle_error_t("admission", code, detail)
+
+
+def key_authority_error(code, detail=""):
+    raise oracle_error_t("key_authority", code, detail)
 
 
 def apply_delta(base, delta):
@@ -754,66 +766,421 @@ def apply_delta(base, delta):
     return {"grants": [grants[key] for key in sorted(grants)]}
 
 
-def admit_chain(envelopes, resolver):
-    """Admits commits in order into one lineage; returns {commit_id: payload}."""
-    admitted = {}
-    seen_grants = set()
-    seen_requests = set()
-    authoritative_subject = None
-    for data in envelopes:
-        payload = verify(data, "commit", resolver)
+RecoveryCommitTypes = {"restore", "revocation"}
+# Unsigned registry records the model accepts; every one of them only narrows authority.
+RecordKinds = {"expired", "session_ended", "restriction", "containment", "quarantine", "admin_recover",
+               "recovery_opened", "recovery_keys", "recovery_closed", "deletion_pending"}
+RecordByteFields = {"grant_id", "grant_ids", "session_id", "recovery_id", "persistent_key_id", "temporary_key_id"}
+
+
+def record_error(code, detail=""):
+    admission_error(code, detail)
+
+
+class lineage_state_t:
+    def __init__(self):
+        self.trunk_head = None
+        # Live temporary branch heads: head commit id -> grant ids added on that branch.
+        # A trunk commit ends every temporary branch (ADR 0007 section 1).
+        self.branches = {}
+        self.authoritative_subject = None
+        self.seen_grants = set()
+        self.containment_head = None
+        self.recovered = False
+
+
+class key_record_t:
+    def __init__(self, certificate):
+        self.authority_class = certificate["authority_class"]
+        self.key_epoch = certificate["key_epoch"]
+        self.not_before = certificate["not_before"]
+        self.not_after = certificate.get("not_after")
+        self.invalidated = None
+        self.retired = False
+
+
+class journal_t:
+    """Admission model of one user's journal (and, for admit_chain, of bare lineages).
+
+    key_authority=False reproduces the revision-2 entry point admit_chain: commits only,
+    no identity records and no key-authority layer. key_authority=True requires the
+    user's enrollment and certificates before any commit and applies layer 6.
+    """
+
+    def __init__(self, resolver, key_authority=False):
+        self.resolver = resolver
+        self.key_authority = key_authority
+        self.commits = {}
+        self.lineages = {}
+        self.seen_requests = set()
+        self.grants = {}
+        self.grant_lineage = {}
+        self.ended = {}
+        self.user_id = None
+        self.uid = None
+        self.keys = {}
+        self.min_key_epoch = 0
+        self.state = "normal"  # normal / contained / quarantined / deleted
+        self.recovery = None
+        self.recovery_epochs = set()
+
+    # ------------------------------------------------------------ queries
+
+    def live_states(self, lineage):
+        states = []
+        if lineage.trunk_head is not None:
+            states.append(self.commits[lineage.trunk_head]["result_state"])
+        states.extend(self.commits[head]["result_state"] for head in lineage.branches)
+        return states
+
+    def standing(self, grant_id):
+        """current: in a live state and not ended; ended: a terminal record names it;
+        inactive: removed, superseded or on an ended branch; unknown: never admitted."""
+        if grant_id in self.ended:
+            return "ended"
+        if grant_id not in self.grants:
+            return "unknown"
+        lineage = self.lineages[self.grant_lineage[grant_id]]
+        for state in self.live_states(lineage):
+            if any(grant["grant_id"] == grant_id for grant in state["grants"]):
+                return "current"
+        return "inactive"
+
+    def ancestors(self, commit_id):
+        seen = set()
+        pending = [commit_id]
+        while pending:
+            for parent in self.commits[pending.pop()]["parents"]:
+                if parent not in seen:
+                    seen.add(parent)
+                    pending.append(parent)
+        return seen
+
+    def occupying_network_grants(self, states):
+        """R07-r2: network grants that occupy the lineage's single network slot."""
+        return {grant["grant_id"] for state in states for grant in state["grants"]
+                if is_network_grant(grant) and grant["grant_id"] not in self.ended}
+
+    # ------------------------------------------------------------ key authority (layer 6)
+
+    def check_key_authority(self, payload):
+        if self.user_id is None:
+            key_authority_error("key_not_certified", "no enrollment in this journal")
+        key = self.keys.get(payload["key_id"])
+        if key is None or payload["actor"]["user_id"] != self.user_id or payload["actor"]["uid"] != self.uid:
+            key_authority_error("key_not_certified", "signing key not certified for this user")
+        if key.invalidated is not None:
+            key_authority_error("key_invalidated", key.invalidated)
+        if key.key_epoch < self.min_key_epoch:
+            key_authority_error("key_epoch_stale", "key certified before the recovery key epoch")
+        if key.retired:
+            key_authority_error("key_retired", "key superseded by the named recovery keys")
+        if key.authority_class == "identity" or payload["authority_class"] != key.authority_class:
+            key_authority_error("authority_class_denied", "authority class differs from the certificate")
+        if key.authority_class == "temporary" and payload["commit_type"] != "temporary_grant":
+            key_authority_error("authority_class_denied", "temporary key outside temporary_grant")
+        stamp = parse_time(payload["timestamp"])
+        if stamp < parse_time(key.not_before) or (key.not_after and stamp > parse_time(key.not_after)):
+            key_authority_error("certificate_window", "commit outside the certificate validity window")
+        # User state after key validity: deletion, quarantine and containment answer
+        # denied for every key; an open recovery admits only its named persistent key.
+        if self.state == "deleted":
+            key_authority_error("user_deleted")
+        if self.state == "quarantined":
+            key_authority_error("quarantined")
+        if self.state == "contained":
+            if self.recovery is None:
+                key_authority_error("contained", "no recovery ceremony is open")
+            if self.recovery.get("persistent_key_id") != payload["key_id"]:
+                key_authority_error("recovery_key_required", "only the ceremony's named recovery key signs while contained")
+
+    def admit_identity(self, data, kind):
+        payload = verify(data, kind, self.resolver)
+        if kind == "identity_enrollment":
+            if self.user_id is not None:
+                key_authority_error("duplicate_enrollment")
+            self.user_id = payload["user_id"]
+            self.uid = payload["owner_uid"]
+            identity = key_record_t({"authority_class": "persistent", "key_epoch": 0, "not_before": payload["enrolled"]})
+            identity.authority_class = "identity"
+            self.keys[payload["user_id"]] = identity
+            return payload
+        if self.user_id is None or payload["owner_user_id"] != self.user_id:
+            key_authority_error("key_not_certified", "identity object for another or unenrolled user")
+        if self.state in ("deleted", "quarantined"):
+            key_authority_error("user_deleted" if self.state == "deleted" else "quarantined")
+        if kind == "key_invalidation":
+            # Always permitted while enrolled: invalidation only narrows authority.
+            target = self.keys.get(payload["target_key_id"])
+            if target is None or target.authority_class == "identity":
+                key_authority_error("key_not_certified", "invalidation of an unknown key")
+            target.invalidated = target.invalidated or payload["reason"]
+            return payload
+        if payload["owner_uid"] != self.uid or payload["subject_key_id"] in self.keys:
+            key_authority_error("key_not_certified", "certificate owner or duplicate key")
+        if self.state == "contained":
+            if self.recovery is None:
+                key_authority_error("contained", "certificates while contained only inside a recovery ceremony")
+            if payload["key_epoch"] != self.recovery["key_epoch"] or "persistent_key_id" in self.recovery:
+                admission_error("recovery_rule", "recovery certificate epoch or ceremony step")
+        elif payload["key_epoch"] < max([self.min_key_epoch, 1]):
+            key_authority_error("key_epoch_stale", "certificate below the current key epoch")
+        self.keys[payload["subject_key_id"]] = key_record_t(payload)
+        return payload
+
+    # ------------------------------------------------------------ commits (layer 7)
+
+    def placement(self, lineage, payload):
+        """Wire format 6.11: returns ("trunk", None) or ("branch", previous head or None)."""
+        commit_type = payload["commit_type"]
+        parents = payload["parents"]
+        if commit_type == "genesis":
+            if lineage.trunk_head is not None:
+                admission_error("stale_head", "genesis for an existing lineage")
+            return "trunk", None
+        if commit_type == "merge":
+            others = [parent for parent in parents if parent != payload["merge_base"]]
+            if payload["merge_base"] != lineage.trunk_head or any(parent not in lineage.branches for parent in others):
+                admission_error("stale_head", "merge base is not the trunk head or a parent is not a live temporary head")
+            return "trunk", None
+        parent = parents[0]
+        if parent == lineage.trunk_head and commit_type != "temporary_grant":
+            return "trunk", None
+        if parent == lineage.trunk_head:
+            return "branch", None
+        if parent in lineage.branches and commit_type in ("temporary_grant", "revocation"):
+            return "branch", parent
+        admission_error("stale_head", "parent is not the trunk head or a live temporary head")
+
+    def admit_commit(self, data):
+        payload = verify(data, "commit", self.resolver)
         commit_id = hashlib.sha256(data).digest()
+        if self.key_authority:
+            self.check_key_authority(payload)
         for parent in payload["parents"]:
-            if parent not in admitted:
+            if parent not in self.commits:
                 admission_error("parent_unknown")
-            if admitted[parent]["lineage_id"] != payload["lineage_id"]:
+            if self.commits[parent]["lineage_id"] != payload["lineage_id"]:
                 admission_error("lineage_mismatch", "cross-lineage parent")
-        if payload["commit_type"] == "genesis":
+        lineage = self.lineages.get(payload["lineage_id"]) or lineage_state_t()
+        position, branch_head = self.placement(lineage, payload)
+        commit_type = payload["commit_type"]
+        if commit_type == "genesis":
             base = EmptyState
         else:
-            base_id = payload.get("merge_base", payload["parents"][0])
-            base = admitted[base_id]["result_state"]
+            base = self.commits[payload.get("merge_base", payload["parents"][0])]["result_state"]
         if state_hash(base) != payload["base_state_hash"]:
             admission_error("base_state_mismatch")
         if encode(apply_delta(base, payload["delta"])) != encode(payload["result_state"]):
             admission_error("result_state_mismatch")
         for grant in payload["delta"]["add_grants"]:
-            if grant["grant_id"] in seen_grants:
+            if grant["grant_id"] in lineage.seen_grants or grant["grant_id"] in self.grants:
                 admission_error("duplicate_identifier", "grant_id reused")
-        if payload["authorization"]["request_id"] in seen_requests:
+        if payload["authorization"]["request_id"] in self.seen_requests:
             admission_error("duplicate_identifier", "request_id reused")
-        if payload["commit_type"] == "restore":
-            reference = admitted.get(payload["restore_reference"])
-            if reference is None or reference["lineage_id"] != payload["lineage_id"]:
-                admission_error("restore_rule", "reference not in lineage")
-            historical = reference["result_state"]["grants"]
-            for grant in payload["delta"]["add_grants"]:
-                matches = [old for old in historical
-                           if (encode(old["resource"]), encode(old["delegation"]), old["contract_type"])
-                           == (encode(grant["resource"]), encode(grant["delegation"]), grant["contract_type"])]
-                if not matches:
-                    admission_error("restore_rule", "restored grant not in referenced state")
-                if not any("expiration" not in old["lifetime"]
-                           or ("expiration" in grant["lifetime"] and parse_time(grant["lifetime"]["expiration"]) <= parse_time(old["lifetime"]["expiration"]))
-                           for old in matches):
-                    admission_error("restore_rule", "restored grant outlives the referenced grant")
+        if commit_type == "restore":
+            self.check_restore(payload)
+        self.check_subject(lineage, payload)
+        if position == "branch" and commit_type == "revocation":
+            # A branch revocation removes only temporary grants added on that branch.
+            if not set(payload["delta"]["remove_grant_ids"]) <= lineage.branches[branch_head]:
+                admission_error("branch_rule", "branch revocation removes a grant not added on this branch")
+        if self.key_authority and self.state == "contained":
+            self.check_recovery_commit(lineage, payload, position, base)
+        # R07-r2: at most one occupying network grant across the trunk head and every
+        # live temporary head after this admission (durable records only).
+        if position == "trunk":
+            states_after = [payload["result_state"]]
+        else:
+            heads = [head for head in lineage.branches if head != branch_head]
+            states_after = [self.commits[lineage.trunk_head]["result_state"]] + \
+                [self.commits[head]["result_state"] for head in heads] + [payload["result_state"]]
+        if len(self.occupying_network_grants(states_after)) > 1:
+            admission_error("network_grant_conflict", "a second network grant would be live in this lineage")
+        # Apply (nothing above mutated state).
+        self.lineages[payload["lineage_id"]] = lineage
+        if commit_type == "genesis":
+            lineage.authoritative_subject = payload["subject"]
+        elif commit_type == "identity_transition":
+            lineage.authoritative_subject = payload["subject"]
+        if position == "trunk":
+            lineage.trunk_head = commit_id
+            lineage.branches = {}
+        else:
+            added = set() if branch_head is None else lineage.branches.pop(branch_head)
+            added |= {grant["grant_id"] for grant in payload["delta"]["add_grants"]}
+            added -= set(payload["delta"]["remove_grant_ids"])
+            lineage.branches[commit_id] = added
+        for grant in payload["delta"]["add_grants"]:
+            lineage.seen_grants.add(grant["grant_id"])
+            self.grants[grant["grant_id"]] = grant
+            self.grant_lineage[grant["grant_id"]] = payload["lineage_id"]
+        self.seen_requests.add(payload["authorization"]["request_id"])
+        if self.key_authority and self.state == "contained":
+            lineage.recovered = True
+        self.commits[commit_id] = payload
+        return payload
+
+    def check_restore(self, payload):
+        """Wire format 6.7 (R12): reference is the parent or one of its ancestors; only
+        historical grants with a persistent lifetime can be matched."""
+        reference = self.commits.get(payload["restore_reference"])
+        if reference is None or reference["lineage_id"] != payload["lineage_id"]:
+            admission_error("restore_rule", "reference not in lineage")
+        parent = payload["parents"][0]
+        if payload["restore_reference"] != parent and payload["restore_reference"] not in self.ancestors(parent):
+            admission_error("restore_rule", "reference is not an ancestor of the parent")
+        historical = [old for old in reference["result_state"]["grants"] if old["lifetime"]["kind"] == "persistent"]
+        for grant in payload["delta"]["add_grants"]:
+            matches = [old for old in historical
+                       if (encode(old["resource"]), encode(old["delegation"]), old["contract_type"])
+                       == (encode(grant["resource"]), encode(grant["delegation"]), grant["contract_type"])]
+            if not matches:
+                admission_error("restore_rule", "restored grant matches no persistent grant of the referenced state")
+            if not any("expiration" not in old["lifetime"]
+                       or ("expiration" in grant["lifetime"] and parse_time(grant["lifetime"]["expiration"]) <= parse_time(old["lifetime"]["expiration"]))
+                       for old in matches):
+                admission_error("restore_rule", "restored grant outlives the referenced grant")
+
+    def check_subject(self, lineage, payload):
         # R06: the subject changes only through identity_transition; every other commit
         # must restate the lineage's authoritative subject exactly.
-        if payload["commit_type"] == "genesis":
-            authoritative_subject = payload["subject"]
-        elif payload["commit_type"] == "identity_transition":
+        commit_type = payload["commit_type"]
+        if commit_type == "genesis":
+            return
+        authoritative = lineage.authoritative_subject
+        if commit_type == "identity_transition":
             unchanged = dict(payload["subject"], package_identity=None, executable_sha256=None)
-            previous = dict(authoritative_subject, package_identity=None, executable_sha256=None)
+            previous = dict(authoritative, package_identity=None, executable_sha256=None)
             if encode({k: v for k, v in unchanged.items() if v is not None}) != encode({k: v for k, v in previous.items() if v is not None}) \
-                    or encode(payload["delta"]["identity_change"]["from"]) != encode(subject_identity(authoritative_subject)):
+                    or encode(payload["delta"]["identity_change"]["from"]) != encode(subject_identity(authoritative)):
                 admission_error("subject_binding_mismatch", "identity transition does not start at the authoritative subject")
-            authoritative_subject = payload["subject"]
-        elif encode(payload["subject"]) != encode(authoritative_subject):
+        elif encode(payload["subject"]) != encode(authoritative):
             admission_error("subject_binding_mismatch", "subject differs from the lineage's authoritative subject")
-        seen_grants.update(grant["grant_id"] for grant in payload["delta"]["add_grants"])
-        seen_requests.add(payload["authorization"]["request_id"])
-        admitted[commit_id] = payload
-    return admitted
+
+    def check_recovery_commit(self, lineage, payload, position, base):
+        """ADR 0006 section 10 (R13): the only commits admitted while contained."""
+        recovery = self.recovery
+        if recovery is None or "persistent_key_id" not in recovery:
+            admission_error("recovery_rule", "no open recovery ceremony with named keys")
+        if payload["commit_type"] not in RecoveryCommitTypes or position != "trunk":
+            admission_error("recovery_rule", "only trunk restore or revocation commits during recovery")
+        if payload["authorization"]["session_id"] != recovery["recovery_id"]:
+            admission_error("recovery_rule", "authorization session is not the open recovery ceremony")
+        if lineage.containment_head is None or lineage.recovered:
+            admission_error("recovery_rule", "lineage not contained or already re-authorized in this ceremony")
+        if payload["commit_type"] == "restore" and payload["restore_reference"] != lineage.containment_head:
+            admission_error("recovery_rule", "recovery restore must reference the contained trunk head")
+        if sorted(payload["delta"]["remove_grant_ids"]) != sorted(grant["grant_id"] for grant in base["grants"]):
+            admission_error("recovery_rule", "recovery commit must remove every suspended grant of the lineage")
+
+    # ------------------------------------------------------------ registry records
+
+    def contain(self, reason):
+        for lineage in self.lineages.values():
+            for state in self.live_states(lineage):
+                for grant in state["grants"]:
+                    self.ended.setdefault(grant["grant_id"], reason)
+            lineage.branches = {}
+            lineage.containment_head = lineage.trunk_head
+            lineage.recovered = False
+        self.recovery = None
+
+    def admit_record(self, record):
+        kind = record.get("record")
+        if kind not in RecordKinds:
+            record_error("lifecycle_rule", "unknown record kind")
+        if kind == "expired":
+            grant = self.grants.get(record["grant_id"])
+            if grant is None or "expiration" not in grant["lifetime"] \
+                    or parse_time(record["time"]) < parse_time(grant["lifetime"]["expiration"]):
+                record_error("lifecycle_rule", "expired record before the grant's expiration")
+            self.ended.setdefault(record["grant_id"], "expired")
+        elif kind == "session_ended":
+            bound = [grant_id for grant_id, grant in self.grants.items() if grant["lifetime"].get("session_id") == record["session_id"]]
+            if not bound:
+                record_error("lifecycle_rule", "no grant is bound to this session")
+            for grant_id in bound:
+                self.ended.setdefault(grant_id, "session_ended")
+        elif kind == "restriction":
+            if not record["grant_ids"] or any(grant_id not in self.grants for grant_id in record["grant_ids"]):
+                record_error("lifecycle_rule", "restriction of an unknown grant")
+            for grant_id in record["grant_ids"]:
+                self.ended.setdefault(grant_id, "restriction")
+        elif kind == "containment":
+            if self.state in ("deleted", "quarantined"):
+                record_error("recovery_rule", "containment of a deleted or quarantined user")
+            self.contain("suspended")
+            self.state = "contained"
+        elif kind == "quarantine":
+            if self.state == "deleted":
+                record_error("recovery_rule", "quarantine of a deleted user")
+            self.contain("quarantined")
+            self.state = "quarantined"
+        elif kind == "admin_recover":
+            if self.state != "quarantined" or record.get("role") != "admin":
+                record_error("recovery_rule", "admin recover_user applies only to a quarantined user, by admin")
+            self.state = "contained"
+        elif kind == "recovery_opened":
+            epochs = [key.key_epoch for key in self.keys.values()] + list(self.recovery_epochs)
+            if self.state != "contained" or self.recovery is not None:
+                record_error("recovery_rule", "ceremony opens only for a contained user without an open ceremony")
+            if record["mode"] not in ("c1", "c2") or record["role"] not in ("trusted_client", "admin") \
+                    or (record["mode"] == "c2" and record["role"] != "admin"):
+                record_error("recovery_rule", "ceremony mode/role")
+            if record["key_epoch"] <= max(epochs):
+                record_error("recovery_rule", "recovery key epoch must exceed every earlier key epoch")
+            self.recovery = {"recovery_id": record["recovery_id"], "key_epoch": record["key_epoch"]}
+            self.recovery_epochs.add(record["key_epoch"])
+        elif kind == "recovery_keys":
+            recovery = self.recovery
+            if recovery is None or recovery["recovery_id"] != record["recovery_id"] or "persistent_key_id" in recovery:
+                record_error("recovery_rule", "no open ceremony awaiting its keys")
+            for field, authority in (("persistent_key_id", "persistent"), ("temporary_key_id", "temporary")):
+                key = self.keys.get(record[field])
+                if key is None or key.authority_class != authority or key.key_epoch != recovery["key_epoch"] or key.invalidated:
+                    record_error("recovery_rule", "named recovery key not certified for this ceremony")
+            for key_id, key in self.keys.items():
+                if key.authority_class != "identity" and key_id not in (record["persistent_key_id"], record["temporary_key_id"]):
+                    key.retired = True
+            self.min_key_epoch = recovery["key_epoch"]
+            recovery["persistent_key_id"] = record["persistent_key_id"]
+            recovery["temporary_key_id"] = record["temporary_key_id"]
+        elif kind == "recovery_closed":
+            recovery = self.recovery
+            if self.state != "contained" or recovery is None or recovery["recovery_id"] != record["recovery_id"] \
+                    or "persistent_key_id" not in recovery:
+                record_error("recovery_rule", "close of a ceremony that is not open with named keys")
+            self.recovery = None
+            self.state = "normal"
+        else:  # deletion_pending
+            for grant_id in self.grants:
+                self.ended.setdefault(grant_id, "deleted")
+            self.state = "deleted"
+            self.recovery = None
+
+
+def decode_record(record):
+    decoded = {}
+    for key, value in record.items():
+        if key in RecordByteFields:
+            decoded[key] = [bytes.fromhex(item) for item in value] if isinstance(value, list) else bytes.fromhex(value)
+        else:
+            decoded[key] = value
+    return decoded
+
+
+def encode_record(record):
+    return {key: ([item.hex() for item in value] if isinstance(value, list) else value.hex()) if key in RecordByteFields else value
+            for key, value in record.items()}
+
+
+def admit_chain(envelopes, resolver):
+    """Admits commits in order (no identity records); returns {commit_id: payload}."""
+    journal = journal_t(resolver)
+    for data in envelopes:
+        journal.admit_commit(data)
+    return journal.commits
 
 
 # ------------------------------------------------------------------ vector construction
@@ -831,6 +1198,8 @@ Times = ["2026-10-12T12:%02d:00Z" % minute for minute in range(0, 60, 5)]
 KeyLabels = [
     "user_1001_identity", "user_1001_persistent", "user_1001_temporary", "user_1001_retired",
     "user_1002_identity", "user_1002_persistent", "user_1002_temporary",
+    # Revision 3 (R13): keys certified inside the user 1001 recovery ceremony vectors.
+    "user_1001_recovery_persistent", "user_1001_recovery_temporary", "user_1001_recovery_abandoned",
 ]
 
 
@@ -975,7 +1344,7 @@ def build_vectors():
     temporary_once = kate.payload("temporary_once", "temporary_grant", temporary, [revision_id], revision["result_state"],
                                   {"add_grants": [screenshot_once], "remove_grant_ids": []}, Times[3],
                                   "Allow one screenshot of the focused output", authority="temporary")
-    temporary_once_data, _ = sign_commit(temporary, temporary_once)
+    temporary_once_data, temporary_once_id = sign_commit(temporary, temporary_once)
     chain.append(("commit_temporary_one_shot", temporary_once_data))
     merge = kate.payload("merge", "merge", persistent, [revision_id, temporary_session_id], revision["result_state"],
                          {"add_grants": [microphone_persistent], "remove_grant_ids": []}, Times[4],
@@ -1013,10 +1382,14 @@ def build_vectors():
     invalid = build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_id, merge, persistent, temporary, transition)
     invalid.append({"name": "boundary_one_byte_over", "kind": "commit", "envelope": boundary_over, "layer": "envelope_decode",
                     "error": "input_too_large", "description": "maximum-size commit with one more message byte (61,441 bytes)"})
+    ids = {"genesis": genesis_id, "revision": revision_id, "temporary_session": temporary_session_id, "temporary_one_shot": temporary_once_id,
+           "merge": merge_id, "revocation": revocation_id, "restore": restore_id, "identity_transition": transition_id}
+    payloads = {"temporary_one_shot": temporary_once, "identity_transition": transition}
     admission_invalid = build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, revision_id, revocation, revocation_id, persistent,
-                                                restore, restore_id, temporary, temporary_session, merge, transition)
+                                                restore, restore_id, temporary, temporary_session, merge, transition, ids, payloads)
+    scenarios = build_journal_scenarios(keys, kate, ids, payloads)
     extra_valid = [("commit_user_1002_genesis", firefox_data), ("commit_boundary_max_size", boundary)]
-    return keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits
+    return keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits, scenarios
 
 
 def build_boundary_vectors(keys):
@@ -1270,7 +1643,7 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
 
 
 def build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, revision_id, revocation, revocation_id, persistent,
-                            restore, restore_id, temporary, temporary_session, merge, transition):
+                            restore, restore_id, temporary, temporary_session, merge, transition, ids, payloads):
     """Lineage-context failures: each entry is a prefix of the valid chain plus one bad commit."""
     vectors = []
 
@@ -1341,14 +1714,461 @@ def build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, re
         "subject_binding_mismatch", "identity transition whose from does not match the authoritative subject")
     add("identity_transition_changes_runtime_scope", 7, mutate(transition, ["subject", "runtime_scope"], "flatpak"),
         "subject_binding_mismatch", "identity transition that also changes a non-identity subject field")
+    # Revision 3, R12: restore matches only persistent historical grants of an ancestor.
+    microphone_session = temporary_session["delta"]["add_grants"][0]
+    session_as_persistent = mutate(microphone_session, ["grant_id"], synthetic_id("grant session restored as persistent"))
+    session_as_persistent["lifetime"] = {"kind": "persistent", "effective_start": Times[6]}
+    add("restore_session_grant_as_persistent", 6,
+        successor(revocation, [revocation_id], revocation["result_state"], {"add_grants": [session_as_persistent], "remove_grant_ids": []},
+                  "restore session as persistent", commit_type="restore", extra={"restore_reference": ids["temporary_session"]}),
+        "restore_rule", "the reviewer's case: an ancestral session grant restated as persistent (reference is an ancestor through the merge)")
+    clipboard_again = make_grant("clipboard_not_ancestor", "clipboard", "session_clipboard", ["read", "write"], start=Times[6],
+                                 expiration="2027-10-12T12:05:00Z")
+    add("restore_reference_not_ancestor", 6,
+        successor(revocation, [revocation_id], revocation["result_state"], {"add_grants": [clipboard_again], "remove_grant_ids": []},
+                  "restore from non-ancestor", commit_type="restore", extra={"restore_reference": ids["temporary_one_shot"]}),
+        "restore_rule", "restore referencing the one-shot branch commit, which is in the lineage but not an ancestor of the parent")
+    # Revision 3, R07-r2 / wire 6.11: placement relative to the trunk head and live temporary heads.
+    camera = make_grant("camera_stale_parent", "camera", "front_camera", ["capture"], start=Times[2])
+    add("revision_parent_not_trunk_head", 2,
+        successor(revision, [genesis_id], genesis["result_state"], {"add_grants": [camera], "remove_grant_ids": []}, "stale revision"),
+        "stale_head", "revision parented on the superseded genesis instead of the current trunk head")
+    late = make_grant("late_temporary", "camera", "front_camera", ["capture"], kind="timed", start=Times[5], expiration=Times[6])
+    add("temporary_grant_on_ended_branch", 5,
+        successor(payloads["temporary_one_shot"], [ids["temporary_one_shot"]], payloads["temporary_one_shot"]["result_state"],
+                  {"add_grants": [late], "remove_grant_ids": []}, "extend ended branch"),
+        "stale_head", "temporary grant extending the one-shot branch after the merge ended it", signer=temporary)
     return vectors
+
+
+def build_journal_scenarios(keys, kate, ids, payloads):
+    """Revision 3: signed multi-step journal vectors (R07-r2 network slot, R12 restore
+    lifetime kinds, R13 recovery ceremony). Each scenario runs in a fresh journal_t;
+    every step states its expected outcome and, optionally, the standing of grants."""
+    persistent = keys["user_1001_persistent"]
+    temporary = keys["user_1001_temporary"]
+    identity = keys["user_1001_identity"]
+    scenarios = []
+
+    def fails(layer, code):
+        return {"layer": layer, "error": code}
+
+    def with_check(step, expect, check, note):
+        step["expect"] = expect
+        if check:
+            step["check"] = {standing: [grant_id.hex() for grant_id in grant_ids] for standing, grant_ids in check.items()}
+        if note:
+            step["note"] = note
+        return step
+
+    def valid(name, expect="admitted", check=None, note=""):
+        return with_check({"valid": name}, expect, check, note)
+
+    def commit(data, expect="admitted", check=None, note=""):
+        return with_check({"commit": data.hex()}, expect, check, note)
+
+    def identity_step(data, kind, expect="admitted", check=None, note=""):
+        return with_check({"identity": data.hex(), "kind": kind}, expect, check, note)
+
+    def record(value, expect="admitted", check=None, note=""):
+        return with_check({"record": encode_record(value)}, expect, check, note)
+
+    def scenario(name, finding, description, steps, key_authority=False):
+        scenarios.append({"name": name, "finding": finding, "description": description,
+                          "key_authority": key_authority, "steps": steps})
+
+    def gid(grant):
+        return grant["grant_id"]
+
+    # ------------------------------------------------------------ R07-r2: network slot
+    browser = lineage_builder_t(keys, 1001, "user_1001_identity", "org.example.browser", "deb:browser:amd64")
+    downloads = make_grant("browser downloads", "filesystem", "home:Downloads", ["read", "write"])
+    browser_genesis = browser.payload("browser genesis", "genesis", persistent, [], EmptyState,
+                                      {"add_grants": [downloads], "remove_grant_ids": []}, Times[0], "Allow the browser to use Downloads")
+    browser_genesis_data, browser_genesis_id = sign_commit(persistent, browser_genesis)
+    browser_state = browser_genesis["result_state"]
+    session_one = synthetic_id("browser desktop session 1")
+    direct_timed = make_grant("browser direct timed", "network", "network_mode", ["direct"], kind="timed", start=Times[1], expiration=Times[3])
+    tor_timed = make_grant("browser tor timed", "network", "network_mode", ["tor"], kind="timed", start=Times[1], expiration=Times[4])
+    direct_short = make_grant("browser direct short", "network", "network_mode", ["direct"], kind="timed", start=Times[1], expiration=Times[2])
+    tor_later = make_grant("browser tor later", "network", "network_mode", ["tor"], kind="timed", start=Times[3], expiration=Times[4])
+    direct_session = make_grant("browser direct session", "network", "network_mode", ["direct"], kind="session", start=Times[1], session=session_one)
+    camera_timed = make_grant("browser camera timed", "camera", "front_camera", ["capture"], kind="timed", start=Times[1], expiration=Times[3])
+    clipboard_timed = make_grant("browser clipboard timed", "clipboard", "session_clipboard", ["read"], kind="timed", start=Times[1], expiration=Times[3])
+    tor_extra = make_grant("browser tor extra", "network", "network_mode", ["tor"], kind="timed", start=Times[1], expiration=Times[3])
+    tor_persistent = make_grant("browser tor persistent", "network", "network_mode", ["tor"], start=Times[2])
+    direct_after_trunk = make_grant("browser direct after trunk", "network", "network_mode", ["direct"], kind="timed", start=Times[3], expiration=Times[4])
+
+    def browser_temporary(label, parent_id, base_state, grants, signer=temporary, time=Times[1]):
+        authority = "temporary" if signer is temporary else "persistent"
+        payload = browser.payload(label, "temporary_grant", signer, [parent_id], base_state,
+                                  {"add_grants": sorted(grants, key=gid), "remove_grant_ids": []}, time,
+                                  "Temporary grant: " + label, authority=authority)
+        data, commit_id = sign_commit(signer, payload)
+        return data, commit_id, payload
+
+    direct_data, direct_id, direct_payload = browser_temporary("browser direct", browser_genesis_id, browser_state, [direct_timed])
+    # The reviewer's variant: the second sibling signed by the persistent key.
+    tor_data, _, _ = browser_temporary("browser tor", browser_genesis_id, browser_state, [tor_timed], signer=persistent)
+    short_data, _, _ = browser_temporary("browser direct short", browser_genesis_id, browser_state, [direct_short])
+    later_data, _, _ = browser_temporary("browser tor later", browser_genesis_id, browser_state, [tor_later], time=Times[3])
+    session_data, _, _ = browser_temporary("browser direct session", browser_genesis_id, browser_state, [direct_session])
+    camera_data, _, _ = browser_temporary("browser camera", browser_genesis_id, browser_state, [camera_timed])
+    extension_data, extension_id, extension_payload = browser_temporary("browser clipboard extension", direct_id, direct_payload["result_state"], [clipboard_timed])
+    second_network_data, _, _ = browser_temporary("browser second network", extension_id, extension_payload["result_state"], [tor_extra])
+    late_data, _, _ = browser_temporary("browser late extension", direct_id, direct_payload["result_state"], [clipboard_timed], time=Times[3])
+    start = [commit(browser_genesis_data, check={"current": [gid(downloads)]})]
+
+    scenario("network_sibling_branches_conflict", "R07-r2",
+             "Offline trunk; a timed Direct branch is admitted; an overlapping timed Tor sibling rooted at the same current trunk head is rejected",
+             start + [commit(direct_data, check={"current": [gid(direct_timed)]}),
+                      commit(tor_data, fails("admission", "network_grant_conflict"), check={"current": [gid(direct_timed), gid(downloads)]},
+                             note="the reviewer's case: both siblings rooted at the current Offline trunk head")])
+    scenario("network_simultaneous_proposals_first_admitted_wins", "R07-r2",
+             "Both proposals were prepared against the same trunk head; under the admission lock the first admitted (here Tor) wins and the other is rejected",
+             start + [commit(tor_data, check={"current": [gid(tor_timed)]}),
+                      commit(direct_data, fails("admission", "network_grant_conflict"), check={"current": [gid(tor_timed)]})])
+    scenario("network_sibling_non_overlapping_lifetimes_conflict", "R07-r2",
+             "Lifetimes that do not overlap still conflict: the slot is freed only by a durable terminal record, never by clock arithmetic at admission",
+             start + [commit(short_data), commit(later_data, fails("admission", "network_grant_conflict"))])
+    scenario("network_sibling_after_durable_expiry", "R07-r2",
+             "A premature expiry record is rejected; after a durable expired record for the Direct grant a Tor sibling is admitted",
+             start + [commit(direct_data),
+                      record({"record": "expired", "grant_id": gid(direct_timed), "time": Times[2]}, fails("admission", "lifecycle_rule")),
+                      commit(tor_data, fails("admission", "network_grant_conflict")),
+                      record({"record": "expired", "grant_id": gid(direct_timed), "time": Times[3]}, check={"ended": [gid(direct_timed)]}),
+                      commit(tor_data, check={"current": [gid(tor_timed)], "ended": [gid(direct_timed)]})])
+    scenario("network_sibling_after_session_end", "R07-r2",
+             "A session-bound Direct grant occupies the slot until its session_ended record is durable",
+             start + [commit(session_data),
+                      commit(tor_data, fails("admission", "network_grant_conflict")),
+                      record({"record": "session_ended", "session_id": synthetic_id("browser desktop session 2")}, fails("admission", "lifecycle_rule"),
+                             note="ending an unrelated session frees nothing"),
+                      record({"record": "session_ended", "session_id": session_one}, check={"ended": [gid(direct_session)]}),
+                      commit(tor_data, check={"current": [gid(tor_timed)]})])
+    scenario("network_sibling_after_restriction", "R07-r2",
+             "Restricting another grant frees nothing; a durable restriction (revocation intent) of the Direct grant frees the slot",
+             start + [commit(direct_data),
+                      record({"record": "restriction", "grant_ids": [gid(downloads)]}, check={"ended": [gid(downloads)]}),
+                      commit(tor_data, fails("admission", "network_grant_conflict")),
+                      record({"record": "restriction", "grant_ids": [gid(direct_timed)]}, check={"ended": [gid(direct_timed)]}),
+                      commit(tor_data, check={"current": [gid(tor_timed)]})])
+    bad_branch_revocation = browser.payload("browser bad branch revocation", "revocation", persistent, [direct_id], direct_payload["result_state"],
+                                            {"add_grants": [], "remove_grant_ids": [gid(downloads)]}, Times[2], "Revoke Downloads on the temporary branch")
+    branch_revocation = browser.payload("browser branch revocation", "revocation", persistent, [direct_id], direct_payload["result_state"],
+                                        {"add_grants": [], "remove_grant_ids": [gid(direct_timed)]}, Times[2], "Revoke the temporary Direct network grant")
+    scenario("network_branch_revocation_frees_slot", "R07-r2",
+             "A signed branch revocation may remove only grants added on its branch; removing the Direct grant frees the slot",
+             start + [commit(direct_data),
+                      commit(sign_commit(persistent, bad_branch_revocation)[0], fails("admission", "branch_rule")),
+                      commit(sign_commit(persistent, branch_revocation)[0], check={"inactive": [gid(direct_timed)], "current": [gid(downloads)]}),
+                      commit(tor_data, check={"current": [gid(tor_timed)]})])
+    scenario("network_branch_extension_and_non_network_sibling", "R07-r2",
+             "Positive controls: a non-network sibling and an extension of the Direct branch are admitted; a second network grant on that branch is not",
+             start + [commit(direct_data), commit(camera_data), commit(extension_data),
+                      commit(second_network_data, fails("intrinsic", "network_grant_rule")),
+                      record({"record": "expired", "grant_id": gid(direct_timed), "time": Times[3]},
+                             check={"current": [gid(camera_timed), gid(clipboard_timed)], "ended": [gid(direct_timed)]})])
+    trunk_tor = browser.payload("browser trunk tor", "revision", persistent, [browser_genesis_id], browser_state,
+                                {"add_grants": [tor_persistent], "remove_grant_ids": []}, Times[2], "Change network mode from Offline to Tor")
+    trunk_tor_data, trunk_tor_id = sign_commit(persistent, trunk_tor)
+    direct_on_tor_trunk, _, _ = browser_temporary("browser direct on tor trunk", trunk_tor_id, trunk_tor["result_state"], [direct_after_trunk], time=Times[3])
+    scenario("network_trunk_commit_ends_branches", "R07-r2",
+             "A trunk revision adding a persistent Tor grant ends every live temporary branch; the old branch head is stale and a temporary Direct grant over the Tor trunk is rejected",
+             start + [commit(direct_data),
+                      commit(trunk_tor_data, check={"current": [gid(tor_persistent)], "inactive": [gid(direct_timed)]}),
+                      commit(late_data, fails("admission", "stale_head")),
+                      commit(direct_on_tor_trunk, fails("intrinsic", "network_grant_rule"))])
+
+    # ------------------------------------------------------------ R12: restore lifetime kinds
+    recorder = lineage_builder_t(keys, 1001, "user_1001_identity", "org.example.recorder", "deb:recorder:amd64")
+    recordings = make_grant("recorder recordings", "filesystem", "home:Recordings", ["read", "write"])
+    recorder_clipboard = make_grant("recorder clipboard", "clipboard", "session_clipboard", ["read"], expiration="2027-01-01T00:00:00Z")
+    recorder_session = synthetic_id("recorder desktop session")
+    microphone_session = make_grant("recorder microphone session", "audio_input", "default_source", ["capture"], kind="session", start=Times[1], session=recorder_session)
+    camera_window = make_grant("recorder camera timed", "camera", "front_camera", ["capture"], kind="timed", start=Times[1], expiration=Times[5])
+    screenshot_once = make_grant("recorder screenshot once", "screen_capture", "focused_output", ["capture_once"], kind="one_shot", start=Times[1])
+    recorder_genesis = recorder.payload("recorder genesis", "genesis", persistent, [], EmptyState,
+                                        {"add_grants": sorted([recordings, recorder_clipboard], key=gid), "remove_grant_ids": []}, Times[0],
+                                        "Allow the recorder to use Recordings and read the clipboard")
+    recorder_genesis_data, recorder_genesis_id = sign_commit(persistent, recorder_genesis)
+    recorder_state = recorder_genesis["result_state"]
+    branch_ids = []
+    branch_steps = []
+    for label, grant in (("session", microphone_session), ("timed", camera_window), ("one shot", screenshot_once)):
+        payload = recorder.payload("recorder " + label, "temporary_grant", temporary, [recorder_genesis_id], recorder_state,
+                                   {"add_grants": [grant], "remove_grant_ids": []}, Times[1], "Temporary " + label + " grant", authority="temporary")
+        data, commit_id = sign_commit(temporary, payload)
+        branch_ids.append(commit_id)
+        branch_steps.append(commit(data))
+    session_branch_id, timed_branch_id, once_branch_id = branch_ids
+    recorder_merge = recorder.payload("recorder merge", "merge", persistent, [recorder_genesis_id] + branch_ids, recorder_state,
+                                      {"add_grants": [], "remove_grant_ids": [gid(recorder_clipboard)]}, Times[2],
+                                      "Close the temporary branches and remove clipboard access", extra={"merge_base": recorder_genesis_id})
+    recorder_merge_data, recorder_merge_id = sign_commit(persistent, recorder_merge)
+    merged_state = recorder_merge["result_state"]
+
+    def recorder_restore(label, reference, grant):
+        payload = recorder.payload(label, "restore", persistent, [recorder_merge_id], merged_state, {"add_grants": [grant], "remove_grant_ids": []},
+                                   Times[6], "Restore: " + label, extra={"restore_reference": reference})
+        return sign_commit(persistent, payload)
+
+    restored_microphone = make_grant("recorder microphone as persistent", "audio_input", "default_source", ["capture"], start=Times[6])
+    restored_camera = make_grant("recorder camera as persistent", "camera", "front_camera", ["capture"], start=Times[6], expiration=Times[5].replace("12:25", "12:59"))
+    restored_screenshot = make_grant("recorder screenshot as persistent", "screen_capture", "focused_output", ["capture_once"], start=Times[6])
+    restored_clipboard = make_grant("recorder clipboard restored", "clipboard", "session_clipboard", ["read"], start=Times[6], expiration="2027-01-01T00:00:00Z")
+    clipboard_restore_data, clipboard_restore_id = recorder_restore("recorder clipboard via session ancestor", session_branch_id, restored_clipboard)
+    fresh_microphone = make_grant("recorder microphone fresh persistent", "audio_input", "default_source", ["capture"], start=Times[7])
+    fresh_revision = recorder.payload("recorder fresh microphone", "revision", persistent, [clipboard_restore_id],
+                                      apply_delta(merged_state, {"add_grants": [restored_clipboard], "remove_grant_ids": []}),
+                                      {"add_grants": [fresh_microphone], "remove_grant_ids": []}, Times[7],
+                                      "Make microphone access persistent (new grant, fresh approval)")
+    scenario("restore_matches_only_persistent_history", "R12",
+             "Session, timed and one-shot grants of actual ancestors are never restored as persistent; a persistent grant of the same ancestor is; making temporary scope persistent is a separate freshly approved revision",
+             [commit(recorder_genesis_data)] + branch_steps + [
+                 commit(recorder_merge_data, check={"inactive": [gid(microphone_session), gid(camera_window), gid(screenshot_once), gid(recorder_clipboard)]}),
+                 commit(recorder_restore("recorder session as persistent", session_branch_id, restored_microphone)[0], fails("admission", "restore_rule"),
+                        note="the reviewer's case: ancestral session grant restated as persistent"),
+                 commit(recorder_restore("recorder timed as persistent", timed_branch_id, restored_camera)[0], fails("admission", "restore_rule")),
+                 commit(recorder_restore("recorder one shot as persistent", once_branch_id, restored_screenshot)[0], fails("admission", "restore_rule")),
+                 commit(clipboard_restore_data, check={"current": [gid(restored_clipboard)]},
+                        note="positive control: persistent historical grant, reference is a real ancestor through the merge"),
+                 commit(sign_commit(persistent, fresh_revision)[0], check={"current": [gid(fresh_microphone)], "inactive": [gid(microphone_session)]},
+                        note="fresh-approval route for making temporary scope persistent: a revision adding a new persistent grant")])
+
+    # ------------------------------------------------------------ R13: recovery ceremony
+    recovery_persistent = keys["user_1001_recovery_persistent"]
+    recovery_temporary = keys["user_1001_recovery_temporary"]
+    abandoned = keys["user_1001_recovery_abandoned"]
+    ceremony_id = synthetic_id("recovery ceremony 1001 first")
+
+    def certificate(subject, authority, label, epoch=2, supersedes=None):
+        payload = {
+            "schema_version": 1, "certificate_id": synthetic_id("certificate " + label), "issued": Times[9], "owner_uid": 1001,
+            "owner_user_id": identity.key_id, "subject_key_id": subject.key_id, "subject_public_key": subject.public_key,
+            "authority_class": authority, "key_epoch": epoch, "not_before": Times[9],
+        }
+        if authority == "temporary":
+            payload["not_after"] = "2026-10-19T12:00:00Z"
+        if supersedes is not None:
+            payload["supersedes_key_id"] = supersedes.key_id
+        return build_envelope("key_certificate", identity, encode(payload))
+
+    recovery_persistent_certificate = certificate(recovery_persistent, "persistent", "recovery persistent", supersedes=persistent)
+    recovery_temporary_certificate = certificate(recovery_temporary, "temporary", "recovery temporary", supersedes=temporary)
+    abandoned_certificate = certificate(abandoned, "persistent", "recovery abandoned attempt", supersedes=persistent)
+    compromised_invalidation = build_envelope("key_invalidation", identity, encode({
+        "schema_version": 1, "invalidation_id": synthetic_id("invalidation recovery persistent"), "issued": Times[10],
+        "owner_user_id": identity.key_id, "target_key_id": recovery_persistent.key_id, "reason": "compromised"}))
+
+    transition = payloads["identity_transition"]
+    transition_id = ids["identity_transition"]
+    kate_state = transition["result_state"]
+    kate_old_ids = [gid(grant) for grant in kate_state["grants"]]
+    kate_screenshot = make_grant("kate screenshot before containment", "screen_capture", "focused_output", ["capture_once"], kind="one_shot", start=Times[8])
+    kate_branch = kate.payload("kate branch before containment", "temporary_grant", temporary, [transition_id], kate_state,
+                               {"add_grants": [kate_screenshot], "remove_grant_ids": []}, Times[8], "Allow one screenshot of the focused output",
+                               authority="temporary")
+    editor = lineage_builder_t(keys, 1001, "user_1001_identity", "org.example.editor", "deb:editor:amd64")
+    projects = make_grant("editor projects", "filesystem", "home:Projects", ["read", "write"])
+    editor_genesis = editor.payload("editor genesis", "genesis", persistent, [], EmptyState, {"add_grants": [projects], "remove_grant_ids": []},
+                                    Times[8], "Allow the editor to use Projects")
+    editor_genesis_data, editor_genesis_id = sign_commit(persistent, editor_genesis)
+    suspended = kate_old_ids + [gid(kate_screenshot), gid(projects)]
+
+    def regrant(grant, label):
+        lifetime = grant["lifetime"]
+        renewed = make_grant(label, grant["resource"]["category"], grant["resource"]["resource_id"], grant["resource"]["operations"],
+                             start=Times[10], expiration=lifetime.get("expiration"), owner_uid=grant["resource"]["resource_owner_uid"],
+                             delegable=grant["delegation"]["permitted"])
+        renewed["delegation"] = dict(grant["delegation"])
+        return renewed
+
+    kate_by_category = {grant["resource"]["category"]: grant for grant in kate_state["grants"]}
+    renewed = sorted([regrant(kate_by_category["filesystem"], "kate recovered documents"),
+                      regrant(kate_by_category["network"], "kate recovered network"),
+                      regrant(kate_by_category["audio_input"], "kate recovered microphone")], key=gid)
+    renewed_ids = [gid(grant) for grant in renewed]
+
+    def kate_recovery(label, signer=recovery_persistent, commit_type="restore", adds=None, removes=None, reference=None,
+                      session=ceremony_id, parent=transition_id, base=None):
+        base = kate_state if base is None else base
+        extra = {"restore_reference": reference or transition_id} if commit_type == "restore" else None
+        payload = kate.payload(label, commit_type, signer, [parent], base,
+                               {"add_grants": renewed if adds is None else adds, "remove_grant_ids": sorted(kate_old_ids if removes is None else removes)},
+                               Times[10], "Re-authorize Kate after containment", extra=extra)
+        payload["authorization"]["session_id"] = session
+        return sign_commit(signer, payload)[0]
+
+    kate_recovered = kate_recovery("kate recovery restore")
+    prefix = [valid("user_1001_identity_enrollment"), valid("user_1001_persistent_certificate"), valid("user_1001_temporary_certificate")]
+    prefix += [valid(name) for name in ("commit_genesis", "commit_revision", "commit_temporary_session", "commit_temporary_one_shot",
+                                        "commit_merge", "commit_revocation", "commit_restore", "commit_identity_transition")]
+    prefix += [commit(sign_commit(temporary, kate_branch)[0]), commit(editor_genesis_data, check={"current": [gid(projects)] + kate_old_ids})]
+    contained = prefix + [record({"record": "containment"}, check={"ended": suspended},
+                                 note="unverifiable unclean run: every grant suspended, the live temporary branch ends")]
+    opened = contained + [record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c1", "role": "trusted_client"})]
+    keyed = opened + [identity_step(recovery_persistent_certificate, "key_certificate"),
+                      identity_step(recovery_temporary_certificate, "key_certificate"),
+                      record({"record": "recovery_keys", "recovery_id": ceremony_id,
+                              "persistent_key_id": recovery_persistent.key_id, "temporary_key_id": recovery_temporary.key_id},
+                             check={"ended": suspended})]
+    editor_fresh = make_grant("editor projects re-authorized", "filesystem", "home:Projects", ["read", "write"], start=Times[11])
+
+    editor_cleanup = editor.payload("editor remove suspended", "revocation", recovery_persistent, [editor_genesis_id], editor_genesis["result_state"],
+                                    {"add_grants": [], "remove_grant_ids": [gid(projects)]}, Times[11], "Remove the suspended Projects grant")
+    editor_cleanup_data, editor_cleanup_id = sign_commit(recovery_persistent, editor_cleanup)
+
+    def editor_revision(label, signer, grant):
+        payload = editor.payload(label, "revision", signer, [editor_cleanup_id], editor_cleanup["result_state"],
+                                 {"add_grants": [grant], "remove_grant_ids": []}, Times[11], "Re-authorize Projects access")
+        return sign_commit(signer, payload)[0]
+
+    scenario("recovery_c1_complete", "R13",
+             "Containment, then the complete C1 ceremony: open, fresh recovery keys at a new epoch, per-lineage re-authorization signed by the recovery key, close; old grants stay denied at every step",
+             contained + [
+                 commit(kate_recovery("kate restore before ceremony", signer=persistent), fails("key_authority", "contained"),
+                        note="bypass: no ceremony open"),
+                 identity_step(recovery_persistent_certificate, "key_certificate", fails("key_authority", "contained"),
+                               note="certificates only inside an open ceremony"),
+                 record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 1, "mode": "c1", "role": "trusted_client"},
+                        fails("admission", "recovery_rule"), note="recovery epoch must exceed every earlier key epoch"),
+                 record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c1", "role": "trusted_client"},
+                        check={"ended": suspended}),
+                 commit(kate_recovery("kate restore before keys", signer=persistent), fails("key_authority", "recovery_key_required"),
+                        note="the pre-containment key cannot sign recovery commits"),
+                 identity_step(recovery_persistent_certificate, "key_certificate"),
+                 identity_step(recovery_temporary_certificate, "key_certificate"),
+                 record({"record": "recovery_keys", "recovery_id": ceremony_id,
+                         "persistent_key_id": recovery_persistent.key_id, "temporary_key_id": recovery_temporary.key_id}),
+                 commit(kate_recovered, check={"current": renewed_ids, "ended": suspended},
+                        note="per-lineage progress: Kate re-authorized with new grant ids; the editor lineage stays suspended"),
+                 commit(kate_recovered, fails("admission", "stale_head"), note="the same recovery commit cannot be admitted twice"),
+                 record({"record": "recovery_closed", "recovery_id": ceremony_id}, check={"current": renewed_ids, "ended": suspended}),
+                 commit(kate_recovered, fails("admission", "stale_head"), note="replay after close"),
+                 commit(editor_cleanup_data, check={"ended": [gid(projects)]}, note="ordinary revocation removing the suspended grant after close"),
+                 commit(editor_revision("editor old key", persistent, editor_fresh), fails("key_authority", "key_epoch_stale"),
+                        note="pre-recovery keys never sign again"),
+                 commit(editor_revision("editor old id", recovery_persistent, projects), fails("admission", "duplicate_identifier"),
+                        note="a suspended grant id never reappears"),
+                 commit(editor_revision("editor fresh", recovery_persistent, editor_fresh), check={"current": [gid(editor_fresh)], "ended": [gid(projects)]},
+                        note="unrecovered lineage re-authorized later by an ordinary freshly approved revision")],
+             key_authority=True)
+    scenario("recovery_rejects_stale_key", "R13", "A key certified before the recovery epoch cannot sign the recovery restore",
+             keyed + [commit(kate_recovery("kate stale key", signer=persistent), fails("key_authority", "key_epoch_stale"), check={"ended": suspended})],
+             key_authority=True)
+    scenario("recovery_rejects_compromised_key", "R13", "A recovery key invalidated as compromised during the ceremony cannot sign; invalidation is always admitted",
+             keyed + [identity_step(compromised_invalidation, "key_invalidation"),
+                      commit(kate_recovered, fails("key_authority", "key_invalidated"), check={"ended": suspended})],
+             key_authority=True)
+    scenario("recovery_rejects_abandoned_key", "R13",
+             "A key certified at the recovery epoch by an abandoned attempt (its private object erased) but not named by recovery_keys is retired",
+             opened + [identity_step(abandoned_certificate, "key_certificate")] + keyed[len(opened):] +
+             [commit(kate_recovery("kate abandoned key", signer=abandoned), fails("key_authority", "key_retired"), check={"ended": suspended})],
+             key_authority=True)
+    scenario("recovery_rejects_deleted_user", "R13", "A deletion_pending user cannot complete recovery; every key is denied",
+             keyed + [record({"record": "deletion_pending"}), commit(kate_recovered, fails("key_authority", "user_deleted"), check={"ended": suspended}),
+                      record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 3, "mode": "c1", "role": "trusted_client"},
+                             fails("admission", "recovery_rule"))],
+             key_authority=True)
+    renewed_without_microphone = [grant for grant in renewed if grant["resource"]["category"] != "audio_input"]
+    screenshot_persistent = make_grant("kate screenshot as persistent", "screen_capture", "focused_output", ["capture_once"], start=Times[10])
+    revision_scope = make_grant("kate new camera during recovery", "camera", "front_camera", ["capture"], start=Times[10])
+    temporary_scope = make_grant("kate temporary during recovery", "camera", "front_camera", ["capture"], kind="timed", start=Times[10], expiration=Times[11])
+    recovery_revision = kate.payload("kate revision during recovery", "revision", recovery_persistent, [transition_id], kate_state,
+                                     {"add_grants": [revision_scope], "remove_grant_ids": []}, Times[10], "Add camera access")
+    recovery_revision["authorization"]["session_id"] = ceremony_id
+    recovery_temporary_grant = kate.payload("kate temporary during recovery", "temporary_grant", recovery_persistent, [transition_id], kate_state,
+                                            {"add_grants": [temporary_scope], "remove_grant_ids": []}, Times[10], "Temporary camera access")
+    recovery_temporary_grant["authorization"]["session_id"] = ceremony_id
+    scenario("recovery_rejects_bypass", "R13",
+             "Inside an open ceremony only trunk restore/revocation commits bound to the ceremony, referencing the contained head and removing every suspended grant, are admitted",
+             keyed + [
+                 commit(kate_recovery("kate wrong session", session=synthetic_id("auth session 1001")), fails("admission", "recovery_rule")),
+                 commit(sign_commit(recovery_persistent, recovery_revision)[0], fails("admission", "recovery_rule")),
+                 commit(sign_commit(recovery_persistent, recovery_temporary_grant)[0], fails("admission", "recovery_rule")),
+                 commit(kate_recovery("kate partial removal", removes=[grant_id for grant_id in kate_old_ids if grant_id != gid(kate_by_category["filesystem"])],
+                                      adds=[grant for grant in renewed if grant["resource"]["category"] != "filesystem"]), fails("admission", "recovery_rule"),
+                        note="keeps one suspended grant in the re-authorized state"),
+                 commit(kate_recovery("kate older reference", reference=ids["revision"], adds=renewed_without_microphone), fails("admission", "recovery_rule")),
+                 commit(kate_recovery("kate temporary scope", adds=sorted(renewed + [screenshot_persistent], key=gid)), fails("admission", "restore_rule"),
+                        note="scope that existed only on a temporary branch is never restored"),
+                 commit(kate_recovery("kate keep old ids", adds=[grant for grant in renewed if grant["resource"]["category"] != "network"], removes=[]),
+                        fails("admission", "recovery_rule")),
+                 record({"record": "recovery_closed", "recovery_id": synthetic_id("another ceremony")}, fails("admission", "recovery_rule")),
+                 commit(kate_recovered, check={"current": renewed_ids, "ended": suspended}, note="positive control after the rejected attempts")],
+             key_authority=True)
+    scenario("recovery_c2_requires_admin", "R13", "Under option C2 only admin opens the ceremony; the user's steps are unchanged",
+             contained + [record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c2", "role": "trusted_client"},
+                                 fails("admission", "recovery_rule")),
+                          record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c2", "role": "admin"})] +
+             keyed[len(opened):] + [commit(kate_recovered, check={"current": renewed_ids})],
+             key_authority=True)
+    second_ceremony = synthetic_id("recovery ceremony 1001 second")
+    editor_recovery = editor.payload("editor recovery in aborted ceremony", "restore", recovery_persistent, [editor_genesis_id], editor_genesis["result_state"],
+                                     {"add_grants": [make_grant("editor projects recovered", "filesystem", "home:Projects", ["read", "write"], start=Times[10])],
+                                      "remove_grant_ids": [gid(projects)]}, Times[10], "Re-authorize the editor", extra={"restore_reference": editor_genesis_id})
+    editor_recovery["authorization"]["session_id"] = ceremony_id
+    scenario("recovery_aborted_by_new_containment", "R13",
+             "A new unverifiable run during an open ceremony suspends the grants it re-authorized and aborts it; a new ceremony needs a higher key epoch",
+             keyed + [commit(kate_recovered, check={"current": renewed_ids}),
+                      record({"record": "containment"}, check={"ended": suspended + renewed_ids}),
+                      commit(sign_commit(recovery_persistent, editor_recovery)[0], fails("key_authority", "contained")),
+                      record({"record": "recovery_opened", "recovery_id": second_ceremony, "key_epoch": 2, "mode": "c1", "role": "trusted_client"},
+                             fails("admission", "recovery_rule")),
+                      record({"record": "recovery_opened", "recovery_id": second_ceremony, "key_epoch": 3, "mode": "c1", "role": "trusted_client"},
+                             check={"ended": suspended + renewed_ids})],
+             key_authority=True)
+    scenario("recovery_quarantine_requires_admin_first", "R13",
+             "Quarantine (store integrity failure) denies everything until admin recover_user; then the same ceremony applies",
+             prefix + [record({"record": "quarantine"}, check={"ended": suspended}),
+                       record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c1", "role": "trusted_client"},
+                              fails("admission", "recovery_rule")),
+                       commit(kate_recovery("kate restore while quarantined", signer=persistent), fails("key_authority", "quarantined")),
+                       record({"record": "admin_recover", "role": "trusted_client"}, fails("admission", "recovery_rule")),
+                       record({"record": "admin_recover", "role": "admin"}, check={"ended": suspended}),
+                       record({"record": "recovery_opened", "recovery_id": ceremony_id, "key_epoch": 2, "mode": "c1", "role": "trusted_client"})] +
+             keyed[len(opened):] + [commit(kate_recovered, check={"current": renewed_ids, "ended": suspended})],
+             key_authority=True)
+    return scenarios
+
+
+def run_scenario(scenario, valid_by_name, resolver):
+    """Returns a list of failure strings for one stored journal scenario."""
+    journal = journal_t(resolver, key_authority=scenario["key_authority"])
+    failures = []
+    for index, step in enumerate(scenario["steps"]):
+        try:
+            if "valid" in step:
+                kind, data = valid_by_name[step["valid"]]
+                if kind == "commit":
+                    journal.admit_commit(data)
+                else:
+                    journal.admit_identity(data, kind)
+            elif "commit" in step:
+                journal.admit_commit(bytes.fromhex(step["commit"]))
+            elif "identity" in step:
+                journal.admit_identity(bytes.fromhex(step["identity"]), step["kind"])
+            else:
+                journal.admit_record(decode_record(step["record"]))
+            outcome = "admitted"
+        except oracle_error_t as error:
+            outcome = {"layer": error.layer, "error": error.code}
+        if outcome != step["expect"]:
+            failures.append("scenario %s step %d: expected %s got %s" % (scenario["name"], index, step["expect"], outcome))
+        for standing, grant_ids in step.get("check", {}).items():
+            for grant_id in grant_ids:
+                have = journal.standing(bytes.fromhex(grant_id))
+                if have != standing:
+                    failures.append("scenario %s step %d: grant %s is %s, expected %s" % (scenario["name"], index, grant_id[:8], have, standing))
+    return failures
 
 
 # ------------------------------------------------------------------ serialization and check
 
 
 def vector_document():
-    keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits = build_vectors()
+    keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits, scenarios = build_vectors()
     resolver = resolver_t(resolver_keys)
     document = {
         "format": "cham3 ECR v1 vectors",
@@ -1368,6 +2188,7 @@ def vector_document():
         "limits": limits,
         "invalid": [],
         "admission_invalid": [],
+        "journal_scenarios": scenarios,
     }
     for item in identity:
         document["valid"].append({"name": item["name"], "kind": item["kind"], "envelope": item["envelope"].hex(),
@@ -1432,6 +2253,13 @@ def check_document(path):
         except oracle_error_t as error:
             failures.append("boundary vector not admissible: %s" % error)
     chain = [by_name[name] for name in stored["lineage"]["commits"]]
+    valid_by_name = {item["name"]: (item["kind"], bytes.fromhex(item["envelope"])) for item in stored["valid"]}
+    scenario_steps = 0
+    for scenario in stored.get("journal_scenarios", []):
+        failures.extend(run_scenario(scenario, valid_by_name, resolver))
+        scenario_steps += len(scenario["steps"])
+    if not stored.get("journal_scenarios"):
+        failures.append("journal scenarios missing")
     for item in stored["admission_invalid"]:
         try:
             admit_chain(chain[: item["prefix"]] + [bytes.fromhex(item["envelope"])], resolver)
@@ -1441,8 +2269,9 @@ def check_document(path):
                 failures.append("admission %s: expected %s/%s got %s/%s" % (item["name"], item["layer"], item["error"], error.layer, error.code))
     for failure in failures:
         print("FAIL " + failure)
-    print("checked %d valid, %d invalid, %d admission vectors: %s" % (
-        len(stored["valid"]), len(stored["invalid"]), len(stored["admission_invalid"]), "FAIL" if failures else "PASS"))
+    print("checked %d valid, %d invalid, %d admission vectors, %d journal scenarios (%d steps): %s" % (
+        len(stored["valid"]), len(stored["invalid"]), len(stored["admission_invalid"]), len(stored.get("journal_scenarios", [])),
+        scenario_steps, "FAIL" if failures else "PASS"))
     return 1 if failures else 0
 
 
@@ -1455,7 +2284,8 @@ def main(arguments):
         with open(arguments[1], "w", encoding="utf-8") as handle:
             json.dump(document, handle, indent=1, sort_keys=True)
             handle.write("\n")
-        print("wrote %d valid, %d invalid, %d admission vectors" % (len(document["valid"]), len(document["invalid"]), len(document["admission_invalid"])))
+        print("wrote %d valid, %d invalid, %d admission vectors, %d journal scenarios" % (
+            len(document["valid"]), len(document["invalid"]), len(document["admission_invalid"]), len(document["journal_scenarios"])))
         return 0
     return check_document(arguments[1])
 

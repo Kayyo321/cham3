@@ -1,8 +1,11 @@
 ; cham3 ECR wire schema, version 1 (CDDL, RFC 8610).
 ;
-; Status: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md), revised after
-; the independent review at 9cf8825 (findings R06-R08). Not approved; implementation
-; (M2-003) is gated on independent re-review and owner approval.
+; Status: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md), revision 3:
+; revised after the independent review at 9cf8825 (R06-R08) and the re-review at
+; 336f13b (R07-r2, R12, R13). Revision 3 changes no type; it changes admission
+; semantics (wire format 6.7, 6.11, 6.12) and documents the recovery binding below.
+; Not approved; implementation (M2-003) is gated on independent re-review and owner
+; approval.
 ; Normative prose, limits and validation order: docs/specs/m2_wire_format_v1.md.
 ; Every item is encoded with the cham3_dcbor_v1 deterministic profile; maps are closed
 ; (unknown keys rejected) and optional keys are omitted, never null.
@@ -67,7 +70,8 @@ commit_payload = {
     "parents" => [* commit_id],           ; strictly ascending bytewise, 0..8
     "base_state_hash" => state_hash,
     ? "merge_base" => commit_id,          ; merge only; one of parents
-    ? "restore_reference" => commit_id,   ; restore only
+    ? "restore_reference" => commit_id,   ; restore only; parent or an ancestor of it;
+                                          ; matches only persistent historical grants
     "message" => display_text,
     "delta" => delta,
     "result_state" => contract_state,
@@ -85,7 +89,9 @@ actor = {
 
 authorization = {
     "request_id" => random_id,            ; unique per user; replay rejected
-    "session_id" => random_id,            ; authenticated authorization session
+    "session_id" => random_id,            ; authenticated authorization session; inside a
+                                          ; recovery ceremony it must equal the ceremony's
+                                          ; recovery_id (ADR 0006 section 10)
 }
 
 policy_binding = {
@@ -123,7 +129,9 @@ identity_reference = {
 
 ; Network authority is an ordinary grant (category "network", resource_id
 ; "network_mode", exactly one operation "direct" or "tor", not delegable, not one-shot);
-; at most one network grant per state. No network grant means Offline (PROJECT 3.2).
+; at most one network grant per state, and at most one occupying network grant across
+; the trunk head and all live temporary heads of a lineage (wire format 6.12). No
+; network grant means Offline (PROJECT 3.2).
 contract_state = {
     "grants" => [* grant],                ; strictly ascending grant_id, 0..256
 }

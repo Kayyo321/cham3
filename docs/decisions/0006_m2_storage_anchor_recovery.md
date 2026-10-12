@@ -1,7 +1,7 @@
 # ADR 0006: M2 ECR storage, anchors and recovery (G4)
 
-- **Status:** PROPOSED (revision 2) — awaiting independent re-review and owner approval. Nothing here is approved. Contains two explicit owner choices (§9).
-- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R04, R05, R08, R10, I01; R11 shared with ADR 0008) / cham3 project owner.
+- **Status:** PROPOSED (revision 3) — awaiting independent re-review and owner approval. Nothing here is approved. Contains two explicit owner choices (§9).
+- **Date / decision owner:** Proposed 2026-10-12 by Claude Code (M2 implementer); revised 2026-10-12 after the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (CHANGES_REQUESTED: R04, R05, R08, R10, I01; R11 shared with ADR 0008); revision 3 on 2026-10-12 after the re-review at 336f13be6a19bb871ea956d64f9cacb0936fe028 (CHANGES_REQUESTED: R13 — containment blocked the key authority its own recovery needs) / cham3 project owner. Revision-3 responses: [M2-001-002-finding-resolutions-r2.md](../reviews/M2-001-002-finding-resolutions-r2.md).
 - **Related task/spec sections:** [M2 task](../tasks/M2-cryptographic-contract-core.md) G4, M2-005, M2-006, A07, A08, A10; PROJECT.md §§5.4, 5.7, Phase 2; [ADR 0001](0001_eternal_contract_repository.md) registry storage and recovery; SEC-04, SEC-14. Finding resolutions: [M2-001-002-finding-resolutions.md](../reviews/M2-001-002-finding-resolutions.md).
 
 `PROJECT.md` is the canonical product specification. This ADR records a scoped decision or proposal and does not silently replace that document.
@@ -10,7 +10,7 @@
 
 ADR 0001 requires immutable objects, transactional current-state indexes (heads, epochs, revocations, one-shot state, request ids, signing keys), atomic admission before any activation, serialized writers, separate pending/confirmed outcomes, crash recovery that never grants from incomplete writes, and a rollback-resistant mechanism for authoritative state: hash-valid old history is not freshness. Mandatory denial must not be undone by restarts, failed writes or missing lifecycle evidence. Another file on the same restorable disk is not independent freshness proof, and TPM or external hardware must not become an accidental foundational requirement.
 
-Revision 2 closes the review's gaps: a restriction lost to failed writes plus restart (R04), identity/key state outside the anchored store (R05), records too small for the largest valid object (R08), a shared anchor updated under per-user locks (R10) and an unprotected deletion sequence (R11). Nothing described here is implemented; every mechanism is an M2-005/M2-006 obligation (I01).
+Revision 2 closes the review's gaps: a restriction lost to failed writes plus restart (R04), identity/key state outside the anchored store (R05), records too small for the largest valid object (R08), a shared anchor updated under per-user locks (R10) and an unprotected deletion sequence (R11). Revision 3 (R13) separates **grant containment** from the **key authority** a tightly bound recovery needs, and freezes the complete staged recovery ceremony (§10) that the owner options of §9.2 now refer to. Nothing described here is implemented; every mechanism is an M2-005/M2-006 obligation (I01).
 
 ## Decision (proposed)
 
@@ -28,7 +28,7 @@ Revision 2 closes the review's gaps: a restriction lost to failed writes plus re
 
 ### 2. Global anchor and its serialization (R10)
 
-- The anchor is one map: per user `(seq, chain, state)`, plus deleted-user tombstones and the registryd **run marker** (§3). It is written as two alternating slots (`"C3AN"` ‖ slot counter ‖ map ‖ SHA-256 checksum); startup takes the valid slot with the higher counter.
+- The anchor is one map: per user `(seq, chain, state, user_id, identity_seq)` — `identity_seq` counts that user's identity records (enrollment, certificates, invalidations, replacement) so a lost journal tail that held key-state changes is visible (§10) — plus deleted-user tombstones and the registryd **run marker** (§3). It is written as two alternating slots (`"C3AN"` ‖ slot counter ‖ map ‖ SHA-256 checksum); startup takes the valid slot with the higher counter.
 - registryd holds the authoritative anchor map **in memory** and never re-reads disk during operation. One global anchor lock protects it. **Lock order: user lock → anchor lock**; no code acquires a user lock while holding the anchor lock.
 - Update protocol: under the anchor lock, apply the caller's change to the in-memory map, increment the slot counter, serialize the whole map, write it to the older slot, `fdatasync`, release. Callers reply only after the slot containing their change is durable. Concurrent updates may be coalesced (group commit) but each caller waits for a durable slot that contains its change; no snapshot taken outside the lock is ever written, so one user's update cannot overwrite another's.
 - A failed slot write leaves the change non-durable: restrictive changes stay enforced in memory and in the restriction ledger (§3) and are retried; admissions are reported failed.
@@ -61,7 +61,7 @@ Restart decisions (before serving anything):
 | `running`, different `boot_id` (reboot, power loss, kernel crash) | gone with the boot | **Unverifiable run → containment** |
 | unreadable | — | Quarantine (§4) |
 
-**Containment** (unverifiable unclean run): every user's grants admitted before the restart are `suspended` (denied), live temporary grants end, and one-shots without a recorded success are consumed. Suspension is lifted only by fresh authorization (owner choice §9.2). This includes the review's case — journal and anchor both unwritable, restart after storage recovers — which is either same-boot (ledger re-applies the restriction precisely) or cross-boot (containment); in no case does access resume from missing evidence. The cost is that a power loss or kernel crash requires users to reconfirm their permissions.
+**Containment** (unverifiable unclean run): every user's grants admitted before the restart are `suspended` (denied), live temporary grants end, and one-shots without a recorded success are consumed. A durable `containment` record per user (reserve-backed, restrictive path) names the containment point; until it is durable the user stays denied in memory and no ceremony can open. A suspended grant id is ended **permanently**: suspension is never lifted by un-suspending a grant, only by re-authorizing its scope with a new grant id through the recovery ceremony of §10 (owner choice §9.2 decides who may open it). Containment restricts **grants**, not the user's identity key; the ceremony's narrowly scoped key authority (§10) is what lets the user produce fresh signatures while every old grant and old contract key stays denied. This includes the review's case — journal and anchor both unwritable, restart after storage recovers — which is either same-boot (ledger re-applies the restriction precisely) or cross-boot (containment); in no case does access resume from missing evidence. The cost is that a power loss or kernel crash requires users to reconfirm their permissions.
 
 ### 4. Recovery decision table (per user, after the run-marker decision)
 
@@ -80,13 +80,13 @@ Restart decisions (before serving anything):
 | Tombstone `deleted` and files for that `user_id` exist | Never load them; quarantine and remove |
 | Any record fails replay verification | Quarantine |
 
-**Quarantine** denies every grant and key of that user (`quarantined`). Exit only through the `admin` `recover_user` ceremony: append a `recovery` record, end temporary grants, consume unconfirmed one-shots, mark every persistent grant admitted before the recovery point `requires_reauthorization`, raise the user's minimum valid policy epoch and re-anchor. Re-authorization follows §9.2. Recovery never infers validity, undoes consumption or claims complete history.
+**Quarantine** denies every grant and key of that user (`quarantined`); no ceremony can open and `resolve_key` answers `quarantined` for every key. Exit only through `admin` `recover_user`: verify and accept the journal prefix, append a `recovery` record (temporary grants end, unconfirmed one-shots are consumed, every grant admitted before the recovery point is suspended), raise the user's minimum valid policy epoch and re-anchor. The user is then **contained**, never active: re-authorization is the §10 ceremony under either §9.2 option. If the anchor's `identity_seq` for the user exceeds the identity records in the accepted prefix (a lost tail held key-state changes, possibly an identity replacement or a compromise report), `recover_user` refuses: the only exit is `replace_identity` (new `user_id`, ADR 0005 §2). Recovery never infers validity, undoes consumption or claims complete history.
 
 ### 5. Identity and key freshness (R05)
 
 - Identity records live in the anchored journal (§1), so restoring older identity state is a stale-journal/lost-store detection like any other rollback; no separate identityd store exists to restore.
-- identityd rebuilds its index from registryd at start and answers `resolve_key` with the journal sequence of its snapshot; if registryd is unavailable, the user is contained/quarantined, or the snapshot is older than a restrictive change it knows of, the answer is `unknown` (deny).
-- Key invalidation, identity replacement and deletion are restrictive: in-memory denial and ledger entry first, then one durable journal record, then reply. Until durable, the key is denied everywhere (vaultd checks key status with identityd before every signature).
+- identityd rebuilds its index from registryd at start and answers `resolve_key` with the journal sequence of its snapshot and a **scope** (IPC spec): if registryd is unavailable or the snapshot is older than a restrictive change it knows of, the answer is `unknown` (deny); for a quarantined or deleted user every key is denied; for a contained user every key is denied **except** the narrowly scoped ceremony authority of §10 (revision 3, R13).
+- Key invalidation, identity replacement and deletion are restrictive: in-memory denial and ledger entry first, then one durable journal record, then reply. Until durable, the key is denied everywhere (vaultd checks key status and scope with identityd before every signature, and signs nothing the scope does not permit).
 - Vault key files are not authority: restoring an older encrypted key object cannot revive a key whose invalidation or replacement is in the journal. The vault's failed-attempt counter is not rollback-protected (an offline restore resets delays; Argon2 cost and the passphrase remain) — stated limit.
 
 ### 6. Durability boundaries and fault points
@@ -109,9 +109,39 @@ All authority state is in the journals plus the anchor, so there is one coordina
 ### 9. Owner choices
 
 1. **Default anchor mode.** **Option A (recommended):** `same_volume` degraded mode by default with visible status; administrators may configure `separate_volume`; `tpm2_nv` later. **Option B:** refuse new or expanded grants unless an independent anchor is configured (makes a second volume or TPM a de facto requirement).
-2. **Lifting containment/quarantine.** **Option C1 (recommended):** the user re-authorizes with freshly approved, signed restore commits that remove the suspended grant ids and re-add the grants they still want with new ids (bulk-offered by the trusted client, one approval per lineage); quarantine additionally needs the admin ceremony first. **Option C2:** containment is lifted only by the admin ceremony followed by the same signed re-authorization.
+2. **Who opens the recovery ceremony (rewritten in revision 3, R13).** Both options use the **complete ceremony of §10** unchanged — fresh recovery keys at a new key epoch, per-lineage freshly approved ceremony-bound restore/revocation commits, the same journal/anchor ordering, crash handling and permanent denial of every suspended grant and pre-ceremony key. They differ only in step 2. **Option C1 (recommended):** after containment the user (`trusted_client`, own UID) opens the ceremony; after quarantine an `admin` `recover_user` comes first, then the user opens it. **Option C2:** only `admin` opens the ceremony, after containment and after quarantine; the user then performs steps 3–5. C2 adds an administrator to every reboot after an unclean run; C1 relies on the passphrase-authenticated user alone (with the ADR 0005 §8 limits).
 
-Mandatory denial, quarantine, ledger and recovery rules are identical under every option.
+Mandatory denial, quarantine, ledger and ceremony rules are identical under every option.
+
+### 10. Recovery ceremony after containment or quarantine (revision 3, R13)
+
+**Separation.** Containment is a fact about **grants** (every grant admitted before the containment point is permanently ended as `suspended`). Key authority is evaluated separately with a **scope** (§5): while a user is contained, nothing signs except (a) the identity key for key invalidations (always permitted: they only narrow) and for the ceremony's own certificates, and (b) the ceremony's **named recovery persistent key**, only for trunk `restore`/`revocation` commits bound to the open ceremony. Every pre-ceremony contract key is denied throughout and permanently retired at step 3, so a contract key compromised in an unverifiable window — whose invalidation may have been lost with that window's ledger — can never sign recovery or later commits.
+
+**Steps** (each record is one durable journal record followed by an anchor update before the reply, per §§1–2; each step is idempotent):
+
+| Step | Actor / operation | Journal record | Checks |
+|---|---|---|---|
+| 1. Contain | registryd at start (§3) or `admin` `recover_user` after quarantine (§4) | `containment` / `recovery` | All pre-point grants suspended (terminal), live temporary branches end, unconfirmed one-shots consumed; per lineage the **contained trunk head** is recorded. Denial is in memory before anything is served. |
+| 2. Open | `begin_recovery`: owner under C1, `admin` under C2 (§9.2) | `recovery_opened {recovery_id, key_epoch E, mode, role}` | User contained (not quarantined, not deletion-pending), no ceremony open, `E` greater than every key epoch and every earlier ceremony epoch of the user. |
+| 3. Fresh keys | vaultd `recover_keys(recovery_id, passphrase)` (owner) | two `key_certificate` records (identity-key-signed, epoch `E`, `supersedes_key_id`) then `recovery_keys {recovery_id, persistent_key_id, temporary_key_id}` | Identity key current: user not replaced, deleted or tombstoned; anchor `identity_seq` equals the journal's (else only `replace_identity`). New keys generated in locked memory, never existed before. `recovery_keys` names exactly two certified, non-invalidated epoch-`E` keys; it raises the user's **minimum signing key epoch** to `E` and **retires every other contract key**, including epoch-`E` keys of an abandoned attempt. |
+| 4. Re-authorize, per lineage | contractd `prepare_proposal(recovery_id)` → fresh approval (passphrase, exact digest, ADR 0005 §3) → vaultd signs with the named key → `submit_signed` → `admit` | ordinary `commit_admitted` | Commit type `restore` or `revocation`, trunk position, parent = current trunk head, `restore_reference` = the **contained trunk head**, `authorization.session_id` = `recovery_id`, removes **every** suspended grant id of the lineage's state, adds only grants matching persistent grants of the contained head (wire §6.7) with new ids, current policy epoch (≥ the user's minimum valid epoch), network slot (wire §6.12); one recovery commit per lineage per ceremony. Anything else is `recovery_rule` (or the layer-6 / `restore_rule` code). New grants are pending until enforcement confirms them, like every admission. |
+| 5. Close | `close_recovery` (owner or `admin`) | `recovery_closed {recovery_id}` | Requires step 3 complete. The user leaves containment; lineages not re-authorized keep their suspended grants (still ended) and need ordinary freshly approved commits later. The recovery keys become the user's current keys; pre-ceremony keys never sign again. |
+
+**Old grants denied throughout.** Suspended ids are terminal from step 1 onward, before, during and after the ceremony, whatever its outcome; `grant_id` uniqueness (wire §6.6) forbids their reuse, so only new ids can carry re-authorized scope. Containment never resumes access from missing evidence.
+
+**Crashes and failures** (registryd decides from durable records only; the ledger rules of §3 apply to every restrictive record):
+
+- Before the `containment` record is durable: the next start still sees an unverifiable run and contains again (idempotent).
+- After step 2: the ceremony stays open across clean or same-boot restarts and resumes at the first incomplete step.
+- During step 3: certificates without `recovery_keys` grant nothing; a retry erases this ceremony's unnamed key objects, generates new keys and certifies them at the same epoch; once `recovery_keys` is durable every unnamed key is retired.
+- During step 4: each lineage's commit is atomic; lineages already re-authorized stay re-authorized (pending enforcement), the others stay suspended. A head or epoch change between approval and admission rejects the commit (`stale_head`/`stale_epoch`); the user re-approves.
+- A new unverifiable run while a ceremony is open: a new containment suspends everything admitted before it, **including grants re-authorized in the open ceremony**, and aborts the ceremony; a new ceremony needs a key epoch above `E`.
+- Deletion requested during a ceremony: `deletion_pending` denies every key and closes the ceremony (§7).
+- Anchor write failure at any step: the step is reported failed; a durable-but-unanchored record follows the roll-forward rule of §4.
+
+**Bypass prevention.** No role can lift containment without step 4 commits: admin never signs; `fixture_consumer` cannot call ceremony operations; a pre-ceremony key, a key of an abandoned attempt, a compromised recovery key, a commit not bound to the `recovery_id`, a revision/merge/temporary grant/identity transition, a restore that keeps a suspended id, references an older state or adds scope that existed only on a temporary branch are all rejected. Restoring an older vault key file confers nothing: its key is below the minimum epoch.
+
+**Published vectors** (`journal_scenarios`, oracle model of these rules): `recovery_c1_complete` (positive, with bypass, replay, stale-key and old-id negatives after close), `recovery_rejects_stale_key`, `recovery_rejects_compromised_key`, `recovery_rejects_abandoned_key`, `recovery_rejects_deleted_user`, `recovery_rejects_bypass`, `recovery_c2_requires_admin`, `recovery_aborted_by_new_containment`, `recovery_quarantine_requires_admin_first`. The oracle models admission and key-authority decisions only; vault key handling, passphrase approval, anchor writes and crash points are NOT_RUN until M2-004/M2-006.
 
 ## Alternatives considered
 
@@ -119,6 +149,9 @@ Mandatory denial, quarantine, ledger and recovery rules are identical under ever
 - **Separate identityd store with its own anchor entry:** keeps storage with the owning service; rejected because a cross-service write ordering would be needed for every invalidation and restore, which is exactly the gap R05 found. identityd keeps ownership of validation and policy, not of bytes.
 - **Accepting the double-failure residual (revision 1):** rejected by review R04; contradicts ADR 0001's rule that a failed revocation never justifies continuing access.
 - **Containment after every unclean shutdown without a ledger:** simpler, but makes every service crash within a boot cost a user reconfirmation; the tmpfs ledger limits containment to reboots and genuinely unverifiable runs.
+- **Recovery signed by the pre-containment contract keys (revision 2's implicit path):** cannot run, because containment correctly denies those keys (R13), and would be unsafe if it could: an invalidation of a compromised contract key may have been lost with the unverifiable window. Rejected in favor of fresh ceremony keys at a new epoch.
+- **Lifting containment by un-suspending grants after an admin attestation:** no fresh user signature and no new ids; contradicts ADR 0001 (no restoration from lifecycle evidence). Rejected.
+- **A generic "recovery mode" that re-enables all signing until the user is done:** would let any signature (not just ceremony-bound re-authorization) through during the window; rejected for the step-scoped key authority of §10.
 - **Persisted index files, one global journal, EFI-variable anchors, same-disk duplicates presented as rollback-resistant, service-signed anchors:** rejected as in revision 1 (stale index restoration, failure containment, flash wear, misleading claims, no freshness from a same-disk key).
 
 ## Tradeoffs and consequences
@@ -136,10 +169,10 @@ Mandatory denial, quarantine, ledger and recovery rules are identical under ever
 
 ## Verification plan (M2-005, M2-006, A07, A08, A10, A14)
 
-All planned; nothing has run. Atomic admission under concurrent writers; every fault point in §6; the review's case (journal and anchor unwritable, restart after recovery) in both same-boot and new-boot variants; ledger missing/invalid; run marker unwritable; concurrent users and tombstones racing the anchor; independent restore of each storage domain (journal only, anchor only, vault files only, all but the independent anchor); key invalidation crash points; deletion crash at every step including tombstone write failure; `separate_volume` detection on a distinct filesystem; `same_volume` reporting degraded; quota/reserve. Release binaries under subprocess fault injection.
+All planned; nothing has run except the oracle vectors of §10 and the network-slot/placement scenarios (model evidence, not service evidence). Atomic admission under concurrent writers; the §10 ceremony at every step with crashes and anchor failures, abandoned key generation, a new unclean run mid-ceremony, deletion mid-ceremony and every bypass case, with vault signing refused outside the scope; every fault point in §6; the review's case (journal and anchor unwritable, restart after recovery) in both same-boot and new-boot variants; ledger missing/invalid; run marker unwritable; concurrent users and tombstones racing the anchor; independent restore of each storage domain (journal only, anchor only, vault files only, all but the independent anchor); key invalidation crash points; deletion crash at every step including tombstone write failure; `separate_volume` detection on a distinct filesystem; `same_volume` reporting degraded; quota/reserve. Release binaries under subprocess fault injection.
 
 ## Approval and supersession
 
-- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R04, R05, R08, R10, R11 via G6, I01). Revision 2 requires re-review.
+- **Independent review:** revision 1 CHANGES_REQUESTED at 9cf8825 (R04, R05, R08, R10, R11 via G6, I01). Revision 2 CHANGES_REQUESTED at 336f13b (R13; R04, R05, R10, R11 and I01 passed at design level). Revision 3 requires re-review.
 - **Owner approval evidence:** none. Requires independent re-review, then an explicit owner decision including §9.
-- **Supersedes / is superseded by:** revision 2 supersedes revision 1 of this proposal (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd).
+- **Supersedes / is superseded by:** revision 3 supersedes revision 2 (commit a2bbb370c867da57fdc72274fb17ca19a23426e4), which superseded revision 1 (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd).
