@@ -82,9 +82,17 @@ class image_manifest_fixture_t(unittest.TestCase):
         names = self.clean() | {"thunar"}
         self.assertIn("duplicate utility present in image (transitive): thunar", manifest_problems(names))
 
-    def test_transitive_librewolf_is_caught(self):
-        names = self.clean() | {"librewolf"}
-        self.assertIn("gated tool present in image (transitive): librewolf", manifest_problems(names))
+    def test_transitive_deferred_tool_is_caught(self):
+        # librewolf is an included F2 package now; a deferred tool is the gated negative control.
+        names = self.clean() | {"mitmproxy"}
+        self.assertIn("gated tool present in image (transitive): mitmproxy", manifest_problems(names))
+
+    def test_included_f2_packages_are_expected_not_gated(self):
+        # Positive control: the six F2 packages are expected in the image, not forbidden.
+        names = self.clean()
+        for name in m1_support.KaliPinnedSuite + m1_support.LibreWolfSuite:
+            self.assertIn(name, names)
+        self.assertEqual(manifest_problems(names), [])
 
     def test_missing_cham3_full_is_caught(self):
         names = self.clean() - {m1_support.PackageFull}

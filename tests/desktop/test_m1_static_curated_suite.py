@@ -19,6 +19,12 @@ import m1_support  # noqa: E402
 
 RelationFields = ("Depends", "Recommends", "Suggests", "Pre-Depends")
 KaliSourcePattern = re.compile(r"(?i)(https?://[^\s\"']*kali[^\s\"']*|kali-rolling|kali\.org)")
+# F2: Kali and LibreWolf sources are allowed only in the pinned archive files, whose
+# policy is checked by test_m1_static_foreign_sources.py.
+PinnedForeignArchives = (
+    m1_support.ArchivesDir + "/cham3_kali.",
+    m1_support.ArchivesDir + "/cham3_librewolf.",
+)
 
 
 def relation_fields(stanza):
@@ -59,9 +65,11 @@ def curated_problems(full_names, documented):
 
 
 def kali_reference_problems(texts):
-    """texts maps a repo path to its text. Any Kali apt source or URL is a problem."""
+    """texts maps a repo path to its text. Kali URLs or suites are allowed only in the pinned archive files."""
     problems = []
     for path, text in texts.items():
+        if path.startswith(PinnedForeignArchives):
+            continue
         for match in KaliSourcePattern.finditer(text):
             problems.append("Kali source reference in %s: %s" % (path, match.group(0)))
     return problems
@@ -136,7 +144,10 @@ class curated_suite_real_t(unittest.TestCase):
             ]
         self.assertEqual(problems, [], "gated tools must not be in M1 relationships")
 
-    def test_no_kali_repository_reference_in_build_or_packaging(self):
+    def test_kali_references_are_confined_to_the_pinned_archive_files(self):
+        # Flipped for F2: a Kali URL or suite is permitted only in the narrowly pinned
+        # cham3_kali archive files. Anywhere else (auto config, hooks, includes, packaging)
+        # it is still a problem.
         texts = {}
         texts.update(text_of_tree(m1_support.LiveDesktopDir))
         for package_dir in (m1_support.PackageDesktopDir, m1_support.PackageFullDir):
@@ -178,19 +189,37 @@ class curated_suite_fixture_t(unittest.TestCase):
         self.assertIn(("duplicate utility", "pcmanfm", "Recommends"), found)
 
     def test_gated_tool_is_flagged_in_depends_and_suggests(self):
-        stanza = {"Depends": "nmap, librewolf", "Suggests": "ghidra"}
+        # F2: the deferred tools (and omitted alternatives) are the gated names.
+        stanza = {"Depends": "nmap, mitmproxy", "Suggests": "wpscan"}
         found = forbidden_in_relations(stanza)
-        self.assertIn(("gated tool", "librewolf", "Depends"), found)
-        self.assertIn(("gated tool", "ghidra", "Suggests"), found)
+        self.assertIn(("gated tool", "mitmproxy", "Depends"), found)
+        self.assertIn(("gated tool", "wpscan", "Suggests"), found)
+
+    def test_included_f2_package_is_not_flagged_as_gated(self):
+        # Positive control: librewolf and ghidra are included now, so they are not gated.
+        stanza = {"Depends": "nmap, librewolf, radare2", "Suggests": "ghidra"}
+        self.assertEqual(forbidden_in_relations(stanza), [])
 
     def test_alternative_is_checked_not_just_first_name(self):
         stanza = {"Depends": "kate | thunar"}
         self.assertIn(("duplicate utility", "thunar", "Depends"), forbidden_in_relations(stanza))
 
-    def test_kali_reference_is_flagged_and_clean_config_passes(self):
+    def test_kali_reference_outside_the_pinned_files_is_flagged(self):
+        # Negative control: an unpinned, unexpectedly named Kali archive is a problem.
         bad = {"build/live-desktop/config/archives/kali.list.chroot": "deb http://http.kali.org/kali kali-rolling main\n"}
-        clean = {"build/live-desktop/auto/config": "--mirror-bootstrap http://deb.debian.org/debian/\n"}
         self.assertTrue(kali_reference_problems(bad))
+
+    def test_kali_reference_in_auto_config_is_flagged(self):
+        # Negative control: a Kali mirror in the live-build config is never allowed.
+        bad = {"build/live-desktop/auto/config": "--mirror-binary http://http.kali.org/kali\n"}
+        self.assertTrue(kali_reference_problems(bad))
+
+    def test_pinned_archive_reference_is_confined_and_clean_config_passes(self):
+        # Positive control: the pinned cham3_kali archive file is allowed here; its policy
+        # is checked by the foreign-sources suite.
+        pinned = {"build/live-desktop/config/archives/cham3_kali.sources": "URIs: http://http.kali.org/kali/\nSuites: kali-rolling\n"}
+        clean = {"build/live-desktop/auto/config": "--mirror-bootstrap http://deb.debian.org/debian/\n"}
+        self.assertEqual(kali_reference_problems(pinned), [])
         self.assertEqual(kali_reference_problems(clean), [])
 
 
