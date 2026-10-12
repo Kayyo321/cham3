@@ -57,6 +57,12 @@ jobs:
         env:
           HOME: /home/builder
         run: runuser -u builder -- tests/run_tests.sh desktop
+      - name: Staging (F1 per-profile package selection) tests
+        env:
+          HOME: /home/builder
+        # Docker-free: exercises build_image.sh CHAM3_STAGE_DRYRUN against fixture
+        # debs, unprivileged (the dry-run exits before the root check).
+        run: runuser -u builder -- tests/run_tests.sh staging
 
   package_build:
     runs-on: ubuntu-latest
