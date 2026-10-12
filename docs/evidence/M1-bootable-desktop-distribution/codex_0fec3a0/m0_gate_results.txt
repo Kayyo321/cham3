@@ -1,0 +1,3 @@
+m0_image_tests exit=0
+m0_boot_attempt exit=0
+m0_boot_tests exit=0

@@ -1,0 +1,6 @@
+19b33e909c7f6f3d7f8e8955a9cbff6fdeb1c716508702059ea7dc7db3fa5fbc  out/packages/cham3-base_0.0.0~m0_all.deb
+c18381e8cc589141ca992c84fedf65a18276f56b91ca71281b5adf2f92289a3f  out/packages/cham3-desktop_0.0.0~m1_all.deb
+9c629678713c346bcf451ee9e648b5a7ed6d7434be5801ba066b26afbce9fac7  out/packages/cham3-full_0.0.0~m1_all.deb
+root root 750 /usr/bin/dumpcap
+root wireshark 750
+/usr/bin/dumpcap cap_net_admin,cap_net_raw=eip

@@ -1,0 +1,22 @@
+== tests/container (staging, repo: /workspace/M1-rereview, out: /workspace/M1-rereview/out) ==
+test_guard_accepts_a_script_that_reads_the_switch_first (test_m1_container_staging.staging_guard_t.test_guard_accepts_a_script_that_reads_the_switch_first) ... ok
+test_guard_refuses_a_root_check_placed_before_the_dryrun_switch (test_m1_container_staging.staging_guard_t.test_guard_refuses_a_root_check_placed_before_the_dryrun_switch) ... ok
+test_guard_refuses_a_script_that_never_reads_the_dryrun_switch (test_m1_container_staging.staging_guard_t.test_guard_refuses_a_script_that_never_reads_the_dryrun_switch) ... ok
+test_real_build_script_passes_the_dryrun_guard (test_m1_container_staging.staging_guard_t.test_real_build_script_passes_the_dryrun_guard) ... ok
+test_stub_live_build_invocation_is_detected (test_m1_container_staging.staging_guard_t.test_stub_live_build_invocation_is_detected) ... ok
+test_built_package_not_in_manifest_is_not_staged (test_m1_container_staging.staging_profile_t.test_built_package_not_in_manifest_is_not_staged) ... ok
+test_empty_manifest_fails_closed (test_m1_container_staging.staging_profile_t.test_empty_manifest_fails_closed) ... ok
+test_filename_match_without_package_field_match_fails_closed (test_m1_container_staging.staging_profile_t.test_filename_match_without_package_field_match_fails_closed) ... ok
+test_m0_profile_stages_exactly_cham3_base (test_m1_container_staging.staging_profile_t.test_m0_profile_stages_exactly_cham3_base) ... ok
+test_m1_profile_does_not_stage_cham3_base (test_m1_container_staging.staging_profile_t.test_m1_profile_does_not_stage_cham3_base) ... ok
+test_m1_profile_stages_exactly_desktop_and_full (test_m1_container_staging.staging_profile_t.test_m1_profile_stages_exactly_desktop_and_full) ... ok
+test_manifest_naming_package_with_no_built_deb_fails_closed (test_m1_container_staging.staging_profile_t.test_manifest_naming_package_with_no_built_deb_fails_closed) ... ok
+test_missing_manifest_fails_closed (test_m1_container_staging.staging_profile_t.test_missing_manifest_fails_closed) ... ok
+test_package_missing_its_built_deb_fails_closed (test_m1_container_staging.staging_profile_t.test_package_missing_its_built_deb_fails_closed) ... ok
+test_two_built_debs_for_one_package_fail_closed (test_m1_container_staging.staging_profile_t.test_two_built_debs_for_one_package_fail_closed) ... ok
+test_unparameterized_run_defaults_to_m0_profile (test_m1_container_staging.staging_profile_t.test_unparameterized_run_defaults_to_m0_profile) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.290s
+
+OK

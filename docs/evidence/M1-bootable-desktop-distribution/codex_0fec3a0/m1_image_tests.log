@@ -1,0 +1,158 @@
+== tests/desktop (image-m1, repo: /workspace/M1-rereview, out: /workspace/M1-rereview/out) ==
+test_apt_inputs_classify_files_by_location_not_extension (test_m1_image_contents.image_apt_policy_fixture_t.test_apt_inputs_classify_files_by_location_not_extension) ... ok
+test_kali_key_in_trusted_gpg_d_fails_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_kali_key_in_trusted_gpg_d_fails_the_image_policy) ... ok
+test_pinned_foreign_sources_pass_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_pinned_foreign_sources_pass_the_image_policy) ... ok
+test_unpinned_kali_source_fails_the_image_policy (test_m1_image_contents.image_apt_policy_fixture_t.test_unpinned_kali_source_fails_the_image_policy) ... ok
+test_missing_metapackage_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_metapackage_is_caught) ... ok
+test_missing_plasmoid_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_plasmoid_is_caught) ... ok
+test_missing_real_session_file_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_real_session_file_is_caught) ... ok
+test_missing_real_wallpaper_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_real_wallpaper_is_caught) ... ok
+test_missing_wallpaper_metadata_is_caught (test_m1_image_contents.image_contents_fixture_t.test_missing_wallpaper_metadata_is_caught) ... ok
+test_positive_control_accepted (test_m1_image_contents.image_contents_fixture_t.test_positive_control_accepted) ... ok
+test_shipped_backend_binary_is_caught (test_m1_image_contents.image_contents_fixture_t.test_shipped_backend_binary_is_caught) ... ok
+test_shipped_systemd_unit_is_caught (test_m1_image_contents.image_contents_fixture_t.test_shipped_systemd_unit_is_caught) ... ok
+test_superseded_names_do_not_satisfy_the_gate (test_m1_image_contents.image_contents_fixture_t.test_superseded_names_do_not_satisfy_the_gate) ... ok
+test_contents_match_m1_contract (test_m1_image_contents.image_contents_t.test_contents_match_m1_contract) ... FAIL
+test_final_apt_sources_have_no_trusted_yes (test_m1_image_contents.image_contents_t.test_final_apt_sources_have_no_trusted_yes) ... FAIL
+test_image_apt_policy_pins_foreign_sources (test_m1_image_contents.image_contents_t.test_image_apt_policy_pins_foreign_sources) ... FAIL
+test_keys_reach_apt_only_through_shipped_signed_by_keyrings (test_m1_image_contents.image_contents_t.test_keys_reach_apt_only_through_shipped_signed_by_keyrings) ... FAIL
+test_no_unallowlisted_foreign_origin_package (test_m1_image_contents.image_contents_t.test_no_unallowlisted_foreign_origin_package) ... FAIL
+test_allowlisted_kali_origin_package_is_accepted (test_m1_image_contents.image_origin_fixture_t.test_allowlisted_kali_origin_package_is_accepted) ... ok
+test_missing_debian_index_fails_closed (test_m1_image_contents.image_origin_fixture_t.test_missing_debian_index_fails_closed) ... ok
+test_missing_kali_index_fails_closed_when_kali_is_configured (test_m1_image_contents.image_origin_fixture_t.test_missing_kali_index_fails_closed_when_kali_is_configured) ... ok
+test_non_allowlisted_kali_origin_package_is_rejected (test_m1_image_contents.image_origin_fixture_t.test_non_allowlisted_kali_origin_package_is_rejected) ... ok
+test_unknown_origin_fails_closed (test_m1_image_contents.image_origin_fixture_t.test_unknown_origin_fails_closed) ... ok
+test_all_shipped_keyrings_present_is_accepted (test_m1_image_contents.image_trust_fixture_t.test_all_shipped_keyrings_present_is_accepted) ... ok
+test_missing_shipped_keyring_is_rejected (test_m1_image_contents.image_trust_fixture_t.test_missing_shipped_keyring_is_rejected) ... ok
+test_plain_signed_sources_are_not_trusted_yes (test_m1_image_contents.image_trust_fixture_t.test_plain_signed_sources_are_not_trusted_yes) ... ok
+test_trusted_yes_in_the_final_image_is_rejected (test_m1_image_contents.image_trust_fixture_t.test_trusted_yes_in_the_final_image_is_rejected) ... ok
+test_included_f2_packages_are_expected_not_gated (test_m1_image_manifest.image_manifest_fixture_t.test_included_f2_packages_are_expected_not_gated) ... ok
+test_manifest_name_parsing_strips_versions (test_m1_image_manifest.image_manifest_fixture_t.test_manifest_name_parsing_strips_versions) ... ok
+test_missing_cham3_full_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_missing_cham3_full_is_caught) ... ok
+test_positive_control_clean_manifest_accepted (test_m1_image_manifest.image_manifest_fixture_t.test_positive_control_clean_manifest_accepted) ... ok
+test_transitive_deferred_tool_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_transitive_deferred_tool_is_caught) ... ok
+test_transitive_thunar_is_caught (test_m1_image_manifest.image_manifest_fixture_t.test_transitive_thunar_is_caught) ... ok
+test_image_checksums_verify (test_m1_image_manifest.image_manifest_t.test_image_checksums_verify) ... FAIL
+test_manifest_has_required_and_no_forbidden_packages (test_m1_image_manifest.image_manifest_t.test_manifest_has_required_and_no_forbidden_packages) ... FAIL
+test_provenance_records_m1_profile (test_m1_image_manifest.image_manifest_t.test_provenance_records_m1_profile) ... FAIL
+
+======================================================================
+FAIL: test_contents_match_m1_contract (test_m1_image_contents.image_contents_t.test_contents_match_m1_contract)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 205, in test_contents_match_m1_contract
+    paths = rootfs_listing()
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 73, in rootfs_listing
+    completed = m0_support.run_tool(["unsquashfs", "-l", image_root()])
+                                                         ~~~~~~~~~~^^
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 56, in image_root
+    m0_support.require_file(iso, "run build/scripts/build_image.sh with the M1 profile first")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/cham3-m1-desktop-amd64.iso (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_final_apt_sources_have_no_trusted_yes (test_m1_image_contents.image_contents_t.test_final_apt_sources_have_no_trusted_yes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 217, in test_final_apt_sources_have_no_trusted_yes
+    paths = rootfs_listing()
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 73, in rootfs_listing
+    completed = m0_support.run_tool(["unsquashfs", "-l", image_root()])
+                                                         ~~~~~~~~~~^^
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 56, in image_root
+    m0_support.require_file(iso, "run build/scripts/build_image.sh with the M1 profile first")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/cham3-m1-desktop-amd64.iso (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_image_apt_policy_pins_foreign_sources (test_m1_image_contents.image_contents_t.test_image_apt_policy_pins_foreign_sources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 210, in test_image_apt_policy_pins_foreign_sources
+    paths = rootfs_listing()
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 73, in rootfs_listing
+    completed = m0_support.run_tool(["unsquashfs", "-l", image_root()])
+                                                         ~~~~~~~~~~^^
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 56, in image_root
+    m0_support.require_file(iso, "run build/scripts/build_image.sh with the M1 profile first")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/cham3-m1-desktop-amd64.iso (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_keys_reach_apt_only_through_shipped_signed_by_keyrings (test_m1_image_contents.image_contents_t.test_keys_reach_apt_only_through_shipped_signed_by_keyrings)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 224, in test_keys_reach_apt_only_through_shipped_signed_by_keyrings
+    paths = rootfs_listing()
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 73, in rootfs_listing
+    completed = m0_support.run_tool(["unsquashfs", "-l", image_root()])
+                                                         ~~~~~~~~~~^^
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 56, in image_root
+    m0_support.require_file(iso, "run build/scripts/build_image.sh with the M1 profile first")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/cham3-m1-desktop-amd64.iso (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_no_unallowlisted_foreign_origin_package (test_m1_image_contents.image_contents_t.test_no_unallowlisted_foreign_origin_package)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 231, in test_no_unallowlisted_foreign_origin_package
+    paths = rootfs_listing()
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 73, in rootfs_listing
+    completed = m0_support.run_tool(["unsquashfs", "-l", image_root()])
+                                                         ~~~~~~~~~~^^
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_contents.py", line 56, in image_root
+    m0_support.require_file(iso, "run build/scripts/build_image.sh with the M1 profile first")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/cham3-m1-desktop-amd64.iso (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_image_checksums_verify (test_m1_image_manifest.image_manifest_t.test_image_checksums_verify)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_manifest.py", line 58, in test_image_checksums_verify
+    m0_support.require_file(os.path.join(image_dir, "SHA256SUMS"), "build_image.sh output")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/SHA256SUMS (build_image.sh output)
+
+======================================================================
+FAIL: test_manifest_has_required_and_no_forbidden_packages (test_m1_image_manifest.image_manifest_t.test_manifest_has_required_and_no_forbidden_packages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_manifest.py", line 54, in test_manifest_has_required_and_no_forbidden_packages
+    self.assertEqual(manifest_problems(manifest_names()), [])
+                                       ~~~~~~~~~~~~~~^^
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_manifest.py", line 25, in manifest_names
+    m0_support.require_file(path, "run build/scripts/build_image.sh with the M1 profile first")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/cham3-m1-desktop-amd64.packages (run build/scripts/build_image.sh with the M1 profile first)
+
+======================================================================
+FAIL: test_provenance_records_m1_profile (test_m1_image_manifest.image_manifest_t.test_provenance_records_m1_profile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/desktop/test_m1_image_manifest.py", line 63, in test_provenance_records_m1_profile
+    m0_support.require_file(path, "build_image.sh output")
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/M1-rereview/tests/lib/m0_support.py", line 80, in require_file
+    raise AssertionError("required file missing: %s (%s)" % (path, hint))
+AssertionError: required file missing: /workspace/M1-rereview/out/image/provenance.json (build_image.sh output)
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.005s
+
+FAILED (failures=8)

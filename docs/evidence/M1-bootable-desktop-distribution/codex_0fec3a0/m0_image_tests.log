@@ -1,0 +1,23 @@
+== tests/image (image, repo: /workspace/M1-rereview, out: /workspace/M1-rereview/out) ==
+test_apt_release_files_recorded_or_reason_given (test_image_artifacts.image_artifacts_t.test_apt_release_files_recorded_or_reason_given) ... ok
+test_build_timestamps_are_ordered (test_image_artifacts.image_artifacts_t.test_build_timestamps_are_ordered) ... ok
+test_image_sha256sums_verify_and_cover_iso (test_image_artifacts.image_artifacts_t.test_image_sha256sums_verify_and_cover_iso) ... ok
+test_iso_is_iso9660 (test_image_artifacts.image_artifacts_t.test_iso_is_iso9660) ... ok
+test_local_packages_match_built_deb (test_image_artifacts.image_artifacts_t.test_local_packages_match_built_deb) ... ok
+test_outputs_record_iso_size_and_digest (test_image_artifacts.image_artifacts_t.test_outputs_record_iso_size_and_digest) ... ok
+test_package_manifest_lists_cham3_base_at_expected_version (test_image_artifacts.image_artifacts_t.test_package_manifest_lists_cham3_base_at_expected_version) ... ok
+test_provenance_build_host_is_recorded (test_image_artifacts.image_artifacts_t.test_provenance_build_host_is_recorded) ... ok
+test_provenance_inputs_match_m0_definition (test_image_artifacts.image_artifacts_t.test_provenance_inputs_match_m0_definition) ... ok
+test_provenance_source_is_exact_clean_commit (test_image_artifacts.image_artifacts_t.test_provenance_source_is_exact_clean_commit) ... ok
+test_provenance_tools_are_versioned (test_image_artifacts.image_artifacts_t.test_provenance_tools_are_versioned) ... ok
+test_provenance_top_level_schema (test_image_artifacts.image_artifacts_t.test_provenance_top_level_schema) ... ok
+test_source_date_epoch_is_head_commit_time (test_image_artifacts.image_artifacts_t.test_source_date_epoch_is_head_commit_time) ... ok
+test_text_artifacts_contain_no_secrets (test_image_artifacts.image_artifacts_t.test_text_artifacts_contain_no_secrets) ... ok
+test_cham3_base_documentation_present_in_image (test_image_contents.image_contents_t.test_cham3_base_documentation_present_in_image) ... ok
+test_cham3_base_is_installed_at_expected_version (test_image_contents.image_contents_t.test_cham3_base_is_installed_at_expected_version) ... ok
+test_no_desktop_or_tor_packages_installed (test_image_contents.image_contents_t.test_no_desktop_or_tor_packages_installed) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.568s
+
+OK

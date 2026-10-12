@@ -1,0 +1,95 @@
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:13: trailing whitespace.
++Versions:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:15: trailing whitespace.
++Reverse Depends:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:17: trailing whitespace.
++Dependencies:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:18: trailing whitespace.
++Provides:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:19: trailing whitespace.
++Reverse Provides:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:24: trailing whitespace.
++Versions:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:26: trailing whitespace.
++Reverse Depends:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:29: trailing whitespace.
++Dependencies:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:30: trailing whitespace.
++Provides:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:31: trailing whitespace.
++Reverse Provides:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:36: trailing whitespace.
++Versions:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:38: trailing whitespace.
++Reverse Depends:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:44: trailing whitespace.
++Dependencies:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:45: trailing whitespace.
++Provides:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:46: trailing whitespace.
++Reverse Provides:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:54: trailing whitespace.
++librewolf:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:55: trailing whitespace.
++zaproxy:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:56: trailing whitespace.
++burpsuite:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:57: trailing whitespace.
++wpscan:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:58: trailing whitespace.
++amass:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:59: trailing whitespace.
++metasploit-framework:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:60: trailing whitespace.
++exploitdb:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:61: trailing whitespace.
++ghidra:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:62: trailing whitespace.
++cutter:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:63: trailing whitespace.
++rizin:
+docs/research/evidence/f2_equivalents/trixie_availability_and_dangling_names.txt:64: trailing whitespace.
++rizin-cutter:
+docs/research/evidence/f2_keys/kali_archive-key.show.txt:7: new blank line at EOF.
+docs/research/evidence/f2_keys/kali_archive_keyring_2025.2_contents.txt:11: new blank line at EOF.
+docs/research/evidence/f2_keys/torbrowser_launcher_postinst.txt:44: trailing whitespace.
++	py3compile -p torbrowser-launcher:amd64
+docs/research/evidence/f2_librewolf/librewolf_key_show.txt:8: new blank line at EOF.
+docs/research/evidence/f2_librewolf/repo_landing_and_hashes.txt:4: trailing whitespace.
++
+docs/research/evidence/firmware/codex_b82919c_image_attempt_b43_failure_excerpt.txt:51: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/dahdi-firmware-nonfree/postrm:24: space before tab in indent.
++    	rm -f /var/lib/dahdi/digium-firm/dahdi-*
+docs/research/evidence/firmware/maintainer_scripts/dahdi-firmware-nonfree/postrm:41: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-b43-installer/postinst:243: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-b43-installer/prerm:23: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-b43legacy-installer/postinst:150: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-b43legacy-installer/prerm:23: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-ipw2x00/preinst:27: trailing whitespace.
++            STATE=1
+docs/research/evidence/firmware/maintainer_scripts/firmware-ipw2x00/preinst:29: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ipw2x00/preinst:39: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ipw2x00/preinst:47: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ipw2x00/preinst:55: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ivtv/preinst:27: trailing whitespace.
++            STATE=1
+docs/research/evidence/firmware/maintainer_scripts/firmware-ivtv/preinst:29: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ivtv/preinst:39: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ivtv/preinst:47: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-ivtv/preinst:55: trailing whitespace.
++            ;;
+docs/research/evidence/firmware/maintainer_scripts/firmware-sof-signed/postinst:10: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-sof-signed/postrm:10: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-sof-signed/preinst:10: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/firmware-sof-signed/prerm:10: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/wireless-regdb/postinst:27: new blank line at EOF.
+docs/research/evidence/firmware/maintainer_scripts/wireless-regdb/prerm:9: new blank line at EOF.
+docs/research/evidence/wireshark/wireshark_common_4.4.19_postinst.txt:42: new blank line at EOF.
+tests/lib/m1_apt_support.py:464: new blank line at EOF.
