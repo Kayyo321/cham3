@@ -1,7 +1,7 @@
 # ADR 0001: Eternal Contract Repository and audit commit pipeline
 
 - **Status:** PROPOSED
-- **Date / decision owner:** 2026-10-11 / project owner; approval pending.
+- **Date / decision owner:** Proposed 2026-10-11; adoption candidate revised 2026-10-12 / cham3 project owner (requesting user); scoped approval pending.
 - **Related task/spec sections:** Owner-requested ECR architecture proposal; `PROJECT.md` §§4, 5, 8, 11.3–11.4, 14, 18; roadmap M2, M5, M6; SEC-01–06, SEC-11–16.
 
 `PROJECT.md` is the canonical product specification. This ADR records a scoped decision or proposal and does not silently replace that document.
@@ -10,11 +10,13 @@
 
 Contracts are immutable signed authorization statements, but the specification does not yet select a history-storage format or an audit transaction schema. The Eternal Contract Repository (ECR) would make contract lineage and authorization-change history one verifiable, append-only record owned by `cham3-registryd`. KDE would expose that history through the trusted Contract Inspector and audit dashboard.
 
-This is a future architecture goal for the contract milestones, not an implementation report or authorization to build privileged services now. The Git analogy describes lineage and forward revisions; it does not require Git, executable hooks, blockchain, or application access to a repository.
+This adoption candidate makes ECR a foundational M2 deliverable, with trusted desktop integration in M5 and runtime transition/restore verification in M6. Architecture adoption and implementation readiness are separate gates; this document reports no implementation and authorizes no privileged-service work before the detailed design gates below pass. The Git analogy describes lineage and forward revisions; it does not require Git, executable hooks, blockchain, or application access to a repository.
 
 ## Decision
 
-The following requirements and implementation outlines are **proposed**, subject to owner approval and the unresolved decisions below.
+The following architecture is **proposed for scoped owner approval**. Approval adopts the contract DAG, canonical signed change transactions, protected registry ownership, trusted approval/history workflow, forward restore, and the mandatory-denial rule below. It does not select a database, freeze a wire format, approve a background signing authority, or pass implementation gates. Detailed choices listed below need reviewed, owner-approved design decisions before the affected work becomes READY.
+
+The accompanying `PROJECT.md` amendments add §5.7 and the Phase 2 ECR deliverables. They are part of this approval candidate; until owner approval, those amendments remain proposed and cannot authorize implementation.
 
 ### Contract DAG and lifetimes
 
@@ -26,7 +28,9 @@ The following requirements and implementation outlines are **proposed**, subject
 
 ### Canonical commit and cryptographic audit entry
 
-The requested goal is that contract additions, modifications, and revocations cannot be authorized or enforced without a new durable ECR transaction node. Every authorization transaction is the canonical cryptographic audit entry for that change. Operational diagnostics and enforcement outcomes supplement it and cannot replace it.
+User-authorized contract additions, modifications, explicit revocations, merges, and historical restores require a new durable signed ECR transaction. No new or expanded authority may be activated before admission. Every such transaction is the canonical cryptographic audit entry for that authorized change. Operational diagnostics and enforcement outcomes supplement it and cannot replace it.
+
+Mandatory expiration, session termination, one-shot consumption, key/policy invalidation, emergency restriction, and fail-closed denial execute immediately under existing validity limits or mandatory policy. Restriction may precede transaction admission when signing, authentication, storage, or enforcement confirmation is unavailable. A failed explicit-revocation commit must never justify continuing access: deny/quarantine immediately, report the unsigned denial separately, and complete the signed history transaction only through a fresh valid authorization workflow. Neither restriction nor its lifecycle evidence can grant, extend, or restore authority. The lifecycle evidence requirements below preserve that distinction.
 
 Every commit must contain or cryptographically bind the following structured metadata:
 
@@ -56,7 +60,7 @@ Maintain transactional indexes for current persistent heads, live temporary bran
 
 Admission must verify canonical encoding, signature and key authority, ownership, verified subject, mandatory policy, parent existence, acyclicity, allowed lineage, and precise state/delta consistency. Serialize conflicting changes against the expected current head and policy epoch; reject or reauthorize stale proposals. Bind approval to the exact bytes shown, not just a request identifier. Reject duplicate transaction activation and one-shot reuse.
 
-Durably commit all required objects and the pending transaction/index update atomically before attempting its authority change. Track pending, failed, and confirmed enforcement outcomes separately, bound to the commit and runtime identity; never mutate signed history to record a later outcome. Promote active state only after the appropriate enforcement services confirm success. Recovery must reconcile pending transactions without granting authority from an incomplete write or blindly retrying a consumed grant.
+For signed contract transactions, durably commit all required objects and the pending transaction/index update atomically before attempting activation; mandatory denial is never blocked on this write. Track pending, failed, and confirmed enforcement outcomes separately, bound to the commit and runtime identity; never mutate signed history to record a later outcome. Promote active state only after the appropriate enforcement services confirm success. Recovery must reconcile pending transactions without granting authority from an incomplete write or blindly retrying a consumed grant.
 
 Derived history-search indexes may be rebuilt from validated objects. The authoritative active-head, epoch, revocation, and one-shot state must additionally have a rollback-resistant recovery mechanism: rebuilding arbitrary old signed history is not sufficient. Its durable anchors, backup/restore semantics, and crash behavior require a separate approved design. Corruption, unavailable storage, or unknown current state must fail closed. No adoption claim of immutable or complete history extends beyond the threat model, especially privileged-service/kernel compromise or deletion of an unanchored repository tail.
 
@@ -84,20 +88,22 @@ Historical inspection is read-only and does not unlock signing keys. A selected 
 
 Restore uses a forward-signed revision (`git revert` model), parented to the current authorized head rather than resetting it to the selected historical node. Bind the selected historical hash as a restore reference, recompute the delta and target state under the current policy epoch, ownership, identity, key authority, and mandatory restrictions, then obtain fresh explicit approval. Show any historical permissions that are now forbidden or unavailable; reject or require approval of a clearly displayed permitted target rather than silently granting them. Temporary grants require fresh valid scope and lifetime. Old signatures, keys, sessions, and one-shot grants are not reused. Follow quarantine/restart and resource-specific revocation requirements before reporting success (SEC-04, SEC-06, SEC-13, SEC-14).
 
-### Required invariant and unresolved owner decisions
+### Required invariant, lifecycle decision, and implementation gates
 
-**An ECR commit is a necessary condition for authorization, but is not technical proof of active enforcement until confirmed by `cham3-launcherd` / `cham3-netd` for their enforcement domains (SEC-03, SEC-11).** Relevant resource brokers must also confirm their own domains. Policy decisions, authenticated user approval, durable commit admission, and technical enforcement remain distinct.
+**A durable signed ECR commit is necessary before new or expanded contract authority can be activated, but is not technical proof of active enforcement until confirmed by `cham3-launcherd` / `cham3-netd` for their enforcement domains (SEC-03, SEC-11). Mandatory denial never depends on a new commit.** Relevant resource brokers must also confirm their own domains. Policy decisions, authenticated user approval, durable commit admission, and technical enforcement remain distinct.
 
-Resolve these points before approving the architecture or starting dependent implementation:
+**Lifecycle decision included in scoped approval:** `PROJECT.md` §§5.3, 5.5, 11.4 and ADR 0002's emergency deny boundary take precedence over history admission. Trusted services enforce already authorized validity limits and mandatory restrictions immediately, including with the vault locked, user presence absent, ECR unavailable, or current state uncertain. They record closure/lifecycle evidence through a narrowly authenticated service path when possible; that evidence is not a human-authorized contract commit and conveys no signing or grant authority. When durable evidence cannot be written, report an audit gap and keep affected access denied/unknown; recovery cannot infer continuing validity, undo consumption, or claim complete history. Re-enabling access requires justified current authorization and confirmed enforcement, with fresh approval for a new or expanded grant. This decision grants no unrestricted background vault access and changes no cryptographic primitive.
 
-- **Automatic invalidation versus human-only commits:** The requested universal commit-before-revocation rule and human-presence-only modification rule must be reconciled with mandatory expiration, session exit, one-shot consumption, key invalidation, and emergency fail-closed restriction. `PROJECT.md` §§5.3, 5.5, 11.4 require denial even while the vault is locked, authentication is unavailable, or ECR writes fail. Proposed direction for owner review: enforce validity limits already authorized by a signed grant immediately; record lifecycle/closure evidence separately through an authenticated service path without granting new authority or unrestricted background signing. The exact event format, signing authority, relation to canonical transactions, and recovery rules are **unresolved**, not an approved exception. ECR availability or user presence cannot defer mandatory denial.
+The following are implementation gates, not secretly selected details. The coordinator must create separate reviewed, owner-approved design records and task acceptance criteria for each before dependent implementation:
+
+- **Lifecycle evidence and denial recovery:** Define event encoding, authenticated service provenance, durable ordering/consumption state, audit-gap reporting, and replay-resistant reconciliation. A lifecycle event cannot be represented as a user-signed transaction unless the exact signing operation has independent user approval under `PROJECT.md` §14. No service signing key is selected by this ADR; any such proposal needs its own owner decision.
 - **Wire schema and storage:** Approve exact CBOR/COSE/hash profile, schema evolution, linked contract representation, merge semantics, backend, atomicity, concurrent writers, and durable rollback-resistant state anchors.
 - **Retention and privacy:** Define capacity, access by trusted viewers, backup/export/recovery, account/key deletion, and treatment of permanently retained temporary history and sensitive metadata. “Eternal” is an append-only design goal, not a guarantee of infinite retention or resistance to every privileged attacker.
 - **Authentication and identity:** Define approved authentication mechanisms, identity/hash handling across package updates, and safe restore when historical resources or keys no longer exist.
 
 ### Staged delivery and acceptance evidence
 
-- **M2 / PROJECT Phase 2:** Resolve owner decisions; approve the versioned commit/contract schema, registry/vault interfaces and crash/replay model; implement DAG storage, transaction admission, current-state indexes, and cryptographic tests.
+- **M2 / PROJECT Phase 2 — key pillar:** Adopt ECR as the contract registry and canonical signed change-history foundation. First pass the lifecycle-evidence, wire schema/storage, retention/privacy, authentication/identity, and rollback-resistant recovery design gates; then implement DAG storage, transaction admission, protected current-state indexes, registry/vault interfaces, and cryptographic/negative/recovery tests. M2 cannot exit with only signatures or a mutable basic registry.
 - **M5 / PROJECT Phase 5:** Add trusted message generation, fresh approval, read-only history tree, snapshot comparison, and accurate enforcement status. Verify trusted attribution and spoof resistance.
 - **M6 / PROJECT Phase 6:** Verify forward restore, revocation, lifecycle termination, quarantine/restart, failed writes/transitions, and recovery under current policy and anti-replay rules. Later multi-user hardening must verify isolated histories and key lifecycle.
 
@@ -116,7 +122,7 @@ Required proposed test specifications are listed in `../engineering/TESTING.md`.
 - Temporary authority remains bounded while its audit objects persist, increasing storage and privacy obligations.
 - Descriptions help people understand changes but structured state controls authorization. Untrusted text cannot influence the signing boundary.
 - Existing applications continue to request permissions through brokers; they gain no repository capability. No migration support or implemented compatibility is claimed.
-- Approval may require explicit canonical-spec changes concerning lifecycle auditing. Record those changes before implementation rather than treating this proposal as overriding the specification.
+- Adoption includes the explicit canonical-spec amendments in `PROJECT.md` §5.7 and Phase 2. They preserve mandatory denial and signing boundaries; detailed implementation decisions remain gated rather than being implied by adoption.
 
 ## Security implications
 
@@ -127,6 +133,7 @@ Required proposed test specifications are listed in `../engineering/TESTING.md`.
 
 ## Approval and supersession
 
-- **Owner approval evidence:** None. The owner requested a PROPOSED ADR and future milestone tracking; this is not approval of the unresolved architecture or permission to implement it now.
-- **Supersedes / is superseded by:** None.
-- **Next owner action:** Review this proposal, resolve the listed conflicts/open decisions, and explicitly approve any required `PROJECT.md` amendments and dependent task specifications.
+- **Owner approval evidence:** Pending approval of this reviewed adoption candidate. On 2026-10-12 the owner requested: “go through the approval motions for ADR 0001, once you're done make it a key pilar of M2 in the roadmap”. This authorizes preparation and review; final scoped adoption includes the lifecycle decision and `PROJECT.md` amendments above.
+- **Independent adoption review:** Pending; the earlier [proposal review](../reviews/ecr_adr_0001_review.md) approved documentation landing only and is not reused as adoption approval.
+- **Supersedes / is superseded by:** None. The scoped lifecycle decision reconciles this ADR's original universal commit wording with mandatory denial and ADR 0002; all other ADR 0002 boundaries remain unchanged.
+- **Next owner action:** Approve or revise the reviewed scoped architecture and canonical-spec amendments. Following approval, the coordinator defines M2 design tasks for the remaining gates; adoption alone does not make backend implementation READY.

@@ -81,7 +81,8 @@
 
 Do not update this status based on plans, generated code claims, or chat summaries alone. Link commits, files, and test artifacts for any new implementation claim.
 
-## Future contract architecture proposals
+## Contract architecture approval workflow
 
 - **2026-10-11:** [ADR 0001 — Eternal Contract Repository and audit commit pipeline](decisions/0001_eternal_contract_repository.md) records the owner's requested future ECR goal as **PROPOSED**, with roadmap links at M2, M5, and M6 and proposed test specifications in `engineering/TESTING.md`.
-- This entry records documentation only. ECR implementation and runtime verification are **NOT_RUN**; owner approval and lifecycle/signing, storage/schema, and anti-replay recovery decisions remain pending. It does not change the historical M0 evidence snapshot above.
+- **2026-10-12 adoption candidate:** Owner requested ADR 0001 approval processing and promotion to a key M2 pillar. The candidate scopes adoption, resolves mandatory denial versus commit/human-presence ordering, and proposes canonical-spec amendments in `PROJECT.md` §5.7 / Phase 2. Task: [ECR-ADR-001-ADOPTION](tasks/ecr_adr_0001_adoption.md). Independent adoption review and final scoped owner approval are pending; the old proposal review does not satisfy these gates.
+- Documentation only: ECR implementation and runtime verification are **NOT_RUN**. Detailed lifecycle-evidence, schema/storage, retention/privacy, authentication/identity, and anti-replay/recovery designs remain implementation gates. No unrelated milestone state or historical evidence is changed.

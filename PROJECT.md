@@ -568,6 +568,20 @@ Revoking a parent grant must invalidate dependent grants unless those grants hav
 
 ---
 
+5.7 Eternal Contract Repository (ECR) — proposed adoption amendment
+
+Pending scoped owner approval of ADR 0001, the following becomes the required contract registry architecture:
+
+The ECR is an append-only signed contract DAG owned by cham3-registryd, partitioned by verified user and application/installation identity. Persistent history and bounded temporary branches retain immutable lineage; historical objects do not retain expired, consumed, revoked, or superseded authority. Sandboxed applications have no direct access to its store, history indexes, administrative interfaces, or signing operations.
+
+User-authorized contract additions, modifications, explicit revocations, merges, and forward restores require durable signed transactions binding the exact state, delta, identity, lifetime, policy epoch, and parents. No new or expanded authority may activate before verified durable admission and confirmed resource enforcement. Restore creates a new current-parented revision under current policy and fresh approval; old signatures or head resets cannot reactivate authority.
+
+Mandatory expiration, session termination, one-shot consumption, key/policy invalidation, emergency restriction, and fail-closed denial must occur immediately, even when a signed transaction or lifecycle audit write is unavailable. An explicit revocation whose commit fails still requires immediate denial/quarantine. Trusted lifecycle evidence cannot authorize or restore grants, impersonate human approval, or permit background user-key signing. Audit-write failures are reported as gaps while access remains denied or unresolved; recovery cannot presume valid authority or complete history.
+
+ADR 0001 defines the scoped architecture and M2/M5/M6 responsibilities. Detailed schema, storage, lifecycle evidence, retention/privacy, authentication/identity transitions, and rollback-resistant recovery designs require independent review and owner approval before affected implementation. Architecture approval alone is not runtime security evidence.
+
+---
+
 6. Application Isolation
 
 cham3 must be compatible with existing Linux applications while enforcing application-specific security boundaries.
@@ -1482,10 +1496,10 @@ Deliverables:
 - COSE signed envelopes.
 - Contract verification.
 - Temporary and persistent signing authorities.
-- Basic contract registry.
-- Expiration and revocation logic.
+- Eternal Contract Repository: append-only signed contract DAG, canonical authorization transactions, protected current-state indexes, and replay-resistant recovery under ADR 0001 (proposed adoption amendment).
+- Expiration and revocation logic, including mandatory denial independent of signing or ECR availability.
 
-Completion condition: Unauthorized changes to a contract invalidate its signature, and users cannot issue contracts under another user's identity through ordinary interfaces.
+Completion condition: Unauthorized changes to a contract invalidate its signature, and users cannot issue contracts under another user's identity through ordinary interfaces. Under the proposed ADR 0001 adoption, Phase 2 also requires independently reviewed ECR admission, immutable lineage, current-state and crash/replay evidence; failed writes cannot grant authority or postpone mandatory denial. Later phases verify actual application isolation, KDE presentation, and runtime resource enforcement.
 
 Phase 3 — Application Sandbox Runtime
 
