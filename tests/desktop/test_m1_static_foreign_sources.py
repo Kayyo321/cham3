@@ -106,6 +106,30 @@ def tree_texts(relative_root):
     return texts
 
 
+KeyringToolPackages = {"gpg": "gnupg", "dpkg-deb": "dpkg-dev"}
+HostPackagesFile = "build/host_packages.txt"
+KeyringToolLoop = re.compile(r"for tool in ([^;]+);")
+
+
+def keyring_tool_problems(script_text, host_text):
+    """Host packages missing for the tools build_archive_keyring requires (empty means listed)."""
+    tools = KeyringToolLoop.search(script_text)
+    if tools is None:
+        return ["build_archive_keyring declares no required-tool loop"]
+    listed = set()
+    for raw in host_text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if line:
+            listed.add(line.split()[0])
+    problems = []
+    for tool in tools.group(1).split():
+        package = KeyringToolPackages.get(tool)
+        if package is not None and package not in listed:
+            problems.append("%s is required by build_archive_keyring but %s is not in %s"
+                            % (tool, package, HostPackagesFile))
+    return problems
+
+
 def foreign_file_problems(unexpected, keys):
     problems = ["foreign source or pin in an unexpected file: " + name for name in unexpected]
     problems += apt.key_problems(keys)
@@ -175,6 +199,12 @@ class foreign_sources_real_t(unittest.TestCase):
 
     def test_archive_keys_are_the_reviewed_fingerprints(self):
         self.assertEqual(key_file_problems(), [])
+
+    def test_keyring_build_tools_are_listed_in_host_packages(self):
+        # build_archive_keyring needs gpg (package gnupg) and dpkg-deb; the host list must name them.
+        script = read(m1_support.KeyringScript)
+        host = read(HostPackagesFile)
+        self.assertEqual(keyring_tool_problems(script, host), [])
 
     def test_keyring_build_pins_hashes_and_fingerprints_and_rejects_bad_keys(self):
         text = read(m1_support.KeyringScript)
@@ -402,6 +432,15 @@ class foreign_sources_fixture_t(unittest.TestCase):
     def test_apt_key_in_prose_is_not_an_invocation(self):
         self.assertEqual(apt.apt_key_invocation_problems({"x": "# no apt-key here, not trusted.gpg.d\n"}), [])
         self.assertTrue(apt.apt_key_invocation_problems({"x": "apt-key add keys/a.asc\n"}))
+
+    def test_keyring_tools_missing_from_host_packages_are_rejected(self):
+        script = "for tool in gpg sha256sum dpkg-deb awk date mktemp; do\n"
+        problems = keyring_tool_problems(script, "dpkg-dev\nlive-build\n")
+        self.assertEqual(problems, ["gpg is required by build_archive_keyring but gnupg is not in build/host_packages.txt"])
+
+    def test_keyring_tools_listed_in_host_packages_are_accepted(self):
+        script = "for tool in gpg sha256sum dpkg-deb awk date mktemp; do\n"
+        self.assertEqual(keyring_tool_problems(script, "gnupg\ndpkg-dev\n"), [])
 
     def test_keyring_names_come_from_the_script_constants(self):
         names = apt.keyring_script_names(self.good_keyring_script())
