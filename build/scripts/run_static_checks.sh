@@ -38,10 +38,22 @@ if ! git_cmd ls-files -z > "${tmp_dir}/tracked_files.list"; then
 fi
 mapfile -d '' tracked_files < "${tmp_dir}/tracked_files.list"
 
+# Captured EXTERNAL evidence (docs/**/evidence/) — upstream maintainer scripts,
+# apt simulation logs, copied live-build sources committed for independent review
+# — is not cham3-authored code. The lint gates apply to our own sources, not to
+# these artifacts, so they are excluded from discovery.
+is_evidence_path() {
+    case "$1" in
+        docs/research/evidence/* | docs/evidence/*) return 0 ;;
+    esac
+    return 1
+}
+
 # Tracked shell scripts: *.sh, or any file whose first line is a sh/bash shebang.
 shell_files=()
 for tracked in "${tracked_files[@]}"; do
     [ -f "${tracked}" ] || continue
+    is_evidence_path "${tracked}" && continue
     case "${tracked}" in
         *.sh) shell_files+=("${tracked}"); continue ;;
     esac
@@ -54,6 +66,7 @@ done
 python_files=()
 yaml_files=()
 for tracked in "${tracked_files[@]}"; do
+    is_evidence_path "${tracked}" && continue
     case "${tracked}" in
         *.py) python_files+=("${tracked}") ;;
         *.yml | *.yaml) yaml_files+=("${tracked}") ;;

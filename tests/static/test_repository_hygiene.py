@@ -30,6 +30,12 @@ SnakeCheckedRoots = ("build/", "tests/", ".github/workflows/")
 # live-config components, *.list.chroot, *.cfg.chroot) are upstream external
 # naming boundaries, not cham3 identifiers. Both are exempt from snake_case.
 SnakeCheckExemptRoots = ("build/live/", "build/live-desktop/")
+# docs/**/evidence/ holds captured EXTERNAL artifacts committed for independent
+# review (upstream maintainer scripts, apt simulation logs, copied live-build
+# sources). They are not cham3-authored code or build outputs of this repo, so the
+# junk-suffix, executable-mode, shebang and strict-mode rules — which govern our
+# own scripts and outputs — do not apply to them.
+EvidenceExemptPrefixes = ("docs/research/evidence/", "docs/evidence/")
 StrictModePattern = re.compile(r"(?m)^\s*set\s+-[a-zA-Z]*e")
 
 
@@ -46,6 +52,8 @@ class repository_hygiene_t(unittest.TestCase):
     def test_no_build_outputs_are_tracked(self):
         problems = []
         for path in m0_support.tracked_files():
+            if path.startswith(EvidenceExemptPrefixes):
+                continue
             parts = path.split("/")
             if path.endswith(ForbiddenSuffixes) or path.endswith(".DS_Store"):
                 problems.append("tracked build output or junk: " + path)
@@ -68,6 +76,8 @@ class repository_hygiene_t(unittest.TestCase):
         modes = m0_support.tracked_modes()
         problems = []
         for path in m0_support.tracked_files():
+            if path.startswith(EvidenceExemptPrefixes):
+                continue
             head = tracked_text_head(path, root)
             if path.endswith(".sh") or head.startswith(b"#!"):
                 if modes.get(path) != "100755":
@@ -78,6 +88,8 @@ class repository_hygiene_t(unittest.TestCase):
         root = m0_support.repo_root()
         problems = []
         for path in m0_support.tracked_files():
+            if path.startswith(EvidenceExemptPrefixes):
+                continue
             is_shell = (
                 path.endswith(".sh")
                 or path == "tests/run_tests.sh"
