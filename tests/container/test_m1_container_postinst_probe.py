@@ -56,9 +56,8 @@ def retarget(script_text, program):
 
 
 def path_without(tool, scratch):
-    """A PATH directory holding a link to every executable except tool."""
-    bin_dir = os.path.join(scratch, "path-without-" + tool)
-    os.makedirs(bin_dir)
+    """A PATH directory holding a link to every executable except tool (a fresh directory per call)."""
+    bin_dir = tempfile.mkdtemp(prefix="path-without-%s-" % tool, dir=scratch)
     seen = set()
     for directory in os.environ.get("PATH", "").split(os.pathsep):
         if not os.path.isdir(directory):
@@ -73,9 +72,8 @@ def path_without(tool, scratch):
 
 
 def failing_path(scratch, tool):
-    """A PATH that puts a stub that exits 1 for tool first."""
-    bin_dir = os.path.join(scratch, "failing-" + tool)
-    os.makedirs(bin_dir)
+    """A PATH that puts a stub that exits 1 for tool first (a fresh directory per call)."""
+    bin_dir = tempfile.mkdtemp(prefix="failing-%s-" % tool, dir=scratch)
     stub = os.path.join(bin_dir, tool)
     with open(stub, "w", encoding="utf-8") as handle:
         handle.write("#!/bin/sh\necho '%s: simulated failure (F3 probe)' >&2\nexit 1\n" % tool)

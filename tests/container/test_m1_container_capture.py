@@ -1,30 +1,29 @@
 """Container-stage checks for the dumpcap capture fallback (F3, security).
 
 Run as root in a disposable debian:trixie linux/amd64 container by
-tests/container/run_container_checks.sh. The suite installs Debian's real
-wireshark-common with the image preseed, installs the candidate's built
-cham3-desktop .deb (dependencies not installed; --force-depends), and checks what
-dumpcap looks like after each step:
+tests/container/run_container_checks.sh. The suite installs Debian's wireshark-common
+with the image preseed. It then installs the candidate's cham3-desktop control scripts
+as a dependency-free stub, so dpkg configures the package and runs the shipped postinst
+and triggers. dumpcap is observed after each step:
 
-  1. upstream_ok        install, setcap works            (positive control)
-  2. upstream_fallback  setcap missing, reinstall        (control: Debian setuid fallback)
-  3. cham3_install      cham3-desktop installed          (capabilities, no setuid)
-  4. reinstall_missing  setcap missing, reinstall        (fail closed)
-  5. reinstall_failing  setcap present but failing       (fail closed)
-  6. recovery           setcap works again, reinstall    (capabilities restored)
-  7. reconfigure_ok     dpkg-reconfigure, setcap works
-  8. reconfigure_missing dpkg-reconfigure, setcap missing (fail closed)
+  1. upstream_ok          install, setcap works            (positive control)
+  2. upstream_fallback    setcap missing, reinstall        (control: Debian setuid fallback)
+  3. cham3_install        cham3-desktop configured         (capabilities, no setuid)
+  4. reinstall_missing    setcap missing, reinstall        (fail closed)
+  5. reinstall_failing    setcap present but failing       (fail closed)
+  6. recovery             setcap works again, reinstall    (trigger restores capabilities)
+  7. reconfigure_ok       dpkg-reconfigure, setcap works   (valid capabilities kept)
+  8. reconfigure_missing  dpkg-reconfigure, setcap missing (never setuid; valid caps may remain)
 
-Step 2 is a sensitivity control. It must show the setuid bit that the upstream
-postinst sets, or the checker proves nothing here. Capture-dependent checks run
-only when this container can capture (the upstream fallback step captured as a
-group member). Otherwise they are NOT_RUN (skipped with reason) and are Codex
-Remote heavy gates. The member and nonmember checks prove the group restriction.
+Design, verified in disposable containers: a dpkg file trigger on /usr/bin/dumpcap runs
+on reinstall but not on dpkg-reconfigure. With the dpkg-statoverride the postinst
+installs, the upstream postinst does nothing on reconfigure, so dumpcap is untouched.
+Retained capabilities without setuid are the intended secure state.
 
-Limits: the container has no real network-interface policy and runs
---force-depends, so the KDE dependency closure is not exercised. Reinstall stands
-in for a version upgrade. Live-session and installed-system capture are Codex
-Remote gates, not established here.
+Step 2 is a sensitivity control: the setuid fallback must appear, or the checker proves
+nothing. The dependency-free stub is not the KDE payload. Member execution and capture
+need CAP_NET_ADMIN in the bounding set; unprivileged Docker lacks it, so those checks are
+NOT_RUN (skipped with a reason) and are the live Codex Remote privileged gate.
 """
 
 import glob
@@ -51,10 +50,14 @@ SetcapPath = "/usr/sbin/setcap"
 HiddenSetcapPath = SetcapPath + ".cham3-f3-hidden"
 MemberUser = "cham3member"
 NonmemberUser = "cham3nonmember"
+MemberUid = 2001
+NonmemberUid = 2002
 CaptureTimeout = 20
 UpstreamPackage = "wireshark-common"
-DebconfPreseedOwner = "wireshark-common"
 SetuidQuestion = "wireshark-common/install-setuid"
+DebconfOwner = "wireshark-common"
+StubDroppedFields = ("Depends", "Recommends", "Suggests", "Pre-Depends")
+ShippedControlScripts = ("postinst", "preinst", "prerm", "postrm", "triggers")
 PermissionDeniedMarker = re.compile(r"permission denied|not permitted|operation not permitted", re.IGNORECASE)
 
 
@@ -75,6 +78,13 @@ def run(argv, env=None, timeout=900, cwd=None):
         raise AssertionError("timed out: " + " ".join(argv))
 
 
+def group_name(gid):
+    try:
+        return grp.getgrgid(gid).gr_name
+    except KeyError:
+        return "gid:%d" % gid
+
+
 def dumpcap_state():
     st = os.stat(m1_support.DumpcapPath)
     getcap = run(["getcap", m1_support.DumpcapPath])
@@ -88,7 +98,7 @@ def dumpcap_state():
 
 
 def debconf_setuid_answer():
-    completed = run(["debconf-show", DebconfPreseedOwner])
+    completed = run(["debconf-show", DebconfOwner])
     for line in completed.stdout.splitlines():
         if SetuidQuestion in line:
             return line.split(":", 1)[-1].strip()
@@ -141,9 +151,9 @@ def capture_as_member(scratch, label):
     return {"rc": process.returncode, "stderr": stderr, "bytes": size}
 
 
-def write_failing_setcap(scratch):
-    bin_dir = os.path.join(scratch, "failing-setcap-bin")
-    os.makedirs(bin_dir)
+def failing_setcap_env(scratch):
+    """PATH with a setcap stub that exits 1 placed first (the setcap-failing case)."""
+    bin_dir = tempfile.mkdtemp(prefix="failing-setcap-", dir=scratch)
     stub = os.path.join(bin_dir, "setcap")
     with open(stub, "w", encoding="utf-8") as handle:
         handle.write("#!/bin/sh\necho 'setcap: simulated failure (F3 control)' >&2\nexit 1\n")
@@ -174,6 +184,45 @@ def dpkg_env(extra=None):
     return env
 
 
+def dependency_free_stub(desktop_deb, scratch):
+    """A package with cham3-desktop's shipped control scripts and no dependencies.
+
+    dpkg does not configure a package with unmet dependencies, so it would never run the
+    shipped postinst or triggers in this container. The stub copies the postinst,
+    preinst, prerm, postrm, and triggers of the built package unchanged, drops the
+    Depends, Recommends, Suggests, and Pre-Depends fields, and has no payload. The KDE
+    payload is not installed. The stub is only a harness for the shipped scripts.
+    """
+    control_dir = os.path.join(scratch, "desktop-control")
+    completed = run(["dpkg-deb", "-e", desktop_deb, control_dir], timeout=300)
+    if completed.returncode != 0:
+        raise AssertionError("dpkg-deb -e failed for %s: %s" % (desktop_deb, completed.stderr.strip()))
+    stub_root = os.path.join(scratch, "desktop-stub")
+    debian = os.path.join(stub_root, "DEBIAN")
+    os.makedirs(debian)
+    with open(os.path.join(control_dir, "control"), "r", encoding="utf-8") as handle:
+        kept, dropping = [], False
+        for line in handle.read().splitlines():
+            if line[:1] in (" ", "\t"):
+                if not dropping:
+                    kept.append(line)
+                continue
+            dropping = line.split(":", 1)[0] in StubDroppedFields
+            if not dropping:
+                kept.append(line)
+    with open(os.path.join(debian, "control"), "w", encoding="utf-8") as handle:
+        handle.write("\n".join(kept) + "\n")
+    for name in ShippedControlScripts:
+        source = os.path.join(control_dir, name)
+        if os.path.isfile(source):
+            shutil.copy2(source, os.path.join(debian, name))
+    stub = os.path.join(scratch, "cham3-desktop-dependency-free.deb")
+    completed = run(["dpkg-deb", "--build", "--root-owner-group", stub_root, stub], timeout=300)
+    if completed.returncode != 0 or not os.path.isfile(stub):
+        raise AssertionError("could not build the dependency-free stub: " + completed.stderr.strip())
+    return stub
+
+
 class capture_scenarios_t(unittest.TestCase):
     """Runs the scenarios once; each test asserts one step's observed state."""
 
@@ -183,12 +232,12 @@ class capture_scenarios_t(unittest.TestCase):
         if gate is not None:
             raise unittest.SkipTest(gate)
         cls.scratch = tempfile.mkdtemp(prefix="cham3_f3_")
-        cls.out_dir = m0_support.out_dir()
-        cls.desktop_deb = m1_support.shipped_deb(cls.out_dir, m1_support.PackageDesktop)
         cls.hidden = False
         cls.obs = {}
         cls.failures = []
         cls.preseed_answer = None
+        cls.out_dir = m0_support.out_dir()
+        cls.desktop_deb = m1_support.shipped_deb(cls.out_dir, m1_support.PackageDesktop)
         try:
             cls.run_scenarios()
         finally:
@@ -214,7 +263,7 @@ class capture_scenarios_t(unittest.TestCase):
 
     @classmethod
     def ensure_users(cls):
-        for name, uid in ((MemberUser, 2001), (NonmemberUser, 2002)):
+        for name, uid in ((MemberUser, MemberUid), (NonmemberUser, NonmemberUid)):
             if run(["id", "-u", name]).returncode != 0:
                 completed = run(["useradd", "--uid", str(uid), "--create-home", name])
                 if completed.returncode != 0:
@@ -225,7 +274,8 @@ class capture_scenarios_t(unittest.TestCase):
         preseed_path = os.path.join(m0_support.repo_root(), m1_support.PreseedFile)
         m0_support.require_file(preseed_path, "cham3 wireshark preseed")
         with open(preseed_path, "r", encoding="utf-8") as handle:
-            lines = [line for line in handle.read().splitlines() if line.strip() and not line.lstrip().startswith("#")]
+            lines = [line for line in handle.read().splitlines()
+                     if line.strip() and not line.lstrip().startswith("#")]
         completed = subprocess.run(
             ["debconf-set-selections"], input="\n".join(lines) + "\n", text=True, capture_output=True, check=False
         )
@@ -250,8 +300,8 @@ class capture_scenarios_t(unittest.TestCase):
             raise AssertionError("dpkg -i reinstall of %s failed: %s" % (UpstreamPackage, completed.stderr.strip()))
 
     @classmethod
-    def reconfigure_upstream(cls, extra_env=None):
-        completed = run(["dpkg-reconfigure", "-f", "noninteractive", UpstreamPackage], env=dpkg_env(extra_env), timeout=900)
+    def reconfigure_upstream(cls):
+        completed = run(["dpkg-reconfigure", "-f", "noninteractive", UpstreamPackage], env=dpkg_env(), timeout=900)
         if completed.returncode != 0:
             raise AssertionError("dpkg-reconfigure %s failed: %s" % (UpstreamPackage, completed.stderr.strip()))
 
@@ -260,7 +310,7 @@ class capture_scenarios_t(unittest.TestCase):
         state = dumpcap_state()
         state["member_exec"] = exec_as(MemberUser, [m1_support.DumpcapPath, "-D"])
         state["nonmember_exec"] = exec_as(NonmemberUser, [m1_support.DumpcapPath, "-D"])
-        if capture:
+        if capture and m1_support.bounding_set_has(m1_support.CapNetAdminBit):
             state["member_capture"] = capture_as_member(cls.scratch, label)
         cls.obs[label] = state
         return state
@@ -287,9 +337,10 @@ class capture_scenarios_t(unittest.TestCase):
 
         cls.purge_upstream()
         cls.install_upstream()
-        completed = run(["dpkg", "-i", "--force-depends", cls.desktop_deb], env=dpkg_env(), timeout=900)
+        stub = dependency_free_stub(cls.desktop_deb, cls.scratch)
+        completed = run(["dpkg", "-i", stub], env=dpkg_env(), timeout=900)
         if completed.returncode != 0:
-            cls.failures.append("dpkg -i cham3-desktop failed: " + completed.stderr.strip())
+            cls.failures.append("dpkg -i of the cham3-desktop stub failed: " + completed.stderr.strip())
         cls.observe("cham3_install", capture=True)
 
         cls.hide_setcap()
@@ -315,7 +366,12 @@ class capture_scenarios_t(unittest.TestCase):
         self.assertIn(label, self.obs, "scenario did not run: " + label)
         return self.obs[label]
 
+    def require_privileged(self):
+        if not m1_support.bounding_set_has(m1_support.CapNetAdminBit):
+            self.skipTest(m1_support.PrivilegedGate)
+
     def require_capture(self):
+        self.require_privileged()
         upstream = self.obs.get("upstream_fallback", {})
         if not upstream.get("member_capture", {}).get("bytes"):
             self.skipTest(
@@ -326,6 +382,10 @@ class capture_scenarios_t(unittest.TestCase):
     def problems(self, label, caps_expected):
         state = self.state(label)
         return m1_support.capture_state_problems(state["mode"], state["group"], state["caps"], caps_expected)
+
+    def retained_problems(self, label):
+        state = self.state(label)
+        return m1_support.retained_state_problems(state["mode"], state["group"], state["caps"])
 
     # Positive and sensitivity controls.
 
@@ -348,17 +408,26 @@ class capture_scenarios_t(unittest.TestCase):
     def test_control_upstream_success_state_is_accepted(self):
         self.assertEqual(self.problems("upstream_ok", caps_expected=True), [])
 
-    # Install with cham3-desktop: capabilities, group restriction and capture.
+    # Install with cham3-desktop: capabilities, group restriction, and capture.
 
     def test_install_sets_capabilities_and_no_setuid(self):
         self.assertEqual(self.problems("cham3_install", caps_expected=True), [])
 
+    def test_install_group_has_execute_and_others_do_not(self):
+        # Mode-level pair for the group restriction (needs no capability): group execute
+        # is granted, other-execute is denied. Run in every container that installs.
+        state = self.state("cham3_install")
+        self.assertTrue(state["mode"] & m1_support.GroupExecBit, "group cannot execute dumpcap (mode %04o)" % state["mode"])
+        self.assertFalse(state["mode"] & m1_support.OtherExecBit, "other users can execute dumpcap (mode %04o)" % state["mode"])
+
     def test_install_nonmember_cannot_execute_dumpcap(self):
+        self.require_privileged()
         result = self.state("cham3_install")["nonmember_exec"]
         self.assertNotEqual(result["rc"], 0, result)
         self.assertTrue(PermissionDeniedMarker.search(result["stderr"]), result["stderr"])
 
     def test_install_member_can_execute_dumpcap(self):
+        self.require_privileged()
         result = self.state("cham3_install")["member_exec"]
         self.assertEqual(result["rc"], 0, result["stderr"])
 
@@ -391,25 +460,28 @@ class capture_scenarios_t(unittest.TestCase):
         capture = self.state("reinstall_missing")["member_capture"]
         self.assertNotEqual(capture["rc"], 0, "capture succeeded without capabilities")
 
-    def test_reconfigure_with_setcap_missing_leaves_no_setuid(self):
-        problems = [p for p in self.problems("reconfigure_missing", caps_expected=False) if "setuid" in p]
+    # Reconfigure: the security properties hold; valid capabilities may be retained.
+
+    def test_reconfigure_with_setcap_missing_never_introduces_setuid(self):
+        problems = [p for p in self.retained_problems("reconfigure_missing") if "setuid" in p]
+        self.assertEqual(problems, [], "dpkg-reconfigure introduced a setuid bit")
+
+    def test_reconfigure_with_setcap_missing_keeps_group_and_other_execute_denied(self):
+        problems = [p for p in self.retained_problems("reconfigure_missing")
+                    if "group" in p or "executable by other" in p]
         self.assertEqual(problems, [])
 
-    def test_reconfigure_with_setcap_missing_leaves_no_capabilities(self):
-        problems = [p for p in self.problems("reconfigure_missing", caps_expected=False) if "capabilities" in p]
-        self.assertEqual(problems, [])
-
-    # Recovery paths: capabilities come back when setcap works again.
+    def test_reconfigure_with_setcap_missing_retains_only_the_valid_capabilities(self):
+        problems = [p for p in self.retained_problems("reconfigure_missing") if "capabilit" in p]
+        self.assertEqual(problems, [], "reconfigure left capabilities other than the agreed set")
 
     def test_reconfigure_with_setcap_working_restores_capabilities(self):
+        # Valid capabilities are present after reconfigure: retained from the trigger-restored
+        # state, or restored. Either way the agreed set and no setuid.
         self.assertEqual(self.problems("reconfigure_ok", caps_expected=True), [])
 
     def test_recovery_after_failure_restores_capabilities(self):
         self.assertEqual(self.problems("recovery", caps_expected=True), [])
-
-
-def failing_setcap_env(scratch):
-    return write_failing_setcap(scratch)
 
 
 if __name__ == "__main__":
