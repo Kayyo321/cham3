@@ -107,13 +107,13 @@ The following are implementation gates, not secretly selected details. The coord
 - **M5 / PROJECT Phase 5:** Add trusted message generation, fresh approval, read-only history tree, snapshot comparison, and accurate enforcement status. Verify trusted attribution and spoof resistance.
 - **M6 / PROJECT Phase 6:** Verify forward restore, revocation, lifecycle termination, quarantine/restart, failed writes/transitions, and recovery under current policy and anti-replay rules. Later multi-user hardening must verify isolated histories and key lifecycle.
 
-Required proposed test specifications are listed in `../engineering/TESTING.md`. Implementation acceptance needs unit vectors, positive/negative component tests, and actual Debian 13/KDE Wayland enforcement tests in disposable environments, with independent security review. A draft ADR or passing documentation check does not satisfy implementation gates.
+Required implementation acceptance specifications are listed in `../engineering/TESTING.md`. Implementation acceptance needs unit vectors, positive/negative component tests, and actual Debian 13/KDE Wayland enforcement tests in disposable environments, with independent security review. A draft ADR or passing documentation check does not satisfy implementation gates.
 
 ## Alternatives considered
 
 - **Separate mutable registry and ordinary text audit log:** Simpler storage, but permits authorization history and audit records to diverge; not selected for this goal.
 - **Literal Git repository:** Useful analogy and exploration tool, but Git access controls and branch pointers alone do not establish cham3 authorization, signing, isolation, or enforcement. Backend selection remains open.
-- **Linear signed journal only:** Easier ordering/recovery but less expressive for bounded grants and explicit merges; retain as an implementation alternative pending schema review.
+- **Linear signed journal only:** Not selected as the logical architecture because it omits the adopted DAG, temporary-branch, and explicit-merge semantics. A physical journal may be evaluated as a storage backend only if it preserves those semantics and passes the same admission/recovery gates. Replacing the logical DAG requires a new scoped owner-approved amendment.
 - **Replay a historical snapshot or reset its head:** Rejected because superseded authority could be restored without current policy and fresh approval (SEC-04).
 
 ## Tradeoffs and consequences
