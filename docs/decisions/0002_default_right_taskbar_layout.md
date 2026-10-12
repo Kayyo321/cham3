@@ -12,7 +12,7 @@
 
 The engineering roadmap assigns the bootable desktop to M1, network enforcement to M4, and trusted KDE integration to M5. The full panel belongs to M5, with M1 supplying its visual/package foundation and M4/M6 supplying enforcement dependencies. The suggested M4 task filename in the request is illustrative, not a milestone renumbering.
 
-[ADR 0001](0001_eternal_contract_repository.md) remains **PROPOSED**. Reserving an ECR Explorer launcher here does not approve its DAG schema, signing/lifecycle rules, storage, or recovery design.
+[ADR 0001](0001_eternal_contract_repository.md) received scoped architecture approval on 2026-10-12. Its detailed schema, lifecycle evidence, storage, and recovery designs remain implementation gates; this ADR approves no such details. This dependency-status correction changes none of the panel or emergency-denial boundaries below.
 
 ## Decision
 
@@ -54,7 +54,7 @@ The alias HUD uses trusted compositor previews scoped to the authenticated user'
 
 ### Contract tools and Hot Contract View
 
-The Contract Handler manages proposals and verified contracts through contract/policy services. The ECR Explorer is a read-only DAG history viewer conditional on approval and implementation of ADR 0001. Until available, its reserved launcher visibly reports the dependency and cannot imply valid history or provide a fabricated DAG. The Active Contracts Monitor binds processes/sandboxes to current authorization and confirmed resource enforcement; revocation uses trusted registry/broker/runtime operations and discloses limits for already copied data and non-revocable resources.
+The Contract Handler manages proposals and verified contracts through contract/policy services. The ECR Explorer is a read-only DAG history viewer dependent on implementation of approved ADR 0001 and its detailed design gates. Until available, its reserved launcher visibly reports the dependency and cannot imply valid history or provide a fabricated DAG. The Active Contracts Monitor binds processes/sandboxes to current authorization and confirmed resource enforcement; revocation uses trusted registry/broker/runtime operations and discloses limits for already copied data and non-revocable resources.
 
 Hot Contract View arms a latched button and inspection-reticle cursor. Trusted KWin hover highlights the managed window. Left-click consumes the selection, resolves verified window → application → runtime sandbox through `cham3-sessiond` and launcher attribution, opens `cham3_inspector`, and auto-disarms. `Escape` cancels; lock, session loss, target destruction, or attribution failure clears the inspection state. Unresolved attribution displays an explicit unknown/error state and cannot open another application's authority. Inspection requires no vault unlock/signing.
 
@@ -100,7 +100,7 @@ These are required responsibilities and validation rules, **not frozen IPC metho
 | User launcher / session controls | `cham3-identityd`, authenticated session control, `cham3-launcherd` | Resolve the logged-in human and public `key_id`; launch only the verified application/profile under effective policy. Session actions use existing authenticated system mechanisms. Never expose secrets. |
 | Alias wheel / pager / task manager | `cham3-sessiond`, KWin, launcher identity state | User/session-bound `alias_id`, `tag_id`, opaque `window_id`, and `sandbox_id`; verified metadata for navigation. Validate window lifetime/ownership and reject forged or stale targets. No policy mutation. |
 | Hot view / inspector / active monitor | KWin attribution, `cham3-sessiond`, `cham3-contractd`, `cham3-policyd`, `cham3-registryd`, runtime/brokers | Resolve actual managed window and current contract validity separately from backend enforcement. Read-only inspection cannot sign. Resource-specific revocation requires enforcement acknowledgement. |
-| ECR Explorer | Restricted registry/history interface under ADR 0001, if approved | Authorized read-only history; no app access to stores, administrative methods, signing, or reset/replay authority. |
+| ECR Explorer | Restricted registry/history interface under approved ADR 0001, once implemented | Authorized read-only history; no app access to stores, administrative methods, signing, or reset/replay authority. |
 | Editor / settings | `cham3-policyd`, contract/registry services, `cham3-authui`, `cham3-vaultd`, `cham3-netd` | Validate exact proposed settings and authenticated approval, bind signed content and revision to the affected scope, then apply and confirm. Cancel/reject cannot increase effective authority. |
 | Kill switch / status | `cham3-netd`, launcher/supervisor and restricted device-control integration | Authenticated deny request and separately authorized restore; state/confirmation for each relevant domain. Unknown or partial enforcement cannot report fully isolated or restored. |
 | HUD previews / input | Trusted KWin integration | Session-scoped compositor rendering and physical input attribution; no application preview access or synthesized authorization. |

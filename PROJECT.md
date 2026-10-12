@@ -568,9 +568,9 @@ Revoking a parent grant must invalidate dependent grants unless those grants hav
 
 ---
 
-5.7 Eternal Contract Repository (ECR) — proposed adoption amendment
+5.7 Eternal Contract Repository (ECR)
 
-Pending scoped owner approval of ADR 0001, the following becomes the required contract registry architecture:
+ADR 0001, scoped owner approval dated 2026-10-12, defines the required contract registry architecture:
 
 The ECR is an append-only signed contract DAG owned by cham3-registryd, partitioned by verified user and application/installation identity. Persistent history and bounded temporary branches retain immutable lineage; historical objects do not retain expired, consumed, revoked, or superseded authority. Sandboxed applications have no direct access to its store, history indexes, administrative interfaces, or signing operations.
 
@@ -1496,10 +1496,10 @@ Deliverables:
 - COSE signed envelopes.
 - Contract verification.
 - Temporary and persistent signing authorities.
-- Eternal Contract Repository: append-only signed contract DAG, canonical authorization transactions, protected current-state indexes, and replay-resistant recovery under ADR 0001 (proposed adoption amendment).
+- Eternal Contract Repository: append-only signed contract DAG, canonical authorization transactions, protected current-state indexes, and replay-resistant recovery under approved ADR 0001.
 - Expiration and revocation logic, including mandatory denial independent of signing or ECR availability.
 
-Completion condition: Unauthorized changes to a contract invalidate its signature, and users cannot issue contracts under another user's identity through ordinary interfaces. Under the proposed ADR 0001 adoption, Phase 2 also requires independently reviewed ECR admission, immutable lineage, current-state and crash/replay evidence; failed writes cannot grant authority or postpone mandatory denial. Later phases verify actual application isolation, KDE presentation, and runtime resource enforcement.
+Completion condition: Unauthorized changes to a contract invalidate its signature, and users cannot issue contracts under another user's identity through ordinary interfaces. Under approved ADR 0001, Phase 2 also requires independently reviewed ECR admission, immutable lineage, current-state and crash/replay evidence; failed writes cannot grant authority or postpone mandatory denial. Later phases verify actual application isolation, KDE presentation, and runtime resource enforcement.
 
 Phase 3 — Application Sandbox Runtime
 

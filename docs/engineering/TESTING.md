@@ -30,9 +30,9 @@ Pair security negative controls with positive controls proving the target path w
 
 Security-sensitive changes require independent review of the test design and results. Required tests that cannot run remain NOT_RUN or BLOCKED and prevent gates that require them from passing.
 
-## ECR implementation acceptance specifications (adoption candidate)
+## ECR implementation acceptance specifications
 
-These specifications support the scoped adoption candidate for [ADR 0001](../decisions/0001_eternal_contract_repository.md); owner approval is pending. They are future implementation acceptance work for M2, M5, and M6, not existing tests or passing evidence. Lifecycle/closure, schema, and recovery cases must use owner-approved semantics before implementation. Each negative case needs a valid approved transaction or authorized trusted caller as its positive control.
+These specifications support [ADR 0001](../decisions/0001_eternal_contract_repository.md), which received scoped owner approval on 2026-10-12. They are future implementation acceptance work for M2, M5, and M6, not existing tests or passing evidence. Lifecycle/closure, schema, and recovery cases must use owner-approved semantics before implementation. Each negative case needs a valid approved transaction or authorized trusted caller as its positive control.
 
 | Specification | Required positive and negative cases | Intended environment / evidence |
 |---|---|---|

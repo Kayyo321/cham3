@@ -1,22 +1,22 @@
 # ADR 0001: Eternal Contract Repository and audit commit pipeline
 
-- **Status:** PROPOSED
-- **Date / decision owner:** Proposed 2026-10-11; adoption candidate revised 2026-10-12 / cham3 project owner (requesting user); scoped approval pending.
+- **Status:** APPROVED — scoped architecture; detailed implementation designs remain gated
+- **Date / decision owner:** Proposed 2026-10-11; scoped adoption approved 2026-10-12 / cham3 project owner (requesting user).
 - **Related task/spec sections:** Owner-requested ECR architecture proposal; `PROJECT.md` §§4, 5, 8, 11.3–11.4, 14, 18; roadmap M2, M5, M6; SEC-01–06, SEC-11–16.
 
 `PROJECT.md` is the canonical product specification. This ADR records a scoped decision or proposal and does not silently replace that document.
 
 ## Problem and context
 
-Contracts are immutable signed authorization statements, but the specification does not yet select a history-storage format or an audit transaction schema. The Eternal Contract Repository (ECR) would make contract lineage and authorization-change history one verifiable, append-only record owned by `cham3-registryd`. KDE would expose that history through the trusted Contract Inspector and audit dashboard.
+Contracts are immutable signed authorization statements, but the specification does not yet select a history-storage format or an audit transaction schema. The Eternal Contract Repository (ECR) makes contract lineage and authorization-change history one verifiable, append-only record owned by `cham3-registryd`. KDE will expose that history through the trusted Contract Inspector and audit dashboard.
 
-This adoption candidate makes ECR a foundational M2 deliverable, with trusted desktop integration in M5 and runtime transition/restore verification in M6. Architecture adoption and implementation readiness are separate gates; this document reports no implementation and authorizes no privileged-service work before the detailed design gates below pass. The Git analogy describes lineage and forward revisions; it does not require Git, executable hooks, blockchain, or application access to a repository.
+This approved architecture makes ECR a foundational M2 deliverable, with trusted desktop integration in M5 and runtime transition/restore verification in M6. Architecture adoption and implementation readiness are separate gates; this document reports no implementation and authorizes no privileged-service work before the detailed design gates below pass. The Git analogy describes lineage and forward revisions; it does not require Git, executable hooks, blockchain, or application access to a repository.
 
 ## Decision
 
-The following architecture is **proposed for scoped owner approval**. Approval adopts the contract DAG, canonical signed change transactions, protected registry ownership, trusted approval/history workflow, forward restore, and the mandatory-denial rule below. It does not select a database, freeze a wire format, approve a background signing authority, or pass implementation gates. Detailed choices listed below need reviewed, owner-approved design decisions before the affected work becomes READY.
+The following architecture is **approved within the stated scope**. The owner decision adopts the contract DAG, canonical signed change transactions, protected registry ownership, trusted approval/history workflow, forward restore, and the mandatory-denial rule below. It does not select a database, freeze a wire format, approve a background signing authority, or pass implementation gates. Detailed choices listed below need reviewed, owner-approved design decisions before the affected work becomes READY.
 
-The accompanying `PROJECT.md` amendments add §5.7 and the Phase 2 ECR deliverables. They are part of this approval candidate; until owner approval, those amendments remain proposed and cannot authorize implementation.
+The owner also approved the accompanying `PROJECT.md` §5.7 and Phase 2 ECR amendments. They make this scoped architecture canonical while preserving the detailed implementation gates below.
 
 ### Contract DAG and lifetimes
 
@@ -92,7 +92,7 @@ Restore uses a forward-signed revision (`git revert` model), parented to the cur
 
 **A durable signed ECR commit is necessary before new or expanded contract authority can be activated, but is not technical proof of active enforcement until confirmed by `cham3-launcherd` / `cham3-netd` for their enforcement domains (SEC-03, SEC-11). Mandatory denial never depends on a new commit.** Relevant resource brokers must also confirm their own domains. Policy decisions, authenticated user approval, durable commit admission, and technical enforcement remain distinct.
 
-**Lifecycle decision included in scoped approval:** `PROJECT.md` §§5.3, 5.5, 11.4 and ADR 0002's emergency deny boundary take precedence over history admission. Trusted services enforce already authorized validity limits and mandatory restrictions immediately, including with the vault locked, user presence absent, ECR unavailable, or current state uncertain. They record closure/lifecycle evidence through a narrowly authenticated service path when possible; that evidence is not a human-authorized contract commit and conveys no signing or grant authority. When durable evidence cannot be written, report an audit gap and keep affected access denied/unknown; recovery cannot infer continuing validity, undo consumption, or claim complete history. Re-enabling access requires justified current authorization and confirmed enforcement, with fresh approval for a new or expanded grant. This decision grants no unrestricted background vault access and changes no cryptographic primitive.
+**Approved lifecycle decision:** `PROJECT.md` §§5.3, 5.5, 11.4 and ADR 0002's emergency deny boundary take precedence over history admission. Trusted services enforce already authorized validity limits and mandatory restrictions immediately, including with the vault locked, user presence absent, ECR unavailable, or current state uncertain. They record closure/lifecycle evidence through a narrowly authenticated service path when possible; that evidence is not a human-authorized contract commit and conveys no signing or grant authority. When durable evidence cannot be written, report an audit gap and keep affected access denied/unknown; recovery cannot infer continuing validity, undo consumption, or claim complete history. Re-enabling access requires justified current authorization and confirmed enforcement, with fresh approval for a new or expanded grant. This decision grants no unrestricted background vault access and changes no cryptographic primitive.
 
 The following are implementation gates, not secretly selected details. The coordinator must create separate reviewed, owner-approved design records and task acceptance criteria for each before dependent implementation:
 
@@ -133,7 +133,7 @@ Required implementation acceptance specifications are listed in `../engineering/
 
 ## Approval and supersession
 
-- **Owner approval evidence:** Pending approval of this reviewed adoption candidate. On 2026-10-12 the owner requested: “go through the approval motions for ADR 0001, once you're done make it a key pilar of M2 in the roadmap”. This authorizes preparation and review; final scoped adoption includes the lifecycle decision and `PROJECT.md` amendments above.
+- **Owner approval evidence:** On 2026-10-12, after independent review of `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644`, the project owner answered **“Approve this scope and integrate locally”** to the concrete approval question covering ADR 0001, `PROJECT.md` §5.7 / Phase 2, and ECR as a required M2 pillar. The question explicitly included signed durable commits before new authority, immediate mandatory denial without signing/history, and detailed schema, storage, lifecycle evidence, privacy, identity/authentication and recovery gates before implementation. This is scoped architecture/local integration approval, not approval of an unspecified backend or runtime verification.
 - **Independent adoption review:** [APPROVE for owner consideration](../reviews/ecr_adr_0001_adoption_review.md), independent `ecr_adoption_review` at `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644`, 2026-10-12; no outstanding findings. The earlier [proposal review](../reviews/ecr_adr_0001_review.md) approved documentation landing only and is not reused as adoption approval.
 - **Supersedes / is superseded by:** None. The scoped lifecycle decision reconciles this ADR's original universal commit wording with mandatory denial and ADR 0002; all other ADR 0002 boundaries remain unchanged.
-- **Next owner action:** Approve or revise the reviewed scoped architecture and canonical-spec amendments. Following approval, the coordinator defines M2 design tasks for the remaining gates; adoption alone does not make backend implementation READY.
+- **Next action / owner:** Coordinator defines M2 design tasks for the remaining gates; the project owner approves each resulting design after independent review. Adoption alone does not make backend implementation READY.

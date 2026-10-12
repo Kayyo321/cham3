@@ -1,6 +1,6 @@
 # Engineering Roadmap
 
-This is a dependency-oriented plan derived from `PROJECT.md` and scoped owner-approved ADRs, not an implementation report. See `../STATUS.md` for exact implementation and verification evidence. ADR 0001 adoption is pending final owner approval of the reviewed candidate; M2 and later ECR work remain unimplemented.
+This is a dependency-oriented plan derived from `PROJECT.md` and scoped owner-approved ADRs, not an implementation report. See `../STATUS.md` for exact implementation and verification evidence. ADR 0001 received scoped owner approval on 2026-10-12; M2 and later ECR work remain unimplemented.
 
 ## M0 — Repository and build baseline
 - **Objective:** Establish repeatable development entry points and evidence.
@@ -18,8 +18,8 @@ This is a dependency-oriented plan derived from `PROJECT.md` and scoped owner-ap
 
 ## M2 — Cryptographic contract core and Eternal Contract Repository
 - **Objective:** Verify signed, deterministic, versioned contracts and current authorization, with ECR as the durable contract and change-history foundation.
-- **Key pillar — ECR (adoption candidate; owner approval pending):** [ADR 0001](../decisions/0001_eternal_contract_repository.md) makes an append-only signed contract DAG, canonical authorization transactions, protected current-state indexes, and rollback-resistant recovery required M2 deliverables. ECR is part of the milestone's core acceptance, not an optional later history feature.
-- **Dependencies / design gates:** M0; scoped ADR 0001 approval and its canonical-spec amendments; independently reviewed, owner-approved wire/schema/hash profile, registry/vault and lifecycle-evidence interfaces, storage/atomicity/concurrency, rollback-resistant anchors and backup/recovery, retention/privacy, and authentication/identity-transition decisions. Gate affected implementation tasks until these are settled.
+- **Key pillar — ECR (APPROVED architecture):** [ADR 0001](../decisions/0001_eternal_contract_repository.md) makes an append-only signed contract DAG, canonical authorization transactions, protected current-state indexes, and rollback-resistant recovery required M2 deliverables. ECR is part of the milestone's core acceptance, not an optional later history feature.
+- **Dependencies / design gates:** M0; approved ADR 0001 and `PROJECT.md` §5.7 / Phase 2; independently reviewed, owner-approved wire/schema/hash profile, registry/vault and lifecycle-evidence interfaces, storage/atomicity/concurrency, rollback-resistant anchors and backup/recovery, retention/privacy, and authentication/identity-transition decisions. Gate affected implementation tasks until these are settled.
 - **Deliverables:** Per-user identities and persistent/temporary key authorities; encrypted vault boundary; maintained-library Ed25519, deterministic CBOR and COSE_Sign1; immutable persistent/temporary DAG objects; validated genesis/parent/merge/state/delta admission; atomic objects and pending/current-state indexes; expiry/revocation/one-shot/revision evaluation; lifecycle/audit-gap reporting and replay-resistant crash recovery. M5 supplies the trusted history UI; M6 supplies runtime forward-restore and transition integration.
 - **Security:** A durable signed commit precedes new or expanded authority; signature, current authorization, admission, and confirmed enforcement stay distinct. Mandatory denial cannot wait for signing, authentication, or history writes. Preserve app isolation, key custody, domain separation, current-policy precedence, and no stale-state reactivation.
 - **Verification/exit:** Positive/negative cryptographic and authorization vectors; valid/invalid DAG admission; stale-head and duplicate/consumed-grant rejection; concurrent and interrupted-write recovery; stale-index/tail/anchor rollback cases; locked-vault, missing-user, and unavailable-storage denial cases. Require exact commands/artifacts and independent security review under [TESTING.md](TESTING.md). No arbitrary app signing, no incomplete transaction grants, and no mandatory-denial delay. Unit/component results do not establish later KDE, sandbox, or networking enforcement; M2 cannot exit with only signature verification or a mutable basic registry.
@@ -42,7 +42,7 @@ This is a dependency-oriented plan derived from `PROJECT.md` and scoped owner-ap
 - **Objective:** Inspect and authorize a running app's contract from the desktop.
 - **Dependencies:** M2–M4 stable attribution and enforcement APIs.
 - **Deliverables:** Super+Click path, verified window/process attribution, inspector, trusted auth UI, signed revision workflow, runtime status.
-- **ECR integration (ADR 0001 adoption candidate):** Trusted commit descriptions, persistent/temporary history-tree inspection, snapshot comparisons, and fresh authenticated approval, with committed state distinguished from confirmed enforcement. Depends on M2 ECR/interfaces and scoped adoption approval.
+- **ECR integration (approved ADR 0001):** Trusted commit descriptions, persistent/temporary history-tree inspection, snapshot comparisons, and fresh authenticated approval, with committed state distinguished from confirmed enforcement. Depends on M2 ECR and approved interfaces.
 - **Security:** UI is not authority; exact approved content shown; cancel and spoof tests.
 - **Verification/exit:** End-to-end inspect/propose/authorize/enforce status tested without falsely displaying desired state as active.
 
@@ -50,7 +50,7 @@ This is a dependency-oriented plan derived from `PROJECT.md` and scoped owner-ap
 - **Objective:** Safely handle changed policies and active resources.
 - **Dependencies:** M4–M5.
 - **Deliverables:** Quarantine, socket teardown, controlled restart, revocation handling, crash recovery and status reconciliation.
-- **ECR integration (ADR 0001 adoption candidate):** Forward-signed historical restore under current policy, temporary-branch lifecycle handling, and transaction recovery. Depends on M2 admission/recovery and M5 trusted approval; no stale-contract replay or delay of mandatory fail-closed denial is permitted.
+- **ECR integration (approved ADR 0001):** Forward-signed historical restore under current policy, temporary-branch lifecycle handling, and transaction recovery. Depends on M2 admission/recovery and M5 trusted approval; no stale-contract replay or delay of mandatory fail-closed denial is permitted.
 - **Security:** Fail closed through all intermediate states; resource-specific limits documented.
 - **Verification/exit:** Crash/restart/rollback and active access tests meet approved semantics.
 
