@@ -134,6 +134,6 @@ Required implementation acceptance specifications are listed in `../engineering/
 ## Approval and supersession
 
 - **Owner approval evidence:** Pending approval of this reviewed adoption candidate. On 2026-10-12 the owner requested: “go through the approval motions for ADR 0001, once you're done make it a key pilar of M2 in the roadmap”. This authorizes preparation and review; final scoped adoption includes the lifecycle decision and `PROJECT.md` amendments above.
-- **Independent adoption review:** Pending; the earlier [proposal review](../reviews/ecr_adr_0001_review.md) approved documentation landing only and is not reused as adoption approval.
+- **Independent adoption review:** [APPROVE for owner consideration](../reviews/ecr_adr_0001_adoption_review.md), independent `ecr_adoption_review` at `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644`, 2026-10-12; no outstanding findings. The earlier [proposal review](../reviews/ecr_adr_0001_review.md) approved documentation landing only and is not reused as adoption approval.
 - **Supersedes / is superseded by:** None. The scoped lifecycle decision reconciles this ADR's original universal commit wording with mandatory denial and ADR 0002; all other ADR 0002 boundaries remain unchanged.
 - **Next owner action:** Approve or revise the reviewed scoped architecture and canonical-spec amendments. Following approval, the coordinator defines M2 design tasks for the remaining gates; adoption alone does not make backend implementation READY.

@@ -1,6 +1,6 @@
 # Task: ECR-ADR-001-ADOPTION — Review and adopt ECR as an M2 pillar
 
-- **State:** IN_PROGRESS
+- **State:** IN_VERIFICATION
 - **Owner / role / provider:** Codex coordinator, architecture documentation implementer, integrator; project owner retains adoption authority.
 - **Created / updated:** 2026-10-12.
 - **Base commit:** `50e0ee2c16b2db619d106f969df90c84b88e67ae`.
@@ -24,8 +24,8 @@ Complete the approval workflow for ADR 0001 and make ECR a key M2 pillar with ex
 - Remaining design records gate affected M2 implementation; M5/M6 use approved M2 interfaces.
 
 ## Acceptance criteria
-- [ ] Adoption candidate reconciles mandatory denial and human-authorized commits without background user-key signing.
-- [ ] Independent architecture/security reviewer approves the exact candidate; findings resolved.
+- [x] Adoption candidate reconciles mandatory denial and human-authorized commits without background user-key signing.
+- [x] Independent architecture/security reviewer approves the exact candidate; findings resolved.
 - [ ] Owner approves the scoped architecture, lifecycle rule, and canonical-spec amendments; evidence recorded accurately.
 - [ ] ADR/index/spec/roadmap/testing/status consistently represent the owner decision; ECR is a core M2 deliverable and exit gate.
 - [ ] Formatting/link checks pass; exact base/review/implementation commits and handoff recorded.
@@ -43,7 +43,7 @@ Complete the approval workflow for ADR 0001 and make ECR a key M2 pillar with ex
 - Implementer: primary Codex agent, task-specific worktree only.
 - Reviewer/test owner: separate read-only Codex architecture/security reviewer per ORCHESTRATION.md.
 - Branch/worktree: `codex/adr-0001-approval`, `/Users/jessicabruce/.codex/worktrees/adr-0001-approval/cham3`.
-- Target commit: recorded in final handoff after immutable candidate creation.
+- Reviewed adoption candidate: `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644`; independent review: `../reviews/ecr_adr_0001_adoption_review.md`.
 
 ## Decisions / blockers
 - Final scoped owner approval pending after concrete candidate and independent review.
