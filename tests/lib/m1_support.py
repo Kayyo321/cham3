@@ -56,7 +56,7 @@ PanelMaxWidth = 64
 # Curated suite: contract "INCLUDE now - CONFIRMED present in trixie" (amd64
 # debian:trixie container, per the coordinator contract). bind9-dnsutils replaces
 # the absent dnsutils name.
-CuratedRequired = (
+CuratedDebianRequired = (
     "nmap",
     "zenmap",
     "masscan",
@@ -79,10 +79,33 @@ CuratedRequired = (
     "hydra",
     "torbrowser-launcher",
 )
-# Contract acceptance GAPS: confirmed absent from trixie with no suitable
-# Debian-native package. Each may be omitted only when the cham3-full package
-# documents the gap (see documented_omission()). Silent omission is a FAIL.
-CuratedDocumentedGaps = ("mitmproxy", "radare2", "rizin", "amass")
+# F2 owner decision (SECURITY-CRITICAL). cham3-full includes the six packages below.
+# Kali packages come from the narrowly pinned cham3_kali source: the origin is denied by
+# default (Pin-Priority -1) and only KaliAllowlist is raised to 500. LibreWolf comes from
+# the pinned cham3_librewolf source, same shape. Both use Signed-By keyrings, never
+# trusted=yes, and no key is installed through apt-key or trusted.gpg.d. The policy is
+# checked by tests/lib/m1_apt_support.py. Owner decision, not a dependency review result.
+KaliPinnedSuite = ("zaproxy", "exploitdb", "ghidra", "amass", "radare2")
+LibreWolfSuite = ("librewolf",)
+KaliAllowlist = (
+    "zaproxy",
+    "exploitdb",
+    "ghidra",
+    "amass",
+    "libpostal-data",
+    "radare2",
+    "libradare2-6.0.0t64",
+    "libradare2-common",
+)
+LibreWolfAllowlist = ("librewolf",)
+# Acceptance gaps that must be documented in cham3-full, never silently omitted. The
+# three deferred tools await separate review and are NOT dependencies. cutter and rizin
+# are omitted because radare2 was chosen; burpsuite is omitted because ZAP was chosen.
+DeferredTools = ("mitmproxy", "wpscan", "metasploit-framework")
+OmittedAlternatives = ("cutter", "cutter-re", "rizin", "burpsuite")
+CuratedDocumentedGaps = DeferredTools + ("cutter", "rizin", "burpsuite")
+# Expected cham3-full curated set: the Debian-trixie tools plus the six F2 packages.
+CuratedRequired = CuratedDebianRequired + KaliPinnedSuite + LibreWolfSuite
 
 # Required KDE core utilities kept in cham3-desktop (contract CONFIRMED Depends).
 KdeCoreRequired = (
@@ -121,22 +144,8 @@ ExcludedDuplicates = (
     "firefox",
 )
 
-# Tools gated pending Codex source/readiness review: never a dependency in M1.
-GatedTools = (
-    "librewolf",
-    "ghidra",
-    "metasploit-framework",
-    "exploitdb",
-    "searchsploit",
-    "zaproxy",
-    "wpscan",
-    "cutter",
-    "cutter-re",
-    "radare2",
-    "rizin",
-    "mitmproxy",
-    "amass",
-)
+# Never a dependency in M1 (F2): the deferred tools and the omitted alternatives.
+GatedTools = DeferredTools + OmittedAlternatives
 
 # Alternative desktop environments and task metapackages that conflict with the
 # KDE Plasma default. Never allowed in cham3-desktop or cham3-full.
@@ -579,3 +588,104 @@ PackagedWallpaperMetadata = "usr/share/wallpapers/Cham3/metadata.json"
 SddmSessionHook = LiveDesktopDir + "/config/includes.chroot/usr/lib/live/config/0086-cham3-sddm-wayland"
 WallpaperRules = PackageDesktopDir + "/debian/rules"
 WallpaperInstallList = PackageDesktopDir + "/debian/install"
+
+
+# F2 foreign-source paths (repository-relative). The source and pin files are read by
+# content (tests/lib/m1_apt_support.py); the file names are not a contract.
+ArchivesDir = LiveDesktopDir + "/config/archives"
+KeyringIncludeDir = LiveDesktopDir + "/config/includes.chroot/usr/share/keyrings"
+TrustedKeyIncludeDir = LiveDesktopDir + "/config/includes.chroot/etc/apt/trusted.gpg.d"
+
+# F2 firmware (research section 5). With --firmware-chroot false the image installs this
+# explicit list. It is the self-contained set in docs/research/evidence/firmware/
+# proposed_set_without_b43_installers_42.txt. firmware-b43-installer and
+# firmware-b43legacy-installer download fixed URLs during postinst and are excluded.
+FirmwareListPath = LiveDesktopDir + "/config/package-lists/cham3_firmware.list.chroot"
+FirmwareInstallerPackages = ("firmware-b43-installer", "firmware-b43legacy-installer")
+FirmwareSelfContainedSet = (
+    "alsa-topology-conf",
+    "amd64-microcode",
+    "atmel-firmware",
+    "bluez-firmware",
+    "dahdi-firmware-nonfree",
+    "firmware-amd-graphics",
+    "firmware-ast",
+    "firmware-ath9k-htc",
+    "firmware-atheros",
+    "firmware-bnx2",
+    "firmware-bnx2x",
+    "firmware-brcm80211",
+    "firmware-carl9170",
+    "firmware-cavium",
+    "firmware-cirrus",
+    "firmware-intel-graphics",
+    "firmware-intel-misc",
+    "firmware-intel-sound",
+    "firmware-ipw2x00",
+    "firmware-ivtv",
+    "firmware-iwlwifi",
+    "firmware-libertas",
+    "firmware-linux",
+    "firmware-linux-free",
+    "firmware-marvell-prestera",
+    "firmware-mediatek",
+    "firmware-misc-nonfree",
+    "firmware-myricom",
+    "firmware-netronome",
+    "firmware-netxen",
+    "firmware-nvidia-graphics",
+    "firmware-nvidia-tesla-535-gsp",
+    "firmware-qlogic",
+    "firmware-realtek",
+    "firmware-siano",
+    "firmware-sof-signed",
+    "firmware-zd1211",
+    "indi-dsi",
+    "intel-microcode",
+    "libfishcamp1t64",
+    "libsbig4t64",
+    "wireless-regdb",
+)
+
+# Capability-dependent checks (F3). CAP_NET_ADMIN is the bit 12 of the bounding set; an
+# unprivileged container lacks it, so member execution and capture cannot be exercised there.
+CapNetAdminBit = 12
+PrivilegedGate = (
+    "NOT_RUN: CAP_NET_ADMIN is not in this container's bounding set (unprivileged Docker); "
+    "the live member and nonmember capture control is a privileged Codex Remote gate"
+)
+
+
+def bounding_set_has(bit):
+    """True when capability bit is in this process's bounding set (read from /proc)."""
+    try:
+        with open("/proc/self/status", "r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("CapBnd:"):
+                    return bool((int(line.split()[1], 16) >> bit) & 1)
+    except (OSError, ValueError):
+        return False
+    return False
+
+
+def retained_state_problems(mode, group_name, capability_text):
+    """Problems with dumpcap after a reconfigure whose setcap is missing or failing.
+
+    Reconfigure does not run the cham3 trigger, and statoverride makes the upstream
+    postinst a no-op, so existing capabilities may be retained. The security properties
+    are: no setuid bit, group wireshark, no other-execute bit, and only the agreed
+    capabilities if any are present (no extra capability, never a fabricated one).
+    """
+    problems = []
+    if mode & SetuidBit:
+        problems.append("setuid bit set on dumpcap (mode %04o)" % mode)
+    if group_name != CaptureGroup:
+        problems.append("dumpcap group is %r, expected %r" % (group_name, CaptureGroup))
+    if mode & OtherExecBit:
+        problems.append("dumpcap is executable by other users (mode %04o)" % mode)
+    names, flags = parse_capability_text(capability_text)
+    if names is None:
+        problems.append("unrecognized capability text: %r" % capability_text.strip())
+    elif names and (names != CaptureCapabilities or flags != CaptureCapabilityFlags):
+        problems.append("unexpected capabilities retained: %r" % capability_text.strip())
+    return problems
