@@ -1,0 +1,8 @@
+libcap2-bin 1:2.75-10+deb13u1+b3
+live-build 1:20250505+deb13u1
+qemu-system-x86 1:10.0.13+ds-0+deb13u1
+qemu-utils 1:10.0.13+ds-0+deb13u1
+util-linux 2.41.5-0+deb13u1
+wireshark-common 4.4.19-0+deb13u1
+6.18.44
+amd64

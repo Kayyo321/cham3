@@ -1,0 +1,6 @@
+static exit=0
+staging exit=0
+desktop exit=0
+static_checks exit=0
+package_build exit=0
+packages exit=0

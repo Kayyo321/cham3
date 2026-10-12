@@ -1,0 +1,21 @@
+Selecting previously unselected package cham3-archive-keyring.
+(Reading database ... 6108 files and directories currently installed.)
+Preparing to unpack .../cham3-archive-keyring_0.0.0~m1_all.deb ...
+Unpacking cham3-archive-keyring (0.0.0~m1) ...
+Setting up cham3-archive-keyring (0.0.0~m1) ...
+Err:1 http://http.kali.org/kali kali-rolling InRelease
+  403  Forbidden [IP: 172.31.8.173 8080]
+Ign:2 https://repo.librewolf.net librewolf InRelease
+Hit:3 http://deb.debian.org/debian trixie InRelease
+Hit:4 http://deb.debian.org/debian trixie-updates InRelease
+Hit:5 http://deb.debian.org/debian-security trixie-security InRelease
+Ign:2 https://repo.librewolf.net librewolf InRelease
+Ign:2 https://repo.librewolf.net librewolf InRelease
+Err:2 https://repo.librewolf.net librewolf InRelease
+  Invalid response from proxy: HTTP/1.1 403 Forbidden  content-length: 16  content-type: text/plain  date: Mon, 12 Oct 2026 02:38:25 GMT  server: envoy  connection: close     [IP: 172.31.8.173 8080]
+  Invalid response from proxy: HTTP/1.1 403 Forbidden  content-length: 16  content-type: text/plain  date: Mon, 12 Oct 2026 02:38:26 GMT  server: envoy  connection: close     [IP: 172.31.8.173 8080]
+  Invalid response from proxy: HTTP/1.1 403 Forbidden  content-length: 16  content-type: text/plain  date: Mon, 12 Oct 2026 02:38:28 GMT  server: envoy  connection: close     [IP: 172.31.8.173 8080]
+  Invalid response from proxy: HTTP/1.1 403 Forbidden  content-length: 16  content-type: text/plain  date: Mon, 12 Oct 2026 02:38:32 GMT  server: envoy  connection: close     [IP: 172.31.8.173 8080]
+Reading package lists...
+E: Failed to fetch http://http.kali.org/kali/dists/kali-rolling/InRelease  403  Forbidden [IP: 172.31.8.173 8080]
+E: The repository 'http://http.kali.org/kali kali-rolling InRelease' is not signed.

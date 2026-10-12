@@ -1,0 +1,90 @@
+Reading package lists...
+Building dependency tree...
+The following additional packages will be installed:
+  b43-fwcutter bzip2 ca-certificates debconf gcc-14-base libbz2-1.0 libc6
+  libcap2 libffi8 libgcc-s1 libgmp10 libgnutls30t64 libhogweed6t64 libidn2-0
+  libkmod2 libnettle8t64 libp11-kit0 libpci3 libpcre2-8-0 libpsl5t64
+  libssl3t64 libtasn1-6 libudev1 libunistring5 libuuid1 libzstd1 openssl
+  openssl-provider-legacy pci.ids pciutils wget zlib1g
+Suggested packages:
+  bzip2-doc debconf-doc debconf-kde-helper debconf-utils libgtk3-perl
+  libnet-ldap-perl libterm-readline-gnu-perl perl whiptail | dialog glibc-doc
+  libc-l10n locales libnss-nis libnss-nisplus gnutls-bin uuid-runtime
+Recommended packages:
+  apt | apt-utils debconf-i18n publicsuffix
+The following NEW packages will be installed:
+  b43-fwcutter bzip2 ca-certificates debconf firmware-b43-installer
+  gcc-14-base libbz2-1.0 libc6 libcap2 libffi8 libgcc-s1 libgmp10
+  libgnutls30t64 libhogweed6t64 libidn2-0 libkmod2 libnettle8t64 libp11-kit0
+  libpci3 libpcre2-8-0 libpsl5t64 libssl3t64 libtasn1-6 libudev1 libunistring5
+  libuuid1 libzstd1 openssl openssl-provider-legacy pci.ids pciutils wget
+  zlib1g
+0 upgraded, 33 newly installed, 0 to remove and 0 not upgraded.
+Need to get 13.9 MB of archives.
+After this operation, 45.2 MB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/main amd64 debconf all 1.5.91 [121 kB]
+Get:2 http://deb.debian.org/debian trixie/main amd64 gcc-14-base amd64 14.2.0-19 [49.4 kB]
+Get:3 http://deb.debian.org/debian trixie/main amd64 libgcc-s1 amd64 14.2.0-19 [72.8 kB]
+Get:4 http://deb.debian.org/debian trixie/main amd64 libc6 amd64 2.41-12+deb13u4 [2847 kB]
+Get:5 http://security.debian.org trixie-security/main amd64 openssl-provider-legacy amd64 3.5.7-1~deb13u3 [316 kB]
+Get:6 http://deb.debian.org/debian trixie/main amd64 libbz2-1.0 amd64 1.0.8-6 [37.9 kB]
+Get:7 http://deb.debian.org/debian trixie/main amd64 bzip2 amd64 1.0.8-6 [40.5 kB]
+Get:8 http://deb.debian.org/debian trixie/main amd64 libzstd1 amd64 1.5.7+dfsg-1 [304 kB]
+Get:9 http://deb.debian.org/debian trixie/main amd64 zlib1g amd64 1:1.3.dfsg+really1.3.1-1+b1 [88.9 kB]
+Get:10 http://deb.debian.org/debian trixie/main amd64 ca-certificates all 20250419 [162 kB]
+Get:11 http://deb.debian.org/debian trixie/main amd64 libkmod2 amd64 34.2-2 [63.2 kB]
+Get:12 http://deb.debian.org/debian trixie/main amd64 libcap2 amd64 1:2.75-10+deb13u1+b3 [29.0 kB]
+Get:13 http://deb.debian.org/debian trixie/main amd64 libudev1 amd64 257.13-1~deb13u1 [152 kB]
+Get:14 http://security.debian.org trixie-security/main amd64 libssl3t64 amd64 3.5.7-1~deb13u3 [2458 kB]
+Get:15 http://deb.debian.org/debian trixie/main amd64 pci.ids all 0.0~2025.06.09-1 [269 kB]
+Get:16 http://deb.debian.org/debian trixie/main amd64 libpci3 amd64 1:3.13.0-2 [75.6 kB]
+Get:17 http://deb.debian.org/debian trixie/main amd64 pciutils amd64 1:3.13.0-2 [129 kB]
+Get:18 http://deb.debian.org/debian trixie/main amd64 libgmp10 amd64 2:6.3.0+dfsg-3 [560 kB]
+Get:19 http://deb.debian.org/debian trixie/main amd64 libnettle8t64 amd64 3.10.1-1 [305 kB]
+Get:20 http://deb.debian.org/debian trixie/main amd64 libhogweed6t64 amd64 3.10.1-1 [335 kB]
+Get:21 http://deb.debian.org/debian trixie/main amd64 libunistring5 amd64 1.3-2 [477 kB]
+Get:22 http://deb.debian.org/debian trixie/main amd64 libidn2-0 amd64 2.3.8-2 [109 kB]
+Get:23 http://deb.debian.org/debian trixie/main amd64 libffi8 amd64 3.4.8-2 [24.1 kB]
+Get:24 http://deb.debian.org/debian trixie/main amd64 libp11-kit0 amd64 0.25.5-3 [425 kB]
+Get:25 http://deb.debian.org/debian trixie/main amd64 libtasn1-6 amd64 4.20.0-2+deb13u1 [50.1 kB]
+Get:26 http://security.debian.org trixie-security/main amd64 openssl amd64 3.5.7-1~deb13u3 [1508 kB]
+Get:27 http://deb.debian.org/debian trixie/main amd64 libgnutls30t64 amd64 3.8.9-3+deb13u4 [1469 kB]
+Get:28 http://deb.debian.org/debian trixie/main amd64 libpsl5t64 amd64 0.21.2-1.1+b1 [57.2 kB]
+Get:29 http://deb.debian.org/debian trixie/main amd64 libuuid1 amd64 2.41.5-0+deb13u1 [37.8 kB]
+Get:30 http://security.debian.org trixie-security/main amd64 libpcre2-8-0 amd64 10.46-1~deb13u3 [299 kB]
+Get:31 http://deb.debian.org/debian trixie/main amd64 wget amd64 1.25.0-2 [984 kB]
+Get:32 http://deb.debian.org/debian trixie/contrib amd64 b43-fwcutter amd64 1:019-14 [26.3 kB]
+Get:33 http://deb.debian.org/debian trixie/contrib amd64 firmware-b43-installer all 1:019-14 [8620 B]
+Fetched 13.9 MB in 1s (17.9 MB/s)
+Download complete and in download only mode
+Reading package lists...
+Building dependency tree...
+The following additional packages will be installed:
+  b43-fwcutter ca-certificates debconf gcc-14-base libc6 libcap2 libffi8
+  libgcc-s1 libgmp10 libgnutls30t64 libhogweed6t64 libidn2-0 libkmod2
+  libnettle8t64 libp11-kit0 libpci3 libpcre2-8-0 libpsl5t64 libssl3t64
+  libtasn1-6 libudev1 libunistring5 libuuid1 libzstd1 openssl
+  openssl-provider-legacy pci.ids pciutils wget zlib1g
+Suggested packages:
+  debconf-doc debconf-kde-helper debconf-utils libgtk3-perl libnet-ldap-perl
+  libterm-readline-gnu-perl perl whiptail | dialog glibc-doc libc-l10n locales
+  libnss-nis libnss-nisplus gnutls-bin uuid-runtime bzip2
+Recommended packages:
+  apt | apt-utils debconf-i18n publicsuffix
+The following NEW packages will be installed:
+  b43-fwcutter ca-certificates debconf firmware-b43legacy-installer
+  gcc-14-base libc6 libcap2 libffi8 libgcc-s1 libgmp10 libgnutls30t64
+  libhogweed6t64 libidn2-0 libkmod2 libnettle8t64 libp11-kit0 libpci3
+  libpcre2-8-0 libpsl5t64 libssl3t64 libtasn1-6 libudev1 libunistring5
+  libuuid1 libzstd1 openssl openssl-provider-legacy pci.ids pciutils wget
+  zlib1g
+0 upgraded, 31 newly installed, 0 to remove and 0 not upgraded.
+Need to get 7660 B/13.8 MB of archives.
+After this operation, 45.0 MB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian trixie/contrib amd64 firmware-b43legacy-installer all 1:019-14 [7660 B]
+Fetched 7660 B in 0s (291 kB/s)
+Download complete and in download only mode
+-rw-r--r-- 1 root root 8620 Jul 17  2025 /workspace/M1-rereview/out/live-build-work/chroot/binary.deb/archives/firmware-b43-installer_1%3a019-14_all.deb
+-rw-r--r-- 1 root root 7660 Jul 17  2025 /workspace/M1-rereview/out/live-build-work/chroot/binary.deb/archives/firmware-b43legacy-installer_1%3a019-14_all.deb
+4f1c3ff18d09382f6e1c36c5fc9f498f9ac5b111ce8af7616b792f722c729bd8  /workspace/M1-rereview/out/live-build-work/chroot/binary.deb/archives/firmware-b43-installer_1%3a019-14_all.deb
+86ed887108aad8ec47fbbf5e30646597d1387a607c305cbd470bf22ab825a998  /workspace/M1-rereview/out/live-build-work/chroot/binary.deb/archives/firmware-b43legacy-installer_1%3a019-14_all.deb

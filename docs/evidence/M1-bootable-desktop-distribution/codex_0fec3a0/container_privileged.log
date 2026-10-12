@@ -1,0 +1,65 @@
+test_cham3_desktop_installs_on_top_of_wireshark_common (test_m1_container_capture.capture_scenarios_t.test_cham3_desktop_installs_on_top_of_wireshark_common) ... ok
+test_control_checker_detects_the_upstream_setuid_fallback (test_m1_container_capture.capture_scenarios_t.test_control_checker_detects_the_upstream_setuid_fallback) ... ok
+test_control_upstream_fallback_produces_setuid (test_m1_container_capture.capture_scenarios_t.test_control_upstream_fallback_produces_setuid) ... ok
+test_control_upstream_success_state_is_accepted (test_m1_container_capture.capture_scenarios_t.test_control_upstream_success_state_is_accepted) ... ok
+test_install_group_has_execute_and_others_do_not (test_m1_container_capture.capture_scenarios_t.test_install_group_has_execute_and_others_do_not) ... ok
+test_install_member_can_execute_dumpcap (test_m1_container_capture.capture_scenarios_t.test_install_member_can_execute_dumpcap) ... ok
+test_install_member_captures_with_capabilities (test_m1_container_capture.capture_scenarios_t.test_install_member_captures_with_capabilities) ... skipped 'NOT_RUN: this container cannot capture even with the Debian setuid fallback; live capture is a Codex Remote heavy gate'
+test_install_nonmember_cannot_execute_dumpcap (test_m1_container_capture.capture_scenarios_t.test_install_nonmember_cannot_execute_dumpcap) ... FAIL
+test_install_sets_capabilities_and_no_setuid (test_m1_container_capture.capture_scenarios_t.test_install_sets_capabilities_and_no_setuid) ... ok
+test_member_cannot_capture_in_fail_closed_state (test_m1_container_capture.capture_scenarios_t.test_member_cannot_capture_in_fail_closed_state) ... skipped 'NOT_RUN: this container cannot capture even with the Debian setuid fallback; live capture is a Codex Remote heavy gate'
+test_preseed_selects_the_setuid_question_true (test_m1_container_capture.capture_scenarios_t.test_preseed_selects_the_setuid_question_true) ... ok
+test_reconfigure_with_setcap_missing_keeps_group_and_other_execute_denied (test_m1_container_capture.capture_scenarios_t.test_reconfigure_with_setcap_missing_keeps_group_and_other_execute_denied) ... ok
+test_reconfigure_with_setcap_missing_never_introduces_setuid (test_m1_container_capture.capture_scenarios_t.test_reconfigure_with_setcap_missing_never_introduces_setuid) ... ok
+test_reconfigure_with_setcap_missing_retains_only_the_valid_capabilities (test_m1_container_capture.capture_scenarios_t.test_reconfigure_with_setcap_missing_retains_only_the_valid_capabilities) ... ok
+test_reconfigure_with_setcap_working_restores_capabilities (test_m1_container_capture.capture_scenarios_t.test_reconfigure_with_setcap_working_restores_capabilities) ... ok
+test_recovery_after_failure_restores_capabilities (test_m1_container_capture.capture_scenarios_t.test_recovery_after_failure_restores_capabilities) ... ok
+test_reinstall_with_setcap_failing_leaves_no_capabilities (test_m1_container_capture.capture_scenarios_t.test_reinstall_with_setcap_failing_leaves_no_capabilities) ... ok
+test_reinstall_with_setcap_failing_leaves_no_setuid (test_m1_container_capture.capture_scenarios_t.test_reinstall_with_setcap_failing_leaves_no_setuid) ... ok
+test_reinstall_with_setcap_missing_leaves_no_capabilities (test_m1_container_capture.capture_scenarios_t.test_reinstall_with_setcap_missing_leaves_no_capabilities) ... ok
+test_reinstall_with_setcap_missing_leaves_no_setuid (test_m1_container_capture.capture_scenarios_t.test_reinstall_with_setcap_missing_leaves_no_setuid) ... ok
+test_missing_dumpcap_is_rejected (test_m1_container_debian_facts.debian_facts_fixture_t.test_missing_dumpcap_is_rejected) ... ok
+test_module_from_a_non_dependency_is_rejected (test_m1_container_debian_facts.debian_facts_fixture_t.test_module_from_a_non_dependency_is_rejected) ... ok
+test_module_missing_from_every_package_is_rejected (test_m1_container_debian_facts.debian_facts_fixture_t.test_module_missing_from_every_package_is_rejected) ... ok
+test_positive_control_accepted (test_m1_container_debian_facts.debian_facts_fixture_t.test_positive_control_accepted) ... ok
+test_private_module_extraction (test_m1_container_debian_facts.debian_facts_fixture_t.test_private_module_extraction) ... ok
+test_superseded_session_name_is_rejected (test_m1_container_debian_facts.debian_facts_fixture_t.test_superseded_session_name_is_rejected) ... ok
+test_dumpcap_is_shipped_by_wireshark_common (test_m1_container_debian_facts.debian_facts_t.test_dumpcap_is_shipped_by_wireshark_common) ... ok
+test_launcher_private_modules_are_shipped_by_cham3_desktop_dependencies (test_m1_container_debian_facts.debian_facts_t.test_launcher_private_modules_are_shipped_by_cham3_desktop_dependencies) ... ok
+test_plasma_wayland_session_file_is_shipped (test_m1_container_debian_facts.debian_facts_t.test_plasma_wayland_session_file_is_shipped) ... ok
+test_sddm_selection_matches_the_shipped_session (test_m1_container_debian_facts.debian_facts_t.test_sddm_selection_matches_the_shipped_session) ... ok
+test_cham3_postinst_fails_closed_when_setcap_fails (test_m1_container_postinst_probe.postinst_probe_t.test_cham3_postinst_fails_closed_when_setcap_fails) ... ok
+test_cham3_postinst_fails_closed_when_setcap_is_missing (test_m1_container_postinst_probe.postinst_probe_t.test_cham3_postinst_fails_closed_when_setcap_is_missing) ... ok
+test_cham3_postinst_sets_capabilities_without_setuid (test_m1_container_postinst_probe.postinst_probe_t.test_cham3_postinst_sets_capabilities_without_setuid) ... ok
+test_control_upstream_postinst_sets_setuid_when_setcap_fails (test_m1_container_postinst_probe.postinst_probe_t.test_control_upstream_postinst_sets_setuid_when_setcap_fails) ... ok
+test_control_upstream_postinst_succeeds_when_setcap_works (test_m1_container_postinst_probe.postinst_probe_t.test_control_upstream_postinst_succeeds_when_setcap_works) ... ok
+test_guard_accepts_a_script_that_reads_the_switch_first (test_m1_container_staging.staging_guard_t.test_guard_accepts_a_script_that_reads_the_switch_first) ... ok
+test_guard_refuses_a_root_check_placed_before_the_dryrun_switch (test_m1_container_staging.staging_guard_t.test_guard_refuses_a_root_check_placed_before_the_dryrun_switch) ... ok
+test_guard_refuses_a_script_that_never_reads_the_dryrun_switch (test_m1_container_staging.staging_guard_t.test_guard_refuses_a_script_that_never_reads_the_dryrun_switch) ... ok
+test_real_build_script_passes_the_dryrun_guard (test_m1_container_staging.staging_guard_t.test_real_build_script_passes_the_dryrun_guard) ... ok
+test_stub_live_build_invocation_is_detected (test_m1_container_staging.staging_guard_t.test_stub_live_build_invocation_is_detected) ... ok
+test_built_package_not_in_manifest_is_not_staged (test_m1_container_staging.staging_profile_t.test_built_package_not_in_manifest_is_not_staged) ... ok
+test_empty_manifest_fails_closed (test_m1_container_staging.staging_profile_t.test_empty_manifest_fails_closed) ... ok
+test_filename_match_without_package_field_match_fails_closed (test_m1_container_staging.staging_profile_t.test_filename_match_without_package_field_match_fails_closed) ... ok
+test_m0_profile_stages_exactly_cham3_base (test_m1_container_staging.staging_profile_t.test_m0_profile_stages_exactly_cham3_base) ... ok
+test_m1_profile_does_not_stage_cham3_base (test_m1_container_staging.staging_profile_t.test_m1_profile_does_not_stage_cham3_base) ... ok
+test_m1_profile_stages_exactly_desktop_and_full (test_m1_container_staging.staging_profile_t.test_m1_profile_stages_exactly_desktop_and_full) ... ok
+test_manifest_naming_package_with_no_built_deb_fails_closed (test_m1_container_staging.staging_profile_t.test_manifest_naming_package_with_no_built_deb_fails_closed) ... ok
+test_missing_manifest_fails_closed (test_m1_container_staging.staging_profile_t.test_missing_manifest_fails_closed) ... ok
+test_package_missing_its_built_deb_fails_closed (test_m1_container_staging.staging_profile_t.test_package_missing_its_built_deb_fails_closed) ... ok
+test_two_built_debs_for_one_package_fail_closed (test_m1_container_staging.staging_profile_t.test_two_built_debs_for_one_package_fail_closed) ... ok
+test_unparameterized_run_defaults_to_m0_profile (test_m1_container_staging.staging_profile_t.test_unparameterized_run_defaults_to_m0_profile) ... ok
+
+======================================================================
+FAIL: test_install_nonmember_cannot_execute_dumpcap (test_m1_container_capture.capture_scenarios_t.test_install_nonmember_cannot_execute_dumpcap)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/M1-rereview/tests/container/test_m1_container_capture.py", line 426, in test_install_nonmember_cannot_execute_dumpcap
+    self.assertNotEqual(result["rc"], 0, result)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 == 0 : {'rc': 0, 'stderr': '', 'stdout': '1. eth0\n2. any\n3. lo (Loopback)\n4. bluetooth-monitor\n5. nflog\n6. nfqueue\n7. dbus-system\n8. dbus-session\n'}
+
+----------------------------------------------------------------------
+Ran 51 tests in 49.762s
+
+FAILED (failures=1, skipped=2)

@@ -1,0 +1,28 @@
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-trixie-security-automatic.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-bookworm-security-automatic.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-bullseye-stable.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-bookworm-stable.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-trixie-stable.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-bullseye-automatic.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-bullseye-security-automatic.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-trixie-automatic.asc
+out/live-build-work/chroot/etc/apt/trusted.gpg.d/debian-archive-bookworm-automatic.asc
+out/live-build-work/chroot/usr/share/keyrings/cham3_kali_archive.gpg
+out/live-build-work/chroot/usr/share/keyrings/cham3_librewolf.gpg
+gpg: directory '/root/.gnupg' created
+gpg: keybox '/root/.gnupg/pubring.kbx' created
+gpg: /root/.gnupg/trustdb.gpg: trustdb created
+827C8569F2518CC677FECA1AED65462EC8D5E4C5
+662E3CDD6FE329002D0CA5BB40339DD82B12EF16
+4DD4BBECABD32E798CC77A4047981EA73D0E1C63
+drwxr-xr-x root/root         0 2026-10-12 02:20 ./
+drwxr-xr-x root/root         0 2026-10-12 02:20 ./usr/
+drwxr-xr-x root/root         0 2026-10-12 02:20 ./usr/share/
+drwxr-xr-x root/root         0 2026-10-12 02:20 ./usr/share/doc/
+drwxr-xr-x root/root         0 2026-10-12 02:20 ./usr/share/doc/cham3-archive-keyring/
+-rw-r--r-- root/root       811 2026-10-12 02:20 ./usr/share/doc/cham3-archive-keyring/README
+-rw-r--r-- root/root       341 2026-10-12 02:20 ./usr/share/doc/cham3-archive-keyring/copyright
+drwxr-xr-x root/root         0 2026-10-12 02:20 ./usr/share/keyrings/
+-rw-r--r-- root/root      1193 2026-10-12 02:20 ./usr/share/keyrings/cham3_kali_archive.gpg
+-rw-r--r-- root/root      3393 2026-10-12 02:20 ./usr/share/keyrings/cham3_librewolf.gpg
+out/live-build-work/chroot/etc/apt/sources.list.d/packages.list:deb [ trusted=yes ] file:/packages ./

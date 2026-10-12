@@ -1,0 +1,4 @@
+{"argv": ["setpriv", "--reuid=2002", "--regid=2002", "--clear-groups", "/usr/bin/dumpcap", "-D"], "rc": 0, "stdout": "1. eth0\n2. any\n3. lo (Loopback)\n4. bluetooth-monitor\n5. nflog\n6. nfqueue\n7. dbus-system\n8. dbus-session\n", "stderr": ""}
+{"argv": ["setpriv", "--reuid=2002", "--regid=2002", "--clear-groups", "sh", "-c", "exec /usr/bin/dumpcap -D"], "rc": 126, "stdout": "", "stderr": "sh: 1: exec: /usr/bin/dumpcap: Permission denied\n"}
+root scratch mode 0o700 owner 0
+existing harness member output {'rc': 1, 'stderr': 'Capturing on \'Loopback: lo\'\ndumpcap: The file to which the capture would be saved ("/tmp/codex-capture-harness-34npjzne/member-diagnostic.pcapng") could not be opened: Permission denied.\n', 'bytes': 0}

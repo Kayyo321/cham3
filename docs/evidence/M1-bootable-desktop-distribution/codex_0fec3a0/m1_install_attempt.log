@@ -1,0 +1,2 @@
+Formatting '/workspace/M1-rereview-evidence/m1_install.qcow2', fmt=qcow2 cluster_size=65536 extended_l2=off compression_type=zlib size=26843545600 lazy_refcounts=off refcount_bits=16
+qemu-system-x86_64: -cdrom out/image/cham3-m1-desktop-amd64.iso: Could not open 'out/image/cham3-m1-desktop-amd64.iso': No such file or directory
