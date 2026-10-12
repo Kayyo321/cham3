@@ -1,6 +1,6 @@
 # Task: ECR-ADR-001-ADOPTION — Review and adopt ECR as an M2 pillar
 
-- **State:** READY_TO_MERGE — finalization rereview and local integration pending
+- **State:** DONE — scoped architecture approval and local integration
 - **Owner / role / provider:** Codex coordinator, architecture documentation implementer, integrator; project owner retains adoption authority.
 - **Created / updated:** 2026-10-12.
 - **Base commit:** `50e0ee2c16b2db619d106f969df90c84b88e67ae`.
@@ -28,7 +28,7 @@ Complete the approval workflow for ADR 0001 and make ECR a key M2 pillar with ex
 - [x] Independent architecture/security reviewer approves the exact candidate; findings resolved.
 - [x] Owner approves the scoped architecture, lifecycle rule, and canonical-spec amendments; evidence recorded accurately.
 - [x] ADR/index/spec/roadmap/testing/status consistently represent the owner decision; ECR is a core M2 deliverable and exit gate.
-- [ ] Formatting/link checks pass; exact base/review/implementation commits and handoff recorded.
+- [x] Formatting/link checks pass; exact base/review/implementation commits and handoff recorded.
 
 ## Security considerations
 - Default-deny and mandatory restrictions dominate history availability; lifecycle evidence is not grant authority; audit gaps cannot imply completeness. No prompt text is an enforcement boundary.
@@ -46,5 +46,5 @@ Complete the approval workflow for ADR 0001 and make ECR a key M2 pillar with ex
 - Reviewed adoption candidate: `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644`; independent review: `../reviews/ecr_adr_0001_adoption_review.md`.
 
 ## Decisions / blockers
-- Final scoped owner approval GRANTED after concrete candidate and independent review; finalization rereview and local integration remain.
+- Final scoped owner approval GRANTED after concrete candidate and independent review; finalization `8c3ab8028c7d7255debee58af988218d0eaa35bf` independently APPROVED and locally integrated with passing documentation checks. See [handoff](../handoffs/ecr_adr_0001_adoption_handoff.md).
 - Remaining detailed design choices are gates for future implementation, not a claim that M2 is READY or complete.

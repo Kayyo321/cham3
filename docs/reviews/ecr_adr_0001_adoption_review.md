@@ -35,3 +35,14 @@ Current authorization, durable admission and confirmed enforcement stay distinct
 **APPROVE** the scoped adoption candidate at `b0fdbc2f16bd4d5574d29532be9ef7bfd1051644` for owner consideration. This supplies neither owner approval nor implementation verification.
 
 Next: record owner approval of scoped architecture, lifecycle rule and PROJECT.md amendments; finalize status labels, align ADR 0002's stale dependency wording without changing boundaries, and attach handoff evidence. Detailed implementation remains gated. Reviewer offered a bounded finalization rereview.
+
+## Finalization rereview — 2026-10-12
+
+Independent reviewer `ecr_adoption_review` **APPROVED** exact finalization target `8c3ab8028c7d7255debee58af988218d0eaa35bf` for owner-authorized local integration. Read-only scope: `git diff b0fdbc2f16bd4d5574d29532be9ef7bfd1051644 8c3ab8028c7d7255debee58af988218d0eaa35bf`, same declared environment.
+
+- No architecture drift, weakened boundaries or invented runtime evidence; F1 remains resolved. Owner approval scope is consistent throughout the spec, ADR, roadmap, tests and status. ADR 0002 changes only its ECR dependency status. Initial review transcription is accurate.
+- **PASS:** `git rev-parse HEAD` returned exact target; `git status --short` was empty; complete finalization diff inspected.
+- **PASS:** `git diff --check b0fdbc2f16bd4d5574d29532be9ef7bfd1051644 8c3ab8028c7d7255debee58af988218d0eaa35bf`, exit 0.
+- **PASS:** Python 3 exact-target relative-link inspection using `git show` and `git cat-file -e`: 15 targets, 0 failures, exit 0; external URLs/fragments excluded.
+- **NOT_RUN:** Runtime, crypto, IPC/isolation, crash/recovery, Debian/KDE enforcement — documentation only.
+- Delivery note: the exact reviewed target references an adoption handoff not yet present. Supply it with actual local integration/post-integration evidence before DONE. The subsequent [adoption handoff](../handoffs/ecr_adr_0001_adoption_handoff.md) addresses this note; those operations were performed by the integrator, not independently executed by this reviewer.
