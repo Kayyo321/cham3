@@ -1,0 +1,37 @@
+$ git diff --stat f87111d 8b0ccf3
+ core/contract_format/src/dcbor.rs              |   9 +-
+ core/contract_format/src/envelope.rs           |  46 ++++----
+ core/contract_format/src/error.rs              |   5 +-
+ core/contract_format/tests/ecr_vectors.rs      | 156 ++++++++++++++++++++++++-
+ core/contract_format/tests/schema_mutations.rs | 138 ++++++++++++++++++++--
+ docs/decisions/0004_m2_wire_schema_hash.md     |   5 +
+ docs/specs/m2_ecr_v1.cddl                      |   8 +-
+ docs/specs/m2_wire_format_v1.md                |  16 +--
+ tests/m2/harness/test_m2_format_verifier.py    |  86 +++++++++++++-
+ tests/m2/oracle/ecr_oracle.py                  |  41 ++++++-
+ tests/m2/test_inventory.txt                    |   6 +
+ tests/m2/vectors/ecr_v1/vectors.json           |  59 +++++++++-
+ tests/m2/vectors/ecr_v1/vectors_readme.md      |   4 +-
+ 13 files changed, 516 insertions(+), 63 deletions(-)
+
+$ git diff --exit-code f87111d 8b0ccf3 -- Cargo.toml Cargo.lock build .github PROJECT.md core/identityd core/vaultd core/contractd core/policyd core/registryd core/native core/probes docs/specs/m2_service_ipc_v1.md
+exit 0
+
+$ dependency_inventory.md vs 4841039 evidence
+exit 0
+
+$ vectors.json section comparison f87111d -> 8b0ccf3
+admission_invalid: identical
+constants: identical
+format: identical
+invalid: added ['intrinsic_expiration_equals_start', 'protected_decode_before_element_kinds', 'schema_constraints_plain_order', 'schema_operations_plain_order', 'typ_future_version', 'typ_not_text']
+invalid: removed []
+invalid: changed typ_unknown fields ['description', 'error'] (envelope bytes identical: True)
+journal_scenarios: identical
+keys: identical
+limits: identical
+lineage: identical
+specification: identical
+status: identical
+valid: added ['commit_user_1002_encoded_list_order']
+valid: removed []

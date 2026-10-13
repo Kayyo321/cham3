@@ -211,7 +211,7 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 |---|---|---|---|
 | M2-001 | DONE (owner-approved G1, 2026-10-12) | Cargo workspace on Debian 13 Rust 1.85.1 with Debian-packaged offline crates; pinned qualification container and arm64 locks; per-file crate source manifest; domain skeletons with `#![forbid(unsafe_code)]`; `core/native/secure_memory` (only unsafe) and safe `core/native/os_adapter`; provider probe with published KATs and an independent OpenSSL/libsodium/libargon2 oracle; strict dispatcher with inventory-exact validation, harness canaries, lint controls, deployed-profile probes, naming checker, dependency/unsafe inventory, `qualify_m2_rust.sh`, `build_m2_core.sh`, `m2_checks.yml`. arm64 development qualification PASS; **amd64 qualification NOT_RUN** (owner instruction: reviewer runs it in the cloud). | Done: amd64 qualification PASS (author VM, CI and the reviewer's own run); independent re-review r5 APPROVE; G1 approved with a pre-M2-007 advisory re-check condition (ADR 0003). |
 | M2-002 | DONE (owner-approved G1–G6, 2026-10-12) | APPROVED ADRs [0003 (G1)](../decisions/0003_m2_rust_toolchain_dependencies.md), [0004 (G2)](../decisions/0004_m2_wire_schema_hash.md), [0005 (G3)](../decisions/0005_m2_identity_vault_ipc.md), [0006 (G4)](../decisions/0006_m2_storage_anchor_recovery.md), [0007 (G5)](../decisions/0007_m2_lifecycle_time_consumption.md), [0008 (G6)](../decisions/0008_m2_retention_privacy_update_identity.md); [wire format](../specs/m2_wire_format_v1.md), [CDDL](../specs/m2_ecr_v1.cddl), [service IPC](../specs/m2_service_ipc_v1.md); [ECR v1 vectors](../../tests/m2/vectors/ecr_v1/vectors_readme.md) from an independent oracle. | Done: independent re-review r5 APPROVE for every gate; owner decisions ADR 0006 §9.1 A, §9.2 C1; ADR 0007 §4 A, §8 B (trusted time never lowered; forward-error recovery deferred); ADR 0008 §3 A. |
-| M2-003 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Candidate 4841039. | Independent review of the exact candidate; owner decision on erratum E1 (`list_length`). |
+| M2-003 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Review 1cb93c0 CHANGES_REQUESTED (R01–R04 Low, I01 Info); **revision 2 candidate 8b0ccf3** answers them with owner errata E1–E3 ([resolutions](../reviews/M2-003-finding-resolutions.md), [handoff](../handoffs/M2-003-rereview-r2.md)). | Independent re-review of 8b0ccf3. M2-004 obligation: identityd calls `public_key_is_valid` on enrolled/certified keys. |
 | M2-004 | READY | — | Gates G1, G3, G6 approved; starts after M2-003 (one writer on this branch). |
 | M2-005 … M2-008 | DRAFT | — | Gates approved; each waits for its package dependencies (M2-003/004 interfaces, M2-005, M2-004–006, M2-003–007). |
 
@@ -275,6 +275,21 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 - The differential check against the independent oracle found two oracle defects (trailing newline and non-ASCII digits accepted by its patterns), fixed in test code only; the vectors are unchanged.
 - Owner decision requested: erratum E1. Wire format §§6.1/7 say `list_too_long`, while the approved vectors use `list_length`, for too short as well as too long.
 - M2-004 is not started (one writer on this branch); it starts after the M2-003 review.
+
+### M2-003 review and revision 2 (2026-10-13)
+
+- Independent review of 4841039 / f87111d on `review/m2-003-security` at 1cb93c0454583311b04fbbb9e90f01e18aab5ca3 (SHA-256 `e33e8ad4…1f98`, verified; not merged): **CHANGES_REQUESTED**.
+  - Scope, boundaries, qualification, static gates, the oracle fix and the CI comparison PASS.
+  - Findings: R01 (protected-header decode precedence), R02 (declared-capacity reservation), R03 (unknown `typ` code contradicted the prose), R04 (text-list comparator unspecified), all Low; I01 (expiration-equality coverage), Info.
+  - The reviewer's Codex Security plugin workflow was BLOCKED in its environment.
+- **Owner decisions, 2026-10-13** (answers to explicit questions, recorded in ADR 0004):
+  - E1: `list_length`;
+  - E2: any text `typ` other than the expected one is `wrong_object_type`;
+  - E3: text lists use deterministic-encoding order.
+- **Revision 2** candidate **8b0ccf37f2437cae0a9668e012ddf55e9952e2aa** answers every finding ([resolutions](../reviews/M2-003-finding-resolutions.md), [handoff](../handoffs/M2-003-rereview-r2.md)).
+  - Qualification PASS: unit 64+64, ECR 19/96/18, differential 5 950 / 0 mismatches, harness 130.
+  - GitHub Actions m2/m1/m0 PASS.
+- **M2-004 obligation:** identityd must call `envelope::public_key_is_valid` on enrolled and certified public keys before registration.
 
 ### Final M2 review requirement (owner instruction, 2026-10-12)
 

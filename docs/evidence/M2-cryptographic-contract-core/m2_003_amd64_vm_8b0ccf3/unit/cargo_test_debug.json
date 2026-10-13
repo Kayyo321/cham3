@@ -1,0 +1,114 @@
+{
+  "cargo_target_dir": "/work/out/m2/runs/unit_20261013T003503Z_1658/target_debug",
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--frozen"
+  ],
+  "exit_status": 0,
+  "log": "/work/out/m2/runs/unit_20261013T003503Z_1658/cargo_test_debug.log",
+  "result": "PASS",
+  "suites": {
+    "cargo:cham3_contract_format": 11,
+    "cargo:cham3_contractd": 1,
+    "cargo:cham3_identityd": 1,
+    "cargo:cham3_os_adapter": 6,
+    "cargo:cham3_policyd": 1,
+    "cargo:cham3_provider_probe": 14,
+    "cargo:cham3_registryd": 1,
+    "cargo:cham3_secure_memory": 10,
+    "cargo:cham3_vaultd": 1,
+    "cargo:ecr_vectors": 11,
+    "cargo:schema_mutations": 7
+  },
+  "tests": {
+    "cargo:cham3_contract_format": [
+      "dcbor::tests::encoder_sorts_map_keys_by_encoding",
+      "dcbor::tests::forbidden_items_are_rejected",
+      "dcbor::tests::limits_are_checked_before_allocation",
+      "dcbor::tests::map_keys_must_ascend_and_share_a_type",
+      "dcbor::tests::non_minimal_heads_are_rejected",
+      "dcbor::tests::shortest_heads_round_trip",
+      "dcbor::tests::signed_object_tag_only_at_root",
+      "tests::crate_name_matches_package",
+      "text::tests::label_and_operation_patterns",
+      "text::tests::restricted_text_rules",
+      "text::tests::time_format_is_exact"
+    ],
+    "cargo:cham3_contractd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_identityd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_os_adapter": [
+      "tests::hardening_runs_in_child_process",
+      "tests::peer_credentials_fail_on_non_socket",
+      "tests::peer_credentials_report_this_process",
+      "tests::random_empty_buffer_is_ok",
+      "tests::random_fills_and_differs",
+      "tests::random_fills_large_buffer"
+    ],
+    "cargo:cham3_policyd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_provider_probe": [
+      "tests::argon2_library_leaves_caller_workspace_populated",
+      "tests::argon2_workspace_is_clear_after_hash_error",
+      "tests::argon2_workspace_is_clear_after_success",
+      "tests::argon2_workspace_rejects_wrong_size_and_clears",
+      "tests::argon2id_rfc9106_vector_passes",
+      "tests::constant_time_equality_passes",
+      "tests::corrupted_vector_is_detected",
+      "tests::hex_decoder_rejects_malformed_input",
+      "tests::rfc8032_vectors_pass",
+      "tests::run_all_reports_every_check",
+      "tests::sha256_vectors_pass",
+      "tests::strict_verification_rejects_noncanonical_s",
+      "tests::vectors_mirror_committed_vector_file",
+      "tests::xchacha_vector_passes"
+    ],
+    "cargo:cham3_registryd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:cham3_secure_memory": [
+      "tests::child_entry",
+      "tests::data_pages_are_locked_not_dumpable_and_wiped_on_fork",
+      "tests::drop_zeroizes_entire_data_capacity",
+      "tests::guard_pages_are_inaccessible",
+      "tests::invalid_lengths_are_rejected",
+      "tests::memlock_exhaustion_fails_closed",
+      "tests::overrun_hits_trailing_guard_page",
+      "tests::region_is_zero_filled_and_round_trips",
+      "tests::secret_region_has_no_debug_clone_or_display",
+      "tests::underrun_hits_leading_guard_page"
+    ],
+    "cargo:cham3_vaultd": [
+      "tests::crate_name_matches_package"
+    ],
+    "cargo:ecr_vectors": [
+      "admission_vectors_pass_layers_one_to_five",
+      "deterministic_signature_is_independent_of_oracle_signing",
+      "every_kind_is_rejected_as_another_kind",
+      "every_single_byte_change_is_rejected",
+      "invalid_vectors_report_the_published_layer_and_code",
+      "journal_scenario_objects_match_their_local_layers",
+      "protected_header_decode_precedes_other_element_kinds",
+      "seeded_random_inputs_are_rejected_without_panicking",
+      "synthetic_keys_and_constants_match",
+      "text_typ_other_than_expected_is_wrong_object_type",
+      "valid_vectors_verify_and_reproduce_bytes"
+    ],
+    "cargo:schema_mutations": [
+      "an_unknown_field_is_rejected_wherever_it_sorts",
+      "every_removed_required_field_is_missing_field",
+      "every_retyped_field_is_wrong_type",
+      "expiration_equal_to_start_is_a_lifetime_rule_violation",
+      "integer_and_text_boundaries",
+      "text_lists_ascend_in_encoding_order",
+      "unchanged_resigned_payloads_verify"
+    ]
+  },
+  "total_tests": 64
+}
