@@ -1,6 +1,6 @@
 # Task: M2 — Cryptographic contract core and Eternal Contract Repository
 
-- **State:** IN_PROGRESS. M2-001 and M2-002 are DONE; G1–G6 were owner-approved on 2026-10-12 after independent review (ADRs 0003–0008). M2-003 is READY and in progress; M2-004..M2-008 become READY as their package dependencies complete (see the progress table). The milestone is not DONE until M2-008 and the final review below.
+- **State:** IN_PROGRESS. M2-001, M2-002 and M2-003 are DONE; G1–G6 were owner-approved on 2026-10-12 after independent review (ADRs 0003–0008). M2-004 is READY and in progress; M2-005..M2-008 become READY as their package dependencies complete (see the progress table). The milestone is not DONE until M2-008 and the final review below.
 - **Owner / role / provider:** Project owner retains architecture/risk authority. Claude Code is the intended design/implementation author; Codex is the independent architecture/security reviewer. Coordinator tracks gates; integrator admits exact reviewed commits.
 - **Created / updated:** 2026-10-12.
 - **Base commit:** aa843f7ac19398f580f3577ba047300971ba6095, clean local main including approved ADR 0001 and locally merged M1.
@@ -211,8 +211,8 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 |---|---|---|---|
 | M2-001 | DONE (owner-approved G1, 2026-10-12) | Cargo workspace on Debian 13 Rust 1.85.1 with Debian-packaged offline crates; pinned qualification container and arm64 locks; per-file crate source manifest; domain skeletons with `#![forbid(unsafe_code)]`; `core/native/secure_memory` (only unsafe) and safe `core/native/os_adapter`; provider probe with published KATs and an independent OpenSSL/libsodium/libargon2 oracle; strict dispatcher with inventory-exact validation, harness canaries, lint controls, deployed-profile probes, naming checker, dependency/unsafe inventory, `qualify_m2_rust.sh`, `build_m2_core.sh`, `m2_checks.yml`. arm64 development qualification PASS; **amd64 qualification NOT_RUN** (owner instruction: reviewer runs it in the cloud). | Done: amd64 qualification PASS (author VM, CI and the reviewer's own run); independent re-review r5 APPROVE; G1 approved with a pre-M2-007 advisory re-check condition (ADR 0003). |
 | M2-002 | DONE (owner-approved G1–G6, 2026-10-12) | APPROVED ADRs [0003 (G1)](../decisions/0003_m2_rust_toolchain_dependencies.md), [0004 (G2)](../decisions/0004_m2_wire_schema_hash.md), [0005 (G3)](../decisions/0005_m2_identity_vault_ipc.md), [0006 (G4)](../decisions/0006_m2_storage_anchor_recovery.md), [0007 (G5)](../decisions/0007_m2_lifecycle_time_consumption.md), [0008 (G6)](../decisions/0008_m2_retention_privacy_update_identity.md); [wire format](../specs/m2_wire_format_v1.md), [CDDL](../specs/m2_ecr_v1.cddl), [service IPC](../specs/m2_service_ipc_v1.md); [ECR v1 vectors](../../tests/m2/vectors/ecr_v1/vectors_readme.md) from an independent oracle. | Done: independent re-review r5 APPROVE for every gate; owner decisions ADR 0006 §9.1 A, §9.2 C1; ADR 0007 §4 A, §8 B (trusted time never lowered; forward-error recovery deferred); ADR 0008 §3 A. |
-| M2-003 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Review 1cb93c0 CHANGES_REQUESTED (R01–R04 Low, I01 Info); **revision 2 candidate 8b0ccf3** answers them with owner errata E1–E3 ([resolutions](../reviews/M2-003-finding-resolutions.md), [handoff](../handoffs/M2-003-rereview-r2.md)). | Independent re-review of 8b0ccf3. M2-004 obligation: identityd calls `public_key_is_valid` on enrolled/certified keys. |
-| M2-004 | READY | — | Gates G1, G3, G6 approved; starts after M2-003 (one writer on this branch). |
+| M2-003 | DONE (independent re-review APPROVE, 2026-10-13) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Review 1cb93c0 CHANGES_REQUESTED; revision 2 **8b0ccf3** with owner errata E1–E3 approved by re-review 87e9b2a ([completion handoff](../handoffs/M2-003-completion.md)). | Done. M2-004 obligation: identityd calls `public_key_is_valid` on enrolled/certified keys. |
+| M2-004 | READY → IN_PROGRESS (Claude Code) | — | Gates G1, G3, G6 approved; M2-003 DONE. |
 | M2-005 … M2-008 | DRAFT | — | Gates approved; each waits for its package dependencies (M2-003/004 interfaces, M2-005, M2-004–006, M2-003–007). |
 
 ### Independent review and revision 2 (2026-10-12)
@@ -290,6 +290,14 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
   - Qualification PASS: unit 64+64, ECR 19/96/18, differential 5 950 / 0 mismatches, harness 130.
   - GitHub Actions m2/m1/m0 PASS.
 - **M2-004 obligation:** identityd must call `envelope::public_key_is_valid` on enrolled and certified public keys before registration.
+
+### M2-003 re-review and completion (2026-10-13)
+
+- Independent re-review of 8b0ccf3 / ce83f28 on `review/m2-003-r2-security` at 87e9b2a888671ab9b7cd86272d34e8a1c48cd5ac (`docs/reviews/M2-003-codex-security-rereview-r2.md`, SHA-256 `55605db4…2518`, verified; parent 9cf8825; adds only that file; not merged): **APPROVE** for M2-003.
+  - R01–R04 and I01 PASS; earlier PASS items intact; errata E1–E3 recorded and applied consistently; no new findings.
+  - The reviewer's own amd64 qualification, static checks/tests, scripts and CI comparison PASS.
+  - The Codex Security plugin skill was BLOCKED again in the reviewer's environment; it remains required at the final M2-008 review.
+- M2-003 is **DONE** ([completion handoff](../handoffs/M2-003-completion.md)). M2-004 is READY and started.
 
 ### Final M2 review requirement (owner instruction, 2026-10-12)
 
