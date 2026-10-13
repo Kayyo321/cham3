@@ -223,19 +223,41 @@ impl journal_io_t for space_io_t {
     }
 }
 
-/// Records every directory sync and can fail the next sync of the `users` directory
-/// (M2-005 review R01: a parent-directory sync that fails on one attempt).
+/// The next directory sync a [`sync_spy_t`] fails: none, the next sync of a directory
+/// named `users`, or the next sync of one exact path.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum sync_fault_t {
+    none,
+    users_once,
+    path_once(PathBuf),
+}
+
+/// Records every directory sync and can fail one of them (M2-005 review R01, R2-01: a
+/// directory sync that fails on one attempt or at one start).
 #[derive(Clone)]
 struct sync_spy_t {
     synced: Arc<Mutex<Vec<PathBuf>>>,
-    fail_users_once: Arc<AtomicUsize>,
+    fault: Arc<Mutex<sync_fault_t>>,
 }
 
 impl sync_spy_t {
     fn new(fail_users_once: bool) -> sync_spy_t {
+        sync_spy_t::with(if fail_users_once {
+            sync_fault_t::users_once
+        } else {
+            sync_fault_t::none
+        })
+    }
+
+    /// Fails the next sync of exactly `path`.
+    fn failing_once(path: &Path) -> sync_spy_t {
+        sync_spy_t::with(sync_fault_t::path_once(path.to_path_buf()))
+    }
+
+    fn with(fault: sync_fault_t) -> sync_spy_t {
         sync_spy_t {
             synced: Arc::new(Mutex::new(Vec::new())),
-            fail_users_once: Arc::new(AtomicUsize::new(usize::from(fail_users_once))),
+            fault: Arc::new(Mutex::new(fault)),
         }
     }
 
@@ -255,12 +277,75 @@ impl journal_io_t for sync_spy_t {
 
     fn sync_directory(&self, path: &Path) -> io::Result<()> {
         self.synced.lock().unwrap().push(path.to_path_buf());
-        if path.file_name().is_some_and(|name| name == "users")
-            && self.fail_users_once.swap(0, Ordering::SeqCst) == 1
-        {
-            return Err(io::Error::other("injected parent directory fsync failure"));
+        let mut fault = self.fault.lock().unwrap();
+        let fails = match &*fault {
+            sync_fault_t::none => false,
+            sync_fault_t::users_once => path.file_name().is_some_and(|name| name == "users"),
+            sync_fault_t::path_once(target) => path == target,
+        };
+        if fails {
+            *fault = sync_fault_t::none;
+            return Err(io::Error::other("injected directory fsync failure"));
         }
+        drop(fault);
         system_io_t.sync_directory(path)
+    }
+}
+
+/// Allocations that write every requested byte and then fail their sync (M2-005
+/// review R2-02): the reserve has its full length and nothing about it is durable.
+/// The next `failing` allocations fail that way; later ones are the real operation.
+#[derive(Clone)]
+struct unsynced_allocation_io_t {
+    failing: Arc<AtomicUsize>,
+    allocations: Arc<AtomicUsize>,
+}
+
+impl unsynced_allocation_io_t {
+    fn new(failing: usize) -> unsynced_allocation_io_t {
+        unsynced_allocation_io_t {
+            failing: Arc::new(AtomicUsize::new(failing)),
+            allocations: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+
+    fn fail_next(&self, count: usize) {
+        self.failing.store(count, Ordering::SeqCst);
+    }
+
+    fn allocations(&self) -> usize {
+        self.allocations.load(Ordering::SeqCst)
+    }
+}
+
+impl journal_io_t for unsynced_allocation_io_t {
+    fn write_all(&self, file: &mut fs::File, bytes: &[u8]) -> io::Result<()> {
+        system_io_t.write_all(file, bytes)
+    }
+
+    fn sync_data(&self, file: &fs::File) -> io::Result<()> {
+        system_io_t.sync_data(file)
+    }
+
+    fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        system_io_t.sync_directory(path)
+    }
+
+    fn allocate(&self, file: &mut fs::File, from: u64, to: u64) -> io::Result<()> {
+        self.allocations.fetch_add(1, Ordering::SeqCst);
+        let mut remaining = to.saturating_sub(from);
+        while remaining > 0 {
+            let chunk = remaining.min(65_536) as usize;
+            io::Write::write_all(file, &vec![0u8; chunk])?;
+            remaining -= chunk as u64;
+        }
+        if self.failing.load(Ordering::SeqCst) > 0 {
+            self.failing.fetch_sub(1, Ordering::SeqCst);
+            return Err(io::Error::other(
+                "injected reserve fsync failure after its writes",
+            ));
+        }
+        file.sync_all()
     }
 }
 
@@ -876,17 +961,23 @@ fn every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledge
     assert_eq!(
         spy.synced(),
         vec![
-            parent,
+            parent.clone(),
             root.clone(),
             root.join("users"),
             root.join("users").join("1001")
         ]
     );
-    // Reopening an existing store creates nothing and syncs nothing.
+    // Reopening an existing store creates nothing, but repeats the syncs the acknowledged
+    // state depends on (R2-01): `root` in its parent, `users` in `root`, and each
+    // replayed user's directory; a directory's existence is no proof of an earlier
+    // successful sync.
     drop(registry);
     let spy = sync_spy_t::new(false);
     let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
-    assert!(spy.synced().is_empty());
+    assert_eq!(
+        spy.synced(),
+        vec![parent, root.clone(), root.join("users").join("1001")]
+    );
     assert!(registry.unusable_users().unwrap().is_empty());
 }
 
@@ -897,6 +988,7 @@ fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
     // again before it acknowledges the enrollment. Nothing is written before the
     // parent entry is durable, so the failed attempt leaves no journal.
     let root = temp_root("parent_sync_retry");
+    let parent = root.parent().unwrap().to_path_buf();
     let spy = sync_spy_t::new(true);
     let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
     let alice = test_user(1001);
@@ -911,9 +1003,12 @@ fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
     );
     assert!(root.join("users").join("1001").is_dir());
     assert!(!journal_path(&root, alice.uid).exists());
-    // Opening the store created `users` (synced in `root`); the enrollment's `users`
-    // sync failed and nothing else was synced or written.
-    assert_eq!(spy.synced(), vec![root.clone(), root.join("users")]);
+    // Opening the store synced `root` in its parent and the new `users` in `root`; the
+    // enrollment's `users` sync failed and nothing else was synced or written.
+    assert_eq!(
+        spy.synced(),
+        vec![parent.clone(), root.clone(), root.join("users")]
+    );
     let receipt = registry
         .append_identity(
             Identityd,
@@ -927,6 +1022,7 @@ fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
     assert_eq!(
         spy.synced(),
         vec![
+            parent,
             root.clone(),
             root.join("users"),
             root.join("users"),
@@ -945,6 +1041,157 @@ fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
             .len(),
         1
     );
+}
+
+#[test]
+fn a_failed_startup_directory_sync_is_repeated_at_the_next_start() {
+    // M2-005 review R2-01. A start that fails to sync a directory it created refuses
+    // the store and leaves the directory visible. The next start finds it and must not
+    // take its existence for a completed sync: `root` is synced in its parent and
+    // `users` in `root` at every start, before any enrollment is acknowledged.
+    // (a) A new root whose entry in the parent was never made durable.
+    let parent = temp_root("startup_sync_new_root");
+    let root = parent.join("registry");
+    let spy = sync_spy_t::failing_once(&parent);
+    assert!(
+        registry_t::open(
+            &root,
+            owner_of(&parent),
+            registry_config_t::default(),
+            Box::new(spy.clone()),
+            Box::new(fixed_clock_t),
+        )
+        .is_err()
+    );
+    assert!(root.is_dir(), "visible, its entry not durable");
+    assert_eq!(spy.synced(), vec![parent.clone()]);
+    let spy = sync_spy_t::new(false);
+    let registry = Arc::new(
+        registry_t::open(
+            &root,
+            owner_of(&parent),
+            registry_config_t::default(),
+            Box::new(spy.clone()),
+            Box::new(fixed_clock_t),
+        )
+        .expect("second start"),
+    );
+    assert_eq!(spy.synced(), vec![parent.clone(), root.clone()]);
+    enroll(&registry, &test_user(1001));
+    assert_eq!(
+        spy.synced(),
+        vec![
+            parent,
+            root.clone(),
+            root.join("users"),
+            root.join("users").join("1001")
+        ]
+    );
+    // (b) An existing root whose new `users` directory was never made durable in it.
+    let root = temp_root("startup_sync_users");
+    let parent = root.parent().unwrap().to_path_buf();
+    let spy = sync_spy_t::failing_once(&root);
+    assert!(
+        registry_t::open(
+            &root,
+            owner_of(&root),
+            registry_config_t::default(),
+            Box::new(spy.clone()),
+            Box::new(fixed_clock_t),
+        )
+        .is_err()
+    );
+    assert!(root.join("users").is_dir());
+    assert_eq!(spy.synced(), vec![parent.clone(), root.clone()]);
+    let spy = sync_spy_t::new(false);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    assert_eq!(spy.synced(), vec![parent, root.clone()]);
+    enroll(&registry, &test_user(1002));
+    assert!(registry.unusable_users().unwrap().is_empty());
+}
+
+#[test]
+fn a_failed_creation_sync_is_repeated_when_the_journal_is_reopened() {
+    // M2-005 review R2-01. (a) The journal's bytes are durable but the sync of the user
+    // directory that names it fails: the enrollment is refused, the file stays
+    // visible, and the next start syncs the user directory before it replays the
+    // journal and acknowledges the same enrollment as already present.
+    let root = temp_root("creation_sync_reopen");
+    let parent = root.parent().unwrap().to_path_buf();
+    let alice = test_user(1001);
+    let user_directory = root.join("users").join("1001");
+    let spy = sync_spy_t::failing_once(&user_directory);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    assert_eq!(
+        code(registry.append_identity(
+            Identityd,
+            alice.uid,
+            object_kind_t::identity_enrollment,
+            &alice.enrollment,
+        )),
+        "ipc/storage_unavailable"
+    );
+    assert!(
+        journal_path(&root, alice.uid).is_file(),
+        "written, its entry not durable"
+    );
+    drop(registry);
+    let spy = sync_spy_t::new(false);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(
+        spy.synced(),
+        vec![parent.clone(), root.clone(), user_directory.clone()]
+    );
+    let receipt = registry
+        .append_identity(
+            Identityd,
+            alice.uid,
+            object_kind_t::identity_enrollment,
+            &alice.enrollment,
+        )
+        .expect("the replayed enrollment");
+    assert!(receipt.already_present);
+    assert_eq!(receipt.journal_seq, 1);
+    drop(registry);
+    // (b) A reserve recreated at start whose directory sync fails: the user is unusable
+    // for that run; the next start syncs the directory again before any append.
+    fs::remove_file(reserve_path(&root, alice.uid)).unwrap();
+    let spy = sync_spy_t::failing_once(&user_directory);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    assert_eq!(
+        registry.unusable_users().unwrap(),
+        vec![(
+            alice.uid,
+            unusable_reason_t::store(cham3_registryd::journal::store_error_t::io)
+        )]
+    );
+    assert!(
+        reserve_path(&root, alice.uid).is_file(),
+        "created, its entry not durable"
+    );
+    drop(registry);
+    let spy = sync_spy_t::new(false);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(spy.synced(), vec![parent, root.clone(), user_directory]);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    let mut identity = identity_over(&registry);
+    identity
+        .register_certificate(
+            Vaultd,
+            alice.uid,
+            &certificate(
+                &alice.identity,
+                alice.uid,
+                &test_key("after the recreated reserve"),
+                authority_class_t::persistent,
+                1,
+            ),
+        )
+        .expect("the first non-restrictive append refills the recreated reserve");
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    assert_eq!(spy.synced().len(), 3, "an append syncs no directory");
 }
 
 #[test]
@@ -1137,6 +1384,9 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
     drop(registry);
     let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
     assert!(registry.unusable_users().unwrap().is_empty());
+    // The restart synced the full-length reserve before trusting it (R2-02).
+    assert_eq!(io.counts(), (0, 0, 2));
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
     let before = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
     // A key invalidation on a full filesystem: truncated back, the reserve released,
     // the record durable.
@@ -1154,7 +1404,7 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
             ),
         )
         .expect("restrictive record from the reserve");
-    assert_eq!(io.counts(), (1, 1, 1));
+    assert_eq!(io.counts(), (1, 1, 2));
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
     assert_eq!(fs::metadata(&reserve).unwrap().len(), 0);
     assert!(fs::metadata(journal_path(&root, alice.uid)).unwrap().len() > before);
@@ -1173,7 +1423,7 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
         code(admit(&registry, &alice, &genesis)),
         "ipc/storage_unavailable"
     );
-    assert_eq!(io.counts(), (1, 1, 2));
+    assert_eq!(io.counts(), (1, 1, 3));
     assert_eq!(
         fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
         length
@@ -1185,7 +1435,7 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
         "ipc/storage_unavailable",
         "refilling failed again"
     );
-    assert_eq!(io.counts(), (1, 1, 3));
+    assert_eq!(io.counts(), (1, 1, 4));
     identity
         .register_invalidation(
             Vaultd,
@@ -1314,6 +1564,145 @@ fn reserve_files_are_checked_like_journals_and_recreated_when_missing() {
     assert_eq!(admit(&registry, &alice, &genesis), Ok(placement_t::trunk));
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
     assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+}
+
+#[test]
+fn a_reserve_written_without_a_completed_sync_is_never_trusted_for_its_length() {
+    // M2-005 review R2-02. An allocation that writes every byte and then fails its
+    // sync leaves a reserve of full length and unknown durability. The length never
+    // stands in for the sync: (a) at creation, (b) when a journal is reopened and (c)
+    // when a depleted reserve is replenished, the sync is repeated until it succeeds.
+    let root = temp_root("reserve_unsynced");
+    let alice = test_user(1001);
+    let io = unsynced_allocation_io_t::new(2);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
+    let reserve = reserve_path(&root, alice.uid);
+    // (a) Two enrollment attempts whose reserve sync fails: refused, no journal, the
+    // reserve written in full each time but never trusted; the third is acknowledged
+    // only after an allocation that synced.
+    for attempt in 0..2 {
+        assert_eq!(
+            code(registry.append_identity(
+                Identityd,
+                alice.uid,
+                object_kind_t::identity_enrollment,
+                &alice.enrollment,
+            )),
+            "ipc/storage_unavailable",
+            "attempt {attempt}"
+        );
+        assert!(!journal_path(&root, alice.uid).exists());
+        assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+    }
+    assert_eq!(io.allocations(), 2);
+    enroll(&registry, &alice);
+    assert_eq!(io.allocations(), 3, "the retry allocated (synced) again");
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    drop(registry);
+    // (b) Reopening: a full-length reserve is synced before it counts as full. While
+    // that sync fails the reserve is pending: restrictive records are unaffected and
+    // the next non-restrictive append repeats the sync before it is acknowledged.
+    io.fail_next(1);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(io.allocations(), 4);
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+    assert_eq!(
+        registry.reserve_bytes(alice.uid),
+        Ok(0),
+        "pending, whatever the file's length"
+    );
+    let mut identity = identity_over(&registry);
+    identity
+        .register_invalidation(
+            Vaultd,
+            alice.uid,
+            &invalidation(
+                &alice.identity,
+                &alice.temporary.key_id,
+                invalidation_reason_t::compromised,
+                "pending reserve",
+            ),
+        )
+        .expect("restrictive records never wait for the reserve");
+    assert_eq!(io.allocations(), 4);
+    io.fail_next(1);
+    assert_eq!(
+        code(identity.register_certificate(
+            Vaultd,
+            alice.uid,
+            &certificate(
+                &alice.identity,
+                alice.uid,
+                &test_key("unsynced certificate"),
+                authority_class_t::persistent,
+                1,
+            ),
+        )),
+        "ipc/storage_unavailable"
+    );
+    assert_eq!(io.allocations(), 5);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    let fresh_key = test_key("synced certificate");
+    identity
+        .register_certificate(
+            Vaultd,
+            alice.uid,
+            &certificate(
+                &alice.identity,
+                alice.uid,
+                &fresh_key,
+                authority_class_t::persistent,
+                1,
+            ),
+        )
+        .expect("acknowledged once the sync succeeded");
+    assert_eq!(io.allocations(), 6);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    drop(registry);
+    // (c) Replenishing a released reserve: the allocation writes it in full and fails
+    // its sync; the admission is refused, the journal stays usable, and the next
+    // admission allocates (syncs) again although the file already has its full length.
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&reserve)
+        .unwrap()
+        .set_len(0)
+        .unwrap();
+    let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
+    assert_eq!(
+        io.allocations(),
+        6,
+        "a short reserve is pending without a sync"
+    );
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    let browser = app("browser");
+    let genesis =
+        draft(&alice, &browser, commit_type_t::genesis, "unsynced genesis").sign_with(&fresh_key);
+    io.fail_next(1);
+    assert_eq!(
+        code(admit(&registry, &alice, &genesis)),
+        "ipc/storage_unavailable"
+    );
+    assert_eq!(io.allocations(), 7);
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    assert!(
+        registry
+            .lineage_head(Policyd, alice.uid, &genesis.payload.lineage_id)
+            .is_ok(),
+        "the journal stays usable"
+    );
+    io.fail_next(1);
+    assert_eq!(
+        code(admit(&registry, &alice, &genesis)),
+        "ipc/storage_unavailable",
+        "the sync is repeated, the length not trusted"
+    );
+    assert_eq!(io.allocations(), 8);
+    assert_eq!(admit(&registry, &alice, &genesis), Ok(placement_t::trunk));
+    assert_eq!(io.allocations(), 9);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
 }
 
 #[test]

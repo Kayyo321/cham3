@@ -1,25 +1,33 @@
 //! Restrictive-reserve probe (M2-005 review R03): exercises the journal store's
 //! preallocated reserve on an actual filesystem.
 //!
-//! `cham3_reserve_probe <root> allocate-only` creates a journal under `<root>` and
-//! reports whether its reserve is preallocated with real blocks.
+//! `cham3_reserve_probe <root> allocate-only` creates `<root>` (which must not exist)
+//! with a journal under it and reports whether its reserve is preallocated with real
+//! blocks.
 //!
 //! `cham3_reserve_probe <root> full-disk` additionally fills the filesystem that holds
 //! `<root>` with an unrelated writer until `ENOSPC`, then shows that a restrictive
 //! append becomes durable from the reserve, that a non-restrictive append is refused
 //! while the reserve cannot be refilled, that restrictive appends go on, and that the
 //! first non-restrictive append after the filler is removed refills the reserve. It
-//! refuses to run unless `<root>` is on a tmpfs of at most 16 MiB (a disposable
-//! filesystem: `docker run --tmpfs /full-disk:rw,size=2m,...`); it never fills an
-//! ordinary filesystem.
+//! refuses to run, before creating anything, unless `<root>`'s parent is on a tmpfs of
+//! at most 16 MiB (a disposable filesystem: `docker run --tmpfs /full-disk:rw,size=2m,...`);
+//! it never fills an ordinary filesystem.
+//!
+//! The probe owns only what it creates (M2-005 review R2-03): the mode and, in
+//! full-disk mode, the filesystem of `<root>`'s parent are checked before anything is
+//! created; `<root>` is created exclusively and an existing path there is refused and
+//! never read, written or removed; the filler file is created exclusively too; and
+//! only the root this invocation created is removed afterwards, whatever the outcome.
+//! A refusal leaves the filesystem exactly as it was.
 //!
 //! Records are synthetic registry records; the store validates nothing (validation is
 //! the registry's). Exit status: 0 verified, 2 a check failed, 3 refused to run.
 #![forbid(unsafe_code)]
 
 use std::fs;
-use std::io::Write;
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::io::{ErrorKind, Write};
+use std::os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -43,6 +51,10 @@ enum failure_t {
 
 fn check(message: impl Into<String>) -> failure_t {
     failure_t::check(message.into())
+}
+
+fn refused(message: impl Into<String>) -> failure_t {
+    failure_t::refused(message.into())
 }
 
 fn store_failure(error: store_error_t) -> failure_t {
@@ -92,21 +104,17 @@ fn small_tmpfs_mount(path: &Path) -> Result<PathBuf, failure_t> {
             best = Some((point, kind.to_owned(), options.to_owned()));
         }
     }
-    let (point, kind, options) =
-        best.ok_or_else(|| failure_t::refused("no mount found for the root".to_owned()))?;
+    let (point, kind, options) = best.ok_or_else(|| refused("no mount found for the root"))?;
     if kind != "tmpfs" {
-        return Err(failure_t::refused(format!(
-            "{} is {kind}, not tmpfs",
-            point.display()
-        )));
+        return Err(refused(format!("{} is {kind}, not tmpfs", point.display())));
     }
     let size = options
         .split(',')
         .find_map(|option| option.strip_prefix("size="))
         .and_then(parse_size)
-        .ok_or_else(|| failure_t::refused("tmpfs without a size= option".to_owned()))?;
+        .ok_or_else(|| refused("tmpfs without a size= option"))?;
     if size > MaxFillBytes {
-        return Err(failure_t::refused(format!(
+        return Err(refused(format!(
             "tmpfs of {size} bytes exceeds the {MaxFillBytes}-byte limit"
         )));
     }
@@ -133,9 +141,28 @@ struct probe_t {
     root: PathBuf,
 }
 
+/// Creates `root` (`0700`) exclusively in its existing parent. An existing path is
+/// refused and left untouched: the probe owns only a root it created (R2-03).
+fn create_root(root: &Path) -> Result<(), failure_t> {
+    match fs::DirBuilder::new().mode(0o700).create(root) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == ErrorKind::AlreadyExists => Err(existing_root(root)),
+        Err(error) => Err(refused(format!(
+            "cannot create {}: {error}",
+            root.display()
+        ))),
+    }
+}
+
+fn existing_root(root: &Path) -> failure_t {
+    refused(format!(
+        "{} exists; the probe uses only a root it created and leaves other paths alone",
+        root.display()
+    ))
+}
+
+/// Opens the store under a root this invocation created and writes the first record.
 fn open(root: &Path) -> Result<probe_t, failure_t> {
-    fs::create_dir_all(root).map_err(io_failure)?;
-    fs::set_permissions(root, fs::Permissions::from_mode(0o700)).map_err(io_failure)?;
     let owner = fs::metadata(root).map_err(io_failure)?.uid();
     let store = journal_store_t::open(root, owner, &system_io_t).map_err(store_failure)?;
     let journal = store
@@ -177,8 +204,7 @@ fn append(probe: &mut probe_t, restrictive: bool) -> Result<u64, store_error_t> 
         .append(&record(sequence), restrictive, &system_io_t)
 }
 
-fn full_disk(probe: &mut probe_t) -> Result<(), failure_t> {
-    let mount = small_tmpfs_mount(&probe.root)?;
+fn full_disk(probe: &mut probe_t, mount: &Path) -> Result<(), failure_t> {
     println!("tmpfs_mount {}", mount.display());
     let journal_path = probe
         .root
@@ -199,9 +225,24 @@ fn full_disk(probe: &mut probe_t) -> Result<(), failure_t> {
     if !aligned {
         return Err(check("could not align the journal to a block boundary"));
     }
-    // An unrelated writer fills the filesystem.
+    // An unrelated writer fills the filesystem. Its file is created exclusively: an
+    // existing path is never truncated or removed (R2-03).
     let filler_path = mount.join("cham3_reserve_probe_filler");
-    let mut filler = fs::File::create(&filler_path).map_err(io_failure)?;
+    let mut filler = match fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&filler_path)
+    {
+        Ok(filler) => filler,
+        Err(error) if error.kind() == ErrorKind::AlreadyExists => {
+            return Err(refused(format!(
+                "{} exists; the probe fills only through a file it created",
+                filler_path.display()
+            )));
+        }
+        Err(error) => return Err(io_failure(error)),
+    };
     let mut filled: u64 = 0;
     loop {
         match filler.write_all(&[0u8; FillChunk]) {
@@ -209,9 +250,7 @@ fn full_disk(probe: &mut probe_t) -> Result<(), failure_t> {
                 filled = filled.saturating_add(4096);
                 if filled > MaxFillBytes.saturating_mul(2) {
                     let _ = fs::remove_file(&filler_path);
-                    return Err(failure_t::refused(
-                        "the filesystem did not fill up".to_owned(),
-                    ));
+                    return Err(refused("the filesystem did not fill up"));
                 }
             }
             Err(error) if out_of_space(&error) => break,
@@ -280,14 +319,41 @@ fn exhausted(probe: &mut probe_t) -> Result<(), failure_t> {
     Ok(())
 }
 
-fn run(root: &Path, mode: &str) -> Result<(), failure_t> {
+/// The filesystem to fill, decided before anything is created: `None` in
+/// allocate-only mode; in full-disk mode the small tmpfs holding the root's parent
+/// (the root does not exist yet), else a refusal.
+fn fill_target(root: &Path, mode: &str) -> Result<Option<PathBuf>, failure_t> {
+    match mode {
+        "allocate-only" => Ok(None),
+        "full-disk" => {
+            let parent = root
+                .parent()
+                .ok_or_else(|| refused("the root has no parent"))?;
+            small_tmpfs_mount(parent).map(Some)
+        }
+        other => Err(refused(format!("unknown mode {other}"))),
+    }
+}
+
+/// The checks on a root this invocation created.
+fn exercise(root: &Path, mount: Option<&Path>) -> Result<(), failure_t> {
     let mut probe = open(root)?;
     report_reserve(&probe)?;
-    match mode {
-        "allocate-only" => Ok(()),
-        "full-disk" => full_disk(&mut probe),
-        other => Err(failure_t::refused(format!("unknown mode {other}"))),
+    match mount {
+        None => Ok(()),
+        Some(mount) => full_disk(&mut probe, mount),
     }
+}
+
+/// Decides the mode and filesystem, then creates the root and runs the checks. The
+/// root is removed only when this invocation created it (R2-03); a refusal before
+/// that point leaves the filesystem as it was.
+fn run(root: &Path, mode: &str) -> Result<(), failure_t> {
+    let mount = fill_target(root, mode)?;
+    create_root(root)?;
+    let outcome = exercise(root, mount.as_deref());
+    let _ = fs::remove_dir_all(root);
+    outcome
 }
 
 fn main() -> ExitCode {
@@ -298,9 +364,7 @@ fn main() -> ExitCode {
         return ExitCode::from(3);
     };
     let root = PathBuf::from(root);
-    let outcome = run(&root, mode);
-    let _ = fs::remove_dir_all(&root);
-    match outcome {
+    match run(&root, mode) {
         Ok(()) => {
             println!("reserve_verified");
             ExitCode::SUCCESS

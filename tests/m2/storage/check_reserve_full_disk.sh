@@ -6,7 +6,8 @@
 # refused while the reserve cannot be refilled; restrictive appends go on; the first
 # non-restrictive append after space returns refills the reserve; the journal is
 # chained throughout. The probe refuses any filesystem that is not a tmpfs of at most
-# 16 MiB, so it never fills a real disk.
+# 16 MiB, so it never fills a real disk, and it owns only the root and filler it
+# creates (an existing root is refused and never touched).
 #
 # The qualification container has no such filesystem, so this check is a separate
 # step: run it in the pinned container started with
@@ -54,5 +55,8 @@ for profile in release debug; do
     grep -qx 'reserve_replenished' "$report"
     grep -qx 'journal_chained' "$report"
     grep -qx 'reserve_verified' "$report"
+    # The probe removes only what it created, and all of it (R2-03).
+    test ! -e "$disk/cham3_reserve_probe_root"
+    test ! -e "$disk/cham3_reserve_probe_filler"
 done
 echo "restrictive reserve under a full filesystem: PASS"

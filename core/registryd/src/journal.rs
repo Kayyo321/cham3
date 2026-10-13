@@ -23,15 +23,22 @@
 //! `cham3_reserve_probe` measures the allocated blocks on the actual filesystem.
 //! An append writes one complete frame at the end of the file and returns only after
 //! `fdatasync`. Every directory entry this store creates is made durable in its
-//! parent before the operation that created it is acknowledged: opening the store
-//! syncs the parent of each directory it creates (`root` in its parent, `users` in
-//! `root`), and creating a journal syncs the `users` directory after the user
-//! directory exists — on every attempt, not only the one that created it, because a
-//! parent sync that failed on an earlier attempt left the entry non-durable (M2-005
-//! review R01) — then the journal file, then the user directory that names it. A
-//! failed append leaves the journal unusable for the rest of the run: the caller
-//! denies the user until a restart replays the file (torn-tail recovery and the
-//! anchor are M2-006).
+//! parent before the operation that created it is acknowledged, and the existence of
+//! an entry is never taken as proof that an earlier sync of it succeeded (M2-005
+//! review R01, R2-01): opening the store syncs `root` in its parent and `users` in
+//! `root` on every start, whether or not this start created them; creating a journal
+//! syncs the `users` directory after the user directory exists on every attempt, then
+//! the reserve, then the journal file, then the user directory that names both; and
+//! reopening a journal at start syncs the user directory again, because the sync that
+//! followed the journal's or a recreated reserve's creation may have failed before a
+//! restart. A sync that fails at open refuses the store or makes the user unusable.
+//! The reserve's durable size is likewise never read off its length (R2-02): a
+//! reopened reserve of full length is synced before it is trusted, a creation retry
+//! syncs the file an earlier attempt may have written without a completed sync, and
+//! replenishment counts the reserve as full only after an allocation, including its
+//! sync, returns success. A failed append leaves the journal unusable for the rest of
+//! the run: the caller denies the user until a restart replays the file (torn-tail
+//! recovery and the anchor are M2-006).
 //!
 //! [`journal_io_t`] is the boundary for fault injection: tests substitute writes and
 //! syncs that fail, or write only part of a frame.
@@ -135,8 +142,9 @@ pub enum store_error_t {
     too_large,
     /// An earlier append failed in this run.
     failed_earlier,
-    /// The reserve is below its full size and cannot be refilled: no space for a
-    /// non-restrictive record (ADR 0008 §1). The journal itself is unchanged.
+    /// The reserve is below its full durable size and cannot be refilled or synced:
+    /// no space for a non-restrictive record (ADR 0008 §1). The journal itself is
+    /// unchanged.
     reserve_depleted,
     /// An I/O operation failed.
     io,
@@ -202,21 +210,21 @@ fn parse_uid(name: &str) -> Option<u32> {
 
 impl journal_store_t {
     /// Opens (creating if needed) `root` and `root/users`, both `0700` directories of
-    /// `owner` (registryd's effective UID). A directory this call creates is synced
-    /// in its parent before the store is usable (R01): `root` in its parent and
-    /// `users` in `root`.
+    /// `owner` (registryd's effective UID). Both entries are synced in their parents
+    /// before the store is usable — `root` in its parent, `users` in `root` — on every
+    /// start, not only the one that created them (R01, R2-01): a start whose sync
+    /// failed left the directory visible but its entry non-durable, and the next start
+    /// must not take the directory's existence for a completed sync.
     pub fn open(
         root: &Path,
         owner: u32,
         io: &dyn journal_io_t,
     ) -> Result<journal_store_t, store_error_t> {
-        if ensure_directory(root, owner)? {
-            let parent = root.parent().ok_or(store_error_t::unsafe_path)?;
-            io.sync_directory(parent).map_err(io_error)?;
-        }
-        if ensure_directory(&root.join("users"), owner)? {
-            io.sync_directory(root).map_err(io_error)?;
-        }
+        ensure_directory(root, owner)?;
+        let parent = root.parent().ok_or(store_error_t::unsafe_path)?;
+        io.sync_directory(parent).map_err(io_error)?;
+        ensure_directory(&root.join("users"), owner)?;
+        io.sync_directory(root).map_err(io_error)?;
         Ok(journal_store_t {
             root: root.to_path_buf(),
             owner,
@@ -308,7 +316,12 @@ impl journal_store_t {
 
     /// Opens an existing journal for appending after its replay parsed it, with the
     /// user's reserve (created empty if it is missing; it is refilled before the next
-    /// non-restrictive append).
+    /// non-restrictive append). The user directory is synced on every open (R2-01):
+    /// the sync after the journal's creation, or after an earlier start recreated the
+    /// reserve, may have failed before a restart. A reserve of full length is synced
+    /// before it counts as full (R2-02); if that sync fails the reserve is pending,
+    /// restrictive records stay possible, and the next non-restrictive append repeats
+    /// the sync.
     pub fn open_journal(
         &self,
         uid: u32,
@@ -328,10 +341,9 @@ impl journal_store_t {
         if metadata.len() != length {
             return Err(store_error_t::io);
         }
-        let (reserve, reserve_bytes, created) = self.open_reserve(uid)?;
-        if created {
-            io.sync_directory(&directory).map_err(io_error)?;
-        }
+        let (mut reserve, reserve_length, _) = self.open_reserve(uid)?;
+        let reserve_bytes = reopened_reserve_bytes(&mut reserve, reserve_length, io);
+        io.sync_directory(&directory).map_err(io_error)?;
         Ok(journal_file_t {
             file,
             length,
@@ -349,8 +361,10 @@ impl journal_store_t {
     /// Durability order: the user directory's entry in `users` (synced on every
     /// attempt, R01: an earlier attempt may have created the directory and then
     /// failed this sync), then the full reserve (R03: no journal exists before its
-    /// reserve does), then the file's bytes, then the entries of both files in the
-    /// user directory. Nothing is acknowledged before all of them are durable.
+    /// reserve does; allocated and synced on every attempt, R2-02: an earlier attempt
+    /// may have written the whole reserve and failed its sync), then the file's bytes,
+    /// then the entries of both files in the user directory. Nothing is acknowledged
+    /// before all of them are durable.
     pub fn create_journal(
         &self,
         uid: u32,
@@ -363,10 +377,8 @@ impl journal_store_t {
         io.sync_directory(&self.users_directory())
             .map_err(io_error)?;
         let (mut reserve, allocated, _) = self.open_reserve(uid)?;
-        if allocated < ReserveBytes {
-            io.allocate(&mut reserve, allocated, ReserveBytes)
-                .map_err(io_error)?;
-        }
+        io.allocate(&mut reserve, allocated, ReserveBytes)
+            .map_err(io_error)?;
         let path = directory.join(JournalFileName);
         let mut file = match OpenOptions::new()
             .append(true)
@@ -398,6 +410,18 @@ impl journal_store_t {
     }
 }
 
+/// The durable size of a reserve found at start: a reserve of full length counts as
+/// full only once this start has synced it (`allocate` of nothing but the sync); any
+/// other length, or a failed sync, leaves it pending until a replenishment succeeds.
+/// Length alone proves nothing about durability (R2-02).
+fn reopened_reserve_bytes(reserve: &mut File, length: u64, io: &dyn journal_io_t) -> u64 {
+    if length == ReserveBytes && io.allocate(reserve, length, ReserveBytes).is_ok() {
+        ReserveBytes
+    } else {
+        0
+    }
+}
+
 /// An open journal file positioned for appends, with the user's reserve.
 #[derive(Debug)]
 pub struct journal_file_t {
@@ -407,7 +431,9 @@ pub struct journal_file_t {
     count: u64,
     failed: bool,
     reserve: File,
-    /// Bytes currently allocated to the reserve (`ReserveBytes` when full).
+    /// Bytes of the reserve known to be durable: `ReserveBytes` after an allocation
+    /// (including its sync) succeeded, 0 after a release or while the reserve is
+    /// pending. Never read off the file's length.
     reserve_bytes: u64,
 }
 
@@ -437,27 +463,29 @@ impl journal_file_t {
         u64::try_from(record_length.checked_add(crate::record::FrameOverheadBytes)?).ok()
     }
 
-    /// Bytes currently allocated to the restrictive reserve.
+    /// Bytes of the restrictive reserve known to be durable.
     pub fn reserve_bytes(&self) -> u64 {
         self.reserve_bytes
     }
 
-    /// Brings the reserve back to its full size (R03). A failure leaves the journal
-    /// usable for restrictive records and reports the bytes actually allocated.
+    /// Brings the reserve back to its full, durable size (R03). The allocation
+    /// continues from the file's current length (an earlier attempt may have written
+    /// part or all of the reserve) and the reserve counts as full only when the
+    /// allocation, including its sync, succeeds and the file is full (R2-02); any
+    /// failure leaves it pending — the journal stays usable for restrictive records
+    /// and the next non-restrictive append tries again.
     pub fn replenish_reserve(&mut self, io: &dyn journal_io_t) -> Result<(), store_error_t> {
         if self.reserve_bytes >= ReserveBytes {
             return Ok(());
         }
-        let allocated = io.allocate(&mut self.reserve, self.reserve_bytes, ReserveBytes);
-        self.reserve_bytes = self
-            .reserve
-            .metadata()
-            .map(|metadata| metadata.len())
-            .unwrap_or(self.reserve_bytes);
-        match allocated {
-            Ok(()) if self.reserve_bytes >= ReserveBytes => Ok(()),
-            _ => Err(store_error_t::reserve_depleted),
+        let length = self.reserve.metadata().map_err(io_error)?.len();
+        io.allocate(&mut self.reserve, length, ReserveBytes)
+            .map_err(|_| store_error_t::reserve_depleted)?;
+        if self.reserve.metadata().map_err(io_error)?.len() < ReserveBytes {
+            return Err(store_error_t::reserve_depleted);
         }
+        self.reserve_bytes = ReserveBytes;
+        Ok(())
     }
 
     /// Appends one record (whose `seq` is [`journal_file_t::next_sequence`]) and makes

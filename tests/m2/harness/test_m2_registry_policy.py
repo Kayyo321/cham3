@@ -2,8 +2,8 @@
 
 Seeded defects in a disposable copy of the workspace (never the checkout), one at a
 time. Each removes or weakens one admission rule (wire format sections 6.5-6.12, 7),
-one journal or durability rule (ADR 0006 section 1), one current-authorization rule
-(ADR 0007 section 1) or one submission check, and the named Rust test must then fail
+one journal, durability or reserve rule (ADR 0006 section 1), one current-authorization
+rule (ADR 0007 section 1) or one submission check, and the named Rust test must then fail
 (not merely fail to build); the unmodified copy passes the same tests.
 """
 
@@ -98,12 +98,35 @@ SeededDefects = [
       "        if ensure_directory(&directory, self.owner)? {\n            io.sync_directory(&self.users_directory())\n                .map_err(io_error)?;\n        }\n")],
      "cham3_registryd", "registry_operations", "a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged"),
     ("new_users_directory_not_synced_in_root", [("core/registryd/src/journal.rs",
-      "            io.sync_directory(root).map_err(io_error)?;\n", "")],
+      "        io.sync_directory(root).map_err(io_error)?;\n", "")],
      "cham3_registryd", "registry_operations", "every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledged"),
+    # M2-005 review R2-01: a directory's existence is no proof of an earlier successful
+    # sync; the syncs are repeated at every start and every reopen.
+    ("store_open_trusts_existing_directories", [("core/registryd/src/journal.rs",
+      "        ensure_directory(root, owner)?;\n        let parent = root.parent().ok_or(store_error_t::unsafe_path)?;\n        io.sync_directory(parent).map_err(io_error)?;\n        ensure_directory(&root.join(\"users\"), owner)?;\n        io.sync_directory(root).map_err(io_error)?;\n",
+      "        if ensure_directory(root, owner)? {\n            let parent = root.parent().ok_or(store_error_t::unsafe_path)?;\n            io.sync_directory(parent).map_err(io_error)?;\n        }\n        if ensure_directory(&root.join(\"users\"), owner)? {\n            io.sync_directory(root).map_err(io_error)?;\n        }\n")],
+     "cham3_registryd", "registry_operations", "a_failed_startup_directory_sync_is_repeated_at_the_next_start"),
+    ("reopened_user_directory_not_synced", [("core/registryd/src/journal.rs",
+      "        io.sync_directory(&directory).map_err(io_error)?;\n        Ok(journal_file_t {\n            file,\n            length,\n",
+      "        Ok(journal_file_t {\n            file,\n            length,\n")],
+     "cham3_registryd", "registry_operations", "a_failed_creation_sync_is_repeated_when_the_journal_is_reopened"),
     # M2-005 review R03 (ADR 0006 section 1): the preallocated restrictive reserve.
     ("reserve_not_preallocated", [("core/registryd/src/journal.rs",
-      "        if allocated < ReserveBytes {\n            io.allocate(&mut reserve, allocated, ReserveBytes)\n                .map_err(io_error)?;\n        }\n", "")],
+      "        io.allocate(&mut reserve, allocated, ReserveBytes)\n            .map_err(io_error)?;\n", "")],
      "cham3_registryd", "registry_operations", "the_preallocated_reserve_is_used_only_by_restrictive_records"),
+    # M2-005 review R2-02: the reserve's length never stands in for its sync.
+    ("existing_reserve_length_trusted_at_creation", [("core/registryd/src/journal.rs",
+      "        io.allocate(&mut reserve, allocated, ReserveBytes)\n            .map_err(io_error)?;\n",
+      "        if allocated < ReserveBytes {\n            io.allocate(&mut reserve, allocated, ReserveBytes)\n                .map_err(io_error)?;\n        }\n")],
+     "cham3_registryd", "registry_operations", "a_reserve_written_without_a_completed_sync_is_never_trusted_for_its_length"),
+    ("replenishment_trusts_the_file_length", [("core/registryd/src/journal.rs",
+      "        io.allocate(&mut self.reserve, length, ReserveBytes)\n            .map_err(|_| store_error_t::reserve_depleted)?;\n",
+      "        let _ = io.allocate(&mut self.reserve, length, ReserveBytes);\n")],
+     "cham3_registryd", "registry_operations", "a_reserve_written_without_a_completed_sync_is_never_trusted_for_its_length"),
+    ("reopened_reserve_trusted_by_length", [("core/registryd/src/journal.rs",
+      "    if length == ReserveBytes && io.allocate(reserve, length, ReserveBytes).is_ok() {\n",
+      "    if length == ReserveBytes {\n")],
+     "cham3_registryd", "registry_operations", "a_reserve_written_without_a_completed_sync_is_never_trusted_for_its_length"),
     ("admission_proceeds_into_a_depleted_reserve", [("core/registryd/src/journal.rs",
       "        if !restrictive {\n            self.replenish_reserve(io)?;\n        }\n", "")],
      "cham3_registryd", "registry_operations", "the_preallocated_reserve_is_used_only_by_restrictive_records"),
