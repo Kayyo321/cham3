@@ -95,6 +95,12 @@ dependencies = [
 [[package]]
 name = "cham3_contractd"
 version = "0.1.0"
+dependencies = [
+ "cham3_contract_format",
+ "cham3_identityd",
+ "cham3_registryd",
+ "ed25519-dalek",
+]
 
 [[package]]
 name = "cham3_identityd"
@@ -115,6 +121,15 @@ dependencies = [
 [[package]]
 name = "cham3_policyd"
 version = "0.1.0"
+dependencies = [
+ "cham3_contract_format",
+ "cham3_contractd",
+ "cham3_identityd",
+ "cham3_registryd",
+ "cham3_secure_memory",
+ "cham3_vaultd",
+ "ed25519-dalek",
+]
 
 [[package]]
 name = "cham3_provider_probe"
@@ -133,6 +148,11 @@ dependencies = [
 [[package]]
 name = "cham3_registryd"
 version = "0.1.0"
+dependencies = [
+ "cham3_contract_format",
+ "cham3_identityd",
+ "ed25519-dalek",
+]
 
 [[package]]
 name = "cham3_secure_memory"

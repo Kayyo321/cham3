@@ -1,10 +1,30 @@
 //! Current-authorization and mandatory-policy evaluation (cham3-policyd).
 //!
-//! M2-001 qualification skeleton. Domain logic for this crate is gated on the
-//! G2-G5 design decision(s) recorded under docs/decisions/ and is not implemented
-//! here. This crate exists so the safe-core lint controls in
-//! build/scripts/qualify_m2_rust.sh have a real target.
+//! M2-005 implements verification layer 8 (ADR 0007 §1): [`evaluate::evaluate`] and
+//! [`evaluate::network_mode`] as pure functions of one consistent registry snapshot,
+//! identityd's key answers, the mandatory policy ([`mandatory`]), trusted now and
+//! session liveness, and the service operations around them ([`service`]).
+//! Signature validity and admission are not current authorization, and an `eligible`
+//! outcome is never a claim that anything is enforced.
+//!
+//! Limits (M2-005): the mandatory policy is a configuration model supplied at start;
+//! `set_policy_epoch`, `set_emergency_restriction`, `check_proposal`, the trusted-time
+//! offset rule and one-shot reservations are M2-006; transport is M2-007.
 #![forbid(unsafe_code)]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::indexing_slicing,
+        clippy::arithmetic_side_effects
+    )
+)]
+
+pub mod evaluate;
+pub mod mandatory;
+pub mod service;
 
 /// Canonical crate name, reported by qualification probes.
 pub const CrateName: &str = "cham3_policyd";

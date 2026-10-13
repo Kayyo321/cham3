@@ -41,18 +41,44 @@ impl authority_code_t {
     }
 }
 
-/// Registry-rule codes reported under the `admission` layer (wire format §7 registry
-/// records; ADR 0006 §10).
+/// Codes reported under the `admission` layer: layer 7 in wire format §7 check order,
+/// then the registry-record rules (ADR 0006 §10, ADR 0007). `delegation_rule` is
+/// registryd's interim refusal of delegated grants until M2-006 implements the
+/// delegation checks of wire format §6.4.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum rule_code_t {
+    parent_unknown,
+    lineage_mismatch,
+    stale_head,
+    base_state_mismatch,
+    result_state_mismatch,
+    delta_rule,
+    duplicate_identifier,
+    restore_rule,
+    subject_binding_mismatch,
+    branch_rule,
     recovery_rule,
+    network_grant_conflict,
+    delegation_rule,
     lifecycle_rule,
 }
 
 impl rule_code_t {
     pub fn as_str(self) -> &'static str {
         match self {
+            rule_code_t::parent_unknown => "parent_unknown",
+            rule_code_t::lineage_mismatch => "lineage_mismatch",
+            rule_code_t::stale_head => "stale_head",
+            rule_code_t::base_state_mismatch => "base_state_mismatch",
+            rule_code_t::result_state_mismatch => "result_state_mismatch",
+            rule_code_t::delta_rule => "delta_rule",
+            rule_code_t::duplicate_identifier => "duplicate_identifier",
+            rule_code_t::restore_rule => "restore_rule",
+            rule_code_t::subject_binding_mismatch => "subject_binding_mismatch",
+            rule_code_t::branch_rule => "branch_rule",
             rule_code_t::recovery_rule => "recovery_rule",
+            rule_code_t::network_grant_conflict => "network_grant_conflict",
+            rule_code_t::delegation_rule => "delegation_rule",
             rule_code_t::lifecycle_rule => "lifecycle_rule",
         }
     }
@@ -187,15 +213,15 @@ impl std::error::Error for service_error_t {}
 /// Result of a service operation.
 pub type service_result_t<ok_t> = Result<ok_t, service_error_t>;
 
-pub(crate) fn authority(code: authority_code_t) -> service_error_t {
+pub fn authority(code: authority_code_t) -> service_error_t {
     service_error_t::key_authority(code)
 }
 
-pub(crate) fn rule(code: rule_code_t) -> service_error_t {
+pub fn rule(code: rule_code_t) -> service_error_t {
     service_error_t::admission(code)
 }
 
-pub(crate) fn ipc(code: ipc_code_t) -> service_error_t {
+pub fn ipc(code: ipc_code_t) -> service_error_t {
     service_error_t::ipc(code)
 }
 

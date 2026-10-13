@@ -16,3 +16,12 @@ workspace = true
 doctest = false
 
 [dependencies]
+cham3_contract_format = { path = "../contract_format" }
+cham3_identityd = { path = "../identityd" }
+cham3_registryd = { path = "../registryd" }
+
+[dev-dependencies]
+ed25519-dalek = { workspace = true }
+cham3_contractd = { path = "../contractd" }
+cham3_vaultd = { path = "../vaultd" }
+cham3_secure_memory = { path = "../native/secure_memory" }

@@ -1,0 +1,590 @@
+//! One user's ECR index and verification layer 7, admission (wire format §§6.5–6.12,
+//! §7; ADR 0006 §1, ADR 0007 §1).
+//!
+//! The index is derived, never stored: replay rebuilds it from the journal. It holds
+//! every admitted commit, each lineage's trunk head, live temporary branch heads and
+//! authoritative subject, the user's grant ids and request ids, and the grant ids
+//! ended by narrowing lifecycle records.
+//!
+//! [`lineage_index_t::check_commit`] is a pure function of the index and a commit that
+//! passed layers 1–6; it reports the first failure in wire format §7 order. Nothing
+//! changes until [`lineage_index_t::apply_commit`] runs, which the registry calls only
+//! after the commit's record is durable. The decisions mirror the independent oracle's
+//! journal model (tests/m2/oracle/ecr_oracle.py `journal_t`), which the published
+//! journal scenarios and admission vectors check. Rules the model does not state, and
+//! that this index adds, are marked "(beyond the model)".
+
+use std::collections::{BTreeMap, BTreeSet};
+
+use cham3_contract_format::dcbor::encode;
+use cham3_contract_format::hash::digest_t;
+use cham3_contract_format::schema::{
+    commit_payload_t, commit_type_t, contract_state_t, grant_t, lifetime_kind_t, random_id_t,
+    subject_t,
+};
+use cham3_identityd::outcome::{rule, rule_code_t, service_result_t};
+
+use crate::record::{lifecycle_record_t, placement_t};
+
+/// Why a grant id ended (the lifecycle records of M2-005; M2-006 adds containment,
+/// quarantine, deletion and consumption).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum end_reason_t {
+    expired,
+    session_ended,
+    restriction,
+}
+
+impl end_reason_t {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            end_reason_t::expired => "expired",
+            end_reason_t::session_ended => "session_ended",
+            end_reason_t::restriction => "restriction",
+        }
+    }
+}
+
+/// The standing of a grant id (the oracle's `standing`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum standing_t {
+    /// In a live state (trunk head or live temporary head) and not ended.
+    current,
+    /// A lifecycle record ended it.
+    ended(end_reason_t),
+    /// Admitted, but removed, superseded or on an ended branch.
+    inactive,
+    /// Never admitted in this journal.
+    unknown,
+}
+
+/// Admission status of a commit. Confirmation per enforcement domain is M2-006;
+/// M2-005 admits every commit as `pending`, and policyd never uses the status.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum commit_status_t {
+    pending,
+}
+
+/// An admitted commit.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct commit_entry_t {
+    pub payload: Box<commit_payload_t>,
+    pub envelope: Vec<u8>,
+    pub sequence: u64,
+    pub placement: placement_t,
+    pub status: commit_status_t,
+}
+
+/// One lineage.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct lineage_t {
+    pub trunk_head: Option<digest_t>,
+    /// Live temporary branch heads → grant ids added on that branch. Any admitted
+    /// trunk commit ends every branch (wire format §6.11).
+    pub branches: BTreeMap<digest_t, BTreeSet<random_id_t>>,
+    /// Subject of the genesis, replaced only by identity transitions (§6.9).
+    pub authoritative_subject: Option<subject_t>,
+}
+
+/// Where a grant came from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct grant_entry_t {
+    pub grant: grant_t,
+    pub lineage_id: digest_t,
+    /// The commit that added it (its signed contract, wire format §6.8).
+    pub commit_id: digest_t,
+}
+
+/// The decision of a successful [`lineage_index_t::check_commit`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct admission_t {
+    pub commit_id: digest_t,
+    pub lineage_id: digest_t,
+    pub placement: placement_t,
+    /// The live temporary head a branch commit extends (`None` for a new branch).
+    branch_head: Option<digest_t>,
+    /// Whether the commit starts a new lineage.
+    pub new_lineage: bool,
+}
+
+/// One user's ECR index.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct lineage_index_t {
+    commits: BTreeMap<digest_t, commit_entry_t>,
+    lineages: BTreeMap<digest_t, lineage_t>,
+    requests: BTreeSet<random_id_t>,
+    grants: BTreeMap<random_id_t, grant_entry_t>,
+    ended: BTreeMap<random_id_t, end_reason_t>,
+}
+
+fn reject<ok_t>(code: rule_code_t) -> service_result_t<ok_t> {
+    Err(rule(code))
+}
+
+/// `base` minus the removed ids plus the added grants (wire format §6.5 items 2–3).
+fn apply_delta(
+    base: &contract_state_t,
+    payload: &commit_payload_t,
+) -> service_result_t<contract_state_t> {
+    let mut grants: BTreeMap<random_id_t, grant_t> = base
+        .grants
+        .iter()
+        .map(|grant| (grant.grant_id, grant.clone()))
+        .collect();
+    for removed in &payload.delta.remove_grant_ids {
+        if grants.remove(removed).is_none() {
+            return reject(rule_code_t::delta_rule);
+        }
+    }
+    for grant in &payload.delta.add_grants {
+        if grants.insert(grant.grant_id, grant.clone()).is_some() {
+            return reject(rule_code_t::delta_rule);
+        }
+    }
+    Ok(contract_state_t {
+        grants: grants.into_values().collect(),
+    })
+}
+
+/// Subject fields other than the package identity and executable hash.
+fn same_binding(first: &subject_t, second: &subject_t) -> bool {
+    first.owner_uid == second.owner_uid
+        && first.owner_user_id == second.owner_user_id
+        && first.app_id == second.app_id
+        && first.installation_id == second.installation_id
+        && first.runtime_scope == second.runtime_scope
+}
+
+impl lineage_index_t {
+    pub fn new() -> lineage_index_t {
+        lineage_index_t::default()
+    }
+
+    pub fn commit(&self, commit_id: &digest_t) -> Option<&commit_entry_t> {
+        self.commits.get(commit_id)
+    }
+
+    pub fn lineage(&self, lineage_id: &digest_t) -> Option<&lineage_t> {
+        self.lineages.get(lineage_id)
+    }
+
+    pub fn lineage_count(&self) -> usize {
+        self.lineages.len()
+    }
+
+    pub fn grant(&self, grant_id: &random_id_t) -> Option<&grant_entry_t> {
+        self.grants.get(grant_id)
+    }
+
+    pub fn ended(&self, grant_id: &random_id_t) -> Option<end_reason_t> {
+        self.ended.get(grant_id).copied()
+    }
+
+    pub fn has_request(&self, request_id: &random_id_t) -> bool {
+        self.requests.contains(request_id)
+    }
+
+    /// States of the trunk head and every live temporary head of a lineage.
+    pub fn live_states(&self, lineage: &lineage_t) -> Vec<(digest_t, &contract_state_t)> {
+        lineage
+            .trunk_head
+            .iter()
+            .chain(lineage.branches.keys())
+            .filter_map(|head| {
+                self.commits
+                    .get(head)
+                    .map(|entry| (*head, &entry.payload.result_state))
+            })
+            .collect()
+    }
+
+    pub fn standing(&self, grant_id: &random_id_t) -> standing_t {
+        if let Some(reason) = self.ended.get(grant_id) {
+            return standing_t::ended(*reason);
+        }
+        let Some(entry) = self.grants.get(grant_id) else {
+            return standing_t::unknown;
+        };
+        let Some(lineage) = self.lineages.get(&entry.lineage_id) else {
+            return standing_t::unknown;
+        };
+        let current = self
+            .live_states(lineage)
+            .iter()
+            .any(|(_, state)| state.grants.iter().any(|grant| grant.grant_id == *grant_id));
+        if current {
+            standing_t::current
+        } else {
+            standing_t::inactive
+        }
+    }
+
+    /// Network grants occupying the lineage's single network slot in `states`
+    /// (wire format §6.12): network grants no lifecycle record has ended.
+    pub fn occupying_network_grants<'state>(
+        &self,
+        states: impl IntoIterator<Item = &'state contract_state_t>,
+    ) -> BTreeSet<random_id_t> {
+        states
+            .into_iter()
+            .flat_map(|state| state.grants.iter())
+            .filter(|grant| grant.is_network() && !self.ended.contains_key(&grant.grant_id))
+            .map(|grant| grant.grant_id)
+            .collect()
+    }
+
+    fn ancestors(&self, commit_id: &digest_t) -> BTreeSet<digest_t> {
+        let mut seen = BTreeSet::new();
+        let mut pending = vec![*commit_id];
+        while let Some(next) = pending.pop() {
+            if let Some(entry) = self.commits.get(&next) {
+                for parent in &entry.payload.parents {
+                    if seen.insert(*parent) {
+                        pending.push(*parent);
+                    }
+                }
+            }
+        }
+        seen
+    }
+
+    /// Wire format §6.11: trunk, or branch with the head it extends.
+    fn placement(
+        &self,
+        lineage: &lineage_t,
+        payload: &commit_payload_t,
+    ) -> service_result_t<(placement_t, Option<digest_t>)> {
+        let commit_type = payload.commit_type;
+        if commit_type == commit_type_t::genesis {
+            if lineage.trunk_head.is_some() {
+                return reject(rule_code_t::stale_head);
+            }
+            return Ok((placement_t::trunk, None));
+        }
+        if commit_type == commit_type_t::merge {
+            let merge_base = payload.merge_base;
+            let others_live = payload
+                .parents
+                .iter()
+                .filter(|parent| Some(**parent) != merge_base)
+                .all(|parent| lineage.branches.contains_key(parent));
+            if merge_base.is_none() || merge_base != lineage.trunk_head || !others_live {
+                return reject(rule_code_t::stale_head);
+            }
+            return Ok((placement_t::trunk, None));
+        }
+        let Some(parent) = payload.parents.first() else {
+            return reject(rule_code_t::stale_head);
+        };
+        if Some(*parent) == lineage.trunk_head {
+            if commit_type == commit_type_t::temporary_grant {
+                return Ok((placement_t::temporary, None));
+            }
+            return Ok((placement_t::trunk, None));
+        }
+        let extends = matches!(
+            commit_type,
+            commit_type_t::temporary_grant | commit_type_t::revocation
+        );
+        if lineage.branches.contains_key(parent) && extends {
+            return Ok((placement_t::temporary, Some(*parent)));
+        }
+        reject(rule_code_t::stale_head)
+    }
+
+    /// Layer 7 for a commit that passed layers 1–6, in wire format §7 order. Pure:
+    /// the index is unchanged.
+    pub fn check_commit(
+        &self,
+        commit_id: &digest_t,
+        payload: &commit_payload_t,
+    ) -> service_result_t<admission_t> {
+        for parent in &payload.parents {
+            let Some(entry) = self.commits.get(parent) else {
+                return reject(rule_code_t::parent_unknown);
+            };
+            if entry.payload.lineage_id != payload.lineage_id {
+                return reject(rule_code_t::lineage_mismatch);
+            }
+        }
+        let existing = self.lineages.get(&payload.lineage_id);
+        let empty_lineage = lineage_t::default();
+        let lineage = existing.unwrap_or(&empty_lineage);
+        let (placement, branch_head) = self.placement(lineage, payload)?;
+        let empty_state = contract_state_t::default();
+        let base = if payload.commit_type == commit_type_t::genesis {
+            &empty_state
+        } else {
+            let base_id = payload
+                .merge_base
+                .or_else(|| payload.parents.first().copied())
+                .ok_or(rule(rule_code_t::base_state_mismatch))?;
+            &self
+                .commits
+                .get(&base_id)
+                .ok_or(rule(rule_code_t::parent_unknown))?
+                .payload
+                .result_state
+        };
+        if base.state_hash() != payload.base_state_hash {
+            return reject(rule_code_t::base_state_mismatch);
+        }
+        let result = apply_delta(base, payload)?;
+        if encode(&result.to_value()) != encode(&payload.result_state.to_value()) {
+            return reject(rule_code_t::result_state_mismatch);
+        }
+        // Wire format §6.6: grant ids are never reused within the user's journal (the
+        // oracle checks the user's every grant, which includes the lineage's); request
+        // ids are unique per user.
+        if payload
+            .delta
+            .add_grants
+            .iter()
+            .any(|grant| self.grants.contains_key(&grant.grant_id))
+        {
+            return reject(rule_code_t::duplicate_identifier);
+        }
+        // A byte-identical envelope repeats its request id, so a commit id is never
+        // admitted twice.
+        if self.requests.contains(&payload.authorization.request_id) {
+            return reject(rule_code_t::duplicate_identifier);
+        }
+        if payload.commit_type == commit_type_t::restore {
+            self.check_restore(payload)?;
+        }
+        self.check_subject(lineage, payload)?;
+        if placement == placement_t::temporary && payload.commit_type == commit_type_t::revocation {
+            // A branch revocation removes only temporary grants added on that branch.
+            let added = branch_head.and_then(|head| lineage.branches.get(&head));
+            let allowed = payload
+                .delta
+                .remove_grant_ids
+                .iter()
+                .all(|removed| added.is_some_and(|added| added.contains(removed)));
+            if !allowed {
+                return reject(rule_code_t::branch_rule);
+            }
+        }
+        // Wire format §6.12: at most one occupying network grant across the trunk head
+        // and every live temporary head after this admission (durable records only).
+        let occupying = match placement {
+            placement_t::trunk => self.occupying_network_grants([&payload.result_state]),
+            placement_t::temporary => {
+                let others = self
+                    .live_states(lineage)
+                    .into_iter()
+                    .filter(|(head, _)| Some(*head) != branch_head)
+                    .map(|(_, state)| state);
+                self.occupying_network_grants(others.chain([&payload.result_state]))
+            }
+        };
+        if occupying.len() > 1 {
+            return reject(rule_code_t::network_grant_conflict);
+        }
+        // (beyond the model) Interim, fail closed: delegated grants wait for the
+        // delegation checks of wire format §6.4 (M2-006).
+        if payload
+            .delta
+            .add_grants
+            .iter()
+            .any(|grant| grant.delegation.parent_grant_id.is_some())
+        {
+            return reject(rule_code_t::delegation_rule);
+        }
+        Ok(admission_t {
+            commit_id: *commit_id,
+            lineage_id: payload.lineage_id,
+            placement,
+            branch_head,
+            new_lineage: existing.is_none(),
+        })
+    }
+
+    /// Wire format §6.7 (R12): the reference is the parent or one of its ancestors in
+    /// the same lineage; an added grant must match a **persistent** grant of the
+    /// referenced state in contract type, resource and delegation, and may not
+    /// outlive it.
+    fn check_restore(&self, payload: &commit_payload_t) -> service_result_t<()> {
+        let restore_rule = rule(rule_code_t::restore_rule);
+        let reference_id = payload.restore_reference.ok_or(restore_rule)?;
+        let reference = self.commits.get(&reference_id).ok_or(restore_rule)?;
+        if reference.payload.lineage_id != payload.lineage_id {
+            return Err(restore_rule);
+        }
+        let parent = payload.parents.first().ok_or(restore_rule)?;
+        if reference_id != *parent && !self.ancestors(parent).contains(&reference_id) {
+            return Err(restore_rule);
+        }
+        let historical: Vec<&grant_t> = reference
+            .payload
+            .result_state
+            .grants
+            .iter()
+            .filter(|old| old.lifetime.kind == lifetime_kind_t::persistent)
+            .collect();
+        for grant in &payload.delta.add_grants {
+            let resource = encode(&grant.resource.to_value());
+            let delegation = encode(&grant.delegation.to_value());
+            let matches: Vec<&&grant_t> = historical
+                .iter()
+                .filter(|old| {
+                    encode(&old.resource.to_value()) == resource
+                        && encode(&old.delegation.to_value()) == delegation
+                })
+                .collect();
+            if matches.is_empty() {
+                return Err(restore_rule);
+            }
+            // utc_time is fixed-width, so text order is time order.
+            let within = matches.iter().any(|old| match &old.lifetime.expiration {
+                None => true,
+                Some(old_expiration) => grant
+                    .lifetime
+                    .expiration
+                    .as_ref()
+                    .is_some_and(|expiration| expiration.as_str() <= old_expiration.as_str()),
+            });
+            if !within {
+                return Err(restore_rule);
+            }
+        }
+        Ok(())
+    }
+
+    /// Wire format §6.9 (R06).
+    fn check_subject(
+        &self,
+        lineage: &lineage_t,
+        payload: &commit_payload_t,
+    ) -> service_result_t<()> {
+        if payload.commit_type == commit_type_t::genesis {
+            return Ok(());
+        }
+        let mismatch = rule(rule_code_t::subject_binding_mismatch);
+        let authoritative = lineage.authoritative_subject.as_ref().ok_or(mismatch)?;
+        if payload.commit_type == commit_type_t::identity_transition {
+            let from_matches = payload
+                .delta
+                .identity_change
+                .as_ref()
+                .is_some_and(|change| change.from == authoritative.identity());
+            if !same_binding(&payload.subject, authoritative) || !from_matches {
+                return Err(mismatch);
+            }
+        } else if payload.subject != *authoritative {
+            return Err(mismatch);
+        }
+        Ok(())
+    }
+
+    /// Applies a commit that [`lineage_index_t::check_commit`] accepted, once its
+    /// record is durable at `sequence`.
+    pub fn apply_commit(
+        &mut self,
+        admission: &admission_t,
+        payload: Box<commit_payload_t>,
+        envelope: Vec<u8>,
+        sequence: u64,
+    ) {
+        let lineage = self.lineages.entry(admission.lineage_id).or_default();
+        if matches!(
+            payload.commit_type,
+            commit_type_t::genesis | commit_type_t::identity_transition
+        ) {
+            lineage.authoritative_subject = Some(payload.subject.clone());
+        }
+        match admission.placement {
+            placement_t::trunk => {
+                lineage.trunk_head = Some(admission.commit_id);
+                lineage.branches.clear();
+            }
+            placement_t::temporary => {
+                let mut added = admission
+                    .branch_head
+                    .and_then(|head| lineage.branches.remove(&head))
+                    .unwrap_or_default();
+                added.extend(payload.delta.add_grants.iter().map(|grant| grant.grant_id));
+                for removed in &payload.delta.remove_grant_ids {
+                    added.remove(removed);
+                }
+                lineage.branches.insert(admission.commit_id, added);
+            }
+        }
+        for grant in &payload.delta.add_grants {
+            self.grants.insert(
+                grant.grant_id,
+                grant_entry_t {
+                    grant: grant.clone(),
+                    lineage_id: admission.lineage_id,
+                    commit_id: admission.commit_id,
+                },
+            );
+        }
+        self.requests.insert(payload.authorization.request_id);
+        self.commits.insert(
+            admission.commit_id,
+            commit_entry_t {
+                payload,
+                envelope,
+                sequence,
+                placement: admission.placement,
+                status: commit_status_t::pending,
+            },
+        );
+    }
+
+    /// Validates a lifecycle record observed at `time` (`lifecycle_rule`).
+    pub fn check_record(&self, record: &lifecycle_record_t, time: &str) -> service_result_t<()> {
+        let lifecycle_rule = rule(rule_code_t::lifecycle_rule);
+        match record {
+            lifecycle_record_t::expired { grant_id } => {
+                let expiration = self
+                    .grants
+                    .get(grant_id)
+                    .and_then(|entry| entry.grant.lifetime.expiration.as_ref())
+                    .ok_or(lifecycle_rule)?;
+                // utc_time is fixed-width, so text order is time order.
+                if time < expiration.as_str() {
+                    return Err(lifecycle_rule);
+                }
+            }
+            lifecycle_record_t::session_ended { session_id } => {
+                if self.session_grants(session_id).is_empty() {
+                    return Err(lifecycle_rule);
+                }
+            }
+            lifecycle_record_t::restriction { grant_ids } => {
+                if grant_ids.is_empty() || grant_ids.iter().any(|id| !self.grants.contains_key(id))
+                {
+                    return Err(lifecycle_rule);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn session_grants(&self, session_id: &random_id_t) -> Vec<random_id_t> {
+        self.grants
+            .iter()
+            .filter(|(_, entry)| entry.grant.lifetime.session_id.as_ref() == Some(session_id))
+            .map(|(grant_id, _)| *grant_id)
+            .collect()
+    }
+
+    /// Applies a lifecycle record that [`lineage_index_t::check_record`] accepted. A
+    /// grant keeps the first reason that ended it.
+    pub fn apply_record(&mut self, record: &lifecycle_record_t) {
+        let (ended, reason) = match record {
+            lifecycle_record_t::expired { grant_id } => (vec![*grant_id], end_reason_t::expired),
+            lifecycle_record_t::session_ended { session_id } => {
+                (self.session_grants(session_id), end_reason_t::session_ended)
+            }
+            lifecycle_record_t::restriction { grant_ids } => {
+                (grant_ids.clone(), end_reason_t::restriction)
+            }
+        };
+        for grant_id in ended {
+            self.ended.entry(grant_id).or_insert(reason);
+        }
+    }
+}

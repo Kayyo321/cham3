@@ -8,6 +8,10 @@ use crate::error::{error_code_t, format_error_t, format_result_t, layer_t};
 
 /// Largest complete signed object, and largest byte string (wire format §2.3).
 pub const MaxEncodedBytes: usize = 61_440;
+/// Largest IPC message or journal record (wire format §2.3 container budget, R08). A
+/// container embeds at most one signed object; its byte strings keep the
+/// [`MaxEncodedBytes`] limit.
+pub const MaxContainerBytes: usize = 65_536;
 /// Nesting depth of arrays, maps and tags in one decode.
 pub const MaxDepth: usize = 8;
 /// Items in one array or pairs in one map.
@@ -87,12 +91,28 @@ pub fn decode(
     layer: layer_t,
     allow_signed_object_tag: bool,
 ) -> format_result_t<value_t> {
+    decode_within(data, layer, allow_signed_object_tag, MaxEncodedBytes)
+}
+
+/// Decodes one IPC message or journal record: the same profile and limits as
+/// [`decode`], except that the whole item may be up to [`MaxContainerBytes`]. Tag 18
+/// is never accepted (a container carries a signed object as a byte string).
+pub fn decode_container(data: &[u8], layer: layer_t) -> format_result_t<value_t> {
+    decode_within(data, layer, false, MaxContainerBytes)
+}
+
+fn decode_within(
+    data: &[u8],
+    layer: layer_t,
+    allow_signed_object_tag: bool,
+    limit: usize,
+) -> format_result_t<value_t> {
     let mut decoder = decoder_t {
         data,
         position: 0,
         layer,
     };
-    if data.len() > MaxEncodedBytes {
+    if data.len() > limit {
         return decoder.fail(error_code_t::input_too_large);
     }
     let value = decoder.item(0, allow_signed_object_tag)?;
@@ -497,6 +517,41 @@ mod tests {
         assert_eq!(
             decode_error(&vec![0u8; MaxEncodedBytes + 1]),
             Some("input_too_large")
+        );
+    }
+
+    #[test]
+    fn containers_have_their_own_size_limit() {
+        // A record embedding a maximum-size object exceeds the object limit but fits
+        // the container budget; its byte string keeps the object limit.
+        let record = encode(&value_t::text_map(vec![
+            ("kind", value_t::text_of("commit_admitted")),
+            ("envelope", value_t::bytes(vec![0u8; MaxEncodedBytes])),
+        ]));
+        assert!(record.len() > MaxEncodedBytes);
+        assert_eq!(
+            decode(&record, layer_t::payload_decode, false).map_err(|error| error.code.as_str()),
+            Err("input_too_large")
+        );
+        assert!(decode_container(&record, layer_t::payload_decode).is_ok());
+        let over_string = encode(&value_t::text_map(vec![(
+            "envelope",
+            value_t::bytes(vec![0u8; MaxEncodedBytes + 1]),
+        )]));
+        assert_eq!(
+            decode_container(&over_string, layer_t::payload_decode)
+                .map_err(|error| error.code.as_str()),
+            Err("input_too_large")
+        );
+        assert_eq!(
+            decode_container(&vec![0u8; MaxContainerBytes + 1], layer_t::payload_decode)
+                .map_err(|error| error.code.as_str()),
+            Err("input_too_large")
+        );
+        assert_eq!(
+            decode_container(&[0xd2, 0x80], layer_t::payload_decode)
+                .map_err(|error| error.code.as_str()),
+            Err("tag_forbidden")
         );
     }
 
