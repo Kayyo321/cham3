@@ -7,7 +7,7 @@
 - **Owner decisions used:** none were needed for the changes. **Owner decision requested:** which M2-004 revision-2 verdict governs (the earlier CHANGES_REQUESTED or the later APPROVE); until then M2-004 is not DONE.
 - **Base:** 24a35c1914d787b936d14b37b500226dde51722f (the revision-1 docs commit after candidate b06d7cb).
 - **Revision-2 candidate:** **051b4c8aacdeecfabb23625f93dd16615aec39a0** (range 24a35c1..051b4c8, two commits: the implementation 4f7080b091adef38d3c8b1a36fb975db53ba52b7 with M2-005 R01–R03 and M2-004-R2-01, and 051b4c8 adding the three R03 seeded defects to the harness).
-- **Docs-only follow-up:** the commit adding this handoff, the two resolutions records, the M2-004 handoff, the evidence, the task progress and STATUS.
+- **Docs-only follow-up:** f575ac3 (this handoff, the two resolutions records, the M2-004 handoff, the evidence, the task progress and STATUS) and one further docs-only commit correcting the candidate description in the VM evidence README.
 
 ## Completed work
 
@@ -81,8 +81,8 @@ the Codex Security plugin): nothing is expected to be BLOCKED; record BLOCKED on
      git fetch origin codex/m2-cryptographic-contract-core review/m2-005-security review/m2-004-r2-security \
        review/m2-004-security main
      git checkout codex/m2-cryptographic-contract-core && git reset --hard origin/codex/m2-cryptographic-contract-core
-     git rev-parse HEAD        # must be the docs-only commit after 051b4c8aacdeecfabb23625f93dd16615aec39a0
-     git log --oneline -4      # 24a35c1 -> 4f7080b -> 051b4c8 -> <docs commit>
+     git rev-parse HEAD        # the last docs-only commit after 051b4c8aacdeecfabb23625f93dd16615aec39a0
+     git log --oneline -5      # 24a35c1 -> 4f7080b -> 051b4c8 -> f575ac3 (docs) -> <docs fix>
    If `git status` showed local changes or stashes you did not expect, record them and move them aside (git stash)
    rather than discarding them; never force-push or edit the implementation branch. Read every document below from
    this checkout at that HEAD, and make every clean clone for testing from it
@@ -99,7 +99,8 @@ judge against the approved ADRs and specifications. State explicitly how the two
 which verdict stands; the author inferred no approval from the later one.
 
 Targets: candidate 051b4c8aacdeecfabb23625f93dd16615aec39a0 (range 24a35c1914d787b936d14b37b500226dde51722f..051b4c8: the implementation 4f7080b and the harness-only 051b4c8) and the docs-only
-commit after it on origin/codex/m2-cryptographic-contract-core; confirm that commit changes only docs/. Do not merge
+commits after it on origin/codex/m2-cryptographic-contract-core (f575ac3 and the one correcting an evidence README
+line); confirm they change only docs/. Do not merge
 main or review branches into the implementation branch; do not edit implementation files.
 
 1. R01 (core/registryd/src/journal.rs open, create_journal; registry.rs): every created directory entry synced in

@@ -1,6 +1,6 @@
 # M2-005 revision 2 and M2-004 revision 3 — native amd64 evidence at 051b4c8 (author VM)
 
-- **Candidate:** 051b4c8aacdeecfabb23625f93dd16615aec39a0 (one commit on 24a35c1914d787b936d14b37b500226dde51722f; M2-005 review findings R01–R03 and M2-004 revision-2 finding M2-004-R2-01).
+- **Candidate:** 051b4c8aacdeecfabb23625f93dd16615aec39a0 (range 24a35c1914d787b936d14b37b500226dde51722f..051b4c8: the implementation 4f7080b with M2-005 R01–R03 and M2-004-R2-01, and 051b4c8 with the R03 seeded defects).
 - **Environment:**
   - Anthropic cloud VM, native x86_64, kernel 6.18.44.
   - `cham3-m2-dev` built in this VM from the unchanged Dockerfile (pinned base `debian@sha256:913f67…`; see `attempts.md`), UID/GID 1000.
