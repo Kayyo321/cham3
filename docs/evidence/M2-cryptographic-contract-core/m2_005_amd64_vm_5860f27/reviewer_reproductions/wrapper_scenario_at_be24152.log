@@ -1,0 +1,6 @@
+profile release
+refusing_to_fill / is overlay, not tmpfs
+exit_status 3
+wrapper_exit_status 1
+existing_root=deleted
+existing_filler=deleted

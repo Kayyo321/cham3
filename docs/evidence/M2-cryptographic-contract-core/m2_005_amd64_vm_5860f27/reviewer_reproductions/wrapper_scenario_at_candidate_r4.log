@@ -1,0 +1,4 @@
+refusing: /tmp/wrapper_synthetic_disk/cham3_reserve_probe_root exists; this check creates and removes only its own paths
+wrapper_exit_status 1
+existing_root=preserved
+existing_filler=preserved

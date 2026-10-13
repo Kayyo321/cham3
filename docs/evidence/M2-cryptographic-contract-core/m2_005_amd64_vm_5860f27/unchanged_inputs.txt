@@ -1,0 +1,25 @@
+# Unchanged inputs, ad18d8b..5860f276ab593da34771f704691ea35649324d6e
+
+## git diff --stat ad18d8b 5860f27
+ .github/workflows/m2_checks.yml             |  15 +++
+ tests/m2/harness/test_m2_reserve_probe.py   | 161 ++++++++++++++++++++++++++++
+ tests/m2/storage/check_reserve_full_disk.sh |  36 +++++--
+ tests/m2/test_inventory.txt                 |   5 +
+ 4 files changed, 207 insertions(+), 10 deletions(-)
+
+## git diff --exit-code ad18d8b 5860f27 -- <path> (0 = unchanged)
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 docs
+0 core
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 tests/m2/run_m2_tests.sh
+0 tests/m2/protection
+0 tests/static
+0 .github/workflows/m0_checks.yml
+0 .github/workflows/m1_checks.yml

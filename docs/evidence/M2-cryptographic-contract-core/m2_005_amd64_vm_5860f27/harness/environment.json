@@ -1,0 +1,40 @@
+{
+  "environment": {
+    "cargo": {
+      "output": "cargo 1.85.1 (d73d2caf9 2024-12-31)",
+      "status": 0
+    },
+    "cargo_lock_sha256": "364e9c58987391fff35554aaf8ca9c3d6abb54c4fd33e645774fef84b438256a",
+    "debian_version": {
+      "output": "13.7",
+      "status": 0
+    },
+    "dpkg_architecture": {
+      "output": "amd64",
+      "status": 0
+    },
+    "euid": 1000,
+    "git_dirty": false,
+    "git_head": {
+      "output": "5860f276ab593da34771f704691ea35649324d6e",
+      "status": 0
+    },
+    "git_status": {
+      "output": "",
+      "status": 0
+    },
+    "git_tree": {
+      "output": "1b0d1852131944ab0d010472ecc63a85ad05b888",
+      "status": 0
+    },
+    "rustc": {
+      "output": "rustc 1.85.1 (4eb161250 2025-03-15) (built from a source tarball)\nbinary: rustc\ncommit-hash: 4eb161250e340c8f48f66e2b929ef4a5bed7c181\ncommit-date: 2025-03-15\nhost: x86_64-unknown-linux-gnu\nrelease: 1.85.1\nLLVM version: 19.1.7",
+      "status": 0
+    },
+    "uname": {
+      "output": "Linux 6.18.44-fc-v114 x86_64 GNU/Linux",
+      "status": 0
+    }
+  },
+  "result": "PASS"
+}

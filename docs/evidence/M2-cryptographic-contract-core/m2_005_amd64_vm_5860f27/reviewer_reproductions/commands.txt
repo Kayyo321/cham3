@@ -1,0 +1,11 @@
+# The reviewer's wrapper scenario (wrapper_run.py of the revision-3 record), as run here
+# in the pinned container (UID 1000, clean clone mounted read-only at /work, the candidate's
+# probe build mounted read-only at /probe_target):
+#   disk=/tmp/wrapper_synthetic_disk; out=/tmp/wrapper_out
+#   mkdir -p $disk/cham3_reserve_probe_root $out
+#   echo 'synthetic existing root must survive refusal' > $disk/cham3_reserve_probe_root/sentinel
+#   echo 'synthetic existing filler must survive refusal' > $disk/cham3_reserve_probe_filler
+#   cp -r /probe_target $out/target
+#   cd /work && sh tests/m2/storage/check_reserve_full_disk.sh $out $disk; echo wrapper_exit_status $?
+#   then: does $disk/cham3_reserve_probe_root/sentinel exist? does $disk/cham3_reserve_probe_filler exist?
+# Results: wrapper_scenario_at_be24152.log (both deleted), wrapper_scenario_at_candidate_r4.log (both preserved).
