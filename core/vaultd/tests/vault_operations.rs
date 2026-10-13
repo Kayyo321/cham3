@@ -649,6 +649,145 @@ fn register_proposal_checks_role_bytes_binding_and_key_authority() {
 }
 
 #[test]
+fn pending_proposals_count_against_the_retained_id_bounds() {
+    // M2-004 revision-2 review, M2-004-R2-01: a pending proposal becomes a retained
+    // used or cancelled id without a further check, so registration counts pending
+    // ids against the retained-id bound. With 31 ids retired (30 cancelled, 1 used),
+    // exactly one more proposal registers; after its transition the user holds 32 ids
+    // and nothing registers until a lifetime ends.
+    let mut setup = setup("retained_bound");
+    let payload = alice_genesis(&setup);
+    let secret = passphrase(AlicePassphrase);
+    let register = |vault: &mut vault_t, label: &str| {
+        vault.register_proposal(Contractd, request(label, 1001, &payload))
+    };
+    for index in 0..30 {
+        let cancelled = register(&mut setup.vault, &format!("cancelled {index}")).unwrap();
+        setup
+            .vault
+            .cancel_proposal(Alice, &cancelled.proposal_id)
+            .unwrap();
+    }
+    let used = register(&mut setup.vault, "used").unwrap();
+    setup
+        .vault
+        .approve_and_sign(Alice, &used.proposal_id, &used.approval_digest, &secret)
+        .expect("signed once");
+    let last = register(&mut setup.vault, "last pending").expect("the 32nd id");
+    for label in ["one over", "two over"] {
+        assert_eq!(
+            code(register(&mut setup.vault, label)),
+            "ipc/quota_exhausted"
+        );
+    }
+    setup
+        .vault
+        .cancel_proposal(Alice, &last.proposal_id)
+        .unwrap();
+    assert_eq!(
+        code(register(&mut setup.vault, "after the transition")),
+        "ipc/quota_exhausted"
+    );
+    // Approval of a pending id is a transition too: refill after the lifetime, then
+    // approve the one pending id and check that nothing else fits.
+    setup.vault.clock_mut().monotonic += 120;
+    for index in 0..31 {
+        let cancelled = register(&mut setup.vault, &format!("second round {index}")).unwrap();
+        setup
+            .vault
+            .cancel_proposal(Contractd, &cancelled.proposal_id)
+            .unwrap();
+    }
+    let pending = register(&mut setup.vault, "second round pending").unwrap();
+    assert_eq!(
+        code(register(&mut setup.vault, "second round over")),
+        "ipc/quota_exhausted"
+    );
+    setup
+        .vault
+        .approve_and_sign(
+            Alice,
+            &pending.proposal_id,
+            &pending.approval_digest,
+            &secret,
+        )
+        .expect("signed once");
+    assert_eq!(
+        code(register(&mut setup.vault, "second round after")),
+        "ipc/quota_exhausted"
+    );
+    setup.vault.clock_mut().utc += 120;
+    register(&mut setup.vault, "after the second lifetime").expect("a fresh id registers");
+}
+
+#[test]
+fn the_global_retained_id_bound_counts_pending_proposals_of_every_user() {
+    // M2-004-R2-01, global bound: nine users hold 255 retired ids together; pending
+    // registrations across users fill the single remaining slot, and the transitions
+    // of that slot leave 256 retained ids with nothing else registrable.
+    let root = temp_root("retained_global");
+    let identity = identity_service();
+    let mut vault = vault(&root, &identity);
+    let mut users = Vec::new();
+    let mut retained = 0usize;
+    for uid in 1001..=1009u32 {
+        let caller = caller_role_t::trusted_client { uid };
+        let keys = vault
+            .create_user_keys(caller, &passphrase(AlicePassphrase))
+            .expect("enrolls");
+        let payload = commit_payload(
+            "commit_genesis",
+            uid,
+            &keys.user_id,
+            &keys.persistent_key_id,
+            authority_class_t::persistent,
+            CommitTime,
+        );
+        let count = if uid == 1009 { 7 } else { 31 };
+        for index in 0..count {
+            let registered = vault
+                .register_proposal(
+                    Contractd,
+                    request(&format!("{uid} retired {index}"), uid, &payload),
+                )
+                .unwrap();
+            vault
+                .cancel_proposal(Contractd, &registered.proposal_id)
+                .unwrap();
+            retained += 1;
+        }
+        users.push((uid, payload));
+    }
+    assert_eq!(retained, 255);
+    let mut pending = Vec::new();
+    for (uid, payload) in users.iter().take(8) {
+        for index in 0..8 {
+            if let Ok(registered) = vault.register_proposal(
+                Contractd,
+                request(&format!("{uid} pending {index}"), *uid, payload),
+            ) {
+                pending.push(registered);
+            }
+        }
+    }
+    assert_eq!(pending.len(), 1, "exactly one slot was free");
+    for registered in &pending {
+        vault
+            .cancel_proposal(Contractd, &registered.proposal_id)
+            .unwrap();
+    }
+    let (uid, payload) = &users[8];
+    assert_eq!(
+        code(vault.register_proposal(Contractd, request("global over", *uid, payload))),
+        "ipc/quota_exhausted"
+    );
+    vault.clock_mut().monotonic += 120;
+    vault
+        .register_proposal(Contractd, request("global after", *uid, payload))
+        .expect("a fresh id registers after the lifetime");
+}
+
+#[test]
 fn failed_passphrases_are_limited_and_the_limit_survives_restart() {
     let mut setup = setup("attempts");
     let payload = alice_genesis(&setup);

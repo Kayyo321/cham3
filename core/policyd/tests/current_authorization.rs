@@ -43,7 +43,10 @@ use cham3_policyd::evaluate::{
 use cham3_policyd::mandatory::{mandatory_policy_t, network_mode_t, prohibition_t};
 use cham3_policyd::service::{policy_clock_t, policy_service_t, rollback_protection_t};
 use cham3_registryd::journal::system_io_t;
-use cham3_registryd::record::placement_t;
+use cham3_registryd::record::{
+    frame, lifecycle_record_t, next_chain, parse_journal, placement_t, record_body_t,
+    registry_record_t,
+};
 use cham3_registryd::registry::{
     registry_clock_t, registry_config_t, registry_identity_store_t, registry_t,
 };
@@ -709,6 +712,185 @@ fn session_grants_need_this_live_session_and_end_with_their_branch() {
     assert_eq!(
         world.evaluate(&identity, &request),
         denied(deny_reason_t::no_matching_grant)
+    );
+}
+
+/// Appends one registry-written lifecycle record to a user's journal file, correctly
+/// chained (the operation that writes such records is M2-006; replay and the record's
+/// effect are M2-005).
+fn append_lifecycle_record(root: &Path, uid: u32, record: lifecycle_record_t) {
+    let path = root.join("users").join(uid.to_string()).join("journal.c3j");
+    let bytes = fs::read(&path).expect("journal");
+    let parsed = parse_journal(&bytes, uid).expect("chained journal");
+    let count = parsed.records.len() as u64;
+    let encoded = registry_record_t {
+        sequence: count + 1,
+        time: "2026-10-13T09:00:00Z".to_owned(),
+        body: record_body_t::lifecycle(record),
+    }
+    .encode();
+    let chain = next_chain(&parsed.chain, count, &encoded);
+    let mut file = fs::OpenOptions::new()
+        .append(true)
+        .open(&path)
+        .expect("open");
+    std::io::Write::write_all(&mut file, &frame(&encoded, &chain).expect("frame")).expect("append");
+    file.sync_all().expect("sync");
+}
+
+#[test]
+fn a_durably_ended_session_denies_every_grant_bound_to_it_whatever_the_attestation() {
+    // M2-005 review R02 (ADR 0007 §6): once a `session_ended` record is durable, the
+    // session never becomes live again. An attestation issued one second before the
+    // end is still fresh by rule 5 and must not revive the session's grant; a new grant
+    // bound to the same session is refused at admission; and, should the index ever
+    // hold a live grant of an ended session without an ending record, the view's
+    // ended sessions deny it on their own.
+    let mut world = world("ended_session");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let browser = app("browser");
+    let genesis = draft(
+        &alice,
+        &browser,
+        commit_type_t::genesis,
+        "ended session genesis",
+    )
+    .sign(&alice);
+    world.submit(&alice, &genesis);
+    let old = file_grant(
+        "downloads in the ended session",
+        alice.uid,
+        "home:Downloads",
+        &["read"],
+        session_lifetime("ended"),
+    );
+    let session_id = old.lifetime.session_id.expect("session");
+    let branch = draft(
+        &alice,
+        &browser,
+        commit_type_t::temporary_grant,
+        "old branch",
+    )
+    .on(&genesis)
+    .add(vec![old.clone()])
+    .temporary_authority()
+    .sign(&alice);
+    assert_eq!(world.submit(&alice, &branch), placement_t::temporary);
+    let root = world.root.clone();
+    drop(world);
+    append_lifecycle_record(
+        &root,
+        alice.uid,
+        lifecycle_record_t::session_ended { session_id },
+    );
+    let mut world = world_at(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+    );
+    let now = T1Utc + 60;
+    world.now.set(Some(now));
+    let mut identity = runtime(&alice, &browser);
+    identity.session_id = Some(session_id);
+    // A still-fresh attestation from just before the durable end.
+    world.sessions.attested.borrow_mut().insert(
+        session_id,
+        session_attestation_t {
+            live: true,
+            observed_at: now - 1,
+        },
+    );
+    let request = files(alice.uid, "home:Downloads", "read");
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::grant_ended(
+            cham3_registryd::lineage::end_reason_t::session_ended
+        ))
+    );
+    // A fresh grant id bound to the same session: refused at admission, and the
+    // evaluation stays denied.
+    let fresh = draft(
+        &alice,
+        &browser,
+        commit_type_t::temporary_grant,
+        "fresh branch",
+    )
+    .on(&genesis)
+    .add(vec![file_grant(
+        "downloads again in the ended session",
+        alice.uid,
+        "home:Downloads",
+        &["read"],
+        session_lifetime("ended"),
+    )])
+    .temporary_authority()
+    .sign(&alice);
+    assert_eq!(
+        world
+            .contract
+            .submit_signed(
+                caller_role_t::trusted_client { uid: alice.uid },
+                &fresh.envelope
+            )
+            .expect_err("refused")
+            .to_string(),
+        "admission/duplicate_identifier"
+    );
+    assert!(!is_eligible(world.evaluate(&identity, &request)));
+    // The view names the ended session of the live grant. Evaluated as a pure function
+    // with the ending record removed from the view, the ended session alone denies;
+    // without it the fresh attestation would make the grant eligible.
+    let view = world
+        .registry
+        .lineage_head(
+            caller_role_t::service(service_name_t::policyd),
+            alice.uid,
+            &genesis.payload.lineage_id,
+        )
+        .expect("view")
+        .expect("user");
+    assert_eq!(view.ended_sessions, [session_id].into_iter().collect());
+    let key_states: BTreeMap<digest_t, key_state_t> = [(
+        alice.temporary.key_id,
+        key_state_t {
+            invalidated: None,
+            user_state: user_state_t::normal,
+        },
+    )]
+    .into_iter()
+    .collect();
+    let policy = mandatory_policy_t::default();
+    let reserved = BTreeSet::new();
+    let evaluate_view = |view: &cham3_registryd::registry::lineage_view_t| {
+        evaluate(
+            &snapshot_t {
+                view,
+                key_states: &key_states,
+                policy: &policy,
+                now,
+                sessions: &world.sessions,
+                reserved: &reserved,
+            },
+            &identity,
+            &request,
+        )
+    };
+    let mut without_record = view.clone();
+    without_record.ended.clear();
+    assert_eq!(
+        evaluate_view(&without_record),
+        denied(deny_reason_t::grant_ended(
+            cham3_registryd::lineage::end_reason_t::session_ended
+        ))
+    );
+    without_record.ended_sessions.clear();
+    assert_eq!(
+        evaluate_view(&without_record),
+        decision_t::eligible {
+            grant_id: old.grant_id,
+            commit_id: branch.commit_id
+        }
     );
 }
 

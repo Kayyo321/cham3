@@ -25,7 +25,7 @@
 //! boundary are M2-007. Registry time is the system clock; ADR 0007's trusted-time
 //! offset rule is M2-006.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -54,8 +54,10 @@ use crate::record::{placement_t, record_body_t, registry_record_t};
 pub const DefaultQuotaBytes: u64 = 64 * 1024 * 1024;
 pub const MinQuotaBytes: u64 = 16 * 1024 * 1024;
 pub const MaxQuotaBytes: u64 = 1024 * 1024 * 1024;
-/// Reserve kept for restrictive records only (ADR 0006 §1).
-pub const ReserveBytes: u64 = 1024 * 1024;
+/// Reserve kept for restrictive records only (ADR 0006 §1): the quota's logical
+/// reserve here, and the preallocated reserve file of the same size in the store
+/// (`journal.rs`, R03).
+pub const ReserveBytes: u64 = crate::journal::ReserveBytes;
 /// Most lineages per user (ADR 0006 §1).
 pub const MaxLineages: usize = 4096;
 
@@ -184,6 +186,11 @@ pub struct lineage_view_t {
     pub origins: BTreeMap<random_id_t, grant_origin_t>,
     /// Lifecycle records that ended grants of a live state.
     pub ended: BTreeMap<random_id_t, end_reason_t>,
+    /// Sessions that bind grants of a live state and that a durable `session_ended`
+    /// record ended (ADR 0007 §6; M2-005 review R02). Admission refuses such grants,
+    /// so this is empty unless the index and the records disagree; evaluation denies
+    /// them regardless of any liveness attestation.
+    pub ended_sessions: BTreeSet<random_id_t>,
     /// Network grants occupying the lineage's slot (wire format §6.12).
     pub occupying_network: Vec<random_id_t>,
     pub policy_epoch: u64,
@@ -315,12 +322,13 @@ fn replay_user(
     store: &journal_store_t,
     uid: u32,
     bytes: &[u8],
+    io: &dyn journal_io_t,
 ) -> Result<user_slot_t, unusable_reason_t> {
     let parsed = parse(bytes, uid).map_err(unusable_reason_t::defect)?;
     let length = u64::try_from(bytes.len())
         .map_err(|_| unusable_reason_t::store(store_error_t::too_large))?;
     let journal = store
-        .open_journal(uid, &parsed, length)
+        .open_journal(uid, &parsed, length, io)
         .map_err(unusable_reason_t::store)?;
     let mut slot = user_slot_t {
         uid,
@@ -382,14 +390,15 @@ impl registry_t {
         if !valid {
             return Err(registry_start_error_t::invalid_config);
         }
-        let store = journal_store_t::open(root, owner).map_err(registry_start_error_t::store)?;
+        let store = journal_store_t::open(root, owner, io.as_ref())
+            .map_err(registry_start_error_t::store)?;
         let mut users = BTreeMap::new();
         for uid in store.users().map_err(registry_start_error_t::store)? {
             let entry = match store.read(uid, config.quota_bytes) {
                 // A user directory without a journal holds no user (a creation that
                 // never completed its first durable record).
                 Ok(None) => continue,
-                Ok(Some(bytes)) => match replay_user(&store, uid, &bytes) {
+                Ok(Some(bytes)) => match replay_user(&store, uid, &bytes, io.as_ref()) {
                     Ok(slot) => user_entry_t::usable(Arc::new(Mutex::new(slot))),
                     Err(reason) => user_entry_t::unusable(reason),
                 },
@@ -434,7 +443,8 @@ impl registry_t {
     }
 
     /// Whether a record of `record_length` bytes fits the user's quota. Restrictive
-    /// records may use the reserve; nothing else may (ADR 0006 §1).
+    /// records may use the quota's reserve; nothing else may (ADR 0006 §1). The
+    /// preallocated reserve of filesystem blocks is the journal's (`journal.rs`).
     fn check_quota(
         &self,
         journal: &journal_file_t,
@@ -504,14 +514,11 @@ impl registry_t {
             },
         }
         .encode();
-        // A key invalidation is restrictive and may use the reserve.
-        self.check_quota(
-            &slot.journal,
-            record.len(),
-            kind == object_kind_t::key_invalidation,
-        )?;
+        // A key invalidation is restrictive and may use the reserve (quota and blocks).
+        let restrictive = kind == object_kind_t::key_invalidation;
+        self.check_quota(&slot.journal, record.len(), restrictive)?;
         slot.journal
-            .append(&record, self.io.as_ref())
+            .append(&record, restrictive, self.io.as_ref())
             .map_err(|_| storage_unavailable())?;
         slot.directory
             .apply_identity_object(slot.uid, &verified, sequence)?;
@@ -678,8 +685,9 @@ impl registry_t {
         }
         .encode();
         self.check_quota(&slot.journal, record.len(), false)?;
+        // Not restrictive: the full reserve must exist before the append (R03).
         slot.journal
-            .append(&record, self.io.as_ref())
+            .append(&record, false, self.io.as_ref())
             .map_err(|_| storage_unavailable())?;
         slot.lineages
             .apply_commit(&admission, payload, envelope.to_vec(), sequence);
@@ -726,10 +734,16 @@ impl registry_t {
             .unwrap_or_default();
         let mut origins = BTreeMap::new();
         let mut ended = BTreeMap::new();
+        let mut ended_sessions = BTreeSet::new();
         let live = trunk_head.iter().chain(temporary_heads.iter());
         for grant in live.flat_map(|head| head.state.grants.iter()) {
             if let Some(reason) = lineages.ended(&grant.grant_id) {
                 ended.insert(grant.grant_id, reason);
+            }
+            if let Some(session_id) = &grant.lifetime.session_id {
+                if lineages.session_ended(session_id) {
+                    ended_sessions.insert(*session_id);
+                }
             }
             let Some(entry) = lineages.grant(&grant.grant_id) else {
                 continue;
@@ -771,10 +785,20 @@ impl registry_t {
                 .and_then(|lineage| lineage.authoritative_subject.clone()),
             origins,
             ended,
+            ended_sessions,
             occupying_network,
             policy_epoch: self.config.policy_epoch,
             min_valid_policy_epoch: self.config.min_valid_policy_epoch,
         }
+    }
+
+    /// Bytes allocated to a user's restrictive reserve (diagnostics and tests).
+    pub fn reserve_bytes(&self, owner_uid: u32) -> service_result_t<u64> {
+        let Some(slot) = self.slot(owner_uid)? else {
+            return Err(authority(authority_code_t::key_not_certified));
+        };
+        let slot = lock(&slot)?;
+        Ok(slot.journal.reserve_bytes())
     }
 
     /// The standing of a grant id in a user's index (diagnostics and tests).

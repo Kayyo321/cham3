@@ -15,6 +15,14 @@ workspace = true
 [lib]
 doctest = false
 
+# Restrictive-reserve probe for tests/m2/storage/check_reserve_full_disk.sh and
+# tests/m2/harness/test_m2_reserve_probe.py (M2-005 review R03). A qualification tool
+# only, never packaged; exercised as a subprocess.
+[[bin]]
+name = "cham3_reserve_probe"
+path = "src/bin/cham3_reserve_probe.rs"
+test = false
+
 [dependencies]
 cham3_contract_format = { path = "../contract_format" }
 cham3_identityd = { path = "../identityd" }

@@ -711,13 +711,17 @@ where
         if self.proposals.contains_key(&request.proposal_id) {
             return Err(ipc(ipc_code_t::duplicate_identifier));
         }
-        let count = |pending: bool, user: Option<u32>| {
+        let count = |pending_only: bool, user: Option<u32>| {
             self.proposals
                 .values()
-                .filter(|proposal| (proposal.state == proposal_state_t::pending) == pending)
+                .filter(|proposal| !pending_only || proposal.state == proposal_state_t::pending)
                 .filter(|proposal| user.is_none_or(|uid| proposal.owner_uid == uid))
                 .count()
         };
+        // The retained-id bounds count every kept id, pending ones included: a pending
+        // proposal becomes a retained used or cancelled id without any further check,
+        // so its slot is reserved at registration (M2-004 revision-2 review,
+        // M2-004-R2-01). The pending bounds are the smaller limits on live proposals.
         if count(true, Some(request.owner_uid)) >= self.config.max_proposals_per_user
             || count(true, None) >= self.config.max_proposals
             || count(false, Some(request.owner_uid)) >= self.config.max_retired_proposals_per_user

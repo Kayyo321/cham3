@@ -145,9 +145,12 @@ case "$suite" in
             cargo build --frozen --release -p cham3_provider_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step build_vault_protection_probe env CARGO_TARGET_DIR="$profile_dir" \
             cargo build --frozen --release -p cham3_vaultd --bin cham3_vault_protection_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
+        step build_reserve_probe env CARGO_TARGET_DIR="$profile_dir" \
+            cargo build --frozen --release -p cham3_registryd --bin cham3_reserve_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step python_harness env CHAM3_M2_PROBE_DEBUG="$profile_dir/debug/cham3_provider_probe" \
             CHAM3_M2_PROBE_RELEASE="$profile_dir/release/cham3_provider_probe" \
             CHAM3_M2_VAULT_PROTECTION_PROBE="$profile_dir/release/cham3_vault_protection_probe" \
+            CHAM3_M2_RESERVE_PROBE="$profile_dir/release/cham3_reserve_probe" \
             python3 -I "$harness" python-suite --name harness --start-dir tests/m2/harness --run-dir "$run_dir"
         ;;
 esac

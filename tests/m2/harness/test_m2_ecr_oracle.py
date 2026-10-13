@@ -46,9 +46,9 @@ class ecr_oracle_t(unittest.TestCase):
         self.assertGreaterEqual(len(document["valid"]), 16)
         self.assertGreaterEqual(len(document["invalid"]), 70)
         self.assertGreaterEqual(len(document["admission_invalid"]), 18)
-        self.assertGreaterEqual(len(document["journal_scenarios"]), 22)
+        self.assertGreaterEqual(len(document["journal_scenarios"]), 23)
         findings = {scenario["finding"] for scenario in document["journal_scenarios"]}
-        self.assertEqual(findings, {"R07-r2", "R12", "R13", "R14"})
+        self.assertEqual(findings, {"R07-r2", "R12", "R13", "R14", "M2-005-R02"})
         expectations = [step["expect"] for scenario in document["journal_scenarios"] for step in scenario["steps"]]
         self.assertIn("admitted", expectations)
         self.assertTrue(any(isinstance(expect, dict) for expect in expectations))

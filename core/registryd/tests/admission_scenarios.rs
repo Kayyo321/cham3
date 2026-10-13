@@ -1,7 +1,8 @@
 //! Layer-7 differential against the independent oracle's published vectors.
 //!
 //! - Every `key_authority: false` journal scenario of
-//!   tests/m2/vectors/ecr_v1/vectors.json is replayed step by step through layers 1–5
+//!   tests/m2/vectors/ecr_v1/vectors.json (the network-slot, restore and ended-session
+//!   scenarios) is replayed step by step through layers 1–5
 //!   (`cham3_contract_format`) and the Rust lineage index. Each commit, each lifecycle
 //!   record and each standing check after a step is compared with the oracle's
 //!   expectation. (The `key_authority: true` scenarios are the recovery ceremony's,
@@ -183,10 +184,10 @@ fn admission_scenarios_match_the_oracle() {
     // Positive controls: the published counts (a driver that skipped steps or
     // scenarios would not reach them).
     assert_eq!(
-        totals.scenarios, 10,
+        totals.scenarios, 11,
         "admission scenarios in the published vectors"
     );
-    assert_eq!(totals.steps, 53, "steps of the admission scenarios");
+    assert_eq!(totals.steps, 59, "steps of the admission scenarios");
     assert!(totals.comparisons > totals.steps);
 }
 
@@ -211,6 +212,7 @@ fn every_admission_code_of_the_scenarios_is_reproduced() {
     }
     let expected = [
         "admission/branch_rule",
+        "admission/duplicate_identifier",
         "admission/lifecycle_rule",
         "admission/network_grant_conflict",
         "admission/restore_rule",

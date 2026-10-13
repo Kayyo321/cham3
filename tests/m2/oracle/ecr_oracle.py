@@ -828,6 +828,9 @@ class journal_t:
         self.grants = {}
         self.grant_lineage = {}
         self.ended = {}
+        # Sessions a durable session_ended record ended (ADR 0007 section 6): no later
+        # grant may be bound to them (M2-005 review R02).
+        self.ended_sessions = set()
         self.user_id = None
         self.uid = None
         self.keys = {}
@@ -997,6 +1000,9 @@ class journal_t:
                 admission_error("duplicate_identifier", "grant_id reused")
         if payload["authorization"]["request_id"] in self.seen_requests:
             admission_error("duplicate_identifier", "request_id reused")
+        for grant in payload["delta"]["add_grants"]:
+            if grant["lifetime"].get("session_id") in self.ended_sessions:
+                admission_error("duplicate_identifier", "grant bound to an ended session (R02)")
         if commit_type == "restore":
             self.check_restore(payload)
         self.check_subject(lineage, payload)
@@ -1120,6 +1126,7 @@ class journal_t:
             bound = [grant_id for grant_id, grant in self.grants.items() if grant["lifetime"].get("session_id") == record["session_id"]]
             if not bound:
                 record_error("lifecycle_rule", "no grant is bound to this session")
+            self.ended_sessions.add(record["session_id"])
             for grant_id in bound:
                 self.ended.setdefault(grant_id, "session_ended")
         elif kind == "restriction":
@@ -2081,6 +2088,23 @@ def build_journal_scenarios(keys, kate, ids, payloads):
                       commit(tor_data, fails("admission", "network_grant_conflict")),
                       record({"record": "restriction", "grant_ids": [gid(direct_timed)]}, check={"ended": [gid(direct_timed)]}),
                       commit(tor_data, check={"current": [gid(tor_timed)]})])
+    # M2-005 review R02: an ended session never becomes live again (ADR 0007 section 6).
+    session_two = synthetic_id("browser desktop session 3")
+    camera_session_one = make_grant("browser camera session one", "camera", "front_camera", ["capture"], kind="session", start=Times[2], session=session_one)
+    tor_session_one = make_grant("browser tor session one", "network", "network_mode", ["tor"], kind="session", start=Times[2], session=session_one)
+    camera_session_two = make_grant("browser camera session two", "camera", "front_camera", ["capture"], kind="session", start=Times[2], session=session_two)
+    camera_session_one_data, _, _ = browser_temporary("browser camera session one", browser_genesis_id, browser_state, [camera_session_one], time=Times[2])
+    tor_session_one_data, _, _ = browser_temporary("browser tor session one", browser_genesis_id, browser_state, [tor_session_one], time=Times[2])
+    camera_session_two_data, _, _ = browser_temporary("browser camera session two", browser_genesis_id, browser_state, [camera_session_two], time=Times[2])
+    scenario("session_ended_refuses_later_grants_of_that_session", "M2-005-R02",
+             "A durable session_ended record ends the session itself, not only the grants present at that instant: a later grant bound to the same session id is refused (duplicate_identifier), a network grant included, even though the network slot is free; a grant bound to a fresh session is admitted",
+             start + [commit(session_data, check={"current": [gid(direct_session)]}),
+                      record({"record": "session_ended", "session_id": session_one}, check={"ended": [gid(direct_session)]}),
+                      commit(camera_session_one_data, fails("admission", "duplicate_identifier"), check={"ended": [gid(direct_session)], "unknown": [gid(camera_session_one)]},
+                             note="a file grant bound to the ended session is a consumed identifier"),
+                      commit(tor_session_one_data, fails("admission", "duplicate_identifier"), check={"unknown": [gid(tor_session_one)]},
+                             note="the slot is free (the Direct grant ended), yet the network grant is bound to the ended session"),
+                      commit(camera_session_two_data, check={"current": [gid(camera_session_two), gid(downloads)], "ended": [gid(direct_session)]})])
     bad_branch_revocation = browser.payload("browser bad branch revocation", "revocation", persistent, [direct_id], direct_payload["result_state"],
                                             {"add_grants": [], "remove_grant_ids": [gid(downloads)]}, Times[2], "Revoke Downloads on the temporary branch")
     branch_revocation = browser.payload("browser branch revocation", "revocation", persistent, [direct_id], direct_payload["result_state"],

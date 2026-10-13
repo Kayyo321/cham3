@@ -3,8 +3,10 @@
 //!
 //! The index is derived, never stored: replay rebuilds it from the journal. It holds
 //! every admitted commit, each lineage's trunk head, live temporary branch heads and
-//! authoritative subject, the user's grant ids and request ids, and the grant ids
-//! ended by narrowing lifecycle records.
+//! authoritative subject, the user's grant ids and request ids, the grant ids ended
+//! by narrowing lifecycle records and the session ids those records ended (an ended
+//! session never becomes live again, ADR 0007 §6: no later grant may be bound to it;
+//! M2-005 review R02).
 //!
 //! [`lineage_index_t::check_commit`] is a pure function of the index and a commit that
 //! passed layers 1–6; it reports the first failure in wire format §7 order. Nothing
@@ -115,6 +117,8 @@ pub struct lineage_index_t {
     requests: BTreeSet<random_id_t>,
     grants: BTreeMap<random_id_t, grant_entry_t>,
     ended: BTreeMap<random_id_t, end_reason_t>,
+    /// Sessions a durable `session_ended` record ended (ADR 0007 §6).
+    ended_sessions: BTreeSet<random_id_t>,
 }
 
 fn reject<ok_t>(code: rule_code_t) -> service_result_t<ok_t> {
@@ -182,6 +186,11 @@ impl lineage_index_t {
 
     pub fn has_request(&self, request_id: &random_id_t) -> bool {
         self.requests.contains(request_id)
+    }
+
+    /// Whether a durable `session_ended` record ended this session (ADR 0007 §6).
+    pub fn session_ended(&self, session_id: &random_id_t) -> bool {
+        self.ended_sessions.contains(session_id)
     }
 
     /// States of the trunk head and every live temporary head of a lineage.
@@ -347,6 +356,19 @@ impl lineage_index_t {
         // A byte-identical envelope repeats its request id, so a commit id is never
         // admitted twice.
         if self.requests.contains(&payload.authorization.request_id) {
+            return reject(rule_code_t::duplicate_identifier);
+        }
+        // ADR 0007 §6: session ids are single use and an ended session never becomes
+        // live again. A grant bound to a session that a durable `session_ended` record
+        // ended reuses a consumed identifier, like a grant or request id (M2-005
+        // review R02); evaluation denies such a grant too, should one ever be present.
+        if payload.delta.add_grants.iter().any(|grant| {
+            grant
+                .lifetime
+                .session_id
+                .as_ref()
+                .is_some_and(|session_id| self.ended_sessions.contains(session_id))
+        }) {
             return reject(rule_code_t::duplicate_identifier);
         }
         if payload.commit_type == commit_type_t::restore {
@@ -572,11 +594,12 @@ impl lineage_index_t {
     }
 
     /// Applies a lifecycle record that [`lineage_index_t::check_record`] accepted. A
-    /// grant keeps the first reason that ended it.
+    /// grant keeps the first reason that ended it; an ended session stays ended.
     pub fn apply_record(&mut self, record: &lifecycle_record_t) {
         let (ended, reason) = match record {
             lifecycle_record_t::expired { grant_id } => (vec![*grant_id], end_reason_t::expired),
             lifecycle_record_t::session_ended { session_id } => {
+                self.ended_sessions.insert(*session_id);
                 (self.session_grants(session_id), end_reason_t::session_ended)
             }
             lifecycle_record_t::restriction { grant_ids } => {

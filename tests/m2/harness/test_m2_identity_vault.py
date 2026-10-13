@@ -51,6 +51,11 @@ SeededDefects = [
        "                self.deny_in_memory(&target, payload.reason);\n",
        "            identity_effect_t::invalidate => {\n")],
      "cham3_identityd", "service_operations", "invalidation_denies_in_memory_before_it_is_durable"),
+    # M2-004 revision-2 review, M2-004-R2-01: pending ids reserve their retained slot.
+    ("pending_proposals_not_counted_as_retained", "core/vaultd/src/service.rs",
+     [("                .filter(|proposal| !pending_only || proposal.state == proposal_state_t::pending)\n",
+       "                .filter(|proposal| (proposal.state == proposal_state_t::pending) == pending_only)\n")],
+     "cham3_vaultd", "vault_operations", "pending_proposals_count_against_the_retained_id_bounds"),
     ("approval_digest_not_compared", "core/vaultd/src/service.rs",
      [("            if !bool::from(proposal.approval_digest.ct_eq(approval_digest)) {\n",
        "            if false && !bool::from(proposal.approval_digest.ct_eq(approval_digest)) {\n")],

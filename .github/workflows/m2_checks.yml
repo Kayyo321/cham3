@@ -7,9 +7,10 @@
 # builds, backend selection, valgrind of the probe and of the secure-memory tests,
 # unit and harness suites) with CHAM3_M2_REQUIRE_CLEAN=1, so source identity must be
 # complete and clean; then the vault process-protection positive path with a raised
-# memlock limit (tests/m2/protection/check_vault_protection.sh). --record only writes
-# lock proposals when the observed package set differs from the committed amd64 locks;
-# the run then FAILs.
+# memlock limit (tests/m2/protection/check_vault_protection.sh) and the restrictive
+# reserve against a full 2 MiB tmpfs (tests/m2/storage/check_reserve_full_disk.sh).
+# --record only writes lock proposals when the observed package set differs from the
+# committed amd64 locks; the run then FAILs.
 # No secrets, no production keys, read-only repository permissions. Results are
 # development evidence for the exact commit only and establish no M3-M6 enforcement.
 name: m2_checks
@@ -60,6 +61,20 @@ jobs:
             -w /work \
             cham3-m2-dev \
             sh tests/m2/protection/check_vault_protection.sh out/m2/protection
+      # The qualification container has no disposable filesystem to fill, so the
+      # restrictive reserve (ADR 0006 section 1) is exercised against an actually
+      # full filesystem here, on a 2 MiB tmpfs the probe refuses to exceed; the
+      # fault-injected reserve tests are in the unit suite above.
+      - name: Restrictive reserve under a full filesystem (2 MiB tmpfs, unprivileged)
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --tmpfs "/full-disk:rw,size=2m,uid=$(id -u),gid=$(id -g),mode=0700" \
+            -e HOME=/tmp/cham3_home \
+            -v "${GITHUB_WORKSPACE}:/work" \
+            -w /work \
+            cham3-m2-dev \
+            sh tests/m2/storage/check_reserve_full_disk.sh out/m2/storage
       - name: Upload qualification evidence
         if: always()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
@@ -77,5 +92,6 @@ jobs:
             out/m2/runs/*/*.json
             out/m2/runs/*/*.log
             out/m2/protection/*.txt
+            out/m2/storage/*.txt
           retention-days: 14
           if-no-files-found: error

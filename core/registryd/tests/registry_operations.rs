@@ -29,7 +29,7 @@ use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::directory::journal_record_t;
 use cham3_identityd::outcome::service_error_t;
 use cham3_identityd::service::identity_service_t;
-use cham3_registryd::journal::{journal_io_t, system_io_t};
+use cham3_registryd::journal::{ReserveBytes, ReserveFileName, journal_io_t, system_io_t};
 use cham3_registryd::lineage::standing_t;
 use cham3_registryd::record::{
     FrameOverheadBytes, HeaderBytes, frame, genesis_chain, header, lifecycle_record_t, next_chain,
@@ -120,6 +120,146 @@ impl journal_io_t for faulty_io_t {
     }
 
     fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        system_io_t.sync_directory(path)
+    }
+}
+
+/// Filesystem-space faults at the reserve's boundaries (M2-005 review R03): the next
+/// write reports `ENOSPC` before any byte or after `n` bytes, or the next allocation
+/// of the reserve reports `ENOSPC`. Counts truncations, releases and allocations.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum space_fault_t {
+    none,
+    write_enospc,
+    torn_then_enospc(usize),
+    allocate_enospc,
+}
+
+#[derive(Clone)]
+struct space_io_t {
+    fault: Arc<Mutex<space_fault_t>>,
+    truncations: Arc<AtomicUsize>,
+    releases: Arc<AtomicUsize>,
+    allocations: Arc<AtomicUsize>,
+}
+
+impl space_io_t {
+    fn new() -> space_io_t {
+        space_io_t {
+            fault: Arc::new(Mutex::new(space_fault_t::none)),
+            truncations: Arc::new(AtomicUsize::new(0)),
+            releases: Arc::new(AtomicUsize::new(0)),
+            allocations: Arc::new(AtomicUsize::new(0)),
+        }
+    }
+
+    fn set(&self, fault: space_fault_t) {
+        *self.fault.lock().unwrap() = fault;
+    }
+
+    fn take(&self) -> space_fault_t {
+        std::mem::replace(&mut *self.fault.lock().unwrap(), space_fault_t::none)
+    }
+
+    fn counts(&self) -> (usize, usize, usize) {
+        (
+            self.truncations.load(Ordering::SeqCst),
+            self.releases.load(Ordering::SeqCst),
+            self.allocations.load(Ordering::SeqCst),
+        )
+    }
+}
+
+fn enospc() -> io::Error {
+    io::Error::from_raw_os_error(28)
+}
+
+impl journal_io_t for space_io_t {
+    fn write_all(&self, file: &mut fs::File, bytes: &[u8]) -> io::Result<()> {
+        // Copy the fault out first: the guard must not be held while `take` locks.
+        let fault = *self.fault.lock().unwrap();
+        match fault {
+            space_fault_t::write_enospc => {
+                self.take();
+                Err(enospc())
+            }
+            space_fault_t::torn_then_enospc(length) => {
+                self.take();
+                system_io_t.write_all(file, &bytes[..length.min(bytes.len())])?;
+                Err(enospc())
+            }
+            space_fault_t::none | space_fault_t::allocate_enospc => {
+                system_io_t.write_all(file, bytes)
+            }
+        }
+    }
+
+    fn sync_data(&self, file: &fs::File) -> io::Result<()> {
+        system_io_t.sync_data(file)
+    }
+
+    fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        system_io_t.sync_directory(path)
+    }
+
+    fn allocate(&self, file: &mut fs::File, from: u64, to: u64) -> io::Result<()> {
+        self.allocations.fetch_add(1, Ordering::SeqCst);
+        let fault = *self.fault.lock().unwrap();
+        if fault == space_fault_t::allocate_enospc {
+            self.take();
+            return Err(enospc());
+        }
+        system_io_t.allocate(file, from, to)
+    }
+
+    fn release(&self, file: &fs::File) -> io::Result<()> {
+        self.releases.fetch_add(1, Ordering::SeqCst);
+        system_io_t.release(file)
+    }
+
+    fn truncate(&self, file: &fs::File, length: u64) -> io::Result<()> {
+        self.truncations.fetch_add(1, Ordering::SeqCst);
+        system_io_t.truncate(file, length)
+    }
+}
+
+/// Records every directory sync and can fail the next sync of the `users` directory
+/// (M2-005 review R01: a parent-directory sync that fails on one attempt).
+#[derive(Clone)]
+struct sync_spy_t {
+    synced: Arc<Mutex<Vec<PathBuf>>>,
+    fail_users_once: Arc<AtomicUsize>,
+}
+
+impl sync_spy_t {
+    fn new(fail_users_once: bool) -> sync_spy_t {
+        sync_spy_t {
+            synced: Arc::new(Mutex::new(Vec::new())),
+            fail_users_once: Arc::new(AtomicUsize::new(usize::from(fail_users_once))),
+        }
+    }
+
+    fn synced(&self) -> Vec<PathBuf> {
+        self.synced.lock().unwrap().clone()
+    }
+}
+
+impl journal_io_t for sync_spy_t {
+    fn write_all(&self, file: &mut fs::File, bytes: &[u8]) -> io::Result<()> {
+        system_io_t.write_all(file, bytes)
+    }
+
+    fn sync_data(&self, file: &fs::File) -> io::Result<()> {
+        system_io_t.sync_data(file)
+    }
+
+    fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        self.synced.lock().unwrap().push(path.to_path_buf());
+        if path.file_name().is_some_and(|name| name == "users")
+            && self.fail_users_once.swap(0, Ordering::SeqCst) == 1
+        {
+            return Err(io::Error::other("injected parent directory fsync failure"));
+        }
         system_io_t.sync_directory(path)
     }
 }
@@ -709,6 +849,471 @@ fn replayed_lifecycle_records_end_grants_and_free_the_network_slot() {
         .expect("user");
     assert!(view.occupying_network.is_empty());
     assert_eq!(admit(&registry, &alice, &tor), Ok(placement_t::temporary));
+}
+
+#[test]
+fn every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledged() {
+    // M2-005 review R01. Opening a new store syncs each directory it creates in its
+    // parent (`root` in its parent, `users` in `root`); the first enrollment syncs the
+    // user directory's entry in `users`, then the journal's entry in the user
+    // directory. The order of the syncs is the durability order.
+    let parent = temp_root("directory_durability");
+    let root = parent.join("registry");
+    let spy = sync_spy_t::new(false);
+    let registry = Arc::new(
+        registry_t::open(
+            &root,
+            owner_of(&parent),
+            registry_config_t::default(),
+            Box::new(spy.clone()),
+            Box::new(fixed_clock_t),
+        )
+        .expect("registry start"),
+    );
+    assert_eq!(spy.synced(), vec![parent.clone(), root.clone()]);
+    let alice = test_user(1001);
+    enroll(&registry, &alice);
+    assert_eq!(
+        spy.synced(),
+        vec![
+            parent,
+            root.clone(),
+            root.join("users"),
+            root.join("users").join("1001")
+        ]
+    );
+    // Reopening an existing store creates nothing and syncs nothing.
+    drop(registry);
+    let spy = sync_spy_t::new(false);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    assert!(spy.synced().is_empty());
+    assert!(registry.unusable_users().unwrap().is_empty());
+}
+
+#[test]
+fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
+    // M2-005 review R01: the first attempt creates the user directory and fails to
+    // sync its entry in `users`; the retry finds the directory and must sync `users`
+    // again before it acknowledges the enrollment. Nothing is written before the
+    // parent entry is durable, so the failed attempt leaves no journal.
+    let root = temp_root("parent_sync_retry");
+    let spy = sync_spy_t::new(true);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
+    let alice = test_user(1001);
+    assert_eq!(
+        code(registry.append_identity(
+            Identityd,
+            alice.uid,
+            object_kind_t::identity_enrollment,
+            &alice.enrollment,
+        )),
+        "ipc/storage_unavailable"
+    );
+    assert!(root.join("users").join("1001").is_dir());
+    assert!(!journal_path(&root, alice.uid).exists());
+    // Opening the store created `users` (synced in `root`); the enrollment's `users`
+    // sync failed and nothing else was synced or written.
+    assert_eq!(spy.synced(), vec![root.clone(), root.join("users")]);
+    let receipt = registry
+        .append_identity(
+            Identityd,
+            alice.uid,
+            object_kind_t::identity_enrollment,
+            &alice.enrollment,
+        )
+        .expect("retry");
+    assert_eq!(receipt.journal_seq, 1);
+    assert!(!receipt.already_present);
+    assert_eq!(
+        spy.synced(),
+        vec![
+            root.clone(),
+            root.join("users"),
+            root.join("users"),
+            root.join("users").join("1001")
+        ]
+    );
+    // The journal replays after a restart.
+    drop(registry);
+    let registry = open(&root);
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(
+        registry
+            .identity_state(Identityd, alice.uid, 0)
+            .unwrap()
+            .entries
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn an_ended_session_refuses_every_later_grant_bound_to_it() {
+    // M2-005 review R02 (ADR 0007 §6): a durable `session_ended` record ends the
+    // session itself, not only the grants present at that instant. A later grant bound
+    // to the same session id — a network grant included, with the slot free — is
+    // `duplicate_identifier`, at admission and at replay; a fresh session is admitted.
+    let alice = test_user(1001);
+    let browser = app("browser");
+    let root = temp_root("ended_session");
+    let registry = open(&root);
+    enroll(&registry, &alice);
+    let genesis = draft(&alice, &browser, commit_type_t::genesis, "session genesis")
+        .add(vec![file_grant(
+            "cache",
+            alice.uid,
+            "home:cache",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    admit(&registry, &alice, &genesis).expect("genesis");
+    let first = file_grant(
+        "pictures in session one",
+        alice.uid,
+        "home:Pictures",
+        &["read"],
+        session_lifetime("one"),
+    );
+    let session_one = first.lifetime.session_id.expect("session");
+    let first_branch = draft(&alice, &browser, commit_type_t::temporary_grant, "first")
+        .on(&genesis)
+        .add(vec![first.clone()])
+        .temporary_authority()
+        .sign(&alice);
+    admit(&registry, &alice, &first_branch).expect("first branch");
+    drop(registry);
+    let mut records = records_of(&root, alice.uid);
+    records.push(record(
+        records.len() as u64 + 1,
+        record_body_t::lifecycle(lifecycle_record_t::session_ended {
+            session_id: session_one,
+        }),
+    ));
+    write_chained(&root, alice.uid, &alice.identity.key_id, &records);
+    let registry = open(&root);
+    assert!(registry.unusable_users().expect("users").is_empty());
+    assert_eq!(
+        registry.standing(alice.uid, &first.grant_id),
+        Ok(standing_t::ended(
+            cham3_registryd::lineage::end_reason_t::session_ended
+        ))
+    );
+    // The same session on a new sibling: a file grant, then a network grant although
+    // the slot is free. Neither leaves a trace in the index.
+    let again = draft(&alice, &browser, commit_type_t::temporary_grant, "again")
+        .on(&genesis)
+        .add(vec![file_grant(
+            "camera in session one",
+            alice.uid,
+            "camera:front",
+            &["capture"],
+            session_lifetime("one"),
+        )])
+        .temporary_authority()
+        .sign(&alice);
+    assert_eq!(
+        code(admit(&registry, &alice, &again)),
+        "admission/duplicate_identifier"
+    );
+    let network_again = draft(
+        &alice,
+        &browser,
+        commit_type_t::temporary_grant,
+        "tor again",
+    )
+    .on(&genesis)
+    .add(vec![network_grant(
+        "tor in session one",
+        alice.uid,
+        "tor",
+        session_lifetime("one"),
+    )])
+    .temporary_authority()
+    .sign(&alice);
+    assert_eq!(
+        code(admit(&registry, &alice, &network_again)),
+        "admission/duplicate_identifier"
+    );
+    assert_eq!(
+        registry.standing(alice.uid, &synthetic_id("grant camera in session one")),
+        Ok(standing_t::unknown)
+    );
+    // A fresh session is admitted. The view names the ended session because the first
+    // branch (whose grant it ended) is still a live temporary head; the fresh grant's
+    // session is not named.
+    let fresh = draft(&alice, &browser, commit_type_t::temporary_grant, "fresh")
+        .on(&genesis)
+        .add(vec![file_grant(
+            "camera in session two",
+            alice.uid,
+            "camera:front",
+            &["capture"],
+            session_lifetime("two"),
+        )])
+        .temporary_authority()
+        .sign(&alice);
+    assert_eq!(admit(&registry, &alice, &fresh), Ok(placement_t::temporary));
+    let view = registry
+        .lineage_head(Policyd, alice.uid, &genesis.payload.lineage_id)
+        .expect("view")
+        .expect("user");
+    assert_eq!(view.ended_sessions, [session_one].into_iter().collect());
+    assert_eq!(view.ended.len(), 1);
+    assert_eq!(view.temporary_heads.len(), 2);
+    drop(registry);
+    // Replay refuses a correctly chained commit that binds a grant to the ended
+    // session: the whole journal is unusable (fail closed).
+    let mut forged = records_of(&root, alice.uid);
+    forged.push(record(
+        forged.len() as u64 + 1,
+        record_body_t::commit_admitted {
+            commit_id: again.commit_id,
+            lineage_id: again.payload.lineage_id,
+            placement: placement_t::temporary,
+            envelope: again.envelope.clone(),
+        },
+    ));
+    write_chained(&root, alice.uid, &alice.identity.key_id, &forged);
+    let registry = open(&root);
+    assert_eq!(
+        registry.unusable_users().expect("users"),
+        vec![(
+            alice.uid,
+            unusable_reason_t::replay {
+                sequence: forged.len() as u64
+            }
+        )]
+    );
+}
+
+fn reserve_path(root: &Path, uid: u32) -> PathBuf {
+    root.join("users")
+        .join(uid.to_string())
+        .join(ReserveFileName)
+}
+
+fn allocated_bytes(path: &Path) -> u64 {
+    fs::metadata(path).unwrap().blocks() * 512
+}
+
+#[test]
+fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
+    // M2-005 review R03 (ADR 0006 §1, ADR 0008 §1). Enrollment preallocates the reserve
+    // (written zeros, so real blocks). An admission that meets a full filesystem is
+    // refused and touches no reserve; a key invalidation that meets one takes the
+    // reserve's blocks and becomes durable; while the reserve cannot be refilled no
+    // admission proceeds, restrictive records still do; the first admission after
+    // space returns refills it.
+    let root = temp_root("reserve");
+    let alice = test_user(1001);
+    let browser = app("browser");
+    let io = space_io_t::new();
+    let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
+    enroll(&registry, &alice);
+    let reserve = reserve_path(&root, alice.uid);
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+    assert!(
+        allocated_bytes(&reserve) >= ReserveBytes,
+        "blocks, not a sparse file"
+    );
+    assert_eq!(fs::metadata(&reserve).unwrap().mode() & 0o777, 0o600);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    assert_eq!(io.counts(), (0, 0, 1));
+    let genesis = draft(&alice, &browser, commit_type_t::genesis, "reserve genesis").sign(&alice);
+    // An admission on a full filesystem: refused, the reserve untouched, the journal
+    // unusable until restart as for every failed append.
+    io.set(space_fault_t::write_enospc);
+    assert_eq!(
+        code(admit(&registry, &alice, &genesis)),
+        "ipc/storage_unavailable"
+    );
+    assert_eq!(io.counts(), (0, 0, 1));
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+    assert_eq!(
+        code(registry.lineage_head(Policyd, alice.uid, &genesis.payload.lineage_id)),
+        "ipc/storage_unavailable"
+    );
+    drop(registry);
+    let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
+    assert!(registry.unusable_users().unwrap().is_empty());
+    let before = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
+    // A key invalidation on a full filesystem: truncated back, the reserve released,
+    // the record durable.
+    let mut identity = identity_over(&registry);
+    io.set(space_fault_t::write_enospc);
+    identity
+        .register_invalidation(
+            Vaultd,
+            alice.uid,
+            &invalidation(
+                &alice.identity,
+                &alice.temporary.key_id,
+                invalidation_reason_t::compromised,
+                "full disk",
+            ),
+        )
+        .expect("restrictive record from the reserve");
+    assert_eq!(io.counts(), (1, 1, 1));
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), 0);
+    assert!(fs::metadata(journal_path(&root, alice.uid)).unwrap().len() > before);
+    assert_eq!(
+        identity
+            .resolve_key(Contractd, &alice.temporary.key_id)
+            .unwrap()
+            .invalidated,
+        Some(invalidation_reason_t::compromised)
+    );
+    // While the reserve cannot be refilled: no admission, but restrictive records go on
+    // and the journal stays usable.
+    let length = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
+    io.set(space_fault_t::allocate_enospc);
+    assert_eq!(
+        code(admit(&registry, &alice, &genesis)),
+        "ipc/storage_unavailable"
+    );
+    assert_eq!(io.counts(), (1, 1, 2));
+    assert_eq!(
+        fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
+        length
+    );
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    io.set(space_fault_t::allocate_enospc);
+    assert_eq!(
+        code(admit(&registry, &alice, &genesis)),
+        "ipc/storage_unavailable",
+        "refilling failed again"
+    );
+    assert_eq!(io.counts(), (1, 1, 3));
+    identity
+        .register_invalidation(
+            Vaultd,
+            alice.uid,
+            &invalidation(
+                &alice.identity,
+                &alice.persistent.key_id,
+                invalidation_reason_t::retired,
+                "still full",
+            ),
+        )
+        .expect("restrictive records never wait for the reserve");
+    assert!(
+        registry
+            .lineage_head(Policyd, alice.uid, &genesis.payload.lineage_id)
+            .is_ok()
+    );
+    // Space is back: the admission refills the reserve first, then is admitted.
+    io.set(space_fault_t::none);
+    let fresh_key = test_key("reserve fresh persistent");
+    identity
+        .register_certificate(
+            Vaultd,
+            alice.uid,
+            &certificate(
+                &alice.identity,
+                alice.uid,
+                &fresh_key,
+                authority_class_t::persistent,
+                1,
+            ),
+        )
+        .expect("a certificate is not restrictive: it refills the reserve");
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
+    assert!(allocated_bytes(&reserve) >= ReserveBytes);
+    let signed =
+        draft(&alice, &browser, commit_type_t::genesis, "reserve genesis").sign_with(&fresh_key);
+    assert_eq!(admit(&registry, &alice, &signed), Ok(placement_t::trunk));
+    // A restart replays the journal and reopens the reserve.
+    drop(registry);
+    let registry = open(&root);
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    assert!(matches!(
+        registry.standing(alice.uid, &[0; 16]),
+        Ok(standing_t::unknown)
+    ));
+}
+
+#[test]
+fn a_torn_restrictive_write_on_a_full_filesystem_is_truncated_back_and_retried() {
+    // R03: the write of the frame stops after a few bytes with ENOSPC. The journal is
+    // put back to its last complete frame, the reserve released, the frame written
+    // whole; the file holds exactly the chained records afterwards.
+    let root = temp_root("reserve_torn");
+    let alice = test_user(1001);
+    let io = space_io_t::new();
+    let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
+    enroll(&registry, &alice);
+    let before = records_of(&root, alice.uid);
+    let mut identity = identity_over(&registry);
+    io.set(space_fault_t::torn_then_enospc(7));
+    let object = invalidation(
+        &alice.identity,
+        &alice.temporary.key_id,
+        invalidation_reason_t::compromised,
+        "torn on a full disk",
+    );
+    identity
+        .register_invalidation(Vaultd, alice.uid, &object)
+        .expect("retried from the reserve");
+    assert_eq!(io.counts(), (1, 1, 1));
+    let after = records_of(&root, alice.uid);
+    assert_eq!(after.len(), before.len() + 1);
+    assert_eq!(&after[..before.len()], &before[..]);
+    let parsed = parse_journal(
+        &fs::read(journal_path(&root, alice.uid)).unwrap(),
+        alice.uid,
+    )
+    .expect("chained");
+    assert_eq!(parsed.records.len(), after.len());
+    drop(registry);
+    let registry = open(&root);
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    let mut identity = identity_over(&registry);
+    assert_eq!(
+        identity
+            .resolve_key(Contractd, &alice.temporary.key_id)
+            .unwrap()
+            .invalidated,
+        Some(invalidation_reason_t::compromised)
+    );
+}
+
+#[test]
+fn reserve_files_are_checked_like_journals_and_recreated_when_missing() {
+    // R03: a reserve that is a symbolic link makes the user unusable; a missing reserve
+    // (a store written before the reserve existed) is created at start and refilled by
+    // the first non-restrictive append.
+    let root = temp_root("reserve_paths");
+    let alice = test_user(1001);
+    let browser = app("browser");
+    let registry = open(&root);
+    enroll(&registry, &alice);
+    drop(registry);
+    let reserve = reserve_path(&root, alice.uid);
+    fs::remove_file(&reserve).unwrap();
+    std::os::unix::fs::symlink(root.join("elsewhere"), &reserve).unwrap();
+    let registry = open(&root);
+    assert_eq!(
+        registry.unusable_users().unwrap(),
+        vec![(
+            alice.uid,
+            unusable_reason_t::store(cham3_registryd::journal::store_error_t::unsafe_path)
+        )]
+    );
+    drop(registry);
+    fs::remove_file(&reserve).unwrap();
+    let registry = open(&root);
+    assert!(registry.unusable_users().unwrap().is_empty());
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), 0);
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    let genesis = draft(&alice, &browser, commit_type_t::genesis, "paths genesis").sign(&alice);
+    assert_eq!(admit(&registry, &alice, &genesis), Ok(placement_t::trunk));
+    assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
 }
 
 #[test]

@@ -261,6 +261,11 @@ fn check_grant(
         }
     }
     if let Some(session_id) = &lifetime.session_id {
+        // A durable session end dominates every attestation, however fresh (ADR 0007
+        // §6; M2-005 review R02).
+        if snapshot.view.ended_sessions.contains(session_id) {
+            return denied(deny_reason_t::grant_ended(end_reason_t::session_ended));
+        }
         let bound = identity.session_id.as_ref() == Some(session_id);
         let live = snapshot
             .sessions
