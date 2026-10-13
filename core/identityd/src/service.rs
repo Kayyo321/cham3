@@ -281,7 +281,7 @@ impl<journal_impl_t: identity_journal_t> identity_service_t<journal_impl_t> {
         let target = payload.target_key_id;
         match self.directory.check_identity_object(owner_uid, &verified)? {
             identity_effect_t::already_present(sequence) => {
-                self.pending_denials.remove(&target);
+                self.settle_pending_denial(&target);
                 Ok(append_receipt_t {
                     journal_seq: sequence,
                     already_present: true,
@@ -292,7 +292,7 @@ impl<journal_impl_t: identity_journal_t> identity_service_t<journal_impl_t> {
                 let receipt = self
                     .append(owner_uid, object_kind_t::key_invalidation, invalidation)
                     .map_err(|_| ipc(ipc_code_t::restriction_not_durable))?;
-                self.pending_denials.remove(&target);
+                self.settle_pending_denial(&target);
                 Ok(receipt)
             }
             _ => Err(ipc(ipc_code_t::malformed_request)),
@@ -305,6 +305,23 @@ impl<journal_impl_t: identity_journal_t> identity_service_t<journal_impl_t> {
             _ => reason,
         };
         self.pending_denials.insert(*key_id, strongest);
+    }
+
+    /// Drops the pending denial of `key_id` only once the durable index covers it: a
+    /// durable invalidation at least as strong (a pending `compromised` needs a
+    /// durable `compromised`). A weaker or unrelated record that becomes durable
+    /// leaves the pending restriction in place until its own object is durable.
+    fn settle_pending_denial(&mut self, key_id: &digest_t) {
+        let Some(pending) = self.pending_denials.get(key_id).copied() else {
+            return;
+        };
+        let durable = self
+            .directory
+            .resolve(key_id)
+            .and_then(|resolution| resolution.invalidated);
+        if durable_covers(durable, pending) {
+            self.pending_denials.remove(key_id);
+        }
     }
 
     fn append(
@@ -411,6 +428,17 @@ impl<journal_impl_t: identity_journal_t> identity_service_t<journal_impl_t> {
             }
         }
         Ok(identity)
+    }
+}
+
+/// Whether a durable invalidation reason restricts at least as much as a pending one
+/// (ADR 0005 §2: only `compromised` also makes the key's earlier commits ineligible).
+fn durable_covers(durable: Option<invalidation_reason_t>, pending: invalidation_reason_t) -> bool {
+    match (durable, pending) {
+        (Some(invalidation_reason_t::compromised), _) => true,
+        (Some(_), invalidation_reason_t::compromised) => false,
+        (Some(_), _) => true,
+        (None, _) => false,
     }
 }
 

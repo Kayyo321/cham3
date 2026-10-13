@@ -712,6 +712,24 @@ pub fn check_commit_scope(
     }
 }
 
+/// The key's certificate window at signing time `now_utc` (seconds since the epoch):
+/// a signer refuses outside it (ADR 0005 §2). Separate from layer 6, which checks the
+/// object's own immutable timestamp against the window: a still-live proposal must
+/// not extend a key's authority past `not_after`. Inclusive at both ends, like the
+/// historical check; unreadable window times fail closed.
+pub fn check_signing_window(resolution: &key_resolution_t, now_utc: i64) -> service_result_t<()> {
+    let window = authority(authority_code_t::certificate_window);
+    let start = utc_seconds(&resolution.not_before).ok_or(window)?;
+    let end = match &resolution.not_after {
+        Some(not_after) => Some(utc_seconds(not_after).ok_or(window)?),
+        None => None,
+    };
+    if now_utc < start || end.is_some_and(|end| now_utc > end) {
+        return Err(window);
+    }
+    Ok(())
+}
+
 /// Validity window rules of a certificate (beyond the model): `not_after`, when
 /// present, follows `not_before`; temporary authority requires `not_after` at most
 /// seven days after `not_before` (ADR 0005 §2).

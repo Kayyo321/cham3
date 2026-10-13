@@ -19,7 +19,7 @@ use cham3_contract_format::object_kind_t;
 use cham3_contract_format::schema::authority_class_t;
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::index::{ceremony_mode_t, key_scope_t, record_role_t, user_record_t};
-use cham3_identityd::outcome::{authority_code_t, service_error_t};
+use cham3_identityd::outcome::{authority_code_t, ipc_code_t, service_error_t};
 use cham3_vaultd::service::{created_keys_t, proposal_request_t};
 use fixture::*;
 
@@ -340,6 +340,93 @@ fn an_unavailable_status_keeps_every_object_and_a_retry_resumes() {
         "resumed with the held keys"
     );
     assert_eq!(key_files(&root), 3);
+}
+
+#[test]
+fn a_definitive_naming_error_is_reconciled_from_the_status() {
+    // An error from the naming erases nothing by itself, whatever its code: only
+    // recovery_status decides (M2-004 review R05).
+    let (root, identity, mut vault, _alice) = enrolled("naming_error");
+    let secret = passphrase(AlicePassphrase);
+    contain_and_open(&identity);
+    vault.registry_mut().naming_error = Some(service_error_t::ipc(ipc_code_t::role_denied));
+    vault.registry_mut().status_unavailable = true;
+    assert_eq!(
+        code(vault.recover_keys(Alice, &RecoveryId, &secret)),
+        "ipc/role_denied"
+    );
+    assert_eq!(key_files(&root), 5, "status unavailable: every object kept");
+    assert!(root.join("1001").join("pending.reg").exists());
+    let held: Vec<digest_t> = vault.store().list_keys(1001).unwrap();
+    // The status is known now: the ceremony is open and nothing is named, so the
+    // held keys stay and the naming is retried with them.
+    vault.registry_mut().status_unavailable = false;
+    let calls = vault.registry_mut().naming_calls;
+    assert_eq!(
+        code(vault.recover_keys(Alice, &RecoveryId, &secret)),
+        "ipc/role_denied"
+    );
+    assert_eq!(vault.registry_mut().naming_calls, calls + 1);
+    assert_eq!(vault.store().list_keys(1001).unwrap(), held);
+    vault.registry_mut().naming_error = None;
+    let keys = vault
+        .recover_keys(Alice, &RecoveryId, &secret)
+        .expect("named");
+    assert!(held.contains(&keys.0) && held.contains(&keys.1));
+    assert_eq!(key_files(&root), 3);
+}
+
+#[test]
+fn after_a_definitive_naming_error_only_an_ended_ceremony_erases() {
+    let (root, identity, mut vault, _alice) = enrolled("naming_error_abort");
+    let secret = passphrase(AlicePassphrase);
+    contain_and_open(&identity);
+    vault.registry_mut().naming_error = Some(service_error_t::ipc(ipc_code_t::role_denied));
+    assert_eq!(
+        code(vault.recover_keys(Alice, &RecoveryId, &secret)),
+        "ipc/role_denied"
+    );
+    assert_eq!(key_files(&root), 5);
+    // Positive status evidence: a new containment aborted the ceremony, so the held
+    // keys can never be named.
+    push_record(&identity, 1001, user_record_t::containment);
+    assert_eq!(
+        code(vault.recover_keys(Alice, &RecoveryId, &secret)),
+        "admission/recovery_rule"
+    );
+    assert_eq!(key_files(&root), 3);
+    assert!(!root.join("1001").join("pending.reg").exists());
+}
+
+#[test]
+fn a_ceremony_that_ends_during_the_derivation_gets_no_certificates() {
+    // The ceremony and the identity key's ceremony scope are checked again after the
+    // derivations, immediately before the identity key signs (M2-004 review R03).
+    let root = temp_root("interleaved_ceremony");
+    let identity = identity_service();
+    let mut vault = interleaved_vault(&root, &identity);
+    let secret = passphrase(AlicePassphrase);
+    vault.create_user_keys(Alice, &secret).unwrap();
+    contain_and_open(&identity);
+    let records = identity.borrow().journal().record_count(1001);
+    let shared = identity.clone();
+    // recover_keys resolves the identity key and the two held contract keys before
+    // the derivations; the ceremony is aborted right after the last of them.
+    vault.identity_mut().arm(3, move || {
+        push_record(&shared, 1001, user_record_t::containment);
+    });
+    assert_eq!(
+        code(vault.recover_keys(Alice, &RecoveryId, &secret)),
+        "admission/recovery_rule"
+    );
+    assert!(vault.identity_mut().change.is_none(), "the change ran");
+    assert_eq!(
+        identity.borrow().journal().record_count(1001),
+        records + 1,
+        "only the aborting containment: no certificate was registered"
+    );
+    assert_eq!(key_files(&root), 3);
+    assert!(!root.join("1001").join("pending.reg").exists());
 }
 
 fn abandon_attempt(label: &str) -> (std::path::PathBuf, identity_t, vault_t, Vec<digest_t>) {

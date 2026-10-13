@@ -1,6 +1,7 @@
 //! Test fixture for vaultd: temporary vault roots, a manual clock, a shared identity
 //! service over the journal fixture, a labeled stand-in for registryd's ceremony
-//! operations and commit payloads re-bound from the published vectors.
+//! operations, an identity link that interleaves another service's change with a
+//! vault operation, and commit payloads re-bound from the published vectors.
 //!
 //! Synthetic users and passphrases only; nothing here is a production secret.
 
@@ -14,14 +15,16 @@ use cham3_contract_format::dcbor::encode;
 use cham3_contract_format::hash::{digest_t, lineage_id};
 use cham3_contract_format::schema::{authority_class_t, commit_payload_t, random_id_t};
 use cham3_contract_format::{object_kind_t, payload_t, verify_object};
-use cham3_identityd::index::{naming_effect_t, naming_t, recovery_status_t, user_record_t};
-use cham3_identityd::journal::memory_journal_t;
+use cham3_identityd::index::{
+    key_resolution_t, naming_effect_t, naming_t, recovery_status_t, user_record_t,
+};
+use cham3_identityd::journal::{append_receipt_t, memory_journal_t};
 use cham3_identityd::outcome::{ipc_code_t, service_error_t, service_result_t};
-use cham3_identityd::service::identity_service_t;
+use cham3_identityd::service::{enrollment_receipt_t, identity_service_t, user_identity_t};
 use cham3_secure_memory::secret_region_t;
 use cham3_vaultd::clock::vault_clock_t;
 use cham3_vaultd::kdf::kdf_params_t;
-use cham3_vaultd::links::{in_process_identity_t, recovery_registry_t};
+use cham3_vaultd::links::{identity_client_t, in_process_identity_t, recovery_registry_t};
 use cham3_vaultd::service::{vault_config_t, vault_service_t};
 
 #[path = "../../../contract_format/tests/support/mod.rs"]
@@ -65,6 +68,9 @@ pub struct fixture_registry_t {
     pub status_unavailable: bool,
     /// `name_recovery_keys` fails before anything is durable (timeout or crash).
     pub naming_unavailable: bool,
+    /// `name_recovery_keys` refuses with this definitive error before anything is
+    /// durable (for example an access or configuration fault).
+    pub naming_error: Option<service_error_t>,
     pub pending: Option<(u32, naming_t)>,
     pub naming_calls: usize,
 }
@@ -115,6 +121,9 @@ impl recovery_registry_t for fixture_registry_t {
         self.naming_calls += 1;
         if self.naming_unavailable {
             return Err(service_error_t::ipc(ipc_code_t::storage_unavailable));
+        }
+        if let Some(error) = self.naming_error {
+            return Err(error);
         }
         self.settle()?;
         let effect = {
@@ -179,6 +188,7 @@ pub fn registry(identity: &identity_t) -> fixture_registry_t {
         anchor_fault: false,
         status_unavailable: false,
         naming_unavailable: false,
+        naming_error: None,
         pending: None,
         naming_calls: 0,
     }
@@ -282,4 +292,99 @@ pub fn proposal_id(label: &str) -> random_id_t {
     let mut id = [0u8; 16];
     id.copy_from_slice(&digest[..16]);
     id
+}
+
+/// An identity link that runs `change` once, right after the `resolve_key` answer
+/// that `after_resolves` counts down to, standing in for another service's change
+/// that lands while vaultd derives a key. An in-process interleaving, not a socket
+/// race.
+pub struct interleaving_identity_t {
+    pub link: in_process_identity_t<memory_journal_t>,
+    pub after_resolves: usize,
+    pub change: Option<Box<dyn FnOnce()>>,
+    pub resolves: usize,
+}
+
+impl interleaving_identity_t {
+    /// Runs `change` after the `count`-th `resolve_key` answer from now.
+    pub fn arm(&mut self, count: usize, change: impl FnOnce() + 'static) {
+        self.after_resolves = count;
+        self.change = Some(Box::new(change));
+    }
+}
+
+impl identity_client_t for interleaving_identity_t {
+    fn register_enrollment(
+        &mut self,
+        owner_uid: u32,
+        enrollment: &[u8],
+        persistent_certificate: &[u8],
+        temporary_certificate: &[u8],
+    ) -> service_result_t<enrollment_receipt_t> {
+        self.link.register_enrollment(
+            owner_uid,
+            enrollment,
+            persistent_certificate,
+            temporary_certificate,
+        )
+    }
+
+    fn register_certificate(
+        &mut self,
+        owner_uid: u32,
+        certificate: &[u8],
+    ) -> service_result_t<append_receipt_t> {
+        self.link.register_certificate(owner_uid, certificate)
+    }
+
+    fn register_invalidation(
+        &mut self,
+        owner_uid: u32,
+        invalidation: &[u8],
+    ) -> service_result_t<append_receipt_t> {
+        self.link.register_invalidation(owner_uid, invalidation)
+    }
+
+    fn resolve_key(&mut self, key_id: &digest_t) -> service_result_t<key_resolution_t> {
+        let answer = self.link.resolve_key(key_id);
+        self.resolves += 1;
+        if self.change.is_some() {
+            self.after_resolves = self.after_resolves.saturating_sub(1);
+            if self.after_resolves == 0 {
+                if let Some(change) = self.change.take() {
+                    change();
+                }
+            }
+        }
+        answer
+    }
+
+    fn user_identity(&mut self, uid: u32) -> service_result_t<user_identity_t> {
+        self.link.user_identity(uid)
+    }
+}
+
+pub type interleaved_vault_t =
+    vault_service_t<interleaving_identity_t, fixture_registry_t, test_clock_t>;
+
+/// A vault whose identity link can interleave a change (see
+/// [`interleaving_identity_t`]).
+pub fn interleaved_vault(root: &Path, identity: &identity_t) -> interleaved_vault_t {
+    vault_service_t::start(
+        config(root),
+        interleaving_identity_t {
+            link: in_process_identity_t {
+                service: identity.clone(),
+            },
+            after_resolves: 0,
+            change: None,
+            resolves: 0,
+        },
+        registry(identity),
+        test_clock_t {
+            monotonic: 1000,
+            utc: StartUtc,
+        },
+    )
+    .expect("vault")
 }

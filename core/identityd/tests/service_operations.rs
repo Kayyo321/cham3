@@ -508,6 +508,70 @@ fn compromise_escalates_an_earlier_invalidation_reason() {
 }
 
 #[test]
+fn a_pending_compromise_is_kept_until_a_durable_compromise_covers_it() {
+    // A weaker invalidation that is already durable, or becomes durable, must not clear
+    // a stronger restriction held only in memory (M2-004 review R01).
+    let user = test_user(1001);
+    let mut service = enrolled(&[&user]);
+    let reason = |service: &mut service_t, key: &digest_t| {
+        service
+            .resolve_key(Contractd, key)
+            .expect("resolve")
+            .invalidated
+    };
+    let (persistent, temporary) = (user.persistent.key_id, user.temporary.key_id);
+    let rotated = invalidation(&user.identity, &persistent, reason_of("rotated"), "r");
+    service
+        .register_invalidation(Vaultd, 1001, &rotated)
+        .expect("rotated, durable");
+    let compromised = invalidation(&user.identity, &persistent, reason_of("compromised"), "c");
+    let temporary_compromised =
+        invalidation(&user.identity, &temporary, reason_of("compromised"), "tc");
+    service.journal_mut().faults.fail_appends = true;
+    for object in [&compromised, &temporary_compromised] {
+        assert_eq!(
+            code(service.register_invalidation(Vaultd, 1001, object)),
+            "ipc/restriction_not_durable"
+        );
+    }
+    service.journal_mut().faults = Default::default();
+    // The already-durable rotated object again (a vaultd retry): `already_present`,
+    // and the pending compromise stays.
+    let again = service
+        .register_invalidation(Vaultd, 1001, &rotated)
+        .expect("idempotent");
+    assert!(again.already_present);
+    assert_eq!(
+        reason(&mut service, &persistent),
+        Some(reason_of("compromised"))
+    );
+    // A different, weaker invalidation newly appended for the temporary key does not
+    // clear its pending compromise either.
+    let temporary_rotated = invalidation(&user.identity, &temporary, reason_of("rotated"), "tr");
+    let appended = service
+        .register_invalidation(Vaultd, 1001, &temporary_rotated)
+        .expect("appended");
+    assert!(!appended.already_present);
+    assert_eq!(
+        reason(&mut service, &temporary),
+        Some(reason_of("compromised"))
+    );
+    // The compromises become durable on their retries; the durable index then covers
+    // them, also after a restart.
+    for object in [&compromised, &temporary_compromised] {
+        let receipt = service
+            .register_invalidation(Vaultd, 1001, object)
+            .expect("durable");
+        assert!(!receipt.already_present);
+    }
+    let mut restarted = identity_service_t::start(service.journal().clone()).expect("restart");
+    for key in [&persistent, &temporary] {
+        assert_eq!(reason(&mut service, key), Some(reason_of("compromised")));
+        assert_eq!(reason(&mut restarted, key), Some(reason_of("compromised")));
+    }
+}
+
+#[test]
 fn invalidation_narrows_in_every_state_except_deleted_and_never_targets_the_identity_key() {
     let user = test_user(1001);
     let mut service = enrolled(&[&user]);

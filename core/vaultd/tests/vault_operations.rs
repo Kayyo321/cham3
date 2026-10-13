@@ -1,8 +1,10 @@
 //! vaultd with real providers (Argon2id, XChaCha20-Poly1305, Ed25519, getrandom) in
 //! secret regions, against the identity service over the journal fixture: key
 //! creation, exact-proposal approval and signing, approval binding and replay,
-//! attempt limiting, tampered and substituted key objects, user separation, roles,
-//! invalidation, rotation and restartable registration (A04, A05, A12 in-process).
+//! single-use proposal ids, the signing key's window at signing time, authority
+//! changes during the derivation, attempt limiting, tampered and substituted key
+//! objects, user separation, roles, invalidation, rotation and restartable
+//! registration (A04, A05, A12 in-process).
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -16,16 +18,22 @@ mod fixture;
 
 use std::os::unix::fs::PermissionsExt;
 
-use cham3_contract_format::envelope::{protected_header_bytes, to_be_signed};
+use cham3_contract_format::dcbor::encode;
+use cham3_contract_format::envelope::{assemble_envelope, protected_header_bytes, to_be_signed};
 use cham3_contract_format::hash::{digest_t, sha256};
-use cham3_contract_format::schema::{authority_class_t, invalidation_reason_t};
+use cham3_contract_format::schema::{authority_class_t, invalidation_reason_t, key_invalidation_t};
 use cham3_contract_format::{key_resolver_t, object_kind_t, payload_t, verify_object};
 use cham3_identityd::caller::{caller_role_t, service_name_t};
-use cham3_identityd::index::{check_commit_authority, key_scope_t, user_record_t};
+use cham3_identityd::index::{
+    MaxTemporaryCertificateSeconds, check_commit_authority, key_scope_t, user_record_t,
+};
 use cham3_identityd::outcome::service_error_t;
 use cham3_vaultd::kdf::{derive_kek, kdf_params_t};
 use cham3_vaultd::key_object::key_object_t;
-use cham3_vaultd::service::{created_keys_t, proposal_request_t};
+use cham3_vaultd::service::{
+    DefaultMaxRetiredProposalsPerUser, created_keys_t, proposal_request_t,
+};
+use ed25519_dalek::{Signer, SigningKey};
 use fixture::*;
 
 const Contractd: caller_role_t = caller_role_t::service(service_name_t::contractd);
@@ -324,6 +332,167 @@ fn proposals_expire_by_either_clock() {
         code(setup.vault.register_proposal(Contractd, late)),
         "ipc/malformed_request"
     );
+}
+
+#[test]
+fn proposal_ids_stay_single_use_for_their_lifetime() {
+    // A used or cancelled id is kept, without its bytes, until the proposal's lifetime
+    // ends: neither a later registration's cleanup nor a cancellation makes it
+    // registrable or signable again (M2-004 review R04).
+    let mut setup = setup("single_use");
+    let payload = alice_genesis(&setup);
+    let secret = passphrase(AlicePassphrase);
+    let register = |vault: &mut vault_t, label: &str| {
+        vault.register_proposal(Contractd, request(label, 1001, &payload))
+    };
+    let a = register(&mut setup.vault, "a").unwrap();
+    setup
+        .vault
+        .approve_and_sign(Alice, &a.proposal_id, &a.approval_digest, &secret)
+        .expect("a signed once");
+    // Interleaved: b registered (its cleanup runs), c cancelled by the owner, d by
+    // contractd, then b approved.
+    let b = register(&mut setup.vault, "b").unwrap();
+    let c = register(&mut setup.vault, "c").unwrap();
+    setup.vault.cancel_proposal(Alice, &c.proposal_id).unwrap();
+    let d = register(&mut setup.vault, "d").unwrap();
+    setup
+        .vault
+        .cancel_proposal(Contractd, &d.proposal_id)
+        .unwrap();
+    // A used marker cannot be cancelled away; a cancelled one cannot be cancelled again.
+    assert_eq!(
+        code(setup.vault.cancel_proposal(Contractd, &a.proposal_id)),
+        "ipc/proposal_used"
+    );
+    assert_eq!(
+        code(setup.vault.cancel_proposal(Alice, &c.proposal_id)),
+        "ipc/proposal_unknown"
+    );
+    setup
+        .vault
+        .approve_and_sign(Alice, &b.proposal_id, &b.approval_digest, &secret)
+        .expect("b signed once");
+    for (label, approval) in [
+        ("a", "ipc/proposal_used"),
+        ("b", "ipc/proposal_used"),
+        ("c", "ipc/proposal_unknown"),
+        ("d", "ipc/proposal_unknown"),
+    ] {
+        assert_eq!(
+            code(register(&mut setup.vault, label)),
+            "ipc/duplicate_identifier",
+            "{label}"
+        );
+        // The digest is the same for every id here (same bytes).
+        assert_eq!(
+            code(setup.vault.approve_and_sign(
+                Alice,
+                &proposal_id(label),
+                &a.approval_digest,
+                &secret
+            )),
+            approval,
+            "{label}"
+        );
+    }
+    // Retention is bounded: the kept ids count against their own per-user limit...
+    for index in 4..DefaultMaxRetiredProposalsPerUser {
+        let filler = register(&mut setup.vault, &format!("filler {index}")).unwrap();
+        setup
+            .vault
+            .cancel_proposal(Contractd, &filler.proposal_id)
+            .unwrap();
+    }
+    assert_eq!(
+        code(register(&mut setup.vault, "over the limit")),
+        "ipc/quota_exhausted"
+    );
+    // ... and end with the proposals' lifetime.
+    setup.vault.clock_mut().monotonic += 120;
+    register(&mut setup.vault, "after the lifetime").expect("a fresh id registers");
+}
+
+#[test]
+fn a_live_proposal_does_not_extend_the_signing_keys_window() {
+    // The key's certificate window is checked at the current time, at registration
+    // and again immediately before the signature, apart from layer 6's check of the
+    // payload timestamp (M2-004 review R02).
+    let mut setup = setup("window");
+    let secret = passphrase(AlicePassphrase);
+    let not_after = StartUtc + MaxTemporaryCertificateSeconds;
+    let grant = commit_payload(
+        "commit_temporary_session",
+        1001,
+        &setup.alice.user_id,
+        &setup.alice.temporary_key_id,
+        authority_class_t::temporary,
+        "2026-10-20T07:59:55Z",
+    );
+    let approve = |vault: &mut vault_t,
+                   registered: &cham3_vaultd::service::registered_proposal_t| {
+        vault.approve_and_sign(
+            Alice,
+            &registered.proposal_id,
+            &registered.approval_digest,
+            &secret,
+        )
+    };
+    // Registered five seconds before not_after with a timestamp inside the window,
+    // approved one second after it: refused although the proposal is still live.
+    setup.vault.clock_mut().utc = not_after - 5;
+    let late = setup
+        .vault
+        .register_proposal(Contractd, request("late approval", 1001, &grant))
+        .expect("inside the window");
+    setup.vault.clock_mut().utc += 6;
+    setup.vault.clock_mut().monotonic += 6;
+    assert_eq!(
+        code(approve(&mut setup.vault, &late)),
+        "key_authority/certificate_window"
+    );
+    // Approved at not_after exactly (inclusive, like layer 6): signs.
+    setup.vault.clock_mut().utc = not_after - 5;
+    let boundary = setup
+        .vault
+        .register_proposal(Contractd, request("at the boundary", 1001, &grant))
+        .unwrap();
+    setup.vault.clock_mut().utc = not_after;
+    let envelope = approve(&mut setup.vault, &boundary).expect("at not_after");
+    verify_object(
+        &envelope,
+        object_kind_t::commit,
+        &identity_resolver_t(&setup.identity),
+    )
+    .expect("verifies");
+    // Registration after not_after, or before not_before, is refused even for a
+    // payload timestamp inside the window.
+    setup.vault.clock_mut().utc = not_after + 1;
+    assert_eq!(
+        code(
+            setup
+                .vault
+                .register_proposal(Contractd, request("after", 1001, &grant))
+        ),
+        "key_authority/certificate_window"
+    );
+    setup.vault.clock_mut().utc = StartUtc - 1;
+    assert_eq!(
+        code(
+            setup
+                .vault
+                .register_proposal(Contractd, request("before", 1001, &grant))
+        ),
+        "key_authority/certificate_window"
+    );
+    // The persistent key has no not_after.
+    setup.vault.clock_mut().utc = StartUtc + 400 * 24 * 60 * 60;
+    let genesis = alice_genesis(&setup);
+    let persistent = setup
+        .vault
+        .register_proposal(Contractd, request("persistent", 1001, &genesis))
+        .expect("no end");
+    approve(&mut setup.vault, &persistent).expect("signs");
 }
 
 #[test]
@@ -773,6 +942,126 @@ fn invalidated_keys_never_sign_even_from_a_restored_object() {
         )),
         "key_authority/key_not_certified"
     );
+}
+
+/// A compromise invalidation of `target` signed by Alice's identity key, as another
+/// vaultd operation would register it (test only: the identity seed is decrypted with
+/// the synthetic passphrase).
+fn identity_signed_invalidation(
+    root: &std::path::Path,
+    user_id: &digest_t,
+    target: &digest_t,
+) -> Vec<u8> {
+    let path = root
+        .join("1001")
+        .join(format!("{}.key", fixture::support::hex_encode(user_id)));
+    let object = key_object_t::decode(&std::fs::read(path).unwrap()).unwrap();
+    let kek = derive_kek(
+        &kdf_params_t::Minimum,
+        u64::MAX,
+        AlicePassphrase.as_bytes(),
+        &object.metadata.salt,
+    )
+    .unwrap();
+    let seed = object.open(&kek).unwrap();
+    let signing = SigningKey::from_bytes(<&[u8; 32]>::try_from(seed.as_slice()).unwrap());
+    let payload = encode(
+        &key_invalidation_t {
+            invalidation_id: proposal_id("interleaved invalidation"),
+            issued: "2026-10-13T08:00:00Z".to_owned(),
+            owner_user_id: *user_id,
+            target_key_id: *target,
+            reason: invalidation_reason_t::compromised,
+        }
+        .to_value(),
+    );
+    let protected = protected_header_bytes(user_id, object_kind_t::key_invalidation);
+    let message = to_be_signed(object_kind_t::key_invalidation, &protected, &payload);
+    assemble_envelope(&protected, &payload, &signing.sign(&message).to_bytes())
+}
+
+#[test]
+fn authority_changes_during_the_derivation_prevent_the_signature() {
+    // Key status, scope and window are resolved again after the KEK derivation,
+    // immediately before the signature. Each change lands right after the approval's
+    // first `resolve_key` answer, i.e. after the check before the derivation
+    // (M2-004 review R03).
+    let secret = passphrase(AlicePassphrase);
+    for (case, expected) in [
+        ("invalidation", Some("key_authority/key_invalidated")),
+        ("deletion", Some("key_authority/user_deleted")),
+        ("containment", Some("key_authority/contained")),
+        ("no change", None),
+    ] {
+        let root = temp_root(&format!("interleaved {case}"));
+        let identity = identity_service();
+        let mut vault = interleaved_vault(&root, &identity);
+        let alice = vault.create_user_keys(Alice, &secret).unwrap();
+        let payload = commit_payload(
+            "commit_genesis",
+            1001,
+            &alice.user_id,
+            &alice.persistent_key_id,
+            authority_class_t::persistent,
+            CommitTime,
+        );
+        let registered = vault
+            .register_proposal(Contractd, request(case, 1001, &payload))
+            .unwrap();
+        let shared = identity.clone();
+        match case {
+            "invalidation" => {
+                let object =
+                    identity_signed_invalidation(&root, &alice.user_id, &alice.persistent_key_id);
+                vault.identity_mut().arm(1, move || {
+                    shared
+                        .borrow_mut()
+                        .register_invalidation(
+                            caller_role_t::service(service_name_t::vaultd),
+                            1001,
+                            &object,
+                        )
+                        .expect("invalidation");
+                });
+            }
+            "deletion" => vault.identity_mut().arm(1, move || {
+                push_record(&shared, 1001, user_record_t::deletion_pending);
+            }),
+            "containment" => vault.identity_mut().arm(1, move || {
+                push_record(&shared, 1001, user_record_t::containment);
+            }),
+            _ => {}
+        }
+        let resolves = vault.identity_mut().resolves;
+        let outcome = vault.approve_and_sign(
+            Alice,
+            &registered.proposal_id,
+            &registered.approval_digest,
+            &secret,
+        );
+        match expected {
+            Some(expected) => {
+                assert_eq!(code(outcome), expected, "{case}");
+                assert!(
+                    vault.identity_mut().change.is_none(),
+                    "{case}: the change ran"
+                );
+            }
+            None => {
+                verify_object(
+                    &outcome.expect("signed"),
+                    object_kind_t::commit,
+                    &identity_resolver_t(&identity),
+                )
+                .expect("verifies");
+            }
+        }
+        assert_eq!(
+            vault.identity_mut().resolves - resolves,
+            2,
+            "{case}: resolved before and after the derivation"
+        );
+    }
 }
 
 #[test]

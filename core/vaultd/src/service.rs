@@ -29,8 +29,8 @@ use cham3_contract_format::schema::{
 use cham3_contract_format::{layer_t, object_kind_t};
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::index::{
-    MaxTemporaryCertificateSeconds, check_commit_scope, key_class_t, key_scope_t, naming_t,
-    user_state_t, utc_text,
+    MaxTemporaryCertificateSeconds, ceremony_t, check_commit_scope, check_signing_window,
+    key_class_t, key_scope_t, naming_t, user_state_t, utc_text,
 };
 use cham3_identityd::outcome::{
     authority_code_t, ipc_code_t, rule_code_t, service_error_t, service_result_t,
@@ -56,6 +56,10 @@ pub const MaxPassphraseBytes: usize = 1024;
 /// Pending proposals per user and in total.
 pub const DefaultMaxProposalsPerUser: usize = 8;
 pub const DefaultMaxProposals: usize = 64;
+/// Used or cancelled proposal ids kept until their lifetime ends, per user and in
+/// total.
+pub const DefaultMaxRetiredProposalsPerUser: usize = 32;
+pub const DefaultMaxRetiredProposals: usize = 256;
 
 /// vaultd configuration.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -67,6 +71,8 @@ pub struct vault_config_t {
     pub locked_budget_bytes: u64,
     pub max_proposals_per_user: usize,
     pub max_proposals: usize,
+    pub max_retired_proposals_per_user: usize,
+    pub max_retired_proposals: usize,
 }
 
 impl vault_config_t {
@@ -77,6 +83,8 @@ impl vault_config_t {
             locked_budget_bytes: crate::kdf::DefaultLockedBudgetBytes,
             max_proposals_per_user: DefaultMaxProposalsPerUser,
             max_proposals: DefaultMaxProposals,
+            max_retired_proposals_per_user: DefaultMaxRetiredProposalsPerUser,
+            max_retired_proposals: DefaultMaxRetiredProposals,
         }
     }
 }
@@ -110,6 +118,15 @@ pub struct created_keys_t {
     pub temporary_key_id: digest_t,
 }
 
+/// A registered proposal id. A used or cancelled id stays (without its bytes) until
+/// the proposal's lifetime ends, so it cannot be registered and approved again.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum proposal_state_t {
+    pending,
+    used,
+    cancelled,
+}
+
 struct proposal_t {
     owner_uid: u32,
     key_id: digest_t,
@@ -118,7 +135,16 @@ struct proposal_t {
     approval_digest: digest_t,
     expires_monotonic: u64,
     expires_utc: i64,
-    used: bool,
+    state: proposal_state_t,
+}
+
+impl proposal_t {
+    /// Ends the proposal but keeps its id; its bytes are released.
+    fn retire(&mut self, state: proposal_state_t) {
+        self.state = state;
+        self.protected = Vec::new();
+        self.payload = Vec::new();
+    }
 }
 
 /// One freshly generated key: its encrypted object and its seed (secret region).
@@ -663,7 +689,9 @@ where
     /// `register_proposal` (`service:contractd`): exact payload bytes for one signing
     /// operation. The vault decodes and checks the payload itself, binds it to the
     /// owner, key, head and epoch, checks the key's authority and scope with
-    /// identityd and returns the approval digest.
+    /// identityd and its certificate window at the current time, and returns the
+    /// approval digest. A proposal id is single use: a used or cancelled id is refused
+    /// (`duplicate_identifier`) until its proposal's lifetime ends.
     pub fn register_proposal(
         &mut self,
         caller: caller_role_t,
@@ -678,17 +706,22 @@ where
         {
             return Err(ipc(ipc_code_t::malformed_request));
         }
+        self.expire_proposals();
+        // A used or cancelled id is refused for the rest of its lifetime too.
         if self.proposals.contains_key(&request.proposal_id) {
             return Err(ipc(ipc_code_t::duplicate_identifier));
         }
-        self.expire_proposals();
-        let pending_for_user = self
-            .proposals
-            .values()
-            .filter(|proposal| proposal.owner_uid == request.owner_uid)
-            .count();
-        if pending_for_user >= self.config.max_proposals_per_user
-            || self.proposals.len() >= self.config.max_proposals
+        let count = |pending: bool, user: Option<u32>| {
+            self.proposals
+                .values()
+                .filter(|proposal| (proposal.state == proposal_state_t::pending) == pending)
+                .filter(|proposal| user.is_none_or(|uid| proposal.owner_uid == uid))
+                .count()
+        };
+        if count(true, Some(request.owner_uid)) >= self.config.max_proposals_per_user
+            || count(true, None) >= self.config.max_proposals
+            || count(false, Some(request.owner_uid)) >= self.config.max_retired_proposals_per_user
+            || count(false, None) >= self.config.max_retired_proposals
         {
             return Err(ipc(ipc_code_t::quota_exhausted));
         }
@@ -727,7 +760,7 @@ where
                 approval_digest,
                 expires_monotonic: monotonic.saturating_add(request.expires_in_seconds),
                 expires_utc,
-                used: false,
+                state: proposal_state_t::pending,
             },
         );
         Ok(registered_proposal_t {
@@ -736,11 +769,12 @@ where
         })
     }
 
-    /// Layer 6 plus scope for the proposal's signing key, and the vault must hold the
-    /// key's object.
+    /// Layer 6 plus scope for the proposal's signing key, the key's certificate
+    /// window now, and the vault must hold the key's object.
     fn check_signing_key(&mut self, uid: u32, payload: &commit_payload_t) -> service_result_t<()> {
         let resolution = self.identity.resolve_key(&payload.key_id)?;
         check_commit_scope(&resolution, payload)?;
+        check_signing_window(&resolution, self.clock.utc_seconds())?;
         let object = self
             .store
             .read_key(uid, &payload.key_id)
@@ -760,11 +794,12 @@ where
             || self.clock.utc_seconds() >= proposal.expires_utc
     }
 
+    /// Forgets every proposal id, pending or retired, whose lifetime has ended.
     fn expire_proposals(&mut self) {
         let expired: Vec<random_id_t> = self
             .proposals
             .iter()
-            .filter(|(_, proposal)| self.expired(proposal) || proposal.used)
+            .filter(|(_, proposal)| self.expired(proposal))
             .map(|(id, _)| *id)
             .collect();
         for id in expired {
@@ -774,7 +809,12 @@ where
 
     /// `approve_and_sign` (`trusted_client`, owner): signs one registered proposal
     /// whose digest the client computed from the bytes it displayed, after passphrase
-    /// authentication; the proposal is then used.
+    /// authentication; the proposal is then used. Key status, scope and the current
+    /// certificate window are checked before the KEK derivation and again after it,
+    /// immediately before the signature. (The second check narrows, but does not
+    /// close, the interval in which another service's restriction can cross a
+    /// signature; serializing restrictions with signatures across services is part
+    /// of the M2-006/M2-007 integration.)
     pub fn approve_and_sign(
         &mut self,
         caller: caller_role_t,
@@ -792,8 +832,10 @@ where
             if proposal.owner_uid != uid {
                 return Err(ipc(ipc_code_t::owner_mismatch));
             }
-            if proposal.used {
-                return Err(ipc(ipc_code_t::proposal_used));
+            match proposal.state {
+                proposal_state_t::pending => {}
+                proposal_state_t::used => return Err(ipc(ipc_code_t::proposal_used)),
+                proposal_state_t::cancelled => return Err(ipc(ipc_code_t::proposal_unknown)),
             }
             if self.expired(proposal) {
                 self.proposals.remove(proposal_id);
@@ -814,31 +856,38 @@ where
         self.check_signing_key(uid, &parsed)?;
         let class = class_of_certificate(parsed.authority_class);
         let seed = self.unlock(uid, &key_id, class, passphrase)?;
-        let expired = self
-            .proposals
-            .get(proposal_id)
-            .is_none_or(|proposal| proposal.used || self.expired(proposal));
-        if expired {
-            self.proposals.remove(proposal_id);
+        let live = self.proposals.get(proposal_id).is_some_and(|proposal| {
+            proposal.state == proposal_state_t::pending && !self.expired(proposal)
+        });
+        if !live {
+            // Only an ended lifetime removes an id; a used or cancelled marker stays.
+            self.expire_proposals();
             return Err(ipc(ipc_code_t::proposal_expired));
         }
+        // Final check after the derivation, immediately before the signature: key
+        // status, scope and window may have changed meanwhile (a refusal drops `seed`,
+        // which clears it).
+        self.check_signing_key(uid, &parsed)?;
         let envelope = Self::sign(&seed, object_kind_t::commit, &protected, &payload)?;
         drop(seed);
         if let Some(proposal) = self.proposals.get_mut(proposal_id) {
-            proposal.used = true;
+            proposal.retire(proposal_state_t::used);
         }
         Ok(envelope)
     }
 
-    /// `cancel_proposal` (`trusted_client` owner or `service:contractd`).
+    /// `cancel_proposal` (`trusted_client` owner or `service:contractd`): ends a
+    /// pending proposal; its id stays refused for the rest of its lifetime. A used
+    /// proposal's marker cannot be cancelled away.
     pub fn cancel_proposal(
         &mut self,
         caller: caller_role_t,
         proposal_id: &random_id_t,
     ) -> service_result_t<()> {
+        self.expire_proposals();
         let proposal = self
             .proposals
-            .get(proposal_id)
+            .get_mut(proposal_id)
             .ok_or(ipc(ipc_code_t::proposal_unknown))?;
         match caller {
             caller_role_t::service(service_name_t::contractd) => {}
@@ -846,8 +895,14 @@ where
             caller_role_t::trusted_client { .. } => return Err(ipc(ipc_code_t::owner_mismatch)),
             _ => return Err(ipc(ipc_code_t::role_denied)),
         }
-        self.proposals.remove(proposal_id);
-        Ok(())
+        match proposal.state {
+            proposal_state_t::pending => {
+                proposal.retire(proposal_state_t::cancelled);
+                Ok(())
+            }
+            proposal_state_t::used => Err(ipc(ipc_code_t::proposal_used)),
+            proposal_state_t::cancelled => Err(ipc(ipc_code_t::proposal_unknown)),
+        }
     }
 
     // ---------------------------------------------------------------- rotation
@@ -906,12 +961,16 @@ where
         let uid = caller.trusted_uid().ok_or(ipc(ipc_code_t::role_denied))?;
         Self::check_passphrase(passphrase)?;
         self.complete_pending(uid)?;
-        let user_id = self.identity_key(uid, |scope| scope == key_scope_t::normal)?;
+        let normal = |scope: key_scope_t| scope == key_scope_t::normal;
+        let user_id = self.identity_key(uid, normal)?;
         let identity = self.identity.user_identity(uid)?;
         let key_class = class_of_certificate(class);
         let current = self.usable_held_keys(uid, key_class)?;
         let seed = self.unlock(uid, &user_id, key_class_t::identity, passphrase)?;
         let new_key = self.generate_key(key_class, uid, Some(user_id), passphrase)?;
+        // The identity key's scope again, after the derivations and immediately
+        // before it signs.
+        self.identity_key(uid, normal)?;
         let epoch = current
             .iter()
             .map(|(_, epoch)| *epoch)
@@ -988,12 +1047,16 @@ where
         let uid = caller.trusted_uid().ok_or(ipc(ipc_code_t::role_denied))?;
         Self::check_passphrase(passphrase)?;
         self.complete_pending(uid)?;
-        let user_id = self.identity_key(uid, |scope| !matches!(scope, key_scope_t::denied(_)))?;
+        let not_denied = |scope: key_scope_t| !matches!(scope, key_scope_t::denied(_));
+        let user_id = self.identity_key(uid, not_denied)?;
         let resolution = self.identity.resolve_key(target)?;
         if resolution.owner_uid != uid || resolution.class == key_class_t::identity {
             return Err(authority(authority_code_t::key_not_certified));
         }
         let seed = self.unlock(uid, &user_id, key_class_t::identity, passphrase)?;
+        // The identity key's scope again, after the derivation and immediately before
+        // it signs.
+        self.identity_key(uid, not_denied)?;
         let object = self.invalidation_object(&seed, user_id, *target, reason)?;
         drop(seed);
         let held = self.store.read_key(uid, target).map_err(storage)?.is_some();
@@ -1010,11 +1073,28 @@ where
 
     // ---------------------------------------------------------------- recovery
 
+    /// The caller's open ceremony `recovery_id`, which must not have named keys yet.
+    fn open_ceremony(
+        &mut self,
+        uid: u32,
+        recovery_id: &random_id_t,
+    ) -> service_result_t<ceremony_t> {
+        self.identity
+            .user_identity(uid)?
+            .ceremony
+            .filter(|ceremony| ceremony.recovery_id == *recovery_id && ceremony.named.is_none())
+            .ok_or(service_error_t::admission(rule_code_t::recovery_rule))
+    }
+
     /// `recover_keys` (`trusted_client`, owner): ceremony step 3 (ADR 0006 §10). New
     /// persistent and temporary keys, written durably with their certificates at the
     /// ceremony's key epoch, registered with identityd and named through registryd
     /// `name_recovery_keys`. Success is reported only after the naming answered `ok`;
-    /// any failure is reconciled from `recovery_status`.
+    /// any failure is reconciled from `recovery_status`. A call that finds this
+    /// ceremony's held bundle completes it without checking `passphrase`, as every
+    /// other vault operation of the user does first: reconciliation creates and signs
+    /// nothing (the held objects and certificates come from the authenticated call
+    /// that wrote them), unlike `create_user_keys`, whose retry authenticates.
     pub fn recover_keys(
         &mut self,
         caller: caller_role_t,
@@ -1038,18 +1118,14 @@ where
                 }
             }
         }
-        let identity = self.identity.user_identity(uid)?;
-        let ceremony = identity
-            .ceremony
-            .clone()
-            .filter(|ceremony| ceremony.recovery_id == *recovery_id && ceremony.named.is_none())
-            .ok_or(service_error_t::admission(rule_code_t::recovery_rule))?;
-        let user_id = self.identity_key(uid, |scope| {
+        let ceremony = self.open_ceremony(uid, recovery_id)?;
+        let in_ceremony = |scope: key_scope_t| {
             scope
                 == key_scope_t::recovery {
                     recovery_id: Some(*recovery_id),
                 }
-        })?;
+        };
+        let user_id = self.identity_key(uid, in_ceremony)?;
         let mut superseded = Vec::new();
         let mut held_contract_keys = Vec::new();
         for key in self.store.list_keys(uid).map_err(storage)? {
@@ -1073,6 +1149,10 @@ where
             self.generate_key(key_class_t::persistent, uid, Some(user_id), passphrase)?;
         let temporary =
             self.generate_key(key_class_t::temporary, uid, Some(user_id), passphrase)?;
+        // The ceremony and the identity key's ceremony scope again, after the
+        // derivations and immediately before it signs the certificates.
+        self.open_ceremony(uid, recovery_id)?;
+        self.identity_key(uid, in_ceremony)?;
         let mut objects = Vec::new();
         for (key, class) in [
             (&persistent, key_class_t::persistent),
@@ -1125,19 +1205,17 @@ where
                 self.finish_bundle(uid, &bundle.erase_after)?;
                 Ok(named)
             }
-            Err(error) if transient(&error) => {
-                // Reconcile once now; the bundle stays if the outcome is unknown.
-                self.complete_pending(uid)?;
-                let status = self.registry.recovery_status(uid, recovery_id)?;
-                if status.named == Some(named) {
-                    Ok(named)
-                } else {
-                    Err(error)
-                }
-            }
             Err(error) => {
-                self.finish_bundle(uid, &bundle.new_keys)?;
-                Err(error)
+                // Every failure, whatever its code, is reconciled once now from
+                // `recovery_status` (R14); the error alone never erases a held object,
+                // and the bundle stays while the outcome is unknown.
+                let reconciled = self
+                    .complete_pending(uid)
+                    .and_then(|()| self.registry.recovery_status(uid, recovery_id));
+                match reconciled {
+                    Ok(status) if status.named == Some(named) => Ok(named),
+                    _ => Err(error),
+                }
             }
         }
     }

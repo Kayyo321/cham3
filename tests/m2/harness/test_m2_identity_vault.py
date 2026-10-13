@@ -38,6 +38,13 @@ SeededDefects = [
      [("pub const MaxTemporaryCertificateSeconds: i64 = 7 * 24 * 60 * 60;",
        "pub const MaxTemporaryCertificateSeconds: i64 = 70 * 24 * 60 * 60;")],
      "cham3_identityd", "service_operations", "temporary_certificates_need_a_window_of_at_most_seven_days"),
+    # R01 (M2-004 review): a weaker durable invalidation counts as covering a pending
+    # compromise, which is then lost.
+    ("pending_compromise_cleared_by_weaker_record", "core/identityd/src/service.rs",
+     [("        (Some(_), invalidation_reason_t::compromised) => false,\n",
+       "        (Some(_), invalidation_reason_t::compromised) => true,\n")],
+     "cham3_identityd", "service_operations",
+     "a_pending_compromise_is_kept_until_a_durable_compromise_covers_it"),
     ("invalidation_not_denied_before_durable", "core/identityd/src/service.rs",
      [("                self.deny_in_memory(&payload.target_key_id, payload.reason);\n", ""),
       ("            identity_effect_t::invalidate => {\n"
@@ -49,8 +56,30 @@ SeededDefects = [
        "            if false && !bool::from(proposal.approval_digest.ct_eq(approval_digest)) {\n")],
      "cham3_vaultd", "vault_operations", "approval_must_match_the_registered_proposal"),
     ("proposal_reusable", "core/vaultd/src/service.rs",
-     [("            proposal.used = true;\n", "            proposal.used = false;\n")],
+     [("            proposal.retire(proposal_state_t::used);\n", "            let _ = proposal;\n")],
      "cham3_vaultd", "vault_operations", "an_exact_proposal_is_signed_once_after_digest_approval"),
+    # R04: used and cancelled ids are dropped by the next registration's cleanup.
+    ("used_proposal_ids_forgotten", "core/vaultd/src/service.rs",
+     [("            .filter(|(_, proposal)| self.expired(proposal))\n",
+       "            .filter(|(_, proposal)| {\n"
+       "                self.expired(proposal) || proposal.state != proposal_state_t::pending\n"
+       "            })\n")],
+     "cham3_vaultd", "vault_operations", "proposal_ids_stay_single_use_for_their_lifetime"),
+    # R02: only the payload timestamp is checked against the window.
+    ("signing_window_not_checked", "core/vaultd/src/service.rs",
+     [("        check_signing_window(&resolution, self.clock.utc_seconds())?;\n", "")],
+     "cham3_vaultd", "vault_operations", "a_live_proposal_does_not_extend_the_signing_keys_window"),
+    # R03: authority is checked only before the derivation.
+    ("authority_not_rechecked_after_derivation", "core/vaultd/src/service.rs",
+     [("        // which clears it).\n        self.check_signing_key(uid, &parsed)?;\n",
+       "        // which clears it).\n")],
+     "cham3_vaultd", "vault_operations",
+     "authority_changes_during_the_derivation_prevent_the_signature"),
+    ("ceremony_not_rechecked_after_derivation", "core/vaultd/src/service.rs",
+     [("        self.open_ceremony(uid, recovery_id)?;\n"
+       "        self.identity_key(uid, in_ceremony)?;\n"
+       "        let mut objects", "        let mut objects")],
+     "cham3_vaultd", "vault_recovery", "a_ceremony_that_ends_during_the_derivation_gets_no_certificates"),
     ("attempt_limit_ignored", "core/vaultd/src/service.rs",
      [("        if self.attempts(uid)?.locked_at(self.utc_now_unsigned()) {\n",
        "        if false && self.attempts(uid)?.locked_at(self.utc_now_unsigned()) {\n")],
@@ -68,10 +97,14 @@ SeededDefects = [
     ("kdf_workspace_not_cleared", "core/vaultd/src/kdf.rs",
      [("        self.clear();\n        if result.is_err() {\n", "        if result.is_err() {\n")],
      "cham3_vaultd", "--lib", "kdf::tests::workspace_is_clear_after_success"),
-    ("scope_not_rechecked_before_signing", "core/vaultd/src/service.rs",
+    # The approval checks key status and scope before and after the derivation; the
+    # defect removes both (removing one alone is not observable here).
+    ("scope_not_checked_at_approval", "core/vaultd/src/service.rs",
      [("        let parsed = parse_commit(&payload, &key_id)?;\n"
        "        self.check_signing_key(uid, &parsed)?;\n",
-       "        let parsed = parse_commit(&payload, &key_id)?;\n")],
+       "        let parsed = parse_commit(&payload, &key_id)?;\n"),
+      ("        // which clears it).\n        self.check_signing_key(uid, &parsed)?;\n",
+       "        // which clears it).\n")],
      "cham3_vaultd", "vault_operations", "invalidated_keys_never_sign_even_from_a_restored_object"),
     ("unknown_status_erases_held_keys", "core/vaultd/src/service.rs",
      [("        let status = self.registry.recovery_status(uid, &recovery_id)?;\n",
@@ -83,6 +116,15 @@ SeededDefects = [
        "            }\n"
        "        };\n")],
      "cham3_vaultd", "vault_recovery", "an_unavailable_status_keeps_every_object_and_a_retry_resumes"),
+    # R05: a definitive naming error erases the held keys without asking the status.
+    ("definitive_naming_error_erases_held_keys", "core/vaultd/src/service.rs",
+     [("                let reconciled = self\n",
+       "                if !transient(&error) {\n"
+       "                    self.finish_bundle(uid, &bundle.new_keys)?;\n"
+       "                    return Err(error);\n"
+       "                }\n"
+       "                let reconciled = self\n")],
+     "cham3_vaultd", "vault_recovery", "a_definitive_naming_error_is_reconciled_from_the_status"),
 ]
 
 
