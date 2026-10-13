@@ -1,0 +1,10 @@
+# Reviewer reproduction sources (not stored here: reviewer-only code), SHA-256 as in the review record
+efd6142c2d17b88bcbf4fc8d1cec30401fa7476370b623e3cc37ae93429e7b94  review_controls.rs
+4a972f877654d344c15fefe522bbf4d438521531fbfd83488a0f5b5e8d72da74  review_directory_restarts.rs
+d437b4aa16d8f89d2d24214940594bf2015688c89817c7b2a8ff935f2c382cd1  review_extra.rs
+
+# Commands (debug; the release run adds --release before --locked)
+# clone: git clone --no-hardlinks /home/user/cham3 <dir>; git -C <dir> checkout --detach <sha>; chown -R 1000:1000 <dir>
+docker run --rm --user 1000:1000 -e HOME=/tmp/cham3_home -e CARGO_TARGET_DIR=/evidence/adversarial005_r2/target -v <dir>:/work:ro -v <evidence>:/evidence -w /evidence/adversarial005_r2 cham3-m2-dev cargo test --manifest-path core/reviewer/Cargo.toml --offline '::edge_' -- --nocapture --test-threads=1
+# the probe matrix: the record's command (an existing /tmp/existing_probe_data/sentinel, full-disk mode; 32 MiB tmpfs), extended with an unknown mode and an overlay root
+# own_ and filesystem_full_reserve: the first review's package (adversarial005), '::own_' and 'filesystem_full_reserve' with --tmpfs /full-disk:rw,size=2m,uid=1000,gid=1000,mode=0700

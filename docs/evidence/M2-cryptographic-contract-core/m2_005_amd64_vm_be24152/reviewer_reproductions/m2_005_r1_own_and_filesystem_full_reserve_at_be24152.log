@@ -1,0 +1,126 @@
+== clone /tmp/cham3_m2005r3_review at be2415291bf5bcf9dad8df323bf971bd193d5120
+== M2-005 debug own_
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling semver v1.0.23
+   Compiling cfg-if v1.0.0
+   Compiling cpufeatures v0.2.16
+   Compiling zeroize v1.8.1
+   Compiling generic-array v0.14.7
+   Compiling rustix v0.38.37
+   Compiling fiat-crypto v0.2.2
+   Compiling rustc_version v0.4.0
+   Compiling subtle v2.6.1
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling curve25519-dalek v4.1.3
+   Compiling linux-raw-sys v0.4.14
+   Compiling bitflags v2.8.0
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling m2_005_independent_review_tests v0.1.0 (/evidence/adversarial005/core/reviewer)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.05s
+     Running unittests review.rs (target_r3/debug/deps/m2_005_independent_review_tests-6f99949d5b2a283a)
+
+running 9 tests
+test policy::own_ended_session_cannot_authorize_a_fresh_grant ... fresh ended-session admission=Err(admission(duplicate_identifier)); authorization=denied(grant_ended(session_ended))
+ok
+test policy::own_origin_compromise_survives_persistent_restatement ... ok
+test policy::own_session_attestation_boundaries_and_unreadable_clock ... ok
+test registry::own_failed_identity_append_denies_existing_grants ... ok
+test registry::own_network_sibling_writers_have_exactly_one_winner ... ok
+test registry::own_new_store_syncs_users_entry_in_root_before_ack ... directory syncs=["/tmp", "/tmp/cham3_registryd_own_root_sync_875", "/tmp/cham3_registryd_own_root_sync_875/users", "/tmp/cham3_registryd_own_root_sync_875/users/1001"]
+ok
+test registry::own_rechained_wrong_metadata_and_terminal_records_fail_closed ... ok
+test registry::own_restrictive_reserve_has_preallocated_storage ... allocated bytes for entire new store=1064960; promised reserve=1048576
+ok
+test registry::own_retry_must_not_acknowledge_an_unsynced_user_directory ... retry=Ok(append_receipt_t { journal_seq: 1, already_present: false }), directory syncs=["/tmp/cham3_registryd_own_retry_sync_875/users", "/tmp/cham3_registryd_own_retry_sync_875/users/1001"]
+ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 24 filtered out; finished in 2.41s
+
+exit=0
+== M2-005 release own_
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling semver v1.0.23
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling generic-array v0.14.7
+   Compiling zeroize v1.8.1
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling fiat-crypto v0.2.2
+   Compiling rustc_version v0.4.0
+   Compiling ed25519 v2.2.3
+   Compiling bitflags v2.8.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling linux-raw-sys v0.4.14
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling m2_005_independent_review_tests v0.1.0 (/evidence/adversarial005/core/reviewer)
+    Finished `release` profile [optimized] target(s) in 40.93s
+     Running unittests review.rs (target_r3/release/deps/m2_005_independent_review_tests-a50213b7c6057427)
+
+running 9 tests
+test policy::own_ended_session_cannot_authorize_a_fresh_grant ... fresh ended-session admission=Err(admission(duplicate_identifier)); authorization=denied(grant_ended(session_ended))
+ok
+test policy::own_origin_compromise_survives_persistent_restatement ... ok
+test policy::own_session_attestation_boundaries_and_unreadable_clock ... ok
+test registry::own_failed_identity_append_denies_existing_grants ... ok
+test registry::own_network_sibling_writers_have_exactly_one_winner ... ok
+test registry::own_new_store_syncs_users_entry_in_root_before_ack ... directory syncs=["/tmp", "/tmp/cham3_registryd_own_root_sync_491", "/tmp/cham3_registryd_own_root_sync_491/users", "/tmp/cham3_registryd_own_root_sync_491/users/1001"]
+ok
+test registry::own_rechained_wrong_metadata_and_terminal_records_fail_closed ... ok
+test registry::own_restrictive_reserve_has_preallocated_storage ... allocated bytes for entire new store=1064960; promised reserve=1048576
+ok
+test registry::own_retry_must_not_acknowledge_an_unsynced_user_directory ... retry=Ok(append_receipt_t { journal_seq: 1, already_present: false }), directory syncs=["/tmp/cham3_registryd_own_retry_sync_491/users", "/tmp/cham3_registryd_own_retry_sync_491/users/1001"]
+ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.79s
+
+exit=0
+== M2-005 debug filesystem_full_reserve
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests review.rs (target_r3/debug/deps/m2_005_independent_review_tests-6f99949d5b2a283a)
+
+running 1 test
+test registry::filesystem_full_reserve ... journal bytes before disk fill=4090; required restrictive frame=479
+unrelated writer filled 1044480 bytes; restrictive append=Ok(append_receipt_t { journal_seq: 8, already_present: false })
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.04s
+
+exit=0
+== M2-005 release filesystem_full_reserve
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running unittests review.rs (target_r3/release/deps/m2_005_independent_review_tests-a50213b7c6057427)
+
+running 1 test
+test registry::filesystem_full_reserve ... journal bytes before disk fill=4090; required restrictive frame=479
+unrelated writer filled 1044480 bytes; restrictive append=Ok(append_receipt_t { journal_seq: 8, already_present: false })
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.01s
+
+exit=0
+done

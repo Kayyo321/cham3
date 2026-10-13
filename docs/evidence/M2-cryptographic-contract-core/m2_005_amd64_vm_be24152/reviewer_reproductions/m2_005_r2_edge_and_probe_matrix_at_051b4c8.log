@@ -1,0 +1,226 @@
+== clone /tmp/cham3_m2005r2final at 051b4c8aacdeecfabb23625f93dd16615aec39a0
+== debug edge_
+   Compiling typenum v1.17.0
+   Compiling version_check v0.9.5
+   Compiling semver v1.0.23
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling generic-array v0.14.7
+   Compiling subtle v2.6.1
+   Compiling signature v2.2.0
+   Compiling zeroize v1.8.1
+   Compiling fiat-crypto v0.2.2
+   Compiling rustc_version v0.4.0
+   Compiling ed25519 v2.2.3
+   Compiling bitflags v2.8.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling linux-raw-sys v0.4.14
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling m2_005_independent_review_tests v0.1.0 (/evidence/adversarial005_r2/core/reviewer)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 45.99s
+     Running unittests review.rs (target_old_051b4c8/debug/deps/m2_005_independent_review_tests-6f99949d5b2a283a)
+
+running 10 tests
+test registry::edge_control_ended_network_merge_restore_and_repeated_end ... ok
+test registry::edge_control_partial_reserve_refused_across_restart_then_refilled ... ok
+test registry::edge_control_reserve_modes_and_symlink ... ok
+test registry::edge_directory_journal_creation_sync_failure_then_restart ... already-present receipt=append_receipt_t { journal_seq: 1, already_present: true }; directory syncs=[]
+FAILED
+test registry::edge_directory_recreated_reserve_sync_failure_then_restart ... 
+thread 'registry::edge_directory_journal_creation_sync_failure_then_restart' panicked at registry.rs:1908:5:
+journal entry acknowledged after restart without repeating failed creation-directory sync
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+directory syncs after reserve recreation retry=[]
+FAILED
+test registry::edge_failed_root_parent_sync_survives_restart ... 
+thread 'registry::edge_directory_recreated_reserve_sync_failure_then_restart' panicked at registry.rs:1925:5:
+new reserve entry never resynced before ordinary append
+
+thread 'registry::edge_failed_root_parent_sync_survives_restart' panicked at registry.rs:1749:5:
+successful restart/enrollment skipped the earlier failed parent fsync
+required retry sync="/tmp/cham3_registryd_edge_root_parent_878"; observed=["/tmp/cham3_registryd_edge_root_parent_878/new_root", "/tmp/cham3_registryd_edge_root_parent_878/new_root/users", "/tmp/cham3_registryd_edge_root_parent_878/new_root/users/1001"]
+FAILED
+test registry::edge_failed_uid_sync_restart_and_two_users ... ok
+test registry::edge_failed_users_parent_sync_survives_restart ... required retry sync="/tmp/cham3_registryd_edge_users_parent_878"; observed=["/tmp/cham3_registryd_edge_users_parent_878/users", "/tmp/cham3_registryd_edge_users_parent_878/users/1001"]
+
+thread 'registry::edge_failed_users_parent_sync_survives_restart' panicked at registry.rs:1749:5:
+successful restart/enrollment skipped the earlier failed parent fsync
+FAILED
+test registry::edge_reserve_creation_sync_error_is_not_forgotten ... 
+thread 'registry::edge_reserve_creation_sync_error_is_not_forgotten' panicked at registry.rs:1798:5:
+acknowledged a journal after failed reserve sync, without retrying that sync
+creation retry=Ok(journal_file_t { file: File { fd: 4, path: "/tmp/cham3_registryd_edge_create_reserve_878/users/1001/journal.c3j", read: false, write: true }, length: 161, chain: [238, 2, 152, 143, 176, 61, 139, 101, 153, 254, 133, 124, 232, 234, 244, 196, 4, 37, 51, 110, 212, 35, 175, 250, 158, 98, 238, 59, 29, 36, 109, 166], count: 1, failed: false, reserve: File { fd: 3, path: "/tmp/cham3_registryd_edge_create_reserve_878/users/1001/reserve", read: false, write: true }, reserve_bytes: 1048576 }); allocate calls=1
+FAILED
+test registry::edge_reserve_replenish_sync_error_is_not_forgotten ... replenish retry=Ok(2); allocate calls=1
+
+thread 'registry::edge_reserve_replenish_sync_error_is_not_forgotten' panicked at registry.rs:1817:5:
+admission accepted although reserve sync keeps failing
+FAILED
+
+failures:
+
+failures:
+    registry::edge_directory_journal_creation_sync_failure_then_restart
+    registry::edge_directory_recreated_reserve_sync_failure_then_restart
+    registry::edge_failed_root_parent_sync_survives_restart
+    registry::edge_failed_users_parent_sync_survives_restart
+    registry::edge_reserve_creation_sync_error_is_not_forgotten
+    registry::edge_reserve_replenish_sync_error_is_not_forgotten
+
+test result: FAILED. 4 passed; 6 failed; 0 ignored; 0 measured; 33 filtered out; finished in 0.47s
+
+error: test failed, to rerun pass `--lib`
+exit=101
+== release edge_
+   Compiling typenum v1.17.0
+   Compiling version_check v0.9.5
+   Compiling semver v1.0.23
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling subtle v2.6.1
+   Compiling zeroize v1.8.1
+   Compiling generic-array v0.14.7
+   Compiling fiat-crypto v0.2.2
+   Compiling signature v2.2.0
+   Compiling rustc_version v0.4.0
+   Compiling rustix v0.38.37
+   Compiling curve25519-dalek v4.1.3
+   Compiling ed25519 v2.2.3
+   Compiling bitflags v2.8.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling m2_005_independent_review_tests v0.1.0 (/evidence/adversarial005_r2/core/reviewer)
+    Finished `release` profile [optimized] target(s) in 30.21s
+     Running unittests review.rs (target_old_051b4c8/release/deps/m2_005_independent_review_tests-a50213b7c6057427)
+
+running 10 tests
+test registry::edge_control_ended_network_merge_restore_and_repeated_end ... ok
+test registry::edge_control_partial_reserve_refused_across_restart_then_refilled ... ok
+test registry::edge_control_reserve_modes_and_symlink ... ok
+test registry::edge_directory_journal_creation_sync_failure_then_restart ... already-present receipt=append_receipt_t { journal_seq: 1, already_present: true }; directory syncs=[]
+
+thread 'registry::edge_directory_journal_creation_sync_failure_then_restart' panicked at registry.rs:1908:5:
+journal entry acknowledged after restart without repeating failed creation-directory sync
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test registry::edge_directory_recreated_reserve_sync_failure_then_restart ... 
+thread 'registry::edge_directory_recreated_reserve_sync_failure_then_restart' panicked at registry.rs:1925:5:
+new reserve entry never resynced before ordinary append
+directory syncs after reserve recreation retry=[]
+FAILED
+test registry::edge_failed_root_parent_sync_survives_restart ... required retry sync="/tmp/cham3_registryd_edge_root_parent_491"; observed=["/tmp/cham3_registryd_edge_root_parent_491/new_root", "/tmp/cham3_registryd_edge_root_parent_491/new_root/users", "/tmp/cham3_registryd_edge_root_parent_491/new_root/users/1001"]
+
+thread 'registry::edge_failed_root_parent_sync_survives_restart' panicked at registry.rs:1749:5:
+successful restart/enrollment skipped the earlier failed parent fsync
+FAILED
+test registry::edge_failed_uid_sync_restart_and_two_users ... ok
+test registry::edge_failed_users_parent_sync_survives_restart ... required retry sync="/tmp/cham3_registryd_edge_users_parent_491"; observed=["/tmp/cham3_registryd_edge_users_parent_491/users", "/tmp/cham3_registryd_edge_users_parent_491/users/1001"]
+
+thread 'registry::edge_failed_users_parent_sync_survives_restart' panicked at registry.rs:1749:5:
+successful restart/enrollment skipped the earlier failed parent fsync
+FAILED
+test registry::edge_reserve_creation_sync_error_is_not_forgotten ... creation retry=Ok(journal_file_t { file: File { fd: 4, path: "/tmp/cham3_registryd_edge_create_reserve_491/users/1001/journal.c3j", read: false, write: true }, length: 161, chain: [238, 2, 152, 143, 176, 61, 139, 101, 153, 254, 133, 124, 232, 234, 244, 196, 4, 37, 51, 110, 212, 35, 175, 250, 158, 98, 238, 59, 29, 36, 109, 166], count: 1, failed: false, reserve: File { fd: 3, path: "/tmp/cham3_registryd_edge_create_reserve_491/users/1001/reserve", read: false, write: true }, reserve_bytes: 1048576 }); allocate calls=1
+FAILED
+test registry::edge_reserve_replenish_sync_error_is_not_forgotten ... 
+thread 'registry::edge_reserve_creation_sync_error_is_not_forgotten' panicked at registry.rs:1798:5:
+acknowledged a journal after failed reserve sync, without retrying that sync
+
+thread 'registry::edge_reserve_replenish_sync_error_is_not_forgotten' panicked at registry.rs:1817:5:
+admission accepted although reserve sync keeps failing
+replenish retry=Ok(2); allocate calls=1
+FAILED
+
+failures:
+
+failures:
+    registry::edge_directory_journal_creation_sync_failure_then_restart
+    registry::edge_directory_recreated_reserve_sync_failure_then_restart
+    registry::edge_failed_root_parent_sync_survives_restart
+    registry::edge_failed_users_parent_sync_survives_restart
+    registry::edge_reserve_creation_sync_error_is_not_forgotten
+    registry::edge_reserve_replenish_sync_error_is_not_forgotten
+
+test result: FAILED. 4 passed; 6 failed; 0 ignored; 0 measured; 33 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `--lib`
+exit=101
+== probe preservation / refusal matrix
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill / is overlay, not tmpfs
+profile=debug probe_exit=3
+sentinel=deleted
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill unknown mode no-such-mode
+unknown_mode_exit=3
+unknown_mode_root=absent
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill / is overlay, not tmpfs
+overlay_exit=3
+overlay_root=absent
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill tmpfs of 33554432 bytes exceeds the 16777216-byte limit
+large_tmpfs_exit=3
+large_root=absent
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill / is overlay, not tmpfs
+profile=release probe_exit=3
+sentinel=deleted
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill unknown mode no-such-mode
+unknown_mode_exit=3
+unknown_mode_root=absent
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill / is overlay, not tmpfs
+overlay_exit=3
+overlay_root=absent
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+refusing_to_fill tmpfs of 33554432 bytes exceeds the 16777216-byte limit
+large_tmpfs_exit=3
+large_root=absent
+exit=0
+done old_051b4c8

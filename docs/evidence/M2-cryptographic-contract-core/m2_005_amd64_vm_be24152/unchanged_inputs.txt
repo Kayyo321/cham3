@@ -1,0 +1,41 @@
+# Unchanged inputs, 959524c..be2415291bf5bcf9dad8df323bf971bd193d5120
+
+## git diff --stat 959524c be24152
+ core/registryd/src/bin/cham3_reserve_probe.rs | 128 ++++++--
+ core/registryd/src/journal.rs                 | 118 ++++---
+ core/registryd/tests/registry_operations.rs   | 423 ++++++++++++++++++++++++--
+ tests/m2/harness/test_m2_registry_policy.py   |  31 +-
+ tests/m2/harness/test_m2_reserve_probe.py     | 138 ++++++++-
+ tests/m2/storage/check_reserve_full_disk.sh   |   6 +-
+ tests/m2/test_inventory.txt                   |  10 +-
+ 7 files changed, 745 insertions(+), 109 deletions(-)
+
+## git diff --exit-code 959524c be24152 -- <path> (0 = unchanged)
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 docs/specs
+0 docs/decisions
+0 core/registryd/Cargo.toml
+0 core/registryd/src/registry.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/src/record.rs
+0 core/registryd/src/lib.rs
+0 core/registryd/tests/admission_scenarios.rs
+0 core/registryd/tests/builders
+0 core/policyd
+0 core/vaultd
+0 core/identityd
+0 core/contractd
+0 core/contract_format
+0 core/native
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 tests/m2/run_m2_tests.sh
+0 tests/m2/harness/test_m2_identity_vault.py
+0 tests/m2/harness/test_m2_ecr_oracle.py
+0 tests/m2/protection
+0 .github/workflows
