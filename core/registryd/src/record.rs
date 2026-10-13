@@ -13,9 +13,12 @@
 //! implementation's encoding of ADR 0006 §4's "header + enrollment record": it names
 //! the format version and the user the chain is bound to.
 //!
-//! Record kinds in M2-005: `identity` (a validated identity object), `commit_admitted`
-//! and the narrowing lifecycle records `expired`, `session_ended` and `restriction`.
-//! Any other kind fails replay (fail closed); M2-006 adds its own kinds.
+//! Record kinds: `identity` (a validated identity object), `commit_admitted`, the
+//! narrowing lifecycle records `expired`, `session_ended` and `restriction` (M2-005),
+//! and the registry-written user-state records of ADR 0006 §§3, 4, 7 and 10 —
+//! `containment`, `quarantine`, `admin_recover`, `recovery_opened`, `recovery_closed`,
+//! `deletion_pending` (M2-006; the oracle's `RecordKinds`). Every one of them only
+//! narrows authority. Any other kind fails replay (fail closed).
 
 use cham3_contract_format::dcbor::{MaxContainerBytes, decode_container, encode, value_t};
 use cham3_contract_format::hash::{digest_t, domain_hash};
@@ -23,6 +26,7 @@ use cham3_contract_format::layer_t;
 use cham3_contract_format::object_kind_t;
 use cham3_contract_format::schema::random_id_t;
 use cham3_contract_format::text::is_valid_time;
+use cham3_identityd::index::{ceremony_mode_t, record_role_t, user_record_t};
 
 /// Magic of a journal frame.
 pub const FrameMagic: [u8; 4] = *b"C3JR";
@@ -94,6 +98,39 @@ pub enum record_body_t {
         envelope: Vec<u8>,
     },
     lifecycle(lifecycle_record_t),
+    /// A registry-written user-state record (identityd's `user_record_t`: the same
+    /// value both indexes apply).
+    user(user_record_t),
+}
+
+fn role_text(role: record_role_t) -> &'static str {
+    match role {
+        record_role_t::trusted_client => "trusted_client",
+        record_role_t::admin => "admin",
+    }
+}
+
+fn parse_role(text: &str) -> Option<record_role_t> {
+    match text {
+        "trusted_client" => Some(record_role_t::trusted_client),
+        "admin" => Some(record_role_t::admin),
+        _ => None,
+    }
+}
+
+fn mode_text(mode: ceremony_mode_t) -> &'static str {
+    match mode {
+        ceremony_mode_t::c1 => "c1",
+        ceremony_mode_t::c2 => "c2",
+    }
+}
+
+fn parse_mode(text: &str) -> Option<ceremony_mode_t> {
+    match text {
+        "c1" => Some(ceremony_mode_t::c1),
+        "c2" => Some(ceremony_mode_t::c2),
+        _ => None,
+    }
 }
 
 /// One journal record.
@@ -158,6 +195,35 @@ impl registry_record_t {
                     "grant_ids",
                     value_t::array(grant_ids.iter().map(|id| value_t::bytes_of(id)).collect()),
                 ));
+            }
+            record_body_t::user(user_record_t::containment) => {
+                pairs.push(("kind", value_t::text_of("containment")));
+            }
+            record_body_t::user(user_record_t::quarantine) => {
+                pairs.push(("kind", value_t::text_of("quarantine")));
+            }
+            record_body_t::user(user_record_t::admin_recover { role }) => {
+                pairs.push(("kind", value_t::text_of("admin_recover")));
+                pairs.push(("role", value_t::text_of(role_text(*role))));
+            }
+            record_body_t::user(user_record_t::recovery_opened {
+                recovery_id,
+                key_epoch,
+                mode,
+                role,
+            }) => {
+                pairs.push(("kind", value_t::text_of("recovery_opened")));
+                pairs.push(("recovery_id", value_t::bytes_of(recovery_id)));
+                pairs.push(("key_epoch", uint(*key_epoch)));
+                pairs.push(("mode", value_t::text_of(mode_text(*mode))));
+                pairs.push(("role", value_t::text_of(role_text(*role))));
+            }
+            record_body_t::user(user_record_t::recovery_closed { recovery_id }) => {
+                pairs.push(("kind", value_t::text_of("recovery_closed")));
+                pairs.push(("recovery_id", value_t::bytes_of(recovery_id)));
+            }
+            record_body_t::user(user_record_t::deletion_pending) => {
+                pairs.push(("kind", value_t::text_of("deletion_pending")));
             }
         }
         encode(&value_t::text_map(pairs))
@@ -239,6 +305,33 @@ impl registry_record_t {
                     &["grant_ids"],
                 )
             }
+            "containment" => (record_body_t::user(user_record_t::containment), &[]),
+            "quarantine" => (record_body_t::user(user_record_t::quarantine), &[]),
+            "admin_recover" => (
+                record_body_t::user(user_record_t::admin_recover {
+                    role: parse_role(&text(field("role")?)?).ok_or(record_error_t::malformed)?,
+                }),
+                &["role"],
+            ),
+            "recovery_opened" => (
+                record_body_t::user(user_record_t::recovery_opened {
+                    recovery_id: fixed(field("recovery_id")?)?,
+                    key_epoch: match field("key_epoch")? {
+                        value_t::unsigned(epoch) => *epoch,
+                        _ => return Err(record_error_t::malformed),
+                    },
+                    mode: parse_mode(&text(field("mode")?)?).ok_or(record_error_t::malformed)?,
+                    role: parse_role(&text(field("role")?)?).ok_or(record_error_t::malformed)?,
+                }),
+                &["key_epoch", "mode", "recovery_id", "role"],
+            ),
+            "recovery_closed" => (
+                record_body_t::user(user_record_t::recovery_closed {
+                    recovery_id: fixed(field("recovery_id")?)?,
+                }),
+                &["recovery_id"],
+            ),
+            "deletion_pending" => (record_body_t::user(user_record_t::deletion_pending), &[]),
             _ => return Err(record_error_t::malformed),
         };
         // Closed map: "kind", "seq", "time" and exactly the kind's own fields.
@@ -342,6 +435,33 @@ pub struct parsed_journal_t {
     pub records: Vec<Vec<u8>>,
     /// Chain value after the last record.
     pub chain: digest_t,
+    /// Chain value after each record (position `n` → `chain_n`), for the anchor's
+    /// comparison at any sequence (ADR 0006 §4).
+    pub chains: Vec<digest_t>,
+}
+
+impl parsed_journal_t {
+    /// The chain value after `sequence` records (`sequence` 0 is the genesis chain).
+    pub fn chain_at(&self, sequence: u64, uid: u32) -> Option<digest_t> {
+        if sequence == 0 {
+            return Some(genesis_chain(&self.user_id, uid));
+        }
+        usize::try_from(sequence)
+            .ok()
+            .and_then(|position| position.checked_sub(1))
+            .and_then(|position| self.chains.get(position).copied())
+    }
+}
+
+/// The complete frames of a journal file and what follows them (ADR 0006 §4: a torn
+/// frame after the last complete frame is truncated; any other defect quarantines).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct journal_prefix_t {
+    pub parsed: parsed_journal_t,
+    /// Length of the header and the complete frames.
+    pub valid_length: u64,
+    /// Bytes follow the last complete frame without forming one.
+    pub torn: bool,
 }
 
 fn take<'data>(data: &'data [u8], position: &mut usize, count: usize) -> Option<&'data [u8]> {
@@ -352,8 +472,19 @@ fn take<'data>(data: &'data [u8], position: &mut usize, count: usize) -> Option<
 }
 
 /// Parses a journal file of user `uid` and verifies every chain value. The records
-/// themselves are decoded and re-verified by the replay.
+/// themselves are decoded and re-verified by the replay. A torn tail is a defect here;
+/// [`parse_journal_prefix`] reports it with the valid prefix instead.
 pub fn parse_journal(data: &[u8], uid: u32) -> Result<parsed_journal_t, journal_defect_t> {
+    let prefix = parse_journal_prefix(data, uid)?;
+    if prefix.torn {
+        return Err(journal_defect_t::torn_tail);
+    }
+    Ok(prefix.parsed)
+}
+
+/// Parses the complete frames of a journal file and reports whether a torn frame
+/// follows them. Header, frame and chain defects are still refused.
+pub fn parse_journal_prefix(data: &[u8], uid: u32) -> Result<journal_prefix_t, journal_defect_t> {
     let mut position = 0usize;
     let header_bytes = take(data, &mut position, HeaderBytes).ok_or(journal_defect_t::header)?;
     let (magic, rest) = header_bytes.split_at(4);
@@ -368,9 +499,15 @@ pub fn parse_journal(data: &[u8], uid: u32) -> Result<parsed_journal_t, journal_
     let user_id: digest_t = user_id.try_into().map_err(|_| journal_defect_t::header)?;
     let mut chain = genesis_chain(&user_id, uid);
     let mut records = Vec::new();
+    let mut chains = Vec::new();
     let mut index = 0u64;
+    let mut valid_length = position;
+    let mut torn = false;
     while position < data.len() {
-        let head = take(data, &mut position, 8).ok_or(journal_defect_t::torn_tail)?;
+        let Some(head) = take(data, &mut position, 8) else {
+            torn = true;
+            break;
+        };
         let (magic, length) = head.split_at(4);
         if magic != FrameMagic {
             return Err(journal_defect_t::frame);
@@ -381,20 +518,32 @@ pub fn parse_journal(data: &[u8], uid: u32) -> Result<parsed_journal_t, journal_
         if length > MaxRecordBytes {
             return Err(journal_defect_t::frame);
         }
-        let record = take(data, &mut position, length).ok_or(journal_defect_t::torn_tail)?;
-        let stored = take(data, &mut position, 32).ok_or(journal_defect_t::torn_tail)?;
+        let (Some(record), Some(stored)) = (
+            take(data, &mut position, length),
+            take(data, &mut position, 32),
+        ) else {
+            torn = true;
+            break;
+        };
         let expected = next_chain(&chain, index, record);
         if stored != expected {
             return Err(journal_defect_t::chain);
         }
         chain = expected;
         records.push(record.to_vec());
+        chains.push(chain);
         index = index.checked_add(1).ok_or(journal_defect_t::frame)?;
+        valid_length = position;
     }
-    Ok(parsed_journal_t {
-        user_id,
-        records,
-        chain,
+    Ok(journal_prefix_t {
+        parsed: parsed_journal_t {
+            user_id,
+            records,
+            chain,
+            chains,
+        },
+        valid_length: u64::try_from(valid_length).map_err(|_| journal_defect_t::frame)?,
+        torn,
     })
 }
 
@@ -430,6 +579,21 @@ mod tests {
             record_body_t::lifecycle(lifecycle_record_t::restriction {
                 grant_ids: vec![[1; 16], [2; 16]],
             }),
+            record_body_t::user(user_record_t::containment),
+            record_body_t::user(user_record_t::quarantine),
+            record_body_t::user(user_record_t::admin_recover {
+                role: record_role_t::admin,
+            }),
+            record_body_t::user(user_record_t::recovery_opened {
+                recovery_id: [7; 16],
+                key_epoch: 3,
+                mode: ceremony_mode_t::c1,
+                role: record_role_t::trusted_client,
+            }),
+            record_body_t::user(user_record_t::recovery_closed {
+                recovery_id: [7; 16],
+            }),
+            record_body_t::user(user_record_t::deletion_pending),
         ];
         for body in bodies {
             let record = sample(body);

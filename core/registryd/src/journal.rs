@@ -110,6 +110,32 @@ pub trait journal_io_t: Send + Sync {
         file.set_len(length)?;
         file.sync_data()
     }
+
+    /// Replaces the whole content of the private file at `path` (created `0600` if
+    /// missing) with `bytes` and makes it durable: an anchor slot, the ledger's
+    /// validity file (ADR 0006 §§2–3).
+    fn replace_file(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(path)?;
+        file.write_all(bytes)?;
+        file.sync_all()
+    }
+
+    /// Appends `bytes` to the private file at `path` (created `0600` if missing) and
+    /// makes them durable: a restriction-ledger entry (ADR 0006 §3).
+    fn append_file(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
+        let mut file = OpenOptions::new()
+            .append(true)
+            .create(true)
+            .mode(0o600)
+            .open(path)?;
+        file.write_all(bytes)?;
+        file.sync_data()
+    }
 }
 
 /// The real file system.
@@ -163,7 +189,7 @@ fn check_directory(path: &Path, owner: u32) -> Result<(), store_error_t> {
 }
 
 /// Creates `path` (mode `0700`) if needed and checks it; reports whether it was new.
-fn ensure_directory(path: &Path, owner: u32) -> Result<bool, store_error_t> {
+pub(crate) fn ensure_directory(path: &Path, owner: u32) -> Result<bool, store_error_t> {
     let created = match fs::DirBuilder::new().mode(0o700).create(path) {
         Ok(()) => true,
         Err(error) if error.kind() == ErrorKind::AlreadyExists => false,
@@ -314,6 +340,28 @@ impl journal_store_t {
         Ok(Some(bytes))
     }
 
+    /// Truncates a user's journal file to `length` bytes and makes that durable: the
+    /// torn frame after the last complete frame is discarded before replay (ADR 0006
+    /// §4). The file must pass the journal checks and be longer than `length`.
+    pub fn truncate_tail(
+        &self,
+        uid: u32,
+        length: u64,
+        io: &dyn journal_io_t,
+    ) -> Result<(), store_error_t> {
+        let path = self.user_directory(uid).join(JournalFileName);
+        let checked = check_journal_file(&path, self.owner)?;
+        let file = OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .map_err(io_error)?;
+        check_same_file(&file, checked)?;
+        if file.metadata().map_err(io_error)?.len() <= length {
+            return Err(store_error_t::io);
+        }
+        io.truncate(&file, length).map_err(io_error)
+    }
+
     /// Opens an existing journal for appending after its replay parsed it, with the
     /// user's reserve (created empty if it is missing; it is refilled before the next
     /// non-restrictive append). The user directory is synced on every open (R2-01):
@@ -453,6 +501,11 @@ impl journal_file_t {
         self.length
     }
 
+    /// Chain value after the last record (what the anchor records, ADR 0006 §2).
+    pub fn chain(&self) -> digest_t {
+        self.chain
+    }
+
     /// Whether an append failed in this run.
     pub fn failed(&self) -> bool {
         self.failed
@@ -493,8 +546,10 @@ impl journal_file_t {
     /// (`reserve_depleted` otherwise, journal unchanged). A restrictive record that
     /// finds the filesystem full takes the reserve's blocks: the journal is truncated
     /// back to its last complete frame, the reserve released, the frame written again.
-    /// On any other failure, or if that retry fails, the journal refuses every later
-    /// append.
+    /// Any other failed write is truncated back to the last complete frame, durably
+    /// (ADR 0006 §4 in-run: the file holds exactly the chained records afterwards and
+    /// the journal stays usable, so a restrictive change can be retried); only when
+    /// that truncation fails too does the journal refuse every later append.
     pub fn append(
         &mut self,
         record: &[u8],
@@ -528,7 +583,9 @@ impl journal_file_t {
             }
         }
         if written.is_err() {
-            self.failed = true;
+            if io.truncate(&self.file, self.length).is_err() {
+                self.failed = true;
+            }
             return Err(store_error_t::io);
         }
         self.length = self

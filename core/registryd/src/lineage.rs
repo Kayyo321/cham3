@@ -26,15 +26,23 @@ use cham3_contract_format::schema::{
 };
 use cham3_identityd::outcome::{rule, rule_code_t, service_result_t};
 
+use cham3_identityd::index::user_record_t;
+
 use crate::record::{lifecycle_record_t, placement_t};
 
-/// Why a grant id ended (the lifecycle records of M2-005; M2-006 adds containment,
-/// quarantine, deletion and consumption).
+/// Why a grant id ended: the lifecycle records of M2-005, and the user-state records
+/// of ADR 0006 §§3, 4 and 7 (the oracle's reasons; consumption is M2-006 stage B).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum end_reason_t {
     expired,
     session_ended,
     restriction,
+    /// Containment: admitted before an unverifiable run's restart point, permanently.
+    suspended,
+    /// Quarantine of the user.
+    quarantined,
+    /// Deletion of the user.
+    deleted,
 }
 
 impl end_reason_t {
@@ -43,6 +51,9 @@ impl end_reason_t {
             end_reason_t::expired => "expired",
             end_reason_t::session_ended => "session_ended",
             end_reason_t::restriction => "restriction",
+            end_reason_t::suspended => "suspended",
+            end_reason_t::quarantined => "quarantined",
+            end_reason_t::deleted => "deleted",
         }
     }
 }
@@ -86,6 +97,11 @@ pub struct lineage_t {
     pub branches: BTreeMap<digest_t, BTreeSet<random_id_t>>,
     /// Subject of the genesis, replaced only by identity transitions (§6.9).
     pub authoritative_subject: Option<subject_t>,
+    /// The trunk head at the last containment or quarantine (ADR 0006 §10 step 1:
+    /// the `restore_reference` of a recovery commit).
+    pub containment_head: Option<digest_t>,
+    /// A recovery commit re-authorized this lineage in the open ceremony.
+    pub recovered: bool,
 }
 
 /// Where a grant came from.
@@ -591,6 +607,45 @@ impl lineage_index_t {
             .filter(|(_, entry)| entry.grant.lifetime.session_id.as_ref() == Some(session_id))
             .map(|(grant_id, _)| *grant_id)
             .collect()
+    }
+
+    /// Containment or quarantine of the user (ADR 0006 §§3–4, §10 step 1; the oracle's
+    /// `contain`): every grant of a live state ends with `reason`, permanently; every
+    /// live temporary branch ends; each lineage records its contained trunk head.
+    pub fn contain(&mut self, reason: end_reason_t) {
+        let mut ended = Vec::new();
+        for lineage in self.lineages.values() {
+            for (_, state) in self.live_states(lineage) {
+                ended.extend(state.grants.iter().map(|grant| grant.grant_id));
+            }
+        }
+        for grant_id in ended {
+            self.ended.entry(grant_id).or_insert(reason);
+        }
+        for lineage in self.lineages.values_mut() {
+            lineage.branches.clear();
+            lineage.containment_head = lineage.trunk_head;
+            lineage.recovered = false;
+        }
+    }
+
+    /// Applies a user-state record that identityd's index accepted (ADR 0006 §§3, 4,
+    /// 7, 10): containment and quarantine contain; deletion ends every grant the user
+    /// ever had; the ceremony records change key authority only.
+    pub fn apply_user_record(&mut self, record: &user_record_t) {
+        match record {
+            user_record_t::containment => self.contain(end_reason_t::suspended),
+            user_record_t::quarantine => self.contain(end_reason_t::quarantined),
+            user_record_t::deletion_pending => {
+                let grants: Vec<random_id_t> = self.grants.keys().copied().collect();
+                for grant_id in grants {
+                    self.ended.entry(grant_id).or_insert(end_reason_t::deleted);
+                }
+            }
+            user_record_t::admin_recover { .. }
+            | user_record_t::recovery_opened { .. }
+            | user_record_t::recovery_closed { .. } => {}
+        }
     }
 
     /// Applies a lifecycle record that [`lineage_index_t::check_record`] accepted. A

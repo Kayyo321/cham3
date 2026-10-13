@@ -68,6 +68,13 @@ for profile in release debug; do
     grep -q '^second_restrictive_append ok' "$report"
     grep -qx 'reserve_replenished' "$report"
     grep -qx 'journal_chained' "$report"
+    # The restriction ledger on the full filesystem (ADR 0006 §3): refused, failed,
+    # validity removed, and still failed once space returned.
+    grep -qx 'ledger_started' "$report"
+    grep -qx 'ledger_append_on_full_filesystem refused' "$report"
+    grep -qx 'ledger_validity_removed' "$report"
+    grep -qx 'previous_ledger missing' "$report"
+    grep -qx 'ledger_stays_failed' "$report"
     grep -qx 'reserve_verified' "$report"
     # The probe removes only what it created, and all of it (R2-03).
     test ! -e "$root_path"

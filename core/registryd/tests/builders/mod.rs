@@ -4,12 +4,14 @@
 //! Every key is a public synthetic test key and must never sign anything outside
 //! tests.
 
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 #[path = "../../../identityd/tests/builders/mod.rs"]
 mod identity_builders;
 
 pub use identity_builders::*;
+mod registry_support;
+pub use registry_support::*;
 
 use cham3_contract_format::hash::{digest_t, lineage_id};
 use cham3_contract_format::object_kind_t;

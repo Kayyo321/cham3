@@ -27,8 +27,6 @@ use cham3_contract_format::object_kind_t;
 use cham3_contract_format::schema::{authority_class_t, commit_type_t, invalidation_reason_t};
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::directory::journal_record_t;
-use cham3_identityd::outcome::service_error_t;
-use cham3_identityd::service::identity_service_t;
 use cham3_registryd::journal::{ReserveBytes, ReserveFileName, journal_io_t, system_io_t};
 use cham3_registryd::lineage::standing_t;
 use cham3_registryd::record::{
@@ -36,14 +34,9 @@ use cham3_registryd::record::{
     parse_journal, placement_t, record_body_t, registry_record_t,
 };
 use cham3_registryd::registry::{
-    registry_clock_t, registry_config_t, registry_identity_store_t, registry_start_error_t,
-    registry_t, unusable_reason_t,
+    quarantine_reason_t, registry_clock_t, registry_config_t, registry_start_error_t, registry_t,
+    unusable_reason_t,
 };
-
-const Contractd: caller_role_t = caller_role_t::service(service_name_t::contractd);
-const Policyd: caller_role_t = caller_role_t::service(service_name_t::policyd);
-const Identityd: caller_role_t = caller_role_t::service(service_name_t::identityd);
-const Vaultd: caller_role_t = caller_role_t::service(service_name_t::vaultd);
 
 /// Every role a peer can map to (service IPC §1).
 fn every_role() -> Vec<caller_role_t> {
@@ -59,23 +52,6 @@ fn every_role() -> Vec<caller_role_t> {
     roles
 }
 
-fn code(result: Result<impl std::fmt::Debug, service_error_t>) -> String {
-    match result {
-        Ok(value) => panic!("expected a refusal, got {value:?}"),
-        Err(error) => error.to_string(),
-    }
-}
-
-struct fixed_clock_t;
-
-impl registry_clock_t for fixed_clock_t {
-    fn utc_seconds(&self) -> i64 {
-        // 2026-10-13T09:00:00Z
-        1_791_882_000
-    }
-}
-
-/// Fault injection at the journal's durability boundaries.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum fault_t {
     none,
@@ -85,6 +61,11 @@ enum fault_t {
     torn(usize),
     /// The next append's write succeeds and its fdatasync fails.
     fail_sync,
+    /// The next append writes only this many bytes, fails, and the truncation that
+    /// would put the journal back fails too.
+    torn_rollback_fails(usize),
+    /// Armed by `torn_rollback_fails`: the next truncation fails.
+    rollback_fails,
 }
 
 struct faulty_io_t {
@@ -106,8 +87,24 @@ impl journal_io_t for faulty_io_t {
                 system_io_t.write_all(file, &bytes[..length.min(bytes.len())])?;
                 Err(io::Error::other("injected torn write"))
             }
-            fault_t::none | fault_t::fail_sync => system_io_t.write_all(file, bytes),
+            fault_t::torn_rollback_fails(length) => {
+                *self.fault.lock().unwrap() = fault_t::rollback_fails;
+                system_io_t.write_all(file, &bytes[..length.min(bytes.len())])?;
+                Err(io::Error::other("injected torn write"))
+            }
+            fault_t::none | fault_t::fail_sync | fault_t::rollback_fails => {
+                system_io_t.write_all(file, bytes)
+            }
         }
+    }
+
+    fn truncate(&self, file: &fs::File, length: u64) -> io::Result<()> {
+        let fault = *self.fault.lock().unwrap();
+        if fault == fault_t::rollback_fails {
+            *self.fault.lock().unwrap() = fault_t::none;
+            return Err(io::Error::other("injected truncation failure"));
+        }
+        system_io_t.truncate(file, length)
     }
 
     fn sync_data(&self, file: &fs::File) -> io::Result<()> {
@@ -349,65 +346,15 @@ impl journal_io_t for unsynced_allocation_io_t {
     }
 }
 
-fn temp_root(label: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("cham3_registryd_{label}_{}", std::process::id()));
-    let _ = fs::remove_dir_all(&root);
-    fs::create_dir_all(&root).expect("temp root");
-    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).expect("mode");
-    root
-}
-
-fn owner_of(root: &Path) -> u32 {
-    fs::metadata(root).expect("root").uid()
-}
-
-fn open_with(root: &Path, config: registry_config_t, io: Box<dyn journal_io_t>) -> Arc<registry_t> {
-    Arc::new(
-        registry_t::open(root, owner_of(root), config, io, Box::new(fixed_clock_t))
-            .expect("registry start"),
-    )
-}
-
-fn open(root: &Path) -> Arc<registry_t> {
-    open_with(root, registry_config_t::default(), Box::new(system_io_t))
-}
-
-fn identity_over(registry: &Arc<registry_t>) -> identity_service_t<registry_identity_store_t> {
-    identity_service_t::start(registry_identity_store_t {
-        registry: Arc::clone(registry),
-    })
-    .expect("identityd start")
-}
-
-/// Enrolls `user` through identityd, which persists through the registry.
-fn enroll(registry: &Arc<registry_t>, user: &test_user_t) {
-    let mut identity = identity_over(registry);
-    identity
-        .register_enrollment(
-            Vaultd,
-            user.uid,
-            &user.enrollment,
-            &user.persistent_certificate,
-            &user.temporary_certificate,
-        )
-        .expect("enrollment");
-}
-
-fn admit(
-    registry: &registry_t,
-    user: &test_user_t,
-    commit: &commit_t,
-) -> Result<placement_t, service_error_t> {
-    registry
-        .admit(Contractd, user.uid, &commit.envelope)
-        .map(|receipt| {
-            assert_eq!(receipt.commit_id, commit.commit_id);
-            receipt.placement
-        })
-}
-
-fn journal_path(root: &Path, uid: u32) -> PathBuf {
-    root.join("users").join(uid.to_string()).join("journal.c3j")
+/// The directory syncs of a start (M2-006 stage A): `root` in its parent and `users` in
+/// `root` (M2-005 R01), `root` again for the anchor directory it holds, each reopened
+/// user directory, `root` for the ledger directory, the ledger directory after its files
+/// and the anchor directory after the run marker. Every start repeats them (R2-01).
+fn start_syncs(parent: &Path, root: &Path, reopened: &[PathBuf]) -> Vec<PathBuf> {
+    let mut syncs = vec![parent.to_path_buf(), root.to_path_buf(), root.to_path_buf()];
+    syncs.extend(reopened.iter().cloned());
+    syncs.extend([root.to_path_buf(), root.join("ledger"), root.join("anchor")]);
+    syncs
 }
 
 /// A small lineage: genesis, a revision, a temporary branch.
@@ -564,6 +511,7 @@ fn the_journal_file_holds_exactly_the_chained_records() {
                     format!("commit_admitted/{}", placement.as_str())
                 }
                 record_body_t::lifecycle(_) => "lifecycle".to_owned(),
+                record_body_t::user(_) => "user".to_owned(),
             }
         })
         .collect();
@@ -595,67 +543,157 @@ fn write_tampered(root: &Path, uid: u32, edit: impl FnOnce(&mut Vec<u8>)) {
 
 #[test]
 fn a_tampered_or_torn_journal_makes_only_that_user_unusable() {
+    // A rewritten or corrupted journal makes only its user unusable. A defect in the
+    // bytes (a flipped byte, a cut header, a frame whose length no record can have) is a
+    // store defect; a tail shorter than the anchor says is a stale journal and the user
+    // is quarantined (ADR 0006 §4); neither is truncated. Only a torn frame beyond the
+    // anchor — an append that died before it was acknowledged — is discarded at the
+    // next start, and that user resumes (M2-006 stage A).
     let alice = test_user(1001);
     let bob = test_user(1002);
     let editor = app("editor");
     let alice_lineage = sample(&alice, &editor);
     let bob_lineage = sample(&bob, &editor);
     type edit_t = Box<dyn Fn(&mut Vec<u8>)>;
-    let cases: [(&str, edit_t); 4] = [
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum outcome_t {
+        defect,
+        stale_journal,
+        truncated_and_resumed,
+    }
+    let cases: [(&str, edit_t, outcome_t); 5] = [
         (
             "flipped",
             Box::new(|bytes: &mut Vec<u8>| {
                 let position = bytes.len() - 100;
                 bytes[position] ^= 1;
             }),
+            outcome_t::defect,
         ),
         (
-            "torn",
+            "torn_inside_the_anchor",
             Box::new(|bytes: &mut Vec<u8>| bytes.truncate(bytes.len() - 7)),
+            outcome_t::stale_journal,
         ),
         (
             "truncated_header",
             Box::new(|bytes: &mut Vec<u8>| bytes.truncate(20)),
+            outcome_t::defect,
         ),
+        // A frame start whose declared length exceeds every record: a defect, never a
+        // torn append.
         (
             "appended_garbage",
             Box::new(|bytes: &mut Vec<u8>| bytes.extend_from_slice(b"C3JRxxxx")),
+            outcome_t::defect,
+        ),
+        // A frame start with a plausible length and a few bytes of body: a torn append.
+        (
+            "torn_beyond_the_anchor",
+            Box::new(|bytes: &mut Vec<u8>| {
+                bytes.extend_from_slice(b"C3JR");
+                bytes.extend_from_slice(&200u32.to_be_bytes());
+                bytes.extend_from_slice(&[0x5a; 11]);
+            }),
+            outcome_t::truncated_and_resumed,
         ),
     ];
-    for (label, edit) in cases {
+    for (label, edit, outcome) in cases {
         let root = temp_root(&format!("tamper_{label}"));
         let registry = open(&root);
         enroll(&registry, &alice);
         enroll(&registry, &bob);
         admit(&registry, &alice, &alice_lineage.genesis).expect("alice genesis");
         admit(&registry, &bob, &bob_lineage.genesis).expect("bob genesis");
+        let anchored = registry
+            .anchored_user(alice.uid)
+            .expect("anchor")
+            .expect("anchored");
         drop(registry);
+        let intact_length = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
         write_tampered(&root, alice.uid, edit);
+        let tampered_length = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
         let registry = open(&root);
         let unusable = registry.unusable_users().expect("users");
-        assert_eq!(unusable.len(), 1, "{label}");
-        assert_eq!(unusable[0].0, alice.uid, "{label}");
         let lineage_id = alice_lineage.genesis.payload.lineage_id;
-        assert_eq!(
-            code(registry.lineage_head(Policyd, alice.uid, &lineage_id)),
-            "ipc/storage_unavailable",
-            "{label}"
-        );
-        assert_eq!(
-            code(admit(&registry, &alice, &alice_lineage.revision)),
-            "ipc/storage_unavailable"
-        );
-        assert_eq!(
-            code(registry.identity_state(Identityd, alice.uid, 0)),
-            "ipc/storage_unavailable"
-        );
-        // A freshly started identityd cannot read the user's keys: they resolve as not
-        // certified (denied).
         let mut identity = identity_over(&registry);
-        assert_eq!(
-            code(identity.resolve_key(Contractd, &alice.persistent.key_id)),
-            "key_authority/key_not_certified"
-        );
+        if outcome == outcome_t::truncated_and_resumed {
+            assert_eq!(unusable, Vec::new(), "{label}");
+            assert_eq!(
+                fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
+                intact_length,
+                "{label}: the torn frame is discarded"
+            );
+            assert_eq!(
+                registry.anchored_user(alice.uid).unwrap(),
+                Some(anchored),
+                "{label}: nothing to roll forward"
+            );
+            assert!(
+                registry
+                    .lineage_head(Policyd, alice.uid, &lineage_id)
+                    .expect("view")
+                    .is_some(),
+                "{label}"
+            );
+            assert_eq!(
+                admit(&registry, &alice, &alice_lineage.revision),
+                Ok(placement_t::trunk),
+                "{label}"
+            );
+            assert!(
+                identity
+                    .resolve_key(Contractd, &alice.persistent.key_id)
+                    .is_ok(),
+                "{label}"
+            );
+        } else {
+            assert_eq!(unusable.len(), 1, "{label}");
+            assert_eq!(unusable[0].0, alice.uid, "{label}");
+            let expected_code = if outcome == outcome_t::stale_journal {
+                assert_eq!(
+                    unusable[0].1,
+                    unusable_reason_t::quarantine(quarantine_reason_t::stale_journal),
+                    "{label}"
+                );
+                "key_authority/quarantined"
+            } else {
+                assert!(
+                    matches!(unusable[0].1, unusable_reason_t::defect(_)),
+                    "{label}: {:?}",
+                    unusable[0].1
+                );
+                "ipc/storage_unavailable"
+            };
+            // Kept as found: a defective or stale journal is evidence, never truncated.
+            assert_eq!(
+                fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
+                tampered_length,
+                "{label}"
+            );
+            assert_eq!(
+                code(registry.lineage_head(Policyd, alice.uid, &lineage_id)),
+                expected_code,
+                "{label}"
+            );
+            assert_eq!(
+                code(admit(&registry, &alice, &alice_lineage.revision)),
+                expected_code,
+                "{label}"
+            );
+            assert_eq!(
+                code(registry.identity_state(Identityd, alice.uid, 0)),
+                expected_code,
+                "{label}"
+            );
+            // A freshly started identityd cannot read the user's keys: they resolve as
+            // not certified (denied).
+            assert_eq!(
+                code(identity.resolve_key(Contractd, &alice.persistent.key_id)),
+                "key_authority/key_not_certified",
+                "{label}"
+            );
+        }
         // The other user is unaffected.
         assert_eq!(
             admit(&registry, &bob, &bob_lineage.revision),
@@ -674,12 +712,6 @@ fn write_chained(root: &Path, uid: u32, user_id: &digest_t, records: &[Vec<u8>])
         bytes.extend(frame(record, &chain).expect("frame"));
     }
     fs::write(journal_path(root, uid), bytes).expect("write");
-}
-
-fn records_of(root: &Path, uid: u32) -> Vec<Vec<u8>> {
-    parse_journal(&fs::read(journal_path(root, uid)).expect("read"), uid)
-        .expect("parse")
-        .records
 }
 
 fn record(sequence: u64, body: record_body_t) -> Vec<u8> {
@@ -727,127 +759,135 @@ fn a_correctly_chained_record_must_still_pass_every_check_on_replay() {
     let mut forged_signature = lineage.revision.envelope.clone();
     let last = forged_signature.len() - 1;
     forged_signature[last] ^= 1;
-    let cases: Vec<(&str, Vec<Vec<u8>>, u64)> = vec![
+    // The anchor holds the chain at record 4. A rewritten or shortened prefix is caught
+    // there (ADR 0006 §4: chain mismatch, stale journal) before any replay; a record
+    // appended beyond the anchor extends the chain and is admitted only if it passes
+    // every replay rule — a failing one quarantines the user (M2-006 stage A).
+    let on_absent_parent = draft(&alice, &editor, commit_type_t::revision, "absent parent")
+        .on(&lineage.revision)
+        .add(vec![file_grant(
+            "y",
+            alice.uid,
+            "home:y",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    let replay_defect = Some(unusable_reason_t::quarantine(
+        quarantine_reason_t::replay_defect,
+    ));
+    let chain_mismatch = Some(unusable_reason_t::quarantine(
+        quarantine_reason_t::chain_mismatch,
+    ));
+    let stale_journal = Some(unusable_reason_t::quarantine(
+        quarantine_reason_t::stale_journal,
+    ));
+    let extended = |fifth: Vec<u8>| {
+        let mut records = original.clone();
+        records.push(fifth);
+        records
+    };
+    type case_t<'a> = (&'a str, Vec<Vec<u8>>, Option<unusable_reason_t>);
+    let cases: Vec<case_t<'_>> = vec![
         // The control: the original records replay.
-        ("control", original.clone(), 0),
+        ("control", original.clone(), None),
         // A commit whose recorded placement differs from the recomputed one.
         (
             "placement",
+            extended(commit_record(5, &lineage.revision, placement_t::temporary)),
+            replay_defect,
+        ),
+        // A commit admitted twice.
+        (
+            "twice",
+            extended(commit_record(5, &lineage.genesis, placement_t::trunk)),
+            replay_defect,
+        ),
+        // A commit whose parent is not in the journal.
+        (
+            "parent",
+            extended(commit_record(5, &on_absent_parent, placement_t::trunk)),
+            replay_defect,
+        ),
+        // A signature that does not verify.
+        (
+            "signature",
+            extended(record(
+                5,
+                record_body_t::commit_admitted {
+                    commit_id: cham3_contract_format::hash::sha256(&forged_signature),
+                    lineage_id: lineage.revision.payload.lineage_id,
+                    placement: placement_t::trunk,
+                    envelope: forged_signature.clone(),
+                },
+            )),
+            replay_defect,
+        ),
+        // A sequence number out of order.
+        (
+            "sequence",
+            extended(commit_record(9, &lineage.revision, placement_t::trunk)),
+            replay_defect,
+        ),
+        // A lifecycle record that fails its rule (expiry of a grant without expiration).
+        (
+            "lifecycle",
+            extended(record(
+                5,
+                record_body_t::lifecycle(lifecycle_record_t::expired {
+                    grant_id: synthetic_id("grant downloads read"),
+                }),
+            )),
+            replay_defect,
+        ),
+        // A rewritten prefix, correctly chained: the anchored chain disagrees.
+        (
+            "rewritten_prefix",
             vec![
                 original[0].clone(),
                 original[1].clone(),
                 original[2].clone(),
                 commit_record(4, &lineage.genesis, placement_t::temporary),
             ],
-            4,
+            chain_mismatch,
         ),
-        // A commit admitted twice.
-        (
-            "twice",
-            vec![
-                original[0].clone(),
-                original[1].clone(),
-                original[2].clone(),
-                original[3].clone(),
-                commit_record(5, &lineage.genesis, placement_t::trunk),
-            ],
-            5,
-        ),
-        // A commit whose parent is not in the journal (the genesis record removed).
-        (
-            "parent",
-            vec![
-                original[0].clone(),
-                original[1].clone(),
-                original[2].clone(),
-                commit_record(4, &lineage.revision, placement_t::trunk),
-            ],
-            4,
-        ),
-        // A signature that does not verify.
-        (
-            "signature",
-            vec![
-                original[0].clone(),
-                original[1].clone(),
-                original[2].clone(),
-                original[3].clone(),
-                record(
-                    5,
-                    record_body_t::commit_admitted {
-                        commit_id: cham3_contract_format::hash::sha256(&forged_signature),
-                        lineage_id: lineage.revision.payload.lineage_id,
-                        placement: placement_t::trunk,
-                        envelope: forged_signature.clone(),
-                    },
-                ),
-            ],
-            5,
-        ),
-        // A sequence number out of order.
-        (
-            "sequence",
-            vec![
-                original[0].clone(),
-                original[1].clone(),
-                original[2].clone(),
-                commit_record(9, &lineage.genesis, placement_t::trunk),
-            ],
-            4,
-        ),
-        // A commit before the user's certificates.
+        // A shortened journal: the certificates and the commit gone.
+        ("shortened", vec![original[0].clone()], stale_journal),
+        // A commit before the user's certificates (also shorter than the anchor).
         (
             "before_certificates",
             vec![
                 original[0].clone(),
                 commit_record(2, &lineage.genesis, placement_t::trunk),
             ],
-            2,
+            stale_journal,
         ),
-        // A first record that is not the enrollment.
-        ("first_not_enrollment", vec![original[1].clone()], 1),
-        // A lifecycle record that fails its rule (expiry of a grant without expiration).
-        (
-            "lifecycle",
-            vec![
-                original[0].clone(),
-                original[1].clone(),
-                original[2].clone(),
-                original[3].clone(),
-                record(
-                    5,
-                    record_body_t::lifecycle(lifecycle_record_t::expired {
-                        grant_id: synthetic_id("grant downloads read"),
-                    }),
-                ),
-            ],
-            5,
-        ),
-        // A second, valid commit on top: replays.
+        // A second, valid commit on top: replays, and rolls the anchor forward.
         (
             "valid_extension",
-            vec![
-                original[0].clone(),
-                original[1].clone(),
-                original[2].clone(),
-                original[3].clone(),
-                commit_record(5, &unsigned_epoch, placement_t::trunk),
-            ],
-            0,
+            extended(commit_record(5, &unsigned_epoch, placement_t::trunk)),
+            None,
         ),
     ];
-    for (label, records, failing) in cases {
+    for (label, records, expected) in cases {
         write_chained(&root, alice.uid, &user_id, &records);
         let registry = open(&root);
         let unusable = registry.unusable_users().expect("users");
-        if failing == 0 {
-            assert_eq!(unusable, Vec::new(), "{label}");
-        } else {
-            assert_eq!(
-                unusable,
-                vec![(alice.uid, unusable_reason_t::replay { sequence: failing })],
-                "{label}"
-            );
+        match expected {
+            None => {
+                assert_eq!(unusable, Vec::new(), "{label}");
+                assert_eq!(
+                    registry
+                        .anchored_user(alice.uid)
+                        .unwrap()
+                        .map(|entry| entry.seq),
+                    Some(records.len() as u64),
+                    "{label}: anchored at the last record"
+                );
+            }
+            Some(reason) => {
+                assert_eq!(unusable, vec![(alice.uid, reason)], "{label}");
+            }
         }
     }
 }
@@ -955,17 +995,24 @@ fn every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledge
         )
         .expect("registry start"),
     );
-    assert_eq!(spy.synced(), vec![parent.clone(), root.clone()]);
+    assert_eq!(spy.synced(), start_syncs(&parent, &root, &[]));
     let alice = test_user(1001);
     enroll(&registry, &alice);
+    // The enrollment syncs the user directory's entry in `users`, the journal's entry
+    // in the user directory, then the anchor directory once: its first write to the
+    // anchor's second slot (the slot's entry; later writes to a slot this run has
+    // synced do not repeat it).
     assert_eq!(
         spy.synced(),
-        vec![
-            parent.clone(),
-            root.clone(),
-            root.join("users"),
-            root.join("users").join("1001")
+        [
+            start_syncs(&parent, &root, &[]),
+            vec![
+                root.join("users"),
+                root.join("users").join("1001"),
+                root.join("anchor"),
+            ],
         ]
+        .concat()
     );
     // Reopening an existing store creates nothing, but repeats the syncs the acknowledged
     // state depends on (R2-01): `root` in its parent, `users` in `root`, and each
@@ -976,7 +1023,7 @@ fn every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledge
     let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
     assert_eq!(
         spy.synced(),
-        vec![parent, root.clone(), root.join("users").join("1001")]
+        start_syncs(&parent, &root, &[root.join("users").join("1001")])
     );
     assert!(registry.unusable_users().unwrap().is_empty());
 }
@@ -1007,7 +1054,7 @@ fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
     // enrollment's `users` sync failed and nothing else was synced or written.
     assert_eq!(
         spy.synced(),
-        vec![parent.clone(), root.clone(), root.join("users")]
+        [start_syncs(&parent, &root, &[]), vec![root.join("users")]].concat()
     );
     let receipt = registry
         .append_identity(
@@ -1021,13 +1068,16 @@ fn a_failed_parent_directory_sync_is_repeated_before_a_retry_is_acknowledged() {
     assert!(!receipt.already_present);
     assert_eq!(
         spy.synced(),
-        vec![
-            parent,
-            root.clone(),
-            root.join("users"),
-            root.join("users"),
-            root.join("users").join("1001")
+        [
+            start_syncs(&parent, &root, &[]),
+            vec![
+                root.join("users"),
+                root.join("users"),
+                root.join("users").join("1001"),
+                root.join("anchor"),
+            ],
         ]
+        .concat()
     );
     // The journal replays after a restart.
     drop(registry);
@@ -1076,16 +1126,23 @@ fn a_failed_startup_directory_sync_is_repeated_at_the_next_start() {
         )
         .expect("second start"),
     );
-    assert_eq!(spy.synced(), vec![parent.clone(), root.clone()]);
+    assert_eq!(spy.synced(), start_syncs(&parent, &root, &[]));
     enroll(&registry, &test_user(1001));
+    // The enrollment syncs the user directory's entry in `users`, the journal's entry
+    // in the user directory, then the anchor directory once: its first write to the
+    // anchor's second slot (the slot's entry; later writes to a slot this run has
+    // synced do not repeat it).
     assert_eq!(
         spy.synced(),
-        vec![
-            parent,
-            root.clone(),
-            root.join("users"),
-            root.join("users").join("1001")
+        [
+            start_syncs(&parent, &root, &[]),
+            vec![
+                root.join("users"),
+                root.join("users").join("1001"),
+                root.join("anchor"),
+            ],
         ]
+        .concat()
     );
     // (b) An existing root whose new `users` directory was never made durable in it.
     let root = temp_root("startup_sync_users");
@@ -1105,7 +1162,7 @@ fn a_failed_startup_directory_sync_is_repeated_at_the_next_start() {
     assert_eq!(spy.synced(), vec![parent.clone(), root.clone()]);
     let spy = sync_spy_t::new(false);
     let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
-    assert_eq!(spy.synced(), vec![parent, root.clone()]);
+    assert_eq!(spy.synced(), start_syncs(&parent, &root, &[]));
     enroll(&registry, &test_user(1002));
     assert!(registry.unusable_users().unwrap().is_empty());
 }
@@ -1139,9 +1196,15 @@ fn a_failed_creation_sync_is_repeated_when_the_journal_is_reopened() {
     let spy = sync_spy_t::new(false);
     let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
     assert!(registry.unusable_users().unwrap().is_empty());
+    // The journal's one durable record was never anchored (its creation failed before
+    // the anchor update): the start rolls the anchor forward, one more anchor sync.
     assert_eq!(
         spy.synced(),
-        vec![parent.clone(), root.clone(), user_directory.clone()]
+        [
+            start_syncs(&parent, &root, &[user_directory.clone()]),
+            vec![root.join("anchor")],
+        ]
+        .concat()
     );
     let receipt = registry
         .append_identity(
@@ -1174,7 +1237,10 @@ fn a_failed_creation_sync_is_repeated_when_the_journal_is_reopened() {
     let spy = sync_spy_t::new(false);
     let registry = open_with(&root, registry_config_t::default(), Box::new(spy.clone()));
     assert!(registry.unusable_users().unwrap().is_empty());
-    assert_eq!(spy.synced(), vec![parent, root.clone(), user_directory]);
+    assert_eq!(
+        spy.synced(),
+        start_syncs(&parent, &root, &[user_directory.clone()])
+    );
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
     let mut identity = identity_over(&registry);
     identity
@@ -1191,7 +1257,16 @@ fn a_failed_creation_sync_is_repeated_when_the_journal_is_reopened() {
         )
         .expect("the first non-restrictive append refills the recreated reserve");
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
-    assert_eq!(spy.synced().len(), 3, "an append syncs no directory");
+    // An append syncs no directory, except the anchor's for the first write to a slot
+    // this run (the other slot, after the run marker's).
+    assert_eq!(
+        spy.synced(),
+        [
+            start_syncs(&parent, &root, &[user_directory]),
+            vec![root.join("anchor")]
+        ]
+        .concat()
+    );
 }
 
 #[test]
@@ -1327,9 +1402,7 @@ fn an_ended_session_refuses_every_later_grant_bound_to_it() {
         registry.unusable_users().expect("users"),
         vec![(
             alice.uid,
-            unusable_reason_t::replay {
-                sequence: forged.len() as u64
-            }
+            unusable_reason_t::quarantine(quarantine_reason_t::replay_defect)
         )]
     );
 }
@@ -1368,24 +1441,28 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
     assert_eq!(io.counts(), (0, 0, 1));
     let genesis = draft(&alice, &browser, commit_type_t::genesis, "reserve genesis").sign(&alice);
-    // An admission on a full filesystem: refused, the reserve untouched, the journal
-    // unusable until restart as for every failed append.
+    // An admission on a full filesystem: refused, the failed frame truncated away, the
+    // reserve untouched; the user continues (stage A).
     io.set(space_fault_t::write_enospc);
     assert_eq!(
         code(admit(&registry, &alice, &genesis)),
         "ipc/storage_unavailable"
     );
-    assert_eq!(io.counts(), (0, 0, 1));
+    assert_eq!(io.counts(), (1, 0, 1));
     assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
     assert_eq!(
-        code(registry.lineage_head(Policyd, alice.uid, &genesis.payload.lineage_id)),
-        "ipc/storage_unavailable"
+        registry
+            .lineage_head(Policyd, alice.uid, &genesis.payload.lineage_id)
+            .expect("view")
+            .expect("user")
+            .trunk_head,
+        None
     );
     drop(registry);
     let registry = open_with(&root, registry_config_t::default(), Box::new(io.clone()));
     assert!(registry.unusable_users().unwrap().is_empty());
     // The restart synced the full-length reserve before trusting it (R2-02).
-    assert_eq!(io.counts(), (0, 0, 2));
+    assert_eq!(io.counts(), (1, 0, 2));
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
     let before = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
     // A key invalidation on a full filesystem: truncated back, the reserve released,
@@ -1404,8 +1481,14 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
             ),
         )
         .expect("restrictive record from the reserve");
-    assert_eq!(io.counts(), (1, 1, 2));
+    assert_eq!(io.counts(), (2, 1, 2));
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(0));
+    // The depleted reserve is reported (M2-006 stage A, until the status operations of
+    // stage B).
+    assert_eq!(
+        registry.rollback_status(Policyd).unwrap().depleted_reserves,
+        vec![alice.uid]
+    );
     assert_eq!(fs::metadata(&reserve).unwrap().len(), 0);
     assert!(fs::metadata(journal_path(&root, alice.uid)).unwrap().len() > before);
     assert_eq!(
@@ -1423,7 +1506,7 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
         code(admit(&registry, &alice, &genesis)),
         "ipc/storage_unavailable"
     );
-    assert_eq!(io.counts(), (1, 1, 3));
+    assert_eq!(io.counts(), (2, 1, 3));
     assert_eq!(
         fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
         length
@@ -1435,7 +1518,7 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
         "ipc/storage_unavailable",
         "refilling failed again"
     );
-    assert_eq!(io.counts(), (1, 1, 4));
+    assert_eq!(io.counts(), (2, 1, 4));
     identity
         .register_invalidation(
             Vaultd,
@@ -1470,6 +1553,13 @@ fn the_preallocated_reserve_is_used_only_by_restrictive_records() {
         )
         .expect("a certificate is not restrictive: it refills the reserve");
     assert_eq!(registry.reserve_bytes(alice.uid), Ok(ReserveBytes));
+    assert!(
+        registry
+            .rollback_status(Policyd)
+            .unwrap()
+            .depleted_reserves
+            .is_empty()
+    );
     assert_eq!(fs::metadata(&reserve).unwrap().len(), ReserveBytes);
     assert!(allocated_bytes(&reserve) >= ReserveBytes);
     let signed =
@@ -1706,14 +1796,19 @@ fn a_reserve_written_without_a_completed_sync_is_never_trusted_for_its_length() 
 }
 
 #[test]
-fn failed_appends_change_nothing_and_deny_until_restart() {
+fn failed_appends_change_nothing_and_are_rolled_back() {
+    // A failed admission changes nothing: the in-memory state is untouched and the
+    // journal is put back to its last durable frame, so the user continues (M2-006
+    // stage A; M2-005 denied the user until restart). Whether the write failed before
+    // any byte, after a few bytes, or at its fdatasync, the rollback leaves no trace of
+    // the record and nothing is anchored.
     let alice = test_user(1001);
     let editor = app("editor");
     let lineage = sample(&alice, &editor);
-    for (label, fault, after_restart) in [
-        ("write", fault_t::fail_write, "absent"),
-        ("torn", fault_t::torn(11), "unusable"),
-        ("sync", fault_t::fail_sync, "present"),
+    for (label, fault) in [
+        ("write", fault_t::fail_write),
+        ("torn", fault_t::torn(11)),
+        ("sync", fault_t::fail_sync),
     ] {
         let root = temp_root(&format!("fault_{label}"));
         let fault_state = Arc::new(Mutex::new(fault_t::none));
@@ -1733,67 +1828,167 @@ fn failed_appends_change_nothing_and_deny_until_restart() {
             .lineage_head(Policyd, alice.uid, &lineage_id)
             .expect("view")
             .expect("user");
+        let length_before = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
+        let anchored_before = registry.anchored_user(alice.uid).unwrap();
         *fault_state.lock().unwrap() = fault;
         assert_eq!(
             code(admit(&registry, &alice, &lineage.revision)),
             "ipc/storage_unavailable",
             "{label}"
         );
-        // Nothing in memory changed, and the user is denied for the rest of the run.
+        assert_eq!(
+            registry
+                .lineage_head(Policyd, alice.uid, &lineage_id)
+                .expect("view")
+                .expect("user"),
+            before,
+            "{label}: nothing in memory changed"
+        );
+        assert_eq!(
+            registry.anchored_user(alice.uid).unwrap(),
+            anchored_before,
+            "{label}: nothing anchored"
+        );
+        assert_eq!(
+            fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
+            length_before,
+            "{label}: rolled back"
+        );
+        // The user continues: keys resolve and the retried admission is admitted.
+        let mut identity = identity_over(&registry);
+        assert!(
+            identity
+                .resolve_key(Contractd, &alice.persistent.key_id)
+                .is_ok(),
+            "{label}"
+        );
+        drop(identity);
+        assert_eq!(
+            admit(&registry, &alice, &lineage.revision),
+            Ok(placement_t::trunk),
+            "{label}"
+        );
+        drop(registry);
+        let registry = open(&root);
+        assert!(registry.unusable_users().unwrap().is_empty(), "{label}");
+        assert_eq!(
+            registry
+                .lineage_head(Policyd, alice.uid, &lineage_id)
+                .expect("view")
+                .expect("user")
+                .trunk_head
+                .map(|head| head.commit_id),
+            Some(lineage.revision.commit_id),
+            "{label}"
+        );
+    }
+}
+
+#[test]
+fn a_failed_rollback_denies_the_user_until_restart() {
+    // When the truncation that puts the journal back after a failed write fails too,
+    // the file's state is unknown: the user is denied for the rest of the run (fail
+    // closed) and the next start decides from the bytes (ADR 0006 §4). A torn frame
+    // beyond the anchor is discarded; a complete frame beyond it is a durable but
+    // unacknowledged record that rolls the anchor forward — reported failed, found
+    // admitted, reconciled by the client through its request id (ADR 0006 §1).
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let lineage = sample(&alice, &editor);
+    for (label, written, after_restart) in [
+        ("torn", 11usize, "absent"),
+        ("whole", usize::MAX, "present"),
+    ] {
+        let root = temp_root(&format!("rollback_{label}"));
+        let fault_state = Arc::new(Mutex::new(fault_t::none));
+        let registry = open_with(
+            &root,
+            registry_config_t::default(),
+            Box::new(faulty_io_t {
+                fault: Arc::clone(&fault_state),
+                appends: Arc::new(AtomicUsize::new(0)),
+            }),
+        );
+        enroll(&registry, &alice);
+        admit(&registry, &alice, &lineage.genesis).expect("genesis");
+        let lineage_id = lineage.genesis.payload.lineage_id;
+        let before = registry
+            .lineage_head(Policyd, alice.uid, &lineage_id)
+            .expect("view")
+            .expect("user");
+        let length_before = fs::metadata(journal_path(&root, alice.uid)).unwrap().len();
+        *fault_state.lock().unwrap() = fault_t::torn_rollback_fails(written);
+        assert_eq!(
+            code(admit(&registry, &alice, &lineage.revision)),
+            "ipc/storage_unavailable",
+            "{label}"
+        );
+        assert_eq!(
+            *fault_state.lock().unwrap(),
+            fault_t::none,
+            "{label}: the rollback was attempted"
+        );
+        assert!(
+            fs::metadata(journal_path(&root, alice.uid)).unwrap().len() > length_before,
+            "{label}: the failed frame's bytes stay"
+        );
+        // Denied for the rest of the run.
         assert_eq!(
             code(registry.lineage_head(Policyd, alice.uid, &lineage_id)),
-            "ipc/storage_unavailable"
+            "ipc/storage_unavailable",
+            "{label}"
         );
         assert_eq!(
             code(admit(&registry, &alice, &lineage.revision)),
-            "ipc/storage_unavailable"
+            "ipc/storage_unavailable",
+            "{label}"
         );
         let mut identity = identity_over(&registry);
         assert_eq!(
             code(identity.resolve_key(Contractd, &alice.persistent.key_id)),
-            "key_authority/key_not_certified"
+            "key_authority/key_not_certified",
+            "{label}"
         );
         drop(identity);
         drop(registry);
         let registry = open(&root);
+        assert!(registry.unusable_users().unwrap().is_empty(), "{label}");
+        let view = registry
+            .lineage_head(Policyd, alice.uid, &lineage_id)
+            .expect("view")
+            .expect("user");
         match after_restart {
             "absent" => {
-                let view = registry
-                    .lineage_head(Policyd, alice.uid, &lineage_id)
-                    .expect("view")
-                    .expect("user");
                 assert_eq!(view, before, "{label}");
                 assert_eq!(
+                    fs::metadata(journal_path(&root, alice.uid)).unwrap().len(),
+                    length_before,
+                    "{label}: the torn frame is discarded at start"
+                );
+                assert_eq!(
                     admit(&registry, &alice, &lineage.revision),
-                    Ok(placement_t::trunk)
-                );
-            }
-            "present" => {
-                // Reported failed, found admitted after the restart: it stays pending and
-                // the client reconciles by request id (ADR 0006 §1).
-                let view = registry
-                    .lineage_head(Policyd, alice.uid, &lineage_id)
-                    .expect("view")
-                    .expect("user");
-                assert_eq!(
-                    view.trunk_head.map(|head| head.commit_id),
-                    Some(lineage.revision.commit_id)
-                );
-                assert_eq!(
-                    code(admit(&registry, &alice, &lineage.revision)),
-                    "admission/stale_head"
+                    Ok(placement_t::trunk),
+                    "{label}"
                 );
             }
             _ => {
                 assert_eq!(
-                    registry.unusable_users().expect("users"),
-                    vec![(
-                        alice.uid,
-                        unusable_reason_t::defect(
-                            cham3_registryd::record::journal_defect_t::torn_tail
-                        )
-                    )],
-                    "{label}: torn-tail recovery is M2-006"
+                    view.trunk_head.map(|head| head.commit_id),
+                    Some(lineage.revision.commit_id),
+                    "{label}"
+                );
+                assert_eq!(
+                    registry
+                        .anchored_user(alice.uid)
+                        .unwrap()
+                        .map(|entry| entry.seq),
+                    Some(view.journal_seq),
+                    "{label}: the anchor rolled forward"
+                );
+                assert_eq!(
+                    code(admit(&registry, &alice, &lineage.revision)),
+                    "admission/stale_head",
+                    "{label}"
                 );
             }
         }

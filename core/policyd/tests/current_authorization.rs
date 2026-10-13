@@ -438,7 +438,7 @@ fn mandatory_policy_and_emergency_restriction_win_over_grants() {
         .policy_status(caller_role_t::trusted_client { uid: alice.uid })
         .expect("status");
     assert!(status.emergency_restriction);
-    assert_eq!(status.rollback_protection, rollback_protection_t::none);
+    assert_eq!(status.rollback_protection, rollback_protection_t::degraded);
     assert!(
         !world
             .policy
@@ -1245,4 +1245,228 @@ fn conservative_evaluation_of_inconsistent_snapshots() {
         denied(deny_reason_t::delegation_unsupported)
     );
     let _ = (&world.root, object_kind_t::commit);
+}
+
+#[test]
+fn an_emergency_restriction_set_through_registryd_denies_everyone_and_persists() {
+    // M2-006 stage A: `set_emergency_restriction` is a restrictive change of registryd
+    // (ADR 0007 §1 rule 1; ADR 0006 §3), in force at once for every user and persisted
+    // in the anchor; releasing it restores no grant by itself but ends the denial.
+    let root = temp_root("emergency_persisted");
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let identity = runtime(&alice, &editor);
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "emergency genesis")
+        .add(vec![file_grant(
+            "secrets",
+            alice.uid,
+            "home:Secrets",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    let request = files(alice.uid, "home:Secrets", "read");
+    let mut world = world_at(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+    );
+    world.enroll(&alice);
+    world.submit(&alice, &genesis);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    assert_eq!(
+        world
+            .policy
+            .set_emergency_restriction(Contractd, true)
+            .unwrap_err()
+            .to_string(),
+        "ipc/role_denied"
+    );
+    let status = world
+        .policy
+        .set_emergency_restriction(caller_role_t::admin, true)
+        .expect("set");
+    assert!(status.emergency_restriction);
+    assert_eq!(status.rollback_protection, rollback_protection_t::degraded);
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::emergency_restriction)
+    );
+    // The persisted restriction shows for every caller, overlay or not.
+    assert!(
+        world
+            .policy
+            .policy_status(Contractd)
+            .unwrap()
+            .emergency_restriction
+    );
+    drop(world);
+    let mut world = world_at(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+    );
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::emergency_restriction),
+        "persisted across the restart"
+    );
+    let status = world
+        .policy
+        .set_emergency_restriction(caller_role_t::admin, false)
+        .expect("released");
+    assert!(!status.emergency_restriction);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+}
+
+#[test]
+fn a_policy_epoch_raised_through_registryd_ends_older_grants_and_persists() {
+    // M2-006 stage A: `set_policy_epoch` raises the epoch and the minimum valid epoch
+    // through registryd's restrictive path (ADR 0007 §1 rule 4); neither is lowered by
+    // a later request or by a lower configuration at the next start.
+    let root = temp_root("epoch_raised");
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let identity = runtime(&alice, &editor);
+    let genesis = draft(
+        &alice,
+        &editor,
+        commit_type_t::genesis,
+        "epoch raised genesis",
+    )
+    .add(vec![file_grant(
+        "old",
+        alice.uid,
+        "home:Old",
+        &["read"],
+        persistent_lifetime(),
+    )])
+    .sign(&alice);
+    let request = files(alice.uid, "home:Old", "read");
+    let mut world = world_at(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+    );
+    world.enroll(&alice);
+    world.submit(&alice, &genesis);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    assert_eq!(
+        world
+            .policy
+            .set_policy_epoch(Contractd, 2, 2)
+            .unwrap_err()
+            .to_string(),
+        "ipc/role_denied"
+    );
+    let status = world
+        .policy
+        .set_policy_epoch(caller_role_t::admin, 2, 2)
+        .expect("raised");
+    assert_eq!((status.policy_epoch, status.min_valid_policy_epoch), (2, 2));
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::epoch_invalid)
+    );
+    let status = world
+        .policy
+        .set_policy_epoch(caller_role_t::admin, 1, 1)
+        .expect("accepted, not lowered");
+    assert_eq!((status.policy_epoch, status.min_valid_policy_epoch), (2, 2));
+    let fresh = file_grant(
+        "fresh",
+        alice.uid,
+        "home:Old",
+        &["read"],
+        persistent_lifetime(),
+    );
+    let revision = draft(
+        &alice,
+        &editor,
+        commit_type_t::revision,
+        "epoch raised fresh",
+    )
+    .on(&genesis)
+    .add(vec![fresh.clone()])
+    .epoch(2)
+    .sign(&alice);
+    world.submit(&alice, &revision);
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        decision_t::eligible {
+            grant_id: fresh.grant_id,
+            commit_id: revision.commit_id
+        }
+    );
+    drop(world);
+    let mut world = world_at(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+    );
+    let status = world.policy.policy_status(Contractd).expect("status");
+    assert_eq!((status.policy_epoch, status.min_valid_policy_epoch), (2, 2));
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+}
+
+#[test]
+fn a_contained_user_is_denied_until_recovered() {
+    // M2-006 stage A: after an unverifiable run (a restart in another boot without an
+    // orderly shutdown, ADR 0006 §3) every user is contained: evaluation denies with
+    // the user state, and no new commit is admitted until the recovery ceremony
+    // (stage C).
+    let root = temp_root("contained_user");
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let identity = runtime(&alice, &editor);
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "contained genesis")
+        .add(vec![file_grant(
+            "docs",
+            alice.uid,
+            "home:Docs",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    let revision = draft(
+        &alice,
+        &editor,
+        commit_type_t::revision,
+        "contained revision",
+    )
+    .on(&genesis)
+    .add(vec![file_grant(
+        "more",
+        alice.uid,
+        "home:More",
+        &["read"],
+        persistent_lifetime(),
+    )])
+    .sign(&alice);
+    let request = files(alice.uid, "home:Docs", "read");
+    let booted = |boot: &str| registry_config_t {
+        boot_id: Some(boot.to_owned()),
+        ..registry_config_t::default()
+    };
+    let mut world = world_at(&root, booted("boot-1"), mandatory_policy_t::default());
+    world.enroll(&alice);
+    world.submit(&alice, &genesis);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    drop(world);
+    let mut world = world_at(&root, booted("boot-2"), mandatory_policy_t::default());
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::user_state(user_state_t::contained))
+    );
+    assert_eq!(
+        world
+            .contract
+            .submit_signed(
+                caller_role_t::trusted_client { uid: alice.uid },
+                &revision.envelope,
+            )
+            .unwrap_err()
+            .to_string(),
+        "key_authority/contained"
+    );
 }

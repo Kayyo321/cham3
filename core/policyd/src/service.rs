@@ -23,6 +23,7 @@ use cham3_identityd::index::key_resolution_t;
 use cham3_identityd::journal::identity_journal_t;
 use cham3_identityd::outcome::{ipc, ipc_code_t, service_error_t, service_result_t};
 use cham3_identityd::service::{identity_service_t, user_identity_t};
+use cham3_registryd::anchor::anchor_mode_t;
 use cham3_registryd::registry::{lineage_view_t, registry_t};
 
 use crate::evaluate::{
@@ -70,19 +71,25 @@ impl<journal_impl_t: identity_journal_t> policy_identity_link_t
 /// `policy_status`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct policy_status_t {
+    /// The persisted policy state (registryd's anchor; raised by configuration, never
+    /// lowered).
     pub policy_epoch: u64,
     pub min_valid_policy_epoch: u64,
-    /// Emergency restriction of everyone, or of the caller's own UID.
+    /// The persisted emergency restriction of everyone, or policyd's configured
+    /// overlay for everyone (`service:*`) or for the caller's own UID.
     pub emergency_restriction: bool,
-    /// Rollback protection is not established before the anchor exists (M2-006).
+    /// The anchor's rollback-protection mode (ADR 0006 §2, owner choice §9.1).
     pub rollback_protection: rollback_protection_t,
 }
 
-/// Rollback-protection mode reported by `policy_status`.
+/// Rollback-protection mode reported by `policy_status` (ADR 0006 §2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum rollback_protection_t {
-    /// No anchor yet (M2-005): nothing detects a restored store.
-    none,
+    /// The anchor shares the store's filesystem: partial restores, torn tails and
+    /// journal substitution are detected, a whole-volume restore is not.
+    degraded,
+    /// The anchor is on another filesystem.
+    independent,
 }
 
 /// policyd.
@@ -239,17 +246,54 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
 
     /// `policy_status` (`service:*`, `trusted_client` for its own UID).
     pub fn policy_status(&self, caller: caller_role_t) -> service_result_t<policy_status_t> {
-        let emergency = match caller {
+        let overlay = match caller {
             caller_role_t::service(_) => self.policy.emergency_global,
             caller_role_t::trusted_client { uid } => self.policy.emergency(uid),
             _ => return Err(service_error_t::ipc(ipc_code_t::role_denied)),
         };
-        let config = self.registry.config();
+        let state = self.registry.policy_state()?;
+        let anchor_mode = self.registry.rollback_status(Policyd)?.anchor_mode;
         Ok(policy_status_t {
-            policy_epoch: config.policy_epoch,
-            min_valid_policy_epoch: config.min_valid_policy_epoch,
-            emergency_restriction: emergency,
-            rollback_protection: rollback_protection_t::none,
+            policy_epoch: state.epoch,
+            min_valid_policy_epoch: state.min_valid_epoch,
+            emergency_restriction: overlay || state.emergency_restriction,
+            rollback_protection: match anchor_mode {
+                anchor_mode_t::degraded => rollback_protection_t::degraded,
+                anchor_mode_t::independent => rollback_protection_t::independent,
+            },
         })
+    }
+
+    /// `set_policy_epoch` (`admin`): raises the policy epoch and the minimum valid
+    /// epoch through registryd's restrictive path (ADR 0006 §3; ADR 0007 §1 rule 4).
+    /// Neither value ever goes down.
+    pub fn set_policy_epoch(
+        &self,
+        caller: caller_role_t,
+        epoch: u64,
+        min_valid_epoch: u64,
+    ) -> service_result_t<policy_status_t> {
+        if caller != caller_role_t::admin {
+            return Err(ipc(ipc_code_t::role_denied));
+        }
+        self.registry
+            .set_policy_epoch(caller, epoch, min_valid_epoch)?;
+        self.policy_status(Policyd)
+    }
+
+    /// `set_emergency_restriction` (`admin`): sets or releases the persisted emergency
+    /// restriction of everyone (ADR 0007 §1 rule 1) through registryd. Releasing it
+    /// restores no grant by itself.
+    pub fn set_emergency_restriction(
+        &self,
+        caller: caller_role_t,
+        restricted: bool,
+    ) -> service_result_t<policy_status_t> {
+        if caller != caller_role_t::admin {
+            return Err(ipc(ipc_code_t::role_denied));
+        }
+        self.registry
+            .set_emergency_restriction(caller, restricted)?;
+        self.policy_status(Policyd)
     }
 }

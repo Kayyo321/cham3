@@ -22,7 +22,9 @@
     )
 )]
 
+pub mod anchor;
 pub mod journal;
+pub mod ledger;
 pub mod lineage;
 pub mod record;
 pub mod registry;

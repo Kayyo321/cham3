@@ -35,11 +35,19 @@ use cham3_registryd::journal::{
     JournalFileName, ReserveBytes, ReserveFileName, journal_file_t, journal_store_t, out_of_space,
     store_error_t, system_io_t,
 };
+use cham3_registryd::ledger::{
+    EntriesFileName, ValidityFileName, entry_kind_t, ledger_t, previous_ledger_t, read_previous,
+};
 use cham3_registryd::record::{
     lifecycle_record_t, parse_journal, record_body_t, registry_record_t,
 };
 
 const Uid: u32 = 1001;
+/// The ledger directory the probe creates under its root.
+const LedgerDirectory: &str = "ledger";
+/// The boot identifier the probe's ledger names.
+const ProbeBootId: &str = "cham3-reserve-probe";
+
 /// Largest tmpfs the full-disk mode agrees to fill.
 const MaxFillBytes: u64 = 16 * 1024 * 1024;
 const FillChunk: usize = 4096;
@@ -225,6 +233,36 @@ fn full_disk(probe: &mut probe_t, mount: &Path) -> Result<(), failure_t> {
     if !aligned {
         return Err(check("could not align the journal to a block boundary"));
     }
+    // The restriction ledger shares the full filesystem here (in deployment it is on
+    // its own tmpfs): started before the fill, with its entries file ending a byte
+    // before a block boundary so that the next entry needs a new block.
+    let owner = fs::metadata(&probe.root).map_err(io_failure)?.uid();
+    let ledger_directory = probe.root.join(LedgerDirectory);
+    let mut ledger = ledger_t::start(
+        &ledger_directory,
+        owner,
+        [0x22; 16],
+        ProbeBootId,
+        &system_io_t,
+    )
+    .map_err(store_failure)?;
+    let entries_path = ledger_directory.join(EntriesFileName);
+    // Frame and body overhead of one entry: magic, length, run id, kind, uid, payload
+    // length, checksum.
+    const EntryOverheadBytes: usize = 8 + 16 + 1 + 4 + 4 + 32;
+    let padding = vec![
+        0u8;
+        4096usize
+            .saturating_sub(EntryOverheadBytes)
+            .saturating_sub(1)
+    ];
+    ledger
+        .append(&system_io_t, entry_kind_t::policy, 0, &padding)
+        .map_err(store_failure)?;
+    if fs::metadata(&entries_path).map_err(io_failure)?.len() != 4095 {
+        return Err(check("the ledger could not be aligned to a block boundary"));
+    }
+    println!("ledger_started");
     // An unrelated writer fills the filesystem. Its file is created exclusively: an
     // existing path is never truncated or removed (R2-03).
     let filler_path = mount.join("cham3_reserve_probe_filler");
@@ -262,7 +300,8 @@ fn full_disk(probe: &mut probe_t, mount: &Path) -> Result<(), failure_t> {
     }
     filler.sync_all().map_err(io_failure)?;
     println!("filler_bytes {filled}");
-    let result = exhausted(probe);
+    let result =
+        exhausted(probe).and_then(|()| ledger_exhausted(&mut ledger, &ledger_directory, owner));
     // The unrelated writer closes and removes its file: space returns.
     drop(filler);
     let _ = fs::remove_file(&filler_path);
@@ -283,6 +322,48 @@ fn full_disk(probe: &mut probe_t, mount: &Path) -> Result<(), failure_t> {
         return Err(check("the journal does not hold the expected records"));
     }
     println!("journal_chained");
+    // Space is back, but a failed ledger stays failed for the rest of the run.
+    if ledger
+        .append(&system_io_t, entry_kind_t::policy, 0, &[0u8; 8])
+        .is_ok()
+        || !ledger.failed()
+    {
+        return Err(check(
+            "a failed ledger accepted an entry after space returned",
+        ));
+    }
+    println!("ledger_stays_failed");
+    Ok(())
+}
+
+/// With the filesystem full: the ledger cannot take an entry, so it is marked failed
+/// and its validity file is removed (ADR 0006 §3: no eligible decision is served, and
+/// the next start sees an unverifiable run).
+fn ledger_exhausted(ledger: &mut ledger_t, directory: &Path, owner: u32) -> Result<(), failure_t> {
+    match ledger.append(&system_io_t, entry_kind_t::policy, 0, &[0u8; 8]) {
+        Err(store_error_t::io) => println!("ledger_append_on_full_filesystem refused"),
+        other => {
+            return Err(check(format!(
+                "the ledger append on the full filesystem must fail with io: {other:?}"
+            )));
+        }
+    }
+    if !ledger.failed() {
+        return Err(check("the ledger was not marked failed"));
+    }
+    println!("ledger_failed");
+    if directory.join(ValidityFileName).exists() {
+        return Err(check("the ledger's validity file was not removed"));
+    }
+    println!("ledger_validity_removed");
+    match read_previous(directory, owner) {
+        previous_ledger_t::missing => println!("previous_ledger missing"),
+        other => {
+            return Err(check(format!(
+                "the next start must find no valid ledger: {other:?}"
+            )));
+        }
+    }
     Ok(())
 }
 

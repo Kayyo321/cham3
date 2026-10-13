@@ -315,7 +315,9 @@ fn check_subject(
     if let Some(reason) = user_state_denial(snapshot) {
         return Err(decision_t::denied(reason));
     }
-    if snapshot.policy.emergency(identity.owner_uid) {
+    // policyd's own overlay (configuration) and registryd's persisted restriction of
+    // everyone (ADR 0007 §1 rule 1; set through the restrictive path, M2-006 stage A).
+    if snapshot.policy.emergency(identity.owner_uid) || snapshot.view.emergency_restriction {
         return Err(decision_t::denied(deny_reason_t::emergency_restriction));
     }
     if snapshot.view.owner_uid != identity.owner_uid {
