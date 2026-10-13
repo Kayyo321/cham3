@@ -114,7 +114,7 @@ Do not update this status based on plans, generated code claims, or chat summari
 - Current [task](tasks/M2-cryptographic-contract-core.md), [Claude prompt](prompts/m2_claude_implementation.md), [Rust research](research/M2_rust_readiness.md) and [transition handoff](handoffs/M2-rust-transition.md) supersede earlier Stasha instructions. Previous research/receipts/reviews remain historical at their stated exact commits.
 - Preparation revision DONE: [independent review](reviews/M2-rust-transition.md) APPROVED exact candidate a4f7b15948757906b63a90a584df6ad39bfa10a0; documentation/Git/removal checks PASS. Full M2 remains DRAFT; M2-001/M2-002 remain READY. Rust/Debian/provider/product verification is NOT_RUN; ECR scope, security requirements and G1–G6 design approvals are unchanged.
 
-## M2 qualification and design gates — 2026-10-12 (G1–G6 owner-approved; M2-003 DONE; M2-004 in review; M2-005 in progress)
+## M2 qualification and design gates — 2026-10-12 (G1–G6 owner-approved; M2-003 DONE; M2-004 and M2-005 in review)
 
 - Claude Code implemented M2-001 and prepared M2-002 on codex/m2-cryptographic-contract-core from baseline a4bc0c4371f2298787f0876d81c0c6fd21150ea6. Exact commits, commands and results: [M2-001/M2-002 handoff](handoffs/M2-001-002-qualification-design.md).
 - M2-001: Rust workspace, pinned Debian 13 inputs, provider probes, the single reviewed unsafe adapter and the strict M2 harness. Native **arm64** development qualification PASS in a disposable Debian 13.7 container; **amd64 target qualification NOT_RUN** pending the independent reviewer's cloud run.
@@ -161,3 +161,8 @@ Do not update this status based on plans, generated code claims, or chat summari
 - **Owner instruction, 2026-10-13:** reviews that cannot run now are deferred until the owner is back; implementation continues, and each package is marked as needing independent review later.
   - M2-004 stays **IN_REVIEW**: the re-review of ca40c62 is pending and it is not DONE.
   - **M2-005** (current authorization and ECR admission) has started on top of M2-004. Its scope and the items that move to M2-006/M2-007 are recorded in the [task file](tasks/M2-cryptographic-contract-core.md).
+- **M2-005 implemented, review deferred:** candidate b06d7cb21e1e3e42bbcd025abd9cea131574751d adds registryd (per-user chained journal, fail-closed replay, layer-7 admission under a per-user lock, the identity store identityd runs over), policyd (current authorization and network mode, ADR 0007 §1) and contractd submission in safe Rust.
+  - The admission differential agrees with the oracle (10 scenarios, 90 comparisons, 0 disagreements; 18 admission vectors).
+  - Qualification PASS (unit 157+157, harness 135 with 28 seeded registry/policy defects); CI m2 38404018473, m1 38404018403, m0 38404018497 PASS.
+  - In-process composition only: the anchor, crash recovery, lifecycle-record writers, trusted time, transport and processes remain NOT_RUN (M2-006, M2-007). See the [M2-005 handoff](handoffs/M2-005-admission-authorization.md).
+  - The owner reports unrestricted internet access for the Codex environment; previously BLOCKED review items are expected to run.

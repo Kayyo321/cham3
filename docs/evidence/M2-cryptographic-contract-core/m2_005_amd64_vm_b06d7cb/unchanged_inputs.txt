@@ -1,0 +1,113 @@
+$ git diff --stat 6968bd6 b06d7cb
+ Cargo.lock                                  |   20 +
+ core/contract_format/src/dcbor.rs           |   57 +-
+ core/contractd/Cargo.toml                   |    6 +
+ core/contractd/src/lib.rs                   |   23 +-
+ core/contractd/src/submit.rs                |  184 ++++
+ core/contractd/tests/submission.rs          |  340 ++++++
+ core/identityd/src/outcome.rs               |   36 +-
+ core/policyd/Cargo.toml                     |    9 +
+ core/policyd/src/evaluate.rs                |  423 ++++++++
+ core/policyd/src/lib.rs                     |   28 +-
+ core/policyd/src/mandatory.rs               |  149 +++
+ core/policyd/src/service.rs                 |  255 +++++
+ core/policyd/tests/current_authorization.rs | 1066 ++++++++++++++++++
+ core/policyd/tests/end_to_end.rs            |  444 ++++++++
+ core/registryd/Cargo.toml                   |    5 +
+ core/registryd/src/journal.rs               |  343 ++++++
+ core/registryd/src/lib.rs                   |   29 +-
+ core/registryd/src/lineage.rs               |  590 ++++++++++
+ core/registryd/src/record.rs                |  534 +++++++++
+ core/registryd/src/registry.rs              |  816 ++++++++++++++
+ core/registryd/tests/admission_scenarios.rs |  318 ++++++
+ core/registryd/tests/builders/mod.rs        |  349 ++++++
+ core/registryd/tests/registry_operations.rs | 1565 +++++++++++++++++++++++++++
+ tests/m2/harness/test_m2_registry_policy.py |  205 ++++
+ tests/m2/test_inventory.txt                 |   38 +
+ 25 files changed, 7814 insertions(+), 18 deletions(-)
+
+$ git diff --exit-code 6968bd6 b06d7cb -- <path>   (exit 0 = unchanged)
+exit 0 Cargo.toml
+exit 0 .cargo
+exit 0 .github
+exit 0 build
+exit 0 PROJECT.md
+exit 0 docs
+exit 0 tests/m2/vectors
+exit 0 tests/m2/oracle
+exit 0 tests/m2/lib
+exit 0 tests/m2/protection
+exit 0 tests/m2/run_m2_tests.sh
+exit 0 tests/m2/harness/test_m2_identity_vault.py
+exit 0 core/vaultd
+exit 0 core/native
+exit 0 core/probes
+exit 0 core/identityd/src/index.rs
+exit 0 core/identityd/src/service.rs
+exit 0 core/identityd/src/directory.rs
+exit 0 core/identityd/src/journal.rs
+exit 0 core/identityd/src/caller.rs
+exit 0 core/identityd/tests
+exit 0 core/contract_format/src/schema.rs
+exit 0 core/contract_format/src/envelope.rs
+exit 0 core/contract_format/src/intrinsic.rs
+exit 0 core/contract_format/src/text.rs
+exit 0 core/contract_format/src/hash.rs
+exit 0 core/contract_format/src/error.rs
+exit 0 core/contract_format/src/lib.rs
+exit 0 core/contract_format/tests
+
+$ git diff 6968bd6 b06d7cb -- Cargo.lock
+diff --git a/Cargo.lock b/Cargo.lock
+index f713d30..38a220b 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -95,6 +95,12 @@ dependencies = [
+ [[package]]
+ name = "cham3_contractd"
+ version = "0.1.0"
++dependencies = [
++ "cham3_contract_format",
++ "cham3_identityd",
++ "cham3_registryd",
++ "ed25519-dalek",
++]
+ 
+ [[package]]
+ name = "cham3_identityd"
+@@ -115,6 +121,15 @@ dependencies = [
+ [[package]]
+ name = "cham3_policyd"
+ version = "0.1.0"
++dependencies = [
++ "cham3_contract_format",
++ "cham3_contractd",
++ "cham3_identityd",
++ "cham3_registryd",
++ "cham3_secure_memory",
++ "cham3_vaultd",
++ "ed25519-dalek",
++]
+ 
+ [[package]]
+ name = "cham3_provider_probe"
+@@ -133,6 +148,11 @@ dependencies = [
+ [[package]]
+ name = "cham3_registryd"
+ version = "0.1.0"
++dependencies = [
++ "cham3_contract_format",
++ "cham3_identityd",
++ "ed25519-dalek",
++]
+ 
+ [[package]]
+ name = "cham3_secure_memory"
+
+Cargo.lock sha256 at 6968bd6: da1a17c2bf6916e145413574a7f43782048a228962789f387b9d217c78f2e28f
+Cargo.lock sha256 at b06d7cb: 364e9c58987391fff35554aaf8ca9c3d6abb54c4fd33e645774fef84b438256a
+
+$ git diff 6968bd6 b06d7cb -- core/contract_format/src/dcbor.rs core/identityd/src/outcome.rs (shared changes)
+ core/contract_format/src/dcbor.rs | 57 ++++++++++++++++++++++++++++++++++++++-
+ core/identityd/src/outcome.rs     | 36 +++++++++++++++++++++----
+ 2 files changed, 87 insertions(+), 6 deletions(-)

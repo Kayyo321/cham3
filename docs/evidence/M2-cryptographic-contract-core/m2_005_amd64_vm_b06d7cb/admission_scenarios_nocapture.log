@@ -1,0 +1,11 @@
+b06d7cb21e1e3e42bbcd025abd9cea131574751d
+
+running 4 tests
+test admission_invalid_vectors_match_the_oracle ... ok
+test admission_scenarios_match_the_oracle ... admission scenarios 10 steps 53 comparisons 90 disagreements 0
+ok
+test every_admission_code_of_the_scenarios_is_reproduced ... ok
+test the_published_lineage_is_admitted ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+
