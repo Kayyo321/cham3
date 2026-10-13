@@ -8,7 +8,9 @@
 //!
 //! * `dumpable 0` and `core_limit 0` (`/proc/self/limits`);
 //! * `vm_locked_kib`, and `unlocked_mappings 0`: every resident mapping in
-//!   `/proc/self/smaps` is fully locked (`Locked == Rss`, so nothing can be swapped);
+//!   `/proc/self/smaps` carries the `lo` (VM_LOCKED) flag, so none of it can be
+//!   swapped; kernel special mappings that cannot be locked (`[vdso]` and similar)
+//!   are listed separately as `special_mappings`;
 //! * `dontdump_mappings` ≥ 1: the secret region is excluded from core dumps;
 //! * `derivation_ms`: the calibration's cost on this host.
 //!
@@ -32,45 +34,64 @@ fn field_kib(status: &str, name: &str) -> Option<u64> {
         .ok()
 }
 
+/// Kernel special mappings that `mlockall` cannot lock (they are not process memory
+/// that could be swapped).
+const SpecialMappings: [&str; 4] = ["[vdso]", "[vvar]", "[vvar_vclock]", "[vsyscall]"];
+
 struct smaps_summary_t {
-    unlocked: u64,
+    /// Resident mappings without the `lo` (VM_LOCKED) flag, excluding special ones.
+    unlocked: Vec<String>,
+    /// Resident special mappings, which cannot be locked.
+    special: Vec<String>,
     dontdump: u64,
 }
 
+/// Classifies every mapping of `/proc/self/smaps` by its `VmFlags`. The `Locked:`
+/// size is not used: the kernel reports it proportionally (PSS) for pages shared
+/// with other processes, so it is below `Rss:` for shared libraries even when the
+/// mapping is locked.
 fn smaps_summary(smaps: &str) -> smaps_summary_t {
     let mut summary = smaps_summary_t {
-        unlocked: 0,
+        unlocked: Vec::new(),
+        special: Vec::new(),
         dontdump: 0,
     };
+    let mut name = String::new();
     let mut rss = 0u64;
-    let mut locked = 0u64;
     for line in smaps.lines() {
         let mut parts = line.split_whitespace();
-        match parts.next() {
-            Some("Rss:") => {
-                rss = parts
-                    .next()
-                    .and_then(|value| value.parse().ok())
-                    .unwrap_or(0)
-            }
-            Some("Locked:") => {
-                locked = parts
-                    .next()
-                    .and_then(|value| value.parse().ok())
-                    .unwrap_or(0)
-            }
-            Some("VmFlags:") => {
-                let flags: Vec<&str> = parts.collect();
-                if rss > locked {
-                    summary.unlocked = summary.unlocked.saturating_add(1);
+        let first = parts.next().unwrap_or("");
+        if first.ends_with(':') {
+            match first {
+                "Rss:" => {
+                    rss = parts
+                        .next()
+                        .and_then(|value| value.parse().ok())
+                        .unwrap_or(0)
                 }
-                if flags.contains(&"dd") {
-                    summary.dontdump = summary.dontdump.saturating_add(1);
+                "VmFlags:" => {
+                    let flags: Vec<&str> = parts.collect();
+                    if flags.contains(&"dd") {
+                        summary.dontdump = summary.dontdump.saturating_add(1);
+                    }
+                    if rss > 0 && !flags.contains(&"lo") {
+                        if SpecialMappings.contains(&name.as_str()) {
+                            summary.special.push(name.clone());
+                        } else {
+                            summary.unlocked.push(name.clone());
+                        }
+                    }
+                    rss = 0;
                 }
-                rss = 0;
-                locked = 0;
+                _ => {}
             }
-            _ => {}
+        } else if first.contains('-') {
+            // A mapping header: address range, permissions, offset, device, inode, path.
+            name = line
+                .split_whitespace()
+                .nth(5)
+                .unwrap_or("[anonymous]")
+                .to_owned();
         }
     }
     summary
@@ -129,11 +150,17 @@ fn main() {
         "vm_locked_kib {}",
         field_kib(&status, "VmLck:").unwrap_or(0)
     );
-    println!("unlocked_mappings {}", summary.unlocked);
+    println!("unlocked_mappings {}", summary.unlocked.len());
+    for name in &summary.unlocked {
+        println!("unlocked_mapping {name}");
+    }
+    println!("special_mappings {}", summary.special.join(","));
     println!("dontdump_mappings {}", summary.dontdump);
     drop((kek, region));
-    let held =
-        dumpable == "0" && core_limit == "0" && summary.unlocked == 0 && summary.dontdump >= 1;
+    let held = dumpable == "0"
+        && core_limit == "0"
+        && summary.unlocked.is_empty()
+        && summary.dontdump >= 1;
     if held {
         println!("protection_verified");
     } else {
