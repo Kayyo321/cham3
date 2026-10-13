@@ -1,0 +1,10 @@
+== shellcheck (26 files)
+== py_compile (69 files)
+== yamllint (5 files)
+scan_secrets: PASS (no matches for the configured patterns)
+== summary
+PASS shellcheck
+PASS py_compile
+PASS yamllint
+PASS scan_secrets
+static checks: PASS

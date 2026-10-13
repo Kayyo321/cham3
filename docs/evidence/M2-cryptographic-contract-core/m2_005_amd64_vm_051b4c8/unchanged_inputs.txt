@@ -1,0 +1,84 @@
+$ git log --oneline 24a35c1..051b4c8
+051b4c8 test(m2): seeded defects for the preallocated restrictive reserve (R03)
+4f7080b fix(m2): M2-005 revision 2 (R01-R03) and M2-004 revision 3 (M2-004-R2-01)
+
+$ git diff --stat 24a35c1 051b4c8
+ .github/workflows/m2_checks.yml               |  22 +-
+ core/contract_format/tests/ecr_vectors.rs     |   2 +-
+ core/policyd/src/evaluate.rs                  |   5 +
+ core/policyd/tests/current_authorization.rs   | 184 +++++++-
+ core/registryd/Cargo.toml                     |   8 +
+ core/registryd/src/bin/cham3_reserve_probe.rs | 317 ++++++++++++++
+ core/registryd/src/journal.rs                 | 232 +++++++++-
+ core/registryd/src/lineage.rs                 |  29 +-
+ core/registryd/src/registry.rs                |  54 ++-
+ core/registryd/tests/admission_scenarios.rs   |   8 +-
+ core/registryd/tests/registry_operations.rs   | 607 +++++++++++++++++++++++++-
+ core/vaultd/src/service.rs                    |   8 +-
+ core/vaultd/tests/vault_operations.rs         | 139 ++++++
+ tests/m2/harness/test_m2_ecr_oracle.py        |   4 +-
+ tests/m2/harness/test_m2_identity_vault.py    |   5 +
+ tests/m2/harness/test_m2_registry_policy.py   |  31 ++
+ tests/m2/harness/test_m2_reserve_probe.py     |  48 ++
+ tests/m2/oracle/ecr_oracle.py                 |  24 +
+ tests/m2/run_m2_tests.sh                      |   3 +
+ tests/m2/storage/check_reserve_full_disk.sh   |  58 +++
+ tests/m2/test_inventory.txt                   |  11 +
+ tests/m2/vectors/ecr_v1/vectors.json          |  80 ++++
+ tests/m2/vectors/ecr_v1/vectors_readme.md     |   4 +-
+ 23 files changed, 1829 insertions(+), 54 deletions(-)
+
+$ git diff --exit-code 24a35c1 051b4c8 -- <path>   (exit 0 = unchanged)
+exit 0 Cargo.toml
+exit 0 Cargo.lock
+exit 0 .cargo
+exit 0 build
+exit 0 PROJECT.md
+exit 0 docs/specs
+exit 0 docs/decisions
+exit 0 tests/m2/oracle/vault_object_oracle.py
+exit 0 tests/m2/oracle/trusted_time_model.py
+exit 0 tests/m2/oracle/provider_oracle.py
+exit 0 tests/m2/lib
+exit 0 tests/m2/protection
+exit 1 tests/m2/harness/test_m2_identity_vault.py
+exit 0 core/identityd
+exit 0 core/contract_format/src
+exit 0 core/contractd
+exit 0 core/native
+exit 0 core/probes
+exit 0 core/vaultd/src/key_object.rs
+exit 0 core/vaultd/src/kdf.rs
+exit 0 core/vaultd/src/store.rs
+exit 0 core/vaultd/src/protection.rs
+exit 0 core/vaultd/src/records.rs
+exit 0 core/vaultd/src/links.rs
+exit 0 core/vaultd/src/clock.rs
+exit 0 core/vaultd/src/lib.rs
+exit 0 core/vaultd/src/bin
+exit 0 core/vaultd/tests/fixture
+exit 0 core/vaultd/tests/vault_recovery.rs
+exit 0 core/vaultd/Cargo.toml
+exit 0 core/policyd/src/mandatory.rs
+exit 0 core/policyd/src/service.rs
+exit 0 core/policyd/src/lib.rs
+exit 0 core/policyd/tests/end_to_end.rs
+exit 0 core/registryd/src/record.rs
+exit 0 core/registryd/src/lib.rs
+exit 0 core/registryd/tests/builders
+exit 0 core/contract_format/tests/support
+exit 0 core/contract_format/tests/schema_mutations.rs
+unchanged paths: 38
+
+$ vectors: only journal_scenarios changed
+admission_invalid identical
+constants identical
+format identical
+invalid identical
+keys identical
+limits identical
+lineage identical
+specification identical
+status identical
+valid identical
+journal_scenarios: earlier scenarios identical: True ; added: ['session_ended_refuses_later_grants_of_that_session']

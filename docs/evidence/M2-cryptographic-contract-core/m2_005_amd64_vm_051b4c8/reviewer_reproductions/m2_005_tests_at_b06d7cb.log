@@ -1,0 +1,189 @@
+== debug own_ at b06d7cb
+     Locking 43 packages to latest Rust 1.85.1 compatible versions
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling semver v1.0.23
+   Compiling cfg-if v1.0.0
+   Compiling cpufeatures v0.2.16
+   Compiling fiat-crypto v0.2.2
+   Compiling generic-array v0.14.7
+   Compiling rustc_version v0.4.0
+   Compiling subtle v2.6.1
+   Compiling zeroize v1.8.1
+   Compiling rustix v0.38.37
+   Compiling curve25519-dalek v4.1.3
+   Compiling signature v2.2.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling ed25519 v2.2.3
+   Compiling bitflags v2.8.0
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling m2_005_independent_review_tests v0.1.0 (/evidence/adversarial005/core/reviewer)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.33s
+     Running unittests review.rs (target/debug/deps/m2_005_independent_review_tests-6f99949d5b2a283a)
+
+running 9 tests
+test policy::own_ended_session_cannot_authorize_a_fresh_grant ... fresh ended-session admission=Ok(admission_receipt_t { commit_id: [182, 78, 234, 195, 227, 230, 81, 158, 65, 187, 106, 124, 40, 146, 229, 0, 92, 207, 116, 78, 228, 73, 252, 116, 228, 24, 8, 239, 115, 121, 213, 49], journal_seq: 7, placement: temporary, status: pending }); authorization=eligible { grant_id: [17, 57, 108, 110, 135, 42, 195, 238, 137, 78, 181, 8, 29, 161, 142, 73], commit_id: [182, 78, 234, 195, 227, 230, 81, 158, 65, 187, 106, 124, 40, 146, 229, 0, 92, 207, 116, 78, 228, 73, 252, 116, 228, 24, 8, 239, 115, 121, 213, 49] }
+
+thread 'policy::own_ended_session_cannot_authorize_a_fresh_grant' panicked at policy.rs:1092:5:
+durably ended session regained authority through a new grant id
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test policy::own_origin_compromise_survives_persistent_restatement ... ok
+test policy::own_session_attestation_boundaries_and_unreadable_clock ... ok
+test registry::own_failed_identity_append_denies_existing_grants ... ok
+test registry::own_network_sibling_writers_have_exactly_one_winner ... ok
+test registry::own_new_store_syncs_users_entry_in_root_before_ack ... 
+thread 'registry::own_new_store_syncs_users_entry_in_root_before_ack' panicked at registry.rs:1609:5:
+new root/users entry never synced in root
+directory syncs=["/tmp/cham3_registryd_own_root_sync_881/users", "/tmp/cham3_registryd_own_root_sync_881/users/1001"]
+FAILED
+test registry::own_rechained_wrong_metadata_and_terminal_records_fail_closed ... ok
+test registry::own_restrictive_reserve_has_preallocated_storage ... 
+thread 'registry::own_restrictive_reserve_has_preallocated_storage' panicked at registry.rs:1681:5:
+logical quota slack is not preallocated disk space for restrictive records
+allocated bytes for entire new store=16384; promised reserve=1048576
+FAILED
+test registry::own_retry_must_not_acknowledge_an_unsynced_user_directory ... retry=Ok(append_receipt_t { journal_seq: 1, already_present: false }), directory syncs=["/tmp/cham3_registryd_own_retry_sync_881/users/1001"]
+
+thread 'registry::own_retry_must_not_acknowledge_an_unsynced_user_directory' panicked at registry.rs:1598:5:
+retry acknowledged enrollment without retrying the failed parent fsync
+FAILED
+
+failures:
+
+failures:
+    policy::own_ended_session_cannot_authorize_a_fresh_grant
+    registry::own_new_store_syncs_users_entry_in_root_before_ack
+    registry::own_restrictive_reserve_has_preallocated_storage
+    registry::own_retry_must_not_acknowledge_an_unsynced_user_directory
+
+test result: FAILED. 5 passed; 4 failed; 0 ignored; 0 measured; 24 filtered out; finished in 2.63s
+
+error: test failed, to rerun pass `--lib`
+exit=101
+== release own_ at b06d7cb
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling semver v1.0.23
+   Compiling cfg-if v1.0.0
+   Compiling cpufeatures v0.2.16
+   Compiling fiat-crypto v0.2.2
+   Compiling generic-array v0.14.7
+   Compiling rustix v0.38.37
+   Compiling rustc_version v0.4.0
+   Compiling zeroize v1.8.1
+   Compiling curve25519-dalek v4.1.3
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling ed25519 v2.2.3
+   Compiling linux-raw-sys v0.4.14
+   Compiling bitflags v2.8.0
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling m2_005_independent_review_tests v0.1.0 (/evidence/adversarial005/core/reviewer)
+    Finished `release` profile [optimized] target(s) in 45.44s
+     Running unittests review.rs (target/release/deps/m2_005_independent_review_tests-a50213b7c6057427)
+
+running 9 tests
+test policy::own_ended_session_cannot_authorize_a_fresh_grant ... fresh ended-session admission=Ok(admission_receipt_t { commit_id: [182, 78, 234, 195, 227, 230, 81, 158, 65, 187, 106, 124, 40, 146, 229, 0, 92, 207, 116, 78, 228, 73, 252, 116, 228, 24, 8, 239, 115, 121, 213, 49], journal_seq: 7, placement: temporary, status: pending }); authorization=eligible { grant_id: [17, 57, 108, 110, 135, 42, 195, 238, 137, 78, 181, 8, 29, 161, 142, 73], commit_id: [182, 78, 234, 195, 227, 230, 81, 158, 65, 187, 106, 124, 40, 146, 229, 0, 92, 207, 116, 78, 228, 73, 252, 116, 228, 24, 8, 239, 115, 121, 213, 49] }
+
+thread 'policy::own_ended_session_cannot_authorize_a_fresh_grant' panicked at policy.rs:1092:5:
+durably ended session regained authority through a new grant id
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test policy::own_origin_compromise_survives_persistent_restatement ... ok
+test policy::own_session_attestation_boundaries_and_unreadable_clock ... ok
+test registry::own_failed_identity_append_denies_existing_grants ... ok
+test registry::own_network_sibling_writers_have_exactly_one_winner ... ok
+test registry::own_new_store_syncs_users_entry_in_root_before_ack ... directory syncs=["/tmp/cham3_registryd_own_root_sync_491/users", "/tmp/cham3_registryd_own_root_sync_491/users/1001"]
+
+thread 'registry::own_new_store_syncs_users_entry_in_root_before_ack' panicked at registry.rs:1609:5:
+new root/users entry never synced in root
+FAILED
+test registry::own_rechained_wrong_metadata_and_terminal_records_fail_closed ... ok
+test registry::own_restrictive_reserve_has_preallocated_storage ... 
+thread 'registry::own_restrictive_reserve_has_preallocated_storage' panicked at registry.rs:1681:5:
+logical quota slack is not preallocated disk space for restrictive records
+allocated bytes for entire new store=16384; promised reserve=1048576
+FAILED
+test registry::own_retry_must_not_acknowledge_an_unsynced_user_directory ... retry=Ok(append_receipt_t { journal_seq: 1, already_present: false }), directory syncs=["/tmp/cham3_registryd_own_retry_sync_491/users/1001"]
+
+thread 'registry::own_retry_must_not_acknowledge_an_unsynced_user_directory' panicked at registry.rs:1598:5:
+retry acknowledged enrollment without retrying the failed parent fsync
+FAILED
+
+failures:
+
+failures:
+    policy::own_ended_session_cannot_authorize_a_fresh_grant
+    registry::own_new_store_syncs_users_entry_in_root_before_ack
+    registry::own_restrictive_reserve_has_preallocated_storage
+    registry::own_retry_must_not_acknowledge_an_unsynced_user_directory
+
+test result: FAILED. 5 passed; 4 failed; 0 ignored; 0 measured; 24 filtered out; finished in 0.44s
+
+error: test failed, to rerun pass `--lib`
+exit=101
+== debug filesystem_full_reserve at b06d7cb (2 MiB tmpfs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests review.rs (target/debug/deps/m2_005_independent_review_tests-6f99949d5b2a283a)
+
+running 1 test
+test registry::filesystem_full_reserve ... journal bytes before disk fill=4090; required restrictive frame=479
+
+thread 'registry::filesystem_full_reserve' panicked at registry.rs:1714:5:
+the promised preallocated reserve must let this small restrictive record become durable
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+unrelated writer filled 2093056 bytes; restrictive append=Err(ipc(storage_unavailable))
+FAILED
+
+failures:
+
+failures:
+    registry::filesystem_full_reserve
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `--lib`
+exit=101
+== release filesystem_full_reserve at b06d7cb (2 MiB tmpfs)
+    Finished `release` profile [optimized] target(s) in 0.10s
+     Running unittests review.rs (target/release/deps/m2_005_independent_review_tests-a50213b7c6057427)
+
+running 1 test
+test registry::filesystem_full_reserve ... journal bytes before disk fill=4090; required restrictive frame=479
+unrelated writer filled 2093056 bytes; restrictive append=Err(ipc(storage_unavailable))
+
+thread 'registry::filesystem_full_reserve' panicked at registry.rs:1714:5:
+the promised preallocated reserve must let this small restrictive record become durable
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    registry::filesystem_full_reserve
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`
+exit=101

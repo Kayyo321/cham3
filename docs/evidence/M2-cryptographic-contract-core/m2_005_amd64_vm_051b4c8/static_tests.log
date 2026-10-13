@@ -1,0 +1,25 @@
+test_unreadable_file_inside_scanned_directory_is_error (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_inside_scanned_directory_is_error) ... ok
+test_unreadable_file_is_error_exit_two (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_is_error_exit_two) ... ok
+test_unreadable_file_plus_finding_exits_one_and_reports_both (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_plus_finding_exits_one_and_reports_both) ... ok
+test_aws_access_key_id_is_detected (test_secret_scanner.secret_scanner_t.test_aws_access_key_id_is_detected) ... ok
+test_clean_file_exits_zero (test_secret_scanner.secret_scanner_t.test_clean_file_exits_zero) ... ok
+test_github_tokens_are_detected_and_not_printed_in_full (test_secret_scanner.secret_scanner_t.test_github_tokens_are_detected_and_not_printed_in_full) ... ok
+test_pem_private_key_blocks_are_detected (test_secret_scanner.secret_scanner_t.test_pem_private_key_blocks_are_detected) ... ok
+test_public_key_block_is_not_flagged (test_secret_scanner.secret_scanner_t.test_public_key_block_is_not_flagged) ... ok
+test_recursive_directory_scan_finds_nested_secret (test_secret_scanner.secret_scanner_t.test_recursive_directory_scan_finds_nested_secret) ... ok
+test_repository_default_scan_is_clean (test_secret_scanner.secret_scanner_t.test_repository_default_scan_is_clean) ... ok
+test_scanner_does_not_flag_itself (test_secret_scanner.secret_scanner_t.test_scanner_does_not_flag_itself) ... ok
+test_slack_tokens_are_detected (test_secret_scanner.secret_scanner_t.test_slack_tokens_are_detected) ... ok
+test_truncated_aws_prefix_is_not_flagged (test_secret_scanner.secret_scanner_t.test_truncated_aws_prefix_is_not_flagged) ... ok
+test_usage_error_exits_two (test_secret_scanner.secret_scanner_t.test_usage_error_exits_two) ... ok
+test_tree_without_git_fails_file_discovery (test_static_check_runner.static_check_file_discovery_t.test_tree_without_git_fails_file_discovery) ... ok
+test_clean_clone_of_head_passes (test_static_check_runner.static_check_runner_t.test_clean_clone_of_head_passes) ... ok
+test_defective_python_file_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_python_file_fails_runner) ... ok
+test_defective_shell_script_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_shell_script_fails_runner) ... ok
+test_defective_workflow_yaml_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_workflow_yaml_fails_runner) ... ok
+
+----------------------------------------------------------------------
+Ran 82 tests in 136.617s
+
+OK
+static_tests_exit=0

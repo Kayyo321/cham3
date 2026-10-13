@@ -1,0 +1,27 @@
+{
+  "oracle_exit_status": 0,
+  "oracle_output": [
+    "PASS ed25519 RFC 8032 section 7.1 TEST 1",
+    "PASS ed25519 RFC 8032 section 7.1 TEST 2",
+    "PASS ed25519 RFC 8032 section 7.1 TEST 3",
+    "PASS ed25519 RFC 8032 section 7.1 TEST SHA(abc)",
+    "PASS xchacha20poly1305 draft-irtf-cfrg-xchacha-03 appendix A.3.1",
+    "PASS sha256 FIPS 180-2 appendix B.1 (abc)",
+    "PASS sha256 FIPS 180-2 (empty message)",
+    "NOT_CHECKED argon2id RFC 9106 section 5.3 (no secret/AD API in libargon2 binding)",
+    "ARGON2ID_ORACLE_CASE d5bce1e8bcf1a2727ac0ec5e24a1a6e45283490b4a6c6006c948a2ce5e375c38"
+  ],
+  "probe": "/work/out/m2/runs/unit_20261013T153022Z_1845/target_debug/debug/cham3_provider_probe",
+  "probe_exit_status": 0,
+  "probe_output": [
+    "PASS ed25519_rfc8032_vectors",
+    "PASS ed25519_strict_noncanonical_s",
+    "PASS xchacha20poly1305_draft_vector",
+    "PASS argon2id_rfc9106_vector",
+    "PASS sha256_fips180_vectors",
+    "PASS subtle_constant_time_eq",
+    "PASS linux_getrandom",
+    "ARGON2ID_ORACLE_CASE d5bce1e8bcf1a2727ac0ec5e24a1a6e45283490b4a6c6006c948a2ce5e375c38"
+  ],
+  "result": "PASS"
+}
