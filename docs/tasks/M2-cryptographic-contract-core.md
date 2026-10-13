@@ -1,6 +1,6 @@
 # Task: M2 — Cryptographic contract core and Eternal Contract Repository
 
-- **State:** IN_PROGRESS. M2-001, M2-002 and M2-003 are DONE; G1–G6 were owner-approved on 2026-10-12 after independent review (ADRs 0003–0008). M2-004 is READY and in progress; M2-005..M2-008 become READY as their package dependencies complete (see the progress table). The milestone is not DONE until M2-008 and the final review below.
+- **State:** IN_PROGRESS. M2-001, M2-002 and M2-003 are DONE; G1–G6 were owner-approved on 2026-10-12 after independent review (ADRs 0003–0008). M2-004 is IN_REVIEW (revision 2; its independent re-review is deferred by the owner, 2026-10-13). M2-005 is in progress on top of it under the owner's instruction to continue; M2-006..M2-008 become READY as their package dependencies complete (see the progress table). The milestone is not DONE until every package has its independent review, M2-008 and the final review below.
 - **Owner / role / provider:** Project owner retains architecture/risk authority. Claude Code is the intended design/implementation author; Codex is the independent architecture/security reviewer. Coordinator tracks gates; integrator admits exact reviewed commits.
 - **Created / updated:** 2026-10-12.
 - **Base commit:** aa843f7ac19398f580f3577ba047300971ba6095, clean local main including approved ADR 0001 and locally merged M1.
@@ -212,8 +212,9 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 | M2-001 | DONE (owner-approved G1, 2026-10-12) | Cargo workspace on Debian 13 Rust 1.85.1 with Debian-packaged offline crates; pinned qualification container and arm64 locks; per-file crate source manifest; domain skeletons with `#![forbid(unsafe_code)]`; `core/native/secure_memory` (only unsafe) and safe `core/native/os_adapter`; provider probe with published KATs and an independent OpenSSL/libsodium/libargon2 oracle; strict dispatcher with inventory-exact validation, harness canaries, lint controls, deployed-profile probes, naming checker, dependency/unsafe inventory, `qualify_m2_rust.sh`, `build_m2_core.sh`, `m2_checks.yml`. arm64 development qualification PASS; **amd64 qualification NOT_RUN** (owner instruction: reviewer runs it in the cloud). | Done: amd64 qualification PASS (author VM, CI and the reviewer's own run); independent re-review r5 APPROVE; G1 approved with a pre-M2-007 advisory re-check condition (ADR 0003). |
 | M2-002 | DONE (owner-approved G1–G6, 2026-10-12) | APPROVED ADRs [0003 (G1)](../decisions/0003_m2_rust_toolchain_dependencies.md), [0004 (G2)](../decisions/0004_m2_wire_schema_hash.md), [0005 (G3)](../decisions/0005_m2_identity_vault_ipc.md), [0006 (G4)](../decisions/0006_m2_storage_anchor_recovery.md), [0007 (G5)](../decisions/0007_m2_lifecycle_time_consumption.md), [0008 (G6)](../decisions/0008_m2_retention_privacy_update_identity.md); [wire format](../specs/m2_wire_format_v1.md), [CDDL](../specs/m2_ecr_v1.cddl), [service IPC](../specs/m2_service_ipc_v1.md); [ECR v1 vectors](../../tests/m2/vectors/ecr_v1/vectors_readme.md) from an independent oracle. | Done: independent re-review r5 APPROVE for every gate; owner decisions ADR 0006 §9.1 A, §9.2 C1; ADR 0007 §4 A, §8 B (trusted time never lowered; forward-error recovery deferred); ADR 0008 §3 A. |
 | M2-003 | DONE (independent re-review APPROVE, 2026-10-13) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Review 1cb93c0 CHANGES_REQUESTED; revision 2 **8b0ccf3** with owner errata E1–E3 approved by re-review 87e9b2a ([completion handoff](../handoffs/M2-003-completion.md)). | Done. M2-004 obligation: identityd calls `public_key_is_valid` on enrolled/certified keys. |
-| M2-004 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_identityd`: caller roles from peer credentials, layer-6 key-authority index over the journal with scoped `resolve_key`, registration with the M2-003 key-validation obligation, restrictive invalidation; `cham3_vaultd`: encrypted key objects (Argon2id, XChaCha20-Poly1305, secret regions), restricted store, exact-proposal approval and signing, attempt limiting, restartable creation/rotation/invalidation/recovery keys, process protection ([handoff](../handoffs/M2-004-identity-vault.md)). Candidate bb3f1ba (implementation 0e4f993 plus fixes e5be206, bb3f1ba). Review f2d82b7 CHANGES_REQUESTED (R01–R05; I01 observation); **revision 2 candidate ca40c62** answers them ([resolutions](../reviews/M2-004-finding-resolutions.md), [handoff](../handoffs/M2-004-rereview-r2.md)). | Independent re-review of ca40c62. `replace_identity` and vault-side deletion cleanup move to M2-006; transport and binaries are M2-007. Carried: restriction ledger across restarts and cross-service serialization (M2-006/007); duplicate request ids at admission (M2-005). |
-| M2-005 … M2-008 | DRAFT | — | Gates approved; each waits for its package dependencies (M2-003/004 interfaces, M2-005, M2-004–006, M2-003–007). |
+| M2-004 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_identityd`: caller roles from peer credentials, layer-6 key-authority index over the journal with scoped `resolve_key`, registration with the M2-003 key-validation obligation, restrictive invalidation; `cham3_vaultd`: encrypted key objects (Argon2id, XChaCha20-Poly1305, secret regions), restricted store, exact-proposal approval and signing, attempt limiting, restartable creation/rotation/invalidation/recovery keys, process protection ([handoff](../handoffs/M2-004-identity-vault.md)). Candidate bb3f1ba (implementation 0e4f993 plus fixes e5be206, bb3f1ba). Review f2d82b7 CHANGES_REQUESTED (R01–R05; I01 observation); **revision 2 candidate ca40c62** answers them ([resolutions](../reviews/M2-004-finding-resolutions.md), [handoff](../handoffs/M2-004-rereview-r2.md)). | Independent re-review of ca40c62 — **pending, deferred by the owner (2026-10-13)**; required before M2-004 is DONE. `replace_identity` and vault-side deletion cleanup move to M2-006; transport and binaries are M2-007. Carried: restriction ledger across restarts and cross-service serialization (M2-006/007); duplicate request ids at admission (M2-005). |
+| M2-005 | IN_PROGRESS (Claude Code, owner instruction 2026-10-13) | Current authorization (policyd) and ECR admission (registryd journal, layer 7, lineage index); scope recorded below before the work. | Built on M2-004 revision 2, whose re-review is pending. Independent review required later (deferred by the owner); an M2-004 finding may require M2-005 rework. |
+| M2-006 … M2-008 | DRAFT | — | Gates approved; each waits for its package dependencies (M2-005, M2-004–006, M2-003–007). |
 
 ### Independent review and revision 2 (2026-10-12)
 
@@ -310,7 +311,7 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
   - 14 seeded identity/vault defects are each detected.
   - The vault's process protection fails closed without a sufficient memlock limit; its positive path runs as a CI step with a raised limit.
 - **Scope sequencing (recorded before the work):** `replace_identity` (no journal record format and no layer-6 code for a replaced identity's keys yet) and vault-side deletion cleanup (no vaultd IPC route yet) move to M2-006, with `recover_user` and deletion. registryd's journal and the ceremony operations are labeled fixtures until M2-005/006; transport, binaries, the setgid client and systemd units are M2-007.
-- M2-005 is not started (one writer on this branch); it starts after the M2-004 review.
+- M2-005 is not started (one writer on this branch); it starts after the M2-004 review. (Superseded on 2026-10-13 by the owner instruction below.)
 
 ### M2-004 review and revision 2 (2026-10-13)
 
@@ -324,6 +325,44 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
   - The review's own 17 tests: 11/6 at bb3f1ba, 16/1 at ca40c62 (the remaining failure is I01's stricter assertion).
   - CI m2 38347259191 (including the protection positive path), m1 38347259188, m0 38347259258 PASS.
 - **Carried obligations recorded:** M2-006 restriction ledger (a not-yet-durable denial across an identityd restart); M2-006/M2-007 serialization of restrictions with signatures across services; M2-005 admission rejects duplicate request ids.
+
+### Owner instruction: deferred reviews, M2-005 started (2026-10-13)
+
+- **Owner instruction (2026-10-13), relayed with a copy of the already recorded M2-003 re-review verdict:** "If things are unable to be checked now, move on and mark them necessary for review later, I'll let yall know when I'm back on my main computer."
+  - The relayed verdict is the M2-003 re-review already applied in 20c849b. Its record was verified again: `review/m2-003-r2-security` at 87e9b2a888671ab9b7cd86272d34e8a1c48cd5ac, SHA-256 `55605db4…2518`. Nothing changes.
+  - No independent review can run now. The implementer therefore continues with the next package and marks every unreviewed package as **requiring independent review later**. No approval is inferred: M2-004 stays **IN_REVIEW**, with its revision-2 re-review of ca40c62 pending, and is not DONE.
+  - M2-005 starts on top of the unreviewed M2-004 revision 2. Consequences: an M2-004 finding may require M2-005 rework, and M2-005's review follows M2-004's re-review or is combined with it. The owner decides the order when back.
+- **M2-005 scope, recorded before the work:**
+  - **registryd: per-user journal** (ADR 0006 §1).
+    - Frames and chain as specified: `"C3JR"`, length, record, chain.
+    - Records are closed `cham3_dcbor_v1` maps of at most 65 536 bytes (the wire format §2.3 container budget).
+    - Durable append: `fdatasync`, plus a directory `fsync` at creation.
+    - Replay re-verifies the chain and every record through layers 1–7. Any defect makes the user's journal unusable (fail closed).
+    - Indexes are derived in memory, never stored.
+  - **registryd: identity and admission operations.**
+    - `append_identity` and `identity_state` through identityd's journal interface, so identityd runs over the real store.
+    - Commit admission: layers 1–6 from the same journal snapshot, then layer 7 in wire format §7 order. That covers parents, lineage, placement and `stale_head` (§6.11), base and result state, delta, `grant_id` and `request_id` uniqueness (including the M2-004 obligation: duplicate request ids rejected), restore (§6.7), subject binding (§6.9), branch rule and network slot (§6.12).
+    - Policy epoch equal to the current epoch (`stale_epoch`).
+    - A per-user writer lock serializes checks and append.
+    - Quotas (`quota_exhausted`): journal size and lineages.
+    - `lineage_head`.
+    - Commits are admitted `pending`.
+  - **Lifecycle records** `expired`, `session_ended` and `restriction`: their record format, validation (`lifecycle_rule`) and effect on the index (ended grant ids, network slot) are M2-005. The operations that write them are M2-006: `restrict` with the restriction ledger, the expiry latch and `session_event`.
+  - **Interim restriction, fail closed:** a grant with `delegation.parent_grant_id` is refused at admission (`delegation_rule`) until M2-006 implements the delegation checks of wire format §6.4 (no published vector delegates).
+  - **policyd:** `evaluate` and `network_mode` (ADR 0007 §1, rules 1–7), as pure functions of a consistent registry snapshot, identity key resolution, mandatory policy, policy epochs, trusted now, session liveness and one-shot reservations.
+    - The mandatory-policy representation is an M2 configuration model (category/resource/operation prohibitions, forbidden network modes, emergency restriction), not an administrator policy language. It is an author decision for review.
+    - The admin operations `set_policy_epoch` and `set_emergency_restriction` are restrictive changes and move to M2-006 with the restrictive write path. M2-005 configures policy state at construction.
+  - **contractd:** `submit_signed` (layers 1–6 through identityd, then registryd `admit`) and `verify_object`.
+    - `prepare_proposal` and `check_proposal` move to M2-006 with forward-restore and the recovery proposals.
+    - `request_revocation` moves to M2-006 with the restriction path.
+  - **M2-006:**
+    - anchor, run marker, restriction ledger, torn-tail and crash recovery, quarantine;
+    - containment and the recovery ceremony operations, and `recovery_rule` at admission;
+    - delegation admission;
+    - `reserve_use`/`complete_use`, `confirm_enforcement`, `session_event`, `history`, `time_sample`;
+    - the trusted-time service clock, and with it the ±300 s commit-timestamp admission check of ADR 0007 §5.
+  - **Open question for the owner, no change made:** the specifications assign no error code to the ±300 s commit-timestamp check (wire format §7 and the IPC error vocabulary). It needs an erratum before M2-006 implements it.
+  - **M2-007:** transport, binaries and service processes. Until then M2-005 is an in-process composition.
 
 ### Final M2 review requirement (owner instruction, 2026-10-12)
 
