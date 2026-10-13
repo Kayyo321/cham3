@@ -225,8 +225,12 @@ impl<'data> decoder_t<'data> {
                 // practice; it fails closed if it ever did.
                 let count = usize::try_from(argument)
                     .map_err(|_| self.error(error_code_t::container_too_large))?;
+                // Storage grows only with items actually decoded (each consumes input),
+                // never from the declared count: a short body cannot make the decoder
+                // reserve memory before the remaining input is checked (wire format
+                // §2.4; review M2-003-R02).
                 if major == MajorArray {
-                    let mut items = Vec::with_capacity(count);
+                    let mut items = Vec::new();
                     for _ in 0..count {
                         items.push(self.item(inner, false)?);
                     }
@@ -247,7 +251,8 @@ impl<'data> decoder_t<'data> {
     }
 
     fn map_items(&mut self, inner: usize, count: usize) -> format_result_t<value_t> {
-        let mut pairs = Vec::with_capacity(count);
+        // Grows per decoded pair, never from the declared count (M2-003-R02).
+        let mut pairs = Vec::new();
         let mut previous: Option<&'data [u8]> = None;
         let mut text_keys: Option<bool> = None;
         for _ in 0..count {

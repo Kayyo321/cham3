@@ -6,12 +6,19 @@
 * The oracle's text patterns reject a trailing newline and non-ASCII digits (the two
   oracle defects the differential check found).
 * Seeded defects in a disposable copy of the Rust verifier (never the checkout) are
-  each detected by the differential check, and the unmodified copy passes.
+  each detected by the differential check, and the unmodified copy passes. Revision
+  2 adds the reviewer's expiration-equality defect (M2-003-I01), the protected-header
+  precedence defect (M2-003-R01) and the unknown-typ defect (M2-003-R03).
+* Short container bodies do not make the decoder reserve their declared capacity
+  (wire format §2.4, M2-003-R02): the probe's peak heap under Valgrind Massif for a
+  container head that declares 256 items and has none stays within 1 KiB of an
+  empty container's, and reintroducing the count-driven reservation is detected.
 """
 
 import os
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -37,7 +44,33 @@ SeededDefects = [
      ".filter(|grant| grant.is_network()).count() > 1", ".filter(|grant| grant.is_network()).count() > 2"),
     ("bidirectional_controls_accepted", "core/contract_format/src/text.rs",
      "| 0x202a..=0x202e ", ""),
+    ("expiration_equal_to_start_accepted", "core/contract_format/src/intrinsic.rs",
+     "*expiration <= lifetime.effective_start", "*expiration < lifetime.effective_start"),
+    ("element_kinds_checked_before_protected_decode", "core/contract_format/src/envelope.rs",
+     "    let header = decode(&protected, layer_t::envelope_decode, false)?;\n"
+     "    let (value_t::map(unprotected), value_t::bytes(payload), value_t::bytes(signature)) =\n"
+     "        (unprotected, payload, signature)\n"
+     "    else {\n"
+     "        return Err(envelope_error(error_code_t::not_signed_object));\n"
+     "    };\n",
+     "    let (value_t::map(unprotected), value_t::bytes(payload), value_t::bytes(signature)) =\n"
+     "        (unprotected, payload, signature)\n"
+     "    else {\n"
+     "        return Err(envelope_error(error_code_t::not_signed_object));\n"
+     "    };\n"
+     "    let header = decode(&protected, layer_t::envelope_decode, false)?;\n"),
+    ("unknown_typ_reported_as_malformed_header", "core/contract_format/src/envelope.rs",
+     "        value_t::text(_) => Err(envelope_error(error_code_t::wrong_object_type)),\n",
+     "        value_t::text(typ) if object_kind_t::All.iter().any(|kind| kind.typ() == typ) => {\n"
+     "            Err(envelope_error(error_code_t::wrong_object_type))\n"
+     "        }\n"),
 ]
+
+# M2-003-R02: the decoder reserved storage for a container's declared count before
+# its items were available. This edit reintroduces that reservation.
+CountDrivenReservation = ("core/contract_format/src/dcbor.rs", "                    let mut items = Vec::new();\n",
+                          "                    let mut items = Vec::with_capacity(count);\n")
+ShortContainerSlackBytes = 1024
 
 
 def fake_probe(directory, flip_index=None, drop_last=False):
@@ -135,14 +168,57 @@ class seeded_verifier_defects_t(unittest.TestCase):
         shutil.rmtree(cls.workspace, ignore_errors=True)
 
     def build_and_compare(self, label):
+        probe = self.build_probe()
+        run_dir = os.path.join(self.workspace, "runs", label)
+        os.makedirs(run_dir)
+        return m2_harness.run_format_differential(probe, run_dir, format_differential.DefaultSeed,
+                                                  format_differential.DefaultCasesPerObject)
+
+    def build_probe(self):
         status, output = run(["cargo", "build", "--frozen", "-p", "cham3_contract_format", "--bin", "cham3_format_probe"],
                              cwd=self.workspace, env=self.environment)
         self.assertEqual(status, 0, output)
-        run_dir = os.path.join(self.workspace, "runs", label)
-        os.makedirs(run_dir)
-        probe = os.path.join(self.workspace, "target", "debug", "cham3_format_probe")
-        return m2_harness.run_format_differential(probe, run_dir, format_differential.DefaultSeed,
-                                                  format_differential.DefaultCasesPerObject)
+        return os.path.join(self.workspace, "target", "debug", "cham3_format_probe")
+
+    def massif_peak(self, probe, envelope_hex):
+        """Peak heap bytes of one probe run verifying one commit, under Valgrind Massif."""
+        output = os.path.join(self.workspace, "massif_%s.out" % envelope_hex)
+        completed = subprocess.run(
+            ["valgrind", "--tool=massif", "--peak-inaccuracy=0.0", "--massif-out-file=" + output, probe],
+            input="verify commit %s\n" % envelope_hex, capture_output=True, text=True, check=False)
+        self.assertEqual(completed.returncode, 0, completed.stderr[-500:])
+        self.assertEqual(completed.stdout.strip(), "err envelope_decode truncated" if envelope_hex != "80"
+                         else "err envelope not_signed_object")
+        with open(output, encoding="utf-8") as handle:
+            peaks = [int(line.split("=", 1)[1]) for line in handle if line.startswith("mem_heap_B=")]
+        self.assertTrue(peaks, "massif recorded no heap snapshots")
+        return max(peaks)
+
+    def short_container_growth(self, probe):
+        """Extra peak heap of a 256-item array head and a 256-pair map head with no
+        body, over an empty array."""
+        baseline = self.massif_peak(probe, "80")
+        return {name: self.massif_peak(probe, envelope) - baseline for name, envelope in (("array", "990100"), ("map", "b90100"))}
+
+    def test_short_container_bodies_reserve_no_declared_capacity(self):
+        growth = self.short_container_growth(self.build_probe())
+        for name, extra in growth.items():
+            self.assertLess(extra, ShortContainerSlackBytes, "%s head reserved %d bytes" % (name, extra))
+
+    def test_count_driven_reservation_is_detected(self):
+        relative, original, defect = CountDrivenReservation
+        path = os.path.join(self.workspace, relative)
+        with open(path, encoding="utf-8") as handle:
+            source = handle.read()
+        self.assertEqual(source.count(original), 1, "reservation anchor")
+        try:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(source.replace(original, defect))
+            growth = self.short_container_growth(self.build_probe())
+        finally:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(source)
+        self.assertGreaterEqual(growth["array"], ShortContainerSlackBytes, growth)
 
     def test_unmodified_copy_passes(self):
         record = self.build_and_compare("unmodified")

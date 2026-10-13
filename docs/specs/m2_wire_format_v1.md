@@ -1,6 +1,6 @@
 # cham3 ECR wire format, version 1
 
-- **Status:** APPROVED with G2 (owner, 2026-10-12, after independent re-review bd081df; [ADR 0004](../decisions/0004_m2_wire_schema_hash.md)). History: PROPOSED under G2 ([ADR 0004](../decisions/0004_m2_wire_schema_hash.md)), revision 3. Revision 2 answered the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (R06–R08; [resolutions](../reviews/M2-001-002-finding-resolutions.md)); revision 3 answers the re-review on `review/m2-001-002-r2-security` at 336f13be6a19bb871ea956d64f9cacb0936fe028 (R07-r2, R12, R13; [resolutions r2](../reviews/M2-001-002-finding-resolutions-r2.md)): §§6.7, 6.10–6.12, 7 and 9. The byte formats and CDDL types are unchanged. The text is unchanged by the approval; M2-003 implements it.
+- **Status:** APPROVED with G2 (owner, 2026-10-12, after independent re-review bd081df; [ADR 0004](../decisions/0004_m2_wire_schema_hash.md)). History: PROPOSED under G2 ([ADR 0004](../decisions/0004_m2_wire_schema_hash.md)), revision 3. Revision 2 answered the independent review published at 9cf882503848f8c6cc4938a588cc9fc062a9392d (R06–R08; [resolutions](../reviews/M2-001-002-finding-resolutions.md)); revision 3 answers the re-review on `review/m2-001-002-r2-security` at 336f13be6a19bb871ea956d64f9cacb0936fe028 (R07-r2, R12, R13; [resolutions r2](../reviews/M2-001-002-finding-resolutions-r2.md)): §§6.7, 6.10–6.12, 7 and 9. The byte formats and CDDL types are unchanged. The text is unchanged by the approval; M2-003 implements it. **Errata E1–E3**, approved by the owner on 2026-10-13 after the independent M2-003 review (`review/m2-003-security` at 1cb93c0, findings M2-003-R01, R03, R04 and E1), amend §§1, 2.2, 4.1, 6.1, 7 and 8 as marked; the vectors follow (§9).
 - **Schema:** [m2_ecr_v1.cddl](m2_ecr_v1.cddl). This document is normative where the CDDL cannot express a rule (ordering, limits, text restrictions, semantics, validation order and error codes).
 - **Vectors:** [tests/m2/vectors/ecr_v1/](../../tests/m2/vectors/ecr_v1/vectors_readme.md), generated and checked by the independent oracle [tests/m2/oracle/ecr_oracle.py](../../tests/m2/oracle/ecr_oracle.py).
 - **Authority:** PROJECT.md §§4.2, 5, 5.7; ADR 0001. Required primitives are unchanged: Ed25519 (RFC 8032), COSE_Sign1 (RFC 9052), deterministic CBOR (RFC 8949 §4.2), SHA-256.
@@ -11,7 +11,7 @@ Names in this document use the repository convention; COSE/CBOR terms (COSE_Sign
 
 Verification is layered. Each layer reports a distinct fact and never implies the next:
 
-1. **Envelope decode** — the input is a well-formed `cham3_dcbor_v1` item within limits, and the protected header byte string decodes the same way.
+1. **Envelope decode** — the input is a well-formed `cham3_dcbor_v1` item within limits, and the protected header byte string decodes the same way. Once the outer item is a tag-18 array of four elements whose first element is a byte string, that byte string is decoded before the kinds of the other three elements are checked, so a protected-header decode error precedes every layer-2 error (clarification, review M2-003-R01).
 2. **Envelope** — the item is a `signed_object` with the exact protected header for the expected object kind.
 3. **Signature** — `kid` resolves through the caller-supplied key resolver to an Ed25519 public key, and the signature over the Sig_structure verifies with strict verification. Payload bytes are authenticated before they are parsed.
 4. **Payload decode and schema** — the authenticated payload is a well-formed `cham3_dcbor_v1` item matching the closed schema for the kind (field set, types, formats, lengths, ordering, cross-field identity rules).
@@ -44,7 +44,7 @@ A strict subset of RFC 8949 core deterministic encoding (§4.2.1).
 
 - Every integer argument (values, lengths, tags) uses the shortest form (RFC 8949 §4.2.1 preferred serialization). Any longer form is `non_minimal_encoding`.
 - Additional information 28–30 is `reserved_additional_info`; 31 (indefinite length or break) is `indefinite_length`.
-- Map keys are compared as their complete deterministic encodings, bytewise lexicographically; keys must be strictly increasing. Equal keys are therefore also rejected (`unsorted_or_duplicate_key`). In every cham3 map all keys share one major type (text for payload maps, unsigned/negative integers for COSE headers); a map whose keys mix types or use any other type is `map_key_type`.
+- Map keys are compared as their complete deterministic encodings, bytewise lexicographically; keys must be strictly increasing. **Erratum E3:** every list that the CDDL or §6.1 requires to be strictly ascending uses the same comparator: its items' complete deterministic encodings, bytewise lexicographically. A shorter text therefore precedes a longer one (`["b", "aa"]` ascends, `["aa", "b"]` does not); for fixed-length byte strings this is plain byte order. Equal keys are therefore also rejected (`unsorted_or_duplicate_key`). In every cham3 map all keys share one major type (text for payload maps, unsigned/negative integers for COSE headers); a map whose keys mix types or use any other type is `map_key_type`.
 - The input must contain exactly one top-level item; remaining bytes are `trailing_bytes`.
 - Optional fields are absent when unused; `null` is never used.
 
@@ -97,7 +97,7 @@ Decoding is a single depth-first pass in byte order. For each item the decoder c
 
 `signed_object = #6.18([protected, unprotected, payload, signature])`, exactly four elements:
 
-- `protected`: byte string whose content is the `cham3_dcbor_v1` encoding of exactly `{1: -19, 4: kid, 16: typ}` (keys ascending: 0x01, 0x04, 0x10). Any other label, value or encoding is `protected_header_invalid`; an `alg` other than −19 (including −8, polymorphic EdDSA, deprecated by RFC 9864) is `unsupported_algorithm`; `typ` not equal to the expected kind is `wrong_object_type`.
+- `protected`: byte string whose content is the `cham3_dcbor_v1` encoding of exactly `{1: -19, 4: kid, 16: typ}` (keys ascending: 0x01, 0x04, 0x10). Any other label, value or encoding is `protected_header_invalid`; an `alg` other than −19 (including −8, polymorphic EdDSA, deprecated by RFC 9864) is `unsupported_algorithm`; `typ` not equal to the expected kind is `wrong_object_type`. **Erratum E2:** this applies to every text `typ` — another cham3 kind, another version (§8) or an unregistered value; a `typ` that is not a text string is `protected_header_invalid`.
 - `unprotected`: exactly the empty map `0xa0`; otherwise `unprotected_not_empty`.
 - `payload`: attached byte string (never `nil`/detached) decoding to the kind's payload schema.
 - `signature`: byte string of exactly 64 bytes; otherwise `signature_length`.
@@ -137,7 +137,7 @@ Two independent mechanisms separate cham3 contract signatures from every other u
 ### 6.1 Field rules (schema layer)
 
 - `parents`: 0–8 commit ids, strictly ascending (canonical parent order).
-- `add_grants`, `result_state.grants`: strictly ascending `grant_id`; `remove_grant_ids`, `operations`, `max_operations`, `mandatory_constraints`: strictly ascending; list limits per CDDL (`list_too_long`, `list_not_strictly_ascending`).
+- `add_grants`, `result_state.grants`: strictly ascending `grant_id`; `remove_grant_ids`, `operations`, `max_operations`, `mandatory_constraints`: strictly ascending in the §2.2 list order (erratum E3); a list shorter or longer than its CDDL bounds is `list_length` (erratum E1), a list not strictly ascending is `list_not_strictly_ascending`.
 - `subject.owner_uid == actor.uid` and `subject.owner_user_id == actor.user_id` (v1 has no cross-user authorization: `subject_actor_mismatch`).
 - `lineage_id` equals §5's derivation from the subject (`lineage_mismatch`).
 
@@ -244,7 +244,7 @@ Implementations report exactly one stable error code per rejected object: the fi
 
 - Decode: `input_too_large`, `truncated`, `trailing_bytes`, `reserved_additional_info`, `indefinite_length`, `non_minimal_encoding`, `integer_out_of_range`, `float_forbidden`, `simple_value_forbidden`, `tag_forbidden`, `invalid_utf8`, `text_too_long`, `depth_exceeded`, `container_too_large`, `unsorted_or_duplicate_key`, `map_key_type`.
 - Envelope: `not_signed_object` (not a 4-element array under tag 18, or an element of the wrong major type), `protected_header_invalid`, `unsupported_algorithm`, `wrong_object_type`, `unprotected_not_empty`, `signature_length`.
-- Schema: `unknown_field`, `missing_field`, `wrong_type`, `value_out_of_range`, `invalid_text`, `invalid_time`, `invalid_enum`, `list_too_long`, `list_not_strictly_ascending`, `subject_actor_mismatch`, `lineage_mismatch`, `key_id_mismatch`.
+- Schema: `unknown_field`, `missing_field`, `wrong_type`, `value_out_of_range`, `invalid_text`, `invalid_time`, `invalid_enum`, `list_length` (erratum E1), `list_not_strictly_ascending`, `subject_actor_mismatch`, `lineage_mismatch`, `key_id_mismatch`.
 - Signature: `unknown_key`, `signature_invalid`.
 - Intrinsic semantics: `commit_type_rule`, `lifetime_rule`, `delegation_rule`, `network_grant_rule`, `identity_transition_rule`, `delta_rule`, `result_state_mismatch`, `base_state_mismatch` (genesis only; for other types it is an admission check).
 - Key authority (layer 6, identityd; ADR 0005 §2, ADR 0006 §10): `key_not_certified`, `key_invalidated`, `key_epoch_stale`, `key_retired`, `authority_class_denied`, `certificate_window`, `user_deleted`, `quarantined`, `contained`, `recovery_key_required`. Key validity is checked before user state.
@@ -254,10 +254,10 @@ Within the schema layer, fields are checked in ascending key order; within a fie
 
 ## 8. Evolution
 
-- `schema_version` and `typ` are both versioned. v1 verifiers reject any other version (`invalid_enum`/`wrong_object_type`); there is no "best effort" parsing of unknown versions and no unknown-field tolerance.
+- `schema_version` and `typ` are both versioned. v1 verifiers reject any other version (`invalid_enum` for `schema_version`, `wrong_object_type` for `typ`; erratum E2); there is no "best effort" parsing of unknown versions and no unknown-field tolerance.
 - A future schema version is a new `typ`, external_aad and payload schema. Verifiers keep every historical version needed to verify retained history. Migration never rewrites signed bytes: a migration to a new version is a new forward commit, parented on the current head, freshly approved under the new schema; any automatic migration needs its own owner-approved ADR.
 - Increasing limits is a version change because it changes which byte strings are valid.
 
 ## 9. Published vectors
 
-`tests/m2/vectors/ecr_v1/` holds valid objects (identity enrollments, key certificates, a key invalidation, one commit of every type for two synthetic users and a maximum-size 61 440-byte commit), invalid objects each labeled with the expected error code and layer (including the 61 441-byte boundary), lineage-admission failures (including identity substitution by every non-transition commit type, restore scope/network/expiration/lifetime-kind/non-ancestor violations and stale placement), the `limits` block with worst-case wrapper sizes, and — revision 3 — `journal_scenarios`: signed multi-step journals (commits, identity objects and the unsigned narrowing registry records; from revision 4 also role-checked registry interface calls for the ADR 0006 §10 key naming) with the expected outcome of every step and the standing of named grants after it (§§6.7, 6.11, 6.12; the ADR 0006 §10 recovery ceremony). All keys are synthetic, derived from public labels, and must never be used outside tests. The vectors are produced by an implementation independent of the Rust code and re-verified by it; the Rust verifier (M2-003) must reproduce every byte and error code.
+`tests/m2/vectors/ecr_v1/` holds valid objects (identity enrollments, key certificates, a key invalidation, one commit of every type for two synthetic users, a maximum-size 61 440-byte commit and — errata E3 — a commit whose text lists differ between encoding order and plain string order), invalid objects each labeled with the expected error code and layer (including the 61 441-byte boundary), lineage-admission failures (including identity substitution by every non-transition commit type, restore scope/network/expiration/lifetime-kind/non-ancestor violations and stale placement), the `limits` block with worst-case wrapper sizes, and — revision 3 — `journal_scenarios`: signed multi-step journals (commits, identity objects and the unsigned narrowing registry records; from revision 4 also role-checked registry interface calls for the ADR 0006 §10 key naming) with the expected outcome of every step and the standing of named grants after it (§§6.7, 6.11, 6.12; the ADR 0006 §10 recovery ceremony). All keys are synthetic, derived from public labels, and must never be used outside tests. The vectors are produced by an implementation independent of the Rust code and re-verified by it; the Rust verifier (M2-003) must reproduce every byte and error code.

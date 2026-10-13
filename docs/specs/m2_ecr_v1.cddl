@@ -1,6 +1,8 @@
 ; cham3 ECR wire schema, version 1 (CDDL, RFC 8610).
 ;
 ; Status: APPROVED with G2 (owner, 2026-10-12, after independent re-review bd081df).
+; Errata E1-E3 (owner, 2026-10-13, after the M2-003 review 1cb93c0) change no type:
+; list order and the list-length/typ error codes are stated in wire format 2.2, 4.1, 7.
 ; History: PROPOSED under G2 (docs/decisions/0004_m2_wire_schema_hash.md), revision 3:
 ; revised after the independent review at 9cf8825 (R06-R08) and the re-review at
 ; 336f13b (R07-r2, R12, R13). Revision 3 changes no type; it changes admission
@@ -9,6 +11,8 @@
 ; Normative prose, limits and validation order: docs/specs/m2_wire_format_v1.md.
 ; Every item is encoded with the cham3_dcbor_v1 deterministic profile; maps are closed
 ; (unknown keys rejected) and optional keys are omitted, never null.
+; "Strictly ascending" lists compare their items' deterministic encodings bytewise,
+; like map keys (erratum E3): shorter text first, so ["b", "aa"] ascends.
 
 ; ---------------------------------------------------------------- envelope
 ; COSE_Sign1 (RFC 9052 section 4.2), tagged, attached payload. The complete encoded
@@ -23,7 +27,9 @@ signed_object = #6.18([
 protected_header = {
     1 => -19,                             ; alg: Ed25519 (RFC 9864); -8 (EdDSA) rejected
     4 => key_id,                          ; kid: signing key identifier
-    16 => object_type,                    ; typ (RFC 9596): explicit object kind
+    16 => object_type,                    ; typ (RFC 9596): explicit object kind; any other
+                                          ; text is wrong_object_type, a non-text value
+                                          ; protected_header_invalid (erratum E2)
 }
 
 object_type = "application/vnd.cham3.ecr-commit.v1+cose"

@@ -90,7 +90,7 @@ fn with_pairs(pairs: Vec<(value_t, value_t)>) -> value_t {
 #[test]
 fn unchanged_resigned_payloads_verify() {
     let fixture = fixture();
-    assert_eq!(fixture.objects.len(), 17);
+    assert_eq!(fixture.objects.len(), 18);
     for (name, kind, kid, payload) in &fixture.objects {
         assert_eq!(fixture.outcome(*kind, kid, payload), "ok", "{name}");
     }
@@ -269,21 +269,141 @@ fn integer_and_text_boundaries() {
     }
 }
 
+/// Replaces (or, at the last step, inserts) the item at `path`; numeric steps
+/// index arrays.
 fn replaced(value: &value_t, path: &[&str], replacement: value_t) -> value_t {
     match (value, path) {
         (_, []) => replacement,
-        (value_t::map(pairs), [first, rest @ ..]) => value_t::map(
-            pairs
+        (value_t::array(items), [first, rest @ ..]) => {
+            let index: usize = first.parse().expect("array index");
+            value_t::array(
+                items
+                    .iter()
+                    .enumerate()
+                    .map(|(position, item)| {
+                        if position == index {
+                            replaced(item, rest, replacement.clone())
+                        } else {
+                            item.clone()
+                        }
+                    })
+                    .collect(),
+            )
+        }
+        (value_t::map(pairs), [first, rest @ ..]) => {
+            let key = value_t::text_of(first);
+            let mut pairs: Vec<(value_t, value_t)> = pairs
                 .iter()
-                .map(|(key, item)| {
-                    if *key == value_t::text_of(first) {
-                        (key.clone(), replaced(item, rest, replacement.clone()))
+                .map(|(candidate, item)| {
+                    if *candidate == key {
+                        (candidate.clone(), replaced(item, rest, replacement.clone()))
                     } else {
-                        (key.clone(), item.clone())
+                        (candidate.clone(), item.clone())
                     }
                 })
-                .collect(),
-        ),
+                .collect();
+            if !pairs.iter().any(|(candidate, _)| *candidate == key) {
+                assert!(rest.is_empty(), "path {path:?} not found");
+                pairs.push((key, replacement));
+            }
+            value_t::map(pairs)
+        }
         _ => panic!("path {path:?} not found"),
     }
+}
+
+fn genesis_fixture(fixture: &fixture_t) -> (object_kind_t, [u8; 32], value_t) {
+    let (_, kind, kid, payload) = fixture
+        .objects
+        .iter()
+        .find(|(name, ..)| name == "commit_genesis")
+        .expect("genesis vector")
+        .clone();
+    (kind, kid, payload)
+}
+
+#[test]
+fn text_lists_ascend_in_encoding_order() {
+    // Owner erratum E3 (review M2-003-R04): text lists ascend in deterministic
+    // encoding order (shorter first), the map-key order of wire format §2.2.
+    let fixture = fixture();
+    let (kind, kid, payload) = genesis_fixture(&fixture);
+    let texts =
+        |items: &[&str]| value_t::array(items.iter().map(|item| value_t::text_of(item)).collect());
+    let constraint_cases = [
+        (texts(&["tor_only", "no_signing_keys"]), "ok"),
+        (
+            texts(&["no_signing_keys", "tor_only"]),
+            "schema/list_not_strictly_ascending",
+        ),
+        (texts(&["b", "aa"]), "ok"),
+        (texts(&["aa", "b"]), "schema/list_not_strictly_ascending"),
+        (texts(&["aa", "ab"]), "ok"),
+        (texts(&["ab", "aa"]), "schema/list_not_strictly_ascending"),
+        (texts(&["aa", "aa"]), "schema/list_not_strictly_ascending"),
+    ];
+    for (list, expected) in constraint_cases {
+        let edited = replaced(&payload, &["policy", "mandatory_constraints"], list.clone());
+        assert_eq!(fixture.outcome(kind, &kid, &edited), expected, "{list:?}");
+    }
+    let operation_cases = [
+        (texts(&["read", "write", "append"]), "ok"),
+        (
+            texts(&["append", "read", "write"]),
+            "schema/list_not_strictly_ascending",
+        ),
+    ];
+    for (list, expected) in operation_cases {
+        let edited = replaced(
+            &replaced(
+                &payload,
+                &["delta", "add_grants", "0", "resource", "operations"],
+                list.clone(),
+            ),
+            &["result_state", "grants", "0", "resource", "operations"],
+            list.clone(),
+        );
+        assert_eq!(fixture.outcome(kind, &kid, &edited), expected, "{list:?}");
+    }
+}
+
+#[test]
+fn expiration_equal_to_start_is_a_lifetime_rule_violation() {
+    // Review M2-003-I01: wire format §6.3 requires expiration > effective_start.
+    let fixture = fixture();
+    let (kind, kid, payload) = genesis_fixture(&fixture);
+    let start = payload
+        .get("delta")
+        .and_then(|delta| delta.get("add_grants"))
+        .and_then(|grants| match grants {
+            value_t::array(items) => items.first(),
+            _ => None,
+        })
+        .and_then(|grant| grant.get("lifetime"))
+        .and_then(|lifetime| lifetime.get("effective_start"))
+        .cloned()
+        .expect("effective_start");
+    let with_expiration = |expiration: value_t| {
+        replaced(
+            &replaced(
+                &payload,
+                &["delta", "add_grants", "0", "lifetime", "expiration"],
+                expiration.clone(),
+            ),
+            &["result_state", "grants", "0", "lifetime", "expiration"],
+            expiration,
+        )
+    };
+    assert_eq!(
+        fixture.outcome(kind, &kid, &with_expiration(start)),
+        "intrinsic/lifetime_rule"
+    );
+    assert_eq!(
+        fixture.outcome(
+            kind,
+            &kid,
+            &with_expiration(value_t::text_of("2026-10-12T12:00:01Z"))
+        ),
+        "ok"
+    );
 }

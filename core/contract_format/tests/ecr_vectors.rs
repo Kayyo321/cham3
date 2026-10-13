@@ -16,7 +16,7 @@
 
 mod support;
 
-use cham3_contract_format::dcbor::{MaxEncodedBytes, decode, encode};
+use cham3_contract_format::dcbor::{MaxEncodedBytes, SignedObjectTag, decode, encode, value_t};
 use cham3_contract_format::envelope::{assemble_envelope, protected_header_bytes, to_be_signed};
 use cham3_contract_format::hash::{key_id, object_id};
 use cham3_contract_format::intrinsic::empty_state_hash;
@@ -104,7 +104,7 @@ fn valid_vectors_verify_and_reproduce_bytes() {
     let keys = synthetic_keys(&document);
     let resolver = resolver_t::new(&keys);
     let valid = document.get("valid").map(json_t::items).unwrap_or_default();
-    assert_eq!(valid.len(), 18);
+    assert_eq!(valid.len(), 19);
     let mut largest = 0;
     for vector in valid {
         let name = vector.field("name");
@@ -145,6 +145,156 @@ fn valid_vectors_verify_and_reproduce_bytes() {
     );
 }
 
+fn valid_envelope(document: &json_t, name: &str) -> Vec<u8> {
+    let vector = document
+        .get("valid")
+        .map(json_t::items)
+        .unwrap_or_default()
+        .iter()
+        .find(|vector| vector.field("name") == name)
+        .unwrap_or_else(|| panic!("valid vector {name}"));
+    hex_decode(vector.field("envelope"))
+}
+
+#[test]
+fn protected_header_decode_precedes_other_element_kinds() {
+    // Review M2-003-R01: layer 1 includes the protected-header decode, so its errors
+    // precede layer-2 kind errors of the other envelope elements.
+    let document = vectors();
+    let resolver = resolver_t::new(&synthetic_keys(&document));
+    let genesis = valid_envelope(&document, "commit_genesis");
+    let Ok(value_t::tag(_, content)) = decode(&genesis, layer_t::envelope_decode, true) else {
+        panic!("genesis decodes");
+    };
+    let value_t::array(elements) = *content else {
+        panic!("genesis is an array");
+    };
+    let [protected, _, payload, signature] =
+        <[value_t; 4]>::try_from(elements).expect("four elements");
+    let build = |elements: [value_t; 4]| {
+        encode(&value_t::tag(
+            SignedObjectTag,
+            Box::new(value_t::array(elements.to_vec())),
+        ))
+    };
+    let cases = [
+        (
+            [
+                value_t::bytes(vec![0x18, 0x00]),
+                value_t::boolean(false),
+                payload.clone(),
+                signature.clone(),
+            ],
+            "envelope_decode/non_minimal_encoding",
+        ),
+        (
+            [
+                value_t::bytes(vec![0xa3]),
+                value_t::map(Vec::new()),
+                value_t::text_of("p"),
+                signature.clone(),
+            ],
+            "envelope_decode/truncated",
+        ),
+        (
+            [
+                value_t::bytes(vec![0xa0, 0x00]),
+                value_t::map(Vec::new()),
+                payload.clone(),
+                value_t::unsigned(0),
+            ],
+            "envelope_decode/trailing_bytes",
+        ),
+        (
+            [
+                protected.clone(),
+                value_t::boolean(false),
+                payload.clone(),
+                signature.clone(),
+            ],
+            "envelope/not_signed_object",
+        ),
+        (
+            [
+                protected.clone(),
+                value_t::map(Vec::new()),
+                value_t::text_of("p"),
+                signature.clone(),
+            ],
+            "envelope/not_signed_object",
+        ),
+        (
+            [
+                value_t::text_of("p"),
+                value_t::boolean(false),
+                payload,
+                signature,
+            ],
+            "envelope/not_signed_object",
+        ),
+    ];
+    for (elements, expected) in cases {
+        assert_eq!(
+            outcome(&build(elements), object_kind_t::commit, &resolver),
+            expected
+        );
+    }
+}
+
+#[test]
+fn text_typ_other_than_expected_is_wrong_object_type() {
+    // Owner erratum E2 (review M2-003-R03): any text typ other than the expected
+    // kind's is wrong_object_type; a non-text typ is a malformed header.
+    let document = vectors();
+    let keys = synthetic_keys(&document);
+    let resolver = resolver_t::new(&keys);
+    let genesis = valid_envelope(&document, "commit_genesis");
+    let verified = verify_object(&genesis, object_kind_t::commit, &resolver).expect("valid");
+    let signing = SigningKey::from_bytes(&signer(&keys, &verified.kid).seed);
+    let cases = [
+        (value_t::text_of("x"), "envelope/wrong_object_type"),
+        (value_t::text_of(""), "envelope/wrong_object_type"),
+        (
+            value_t::text_of("application/cbor"),
+            "envelope/wrong_object_type",
+        ),
+        (
+            value_t::text_of("application/vnd.cham3.ecr-commit.v2+cose"),
+            "envelope/wrong_object_type",
+        ),
+        (
+            value_t::text_of(object_kind_t::key_certificate.typ()),
+            "envelope/wrong_object_type",
+        ),
+        (
+            value_t::bytes_of(object_kind_t::commit.typ().as_bytes()),
+            "envelope/protected_header_invalid",
+        ),
+        (value_t::unsigned(16), "envelope/protected_header_invalid"),
+        (value_t::text_of(object_kind_t::commit.typ()), "ok"),
+    ];
+    for (typ, expected) in cases {
+        let protected = encode(&value_t::map(vec![
+            (value_t::unsigned(1), value_t::negative(18)),
+            (value_t::unsigned(4), value_t::bytes_of(&verified.kid)),
+            (value_t::unsigned(16), typ.clone()),
+        ]));
+        let signature = signing
+            .sign(&to_be_signed(
+                object_kind_t::commit,
+                &protected,
+                &verified.payload_bytes,
+            ))
+            .to_bytes();
+        let envelope = assemble_envelope(&protected, &verified.payload_bytes, &signature);
+        assert_eq!(
+            outcome(&envelope, object_kind_t::commit, &resolver),
+            expected,
+            "{typ:?}"
+        );
+    }
+}
+
 #[test]
 fn every_kind_is_rejected_as_another_kind() {
     let document = vectors();
@@ -174,7 +324,7 @@ fn invalid_vectors_report_the_published_layer_and_code() {
         .get("invalid")
         .map(json_t::items)
         .unwrap_or_default();
-    assert_eq!(invalid.len(), 90);
+    assert_eq!(invalid.len(), 96);
     let mut layers_seen = std::collections::BTreeSet::new();
     for vector in invalid {
         let kind = object_kind_t::from_name(vector.field("kind")).expect("kind");

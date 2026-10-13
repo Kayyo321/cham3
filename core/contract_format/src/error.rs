@@ -36,9 +36,8 @@ impl layer_t {
 
 /// Stable error codes of wire format §7 for layers 1–5.
 ///
-/// `list_length` is the code the published vectors and the independent oracle use
-/// for a list whose length is outside its CDDL bounds, too short or too long
-/// (wire format §6.1 and §7 name it `list_too_long`; see the M2-003 handoff).
+/// `list_length` is the code for a list whose length is outside its CDDL bounds, too
+/// short or too long (wire format §§6.1, 7 as amended by owner erratum E1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum error_code_t {
     // Decode.

@@ -46,7 +46,6 @@ Kinds = {
     "key_certificate": ("application/vnd.cham3.key-certificate.v1+cose", b"cham3/key-certificate/v1"),
     "key_invalidation": ("application/vnd.cham3.key-invalidation.v1+cose", b"cham3/key-invalidation/v1"),
 }
-KnownTypes = {typ: kind for kind, (typ, _) in Kinds.items()}
 GroupOrder = 2**252 + 27742317777372353535851937790883648493
 
 
@@ -272,9 +271,13 @@ def parse_and_verify(data, expected_kind, resolver):
     if not isinstance(root, tag_t) or not isinstance(root.value, list) or len(root.value) != 4:
         raise oracle_error_t("envelope", "not_signed_object")
     protected, unprotected, payload, signature = root.value
-    if not isinstance(protected, bytes) or not isinstance(unprotected, dict) or not isinstance(payload, bytes) or not isinstance(signature, bytes):
+    if not isinstance(protected, bytes):
         raise oracle_error_t("envelope", "not_signed_object")
+    # Layer 1 includes the protected-header decode, so it precedes the layer-2 kind
+    # checks of the other elements (review M2-003-R01).
     header = decoder_t(protected, "envelope_decode").decode_top()
+    if not isinstance(unprotected, dict) or not isinstance(payload, bytes) or not isinstance(signature, bytes):
+        raise oracle_error_t("envelope", "not_signed_object")
     if not isinstance(header, dict) or set(header) != {LabelAlg, LabelKid, LabelTyp}:
         raise oracle_error_t("envelope", "protected_header_invalid")
     if header[LabelAlg] != AlgorithmEd25519:
@@ -287,7 +290,10 @@ def parse_and_verify(data, expected_kind, resolver):
     typ = header[LabelTyp]
     expected_typ, external_aad = Kinds[expected_kind]
     if typ != expected_typ:
-        if typ in KnownTypes:
+        # Owner erratum E2 (review M2-003-R03): any text typ other than the expected
+        # kind's (another kind, another version, unknown) is wrong_object_type; a typ
+        # that is not text is a malformed header.
+        if isinstance(typ, str):
             raise oracle_error_t("envelope", "wrong_object_type")
         raise oracle_error_t("envelope", "protected_header_invalid")
     if unprotected != {}:
@@ -1543,6 +1549,16 @@ def build_vectors():
                                        "remove_grant_ids": []},
                                       Times[0], "Change network mode from Offline to Tor")
     firefox_data, _ = sign_commit(keys["user_1002_persistent"], firefox_genesis)
+    # Owner erratum E3 (review M2-003-R04): a valid object whose text lists differ
+    # between deterministic-encoding order and plain string order.
+    okular = lineage_builder_t(keys, 1002, "user_1002_identity", "org.kde.okular", "deb:okular:amd64")
+    okular_genesis = okular.payload("okular_genesis", "genesis", keys["user_1002_persistent"], [], EmptyState,
+                                    {"add_grants": [make_grant("okular_documents", "filesystem", "home:Documents", ["append", "read", "write"], owner_uid=1002)],
+                                     "remove_grant_ids": []},
+                                    Times[0], "Allow Okular to read, write and append to Documents",
+                                    extra={"policy": {"epoch": 7, "version": "cham3-policy-2026.10", "security_profile": "desktop_default",
+                                                      "mandatory_constraints": sorted(["no_signing_keys", "tor_only"], key=encode)}})
+    okular_data, _ = sign_commit(keys["user_1002_persistent"], okular_genesis)
 
     boundary, boundary_over, limits = build_boundary_vectors(keys)
     invalid = build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_id, merge, persistent, temporary, transition)
@@ -1554,7 +1570,8 @@ def build_vectors():
     admission_invalid = build_admission_vectors(keys, kate, chain, genesis, genesis_id, revision, revision_id, revocation, revocation_id, persistent,
                                                 restore, restore_id, temporary, temporary_session, merge, transition, ids, payloads)
     scenarios = build_journal_scenarios(keys, kate, ids, payloads)
-    extra_valid = [("commit_user_1002_genesis", firefox_data), ("commit_boundary_max_size", boundary)]
+    extra_valid = [("commit_user_1002_genesis", firefox_data), ("commit_user_1002_encoded_list_order", okular_data),
+                   ("commit_boundary_max_size", boundary)]
     return keys, resolver_keys, identity, chain, extra_valid, invalid, admission_invalid, limits, scenarios
 
 
@@ -1693,7 +1710,15 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
     add("typ_key_certificate", build_envelope("commit", persistent, payload_bytes, protected=protected_bytes(kid, Kinds["key_certificate"][0])),
         "envelope", "wrong_object_type", "commit payload labeled as a key certificate")
     add("typ_unknown", build_envelope("commit", persistent, payload_bytes, protected=protected_bytes(kid, "application/cbor")),
-        "envelope", "protected_header_invalid", "unregistered typ")
+        "envelope", "wrong_object_type", "unregistered typ (owner erratum E2)")
+    add("typ_future_version", build_envelope("commit", persistent, payload_bytes,
+        protected=protected_bytes(kid, "application/vnd.cham3.ecr-commit.v2+cose")),
+        "envelope", "wrong_object_type", "typ of a future commit version (wire format section 8; erratum E2)")
+    add("typ_not_text", build_envelope("commit", persistent, payload_bytes, protected=protected_bytes(kid, typ.encode("ascii"))),
+        "envelope", "protected_header_invalid", "typ as a byte string")
+    add("protected_decode_before_element_kinds", encode(tag_t(18, [b"\x18\x00", False, payload_bytes, signature])),
+        "envelope_decode", "non_minimal_encoding",
+        "non-minimal protected header bytes with a non-map unprotected element: layer 1 first (review M2-003-R01)")
     add("unprotected_kid", encode(tag_t(18, [protected, {LabelKid: kid}, payload_bytes, signature])), "envelope", "unprotected_not_empty", "kid duplicated in the unprotected header")
     add("signature_63_bytes", encode(tag_t(18, [protected, {}, payload_bytes, signature[:63]])), "envelope", "signature_length", "63-byte signature")
     # Layer 3: signature.
@@ -1748,6 +1773,11 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
         ("too_many_parents", mutate(genesis, ["parents"], sorted(synthetic_id("parent %d" % index) * 2 for index in range(9))), "list_length", "nine parents"),
         ("unsorted_parents", mutate(genesis, ["parents"], [b"\x02" * 32, b"\x01" * 32]), "list_not_strictly_ascending", "parents out of canonical order"),
         ("duplicate_operations", mutate(genesis, ["delta", "add_grants", 0, "resource", "operations"], ["read", "read"]), "list_not_strictly_ascending", "duplicate operation"),
+        # Owner erratum E3 (review M2-003-R04): text lists ascend in deterministic
+        # encoding order (shorter first), the map-key order; plain string order is
+        # rejected when the two differ.
+        ("operations_plain_order", mutate(genesis, ["delta", "add_grants", 0, "resource", "operations"], ["append", "read", "write"]), "list_not_strictly_ascending", "operations in plain string order"),
+        ("constraints_plain_order", mutate(genesis, ["policy", "mandatory_constraints"], ["no_signing_keys", "tor_only"]), "list_not_strictly_ascending", "mandatory_constraints in plain string order"),
         ("key_id_mismatch", mutate(genesis, ["key_id"], keys["user_1001_temporary"].key_id), "key_id_mismatch", "payload key_id differs from kid"),
         ("subject_actor_mismatch", mutate(genesis, ["actor", "uid"], 1002), "subject_actor_mismatch", "actor uid differs from owner uid"),
         ("lineage_mismatch", mutate(genesis, ["subject", "app_id"], "org.kde.dolphin"), "lineage_mismatch", "lineage_id derived from another application"),
@@ -1766,6 +1796,7 @@ def build_invalid_vectors(keys, kate, genesis, genesis_data, revision, revision_
         ("restore_reference_on_revision", mutate(revision, ["restore_reference"], revision_id), persistent, "commit_type_rule", "restore_reference on a revision"),
         ("empty_revision", mutate(mutate(revision, ["delta", "add_grants"], []), ["result_state"], genesis["result_state"]), persistent, "commit_type_rule", "revision without any change"),
         ("timed_without_expiration", None, persistent, "lifetime_rule", "timed grant without expiration"),
+        ("expiration_equals_start", mutate(mutate(genesis, ["delta", "add_grants", 0, "lifetime", "expiration"], Times[0]), ["result_state", "grants", 0, "lifetime", "expiration"], Times[0]), persistent, "lifetime_rule", "expiration equal to effective start (review M2-003-I01)"),
         ("expiration_before_start", mutate(mutate(genesis, ["delta", "add_grants", 0, "lifetime", "expiration"], "2026-10-12T11:00:00Z"), ["result_state", "grants", 0, "lifetime", "expiration"], "2026-10-12T11:00:00Z"), persistent, "lifetime_rule", "expiration before effective start"),
         ("delegation_scope_not_permitted", mutate(mutate(genesis, ["delta", "add_grants", 0, "delegation", "permitted"], False), ["result_state", "grants", 0, "delegation", "permitted"], False), persistent, "delegation_rule", "non-delegable grant with delegation depth"),
         ("delegation_exceeds_operations", mutate(mutate(genesis, ["delta", "add_grants", 0, "delegation", "max_operations"], ["write"]), ["result_state", "grants", 0, "delegation", "max_operations"], ["write"]), persistent, "delegation_rule", "delegable operations not in the grant"),

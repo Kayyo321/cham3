@@ -76,12 +76,6 @@ impl object_kind_t {
             .into_iter()
             .find(|kind| kind.name() == name)
     }
-
-    fn from_typ(typ: &str) -> Option<object_kind_t> {
-        object_kind_t::All
-            .into_iter()
-            .find(|kind| kind.typ() == typ)
-    }
 }
 
 /// Resolves a `kid` to an Ed25519 public key. Implemented by identityd (ADR 0005);
@@ -153,6 +147,12 @@ fn signature_error(code: error_code_t) -> format_error_t {
 }
 
 /// Layers 1–3 for an object of `expected_kind`.
+///
+/// Layer 1 is the decode of the envelope **and** of the protected header bytes
+/// (wire format §1). Once the outer item is a tag-18 array of four elements whose
+/// first element is a byte string, that byte string is decoded before the kinds of
+/// the other elements are checked, so a layer-1 error in the protected header always
+/// precedes a layer-2 error elsewhere in the envelope (review M2-003-R01).
 pub fn verify_envelope(
     data: &[u8],
     expected_kind: object_kind_t,
@@ -166,18 +166,18 @@ pub fn verify_envelope(
         },
         _ => return Err(envelope_error(error_code_t::not_signed_object)),
     };
-    let (protected, unprotected, payload, signature) = match <[value_t; 4]>::try_from(elements) {
-        Ok(
-            [
-                value_t::bytes(protected),
-                value_t::map(unprotected),
-                value_t::bytes(payload),
-                value_t::bytes(signature),
-            ],
-        ) => (protected, unprotected, payload, signature),
-        _ => return Err(envelope_error(error_code_t::not_signed_object)),
+    let [protected, unprotected, payload, signature] = <[value_t; 4]>::try_from(elements)
+        .map_err(|_| envelope_error(error_code_t::not_signed_object))?;
+    let value_t::bytes(protected) = protected else {
+        return Err(envelope_error(error_code_t::not_signed_object));
     };
-    let kid = check_protected_header(&protected, expected_kind)?;
+    let header = decode(&protected, layer_t::envelope_decode, false)?;
+    let (value_t::map(unprotected), value_t::bytes(payload), value_t::bytes(signature)) =
+        (unprotected, payload, signature)
+    else {
+        return Err(envelope_error(error_code_t::not_signed_object));
+    };
+    let kid = check_protected_header(header, expected_kind)?;
     if !unprotected.is_empty() {
         return Err(envelope_error(error_code_t::unprotected_not_empty));
     }
@@ -198,13 +198,15 @@ pub fn verify_envelope(
     })
 }
 
-/// Checks the protected header and returns its `kid`.
+/// Checks the decoded protected header and returns its `kid`. A text `typ` other
+/// than the expected kind's (another kind, another version or an unknown value) is
+/// `wrong_object_type`; a `typ` that is not text is `protected_header_invalid`
+/// (wire format §§4.1, 8; owner erratum E2, review M2-003-R03).
 fn check_protected_header(
-    protected: &[u8],
+    header: value_t,
     expected_kind: object_kind_t,
 ) -> format_result_t<digest_t> {
     let invalid = envelope_error(error_code_t::protected_header_invalid);
-    let header = decode(protected, layer_t::envelope_decode, false)?;
     let pairs = match header {
         value_t::map(pairs) => pairs,
         _ => return Err(invalid),
@@ -232,9 +234,7 @@ fn check_protected_header(
     };
     match typ {
         value_t::text(typ) if typ == expected_kind.typ() => Ok(kid),
-        value_t::text(typ) if object_kind_t::from_typ(&typ).is_some() => {
-            Err(envelope_error(error_code_t::wrong_object_type))
-        }
+        value_t::text(_) => Err(envelope_error(error_code_t::wrong_object_type)),
         _ => Err(invalid),
     }
 }
