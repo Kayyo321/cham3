@@ -12,7 +12,7 @@ Use `PROJECT.md` and the approved ADRs as product-authority references. The form
 
 ## Completed work
 
-**Behaviour and files (`git diff --stat 22b6b5f f4b0628`: 17 files changed, 5 added):**
+**Behaviour and files (`git diff --stat 22b6b5f f4b0628`: 22 files changed, 5 of them added; corrected from "17 files changed" after the independent review noted the disagreement with the evidence README):**
 
 - `core/registryd/src/anchor.rs` (new): the anchor map (run marker, policy state, per-user `seq`/`chain`/`state`/`user_id`/`identity_seq`/`min_valid_policy_epoch`, tombstones), two alternating slots `"C3AN" ‖ version ‖ counter ‖ map ‖ SHA-256`, open (the valid slot with the higher counter; `absent`/`invalid`/`loaded`), update (write the older slot, sync, then take the change in memory; the directory synced after the first write to each slot in a run), `independent`/`degraded` by `st_dev`.
 - `core/registryd/src/ledger.rs` (new): the restriction ledger — `validity` (`"C3RV" ‖ run_id ‖ boot_id`) and `entries` (`"C3RL"` frames with a per-entry SHA-256) — started fresh at every start, appended before any disk write of a restrictive change, read as the previous run's evidence; a failed append marks it failed and removes the validity file.

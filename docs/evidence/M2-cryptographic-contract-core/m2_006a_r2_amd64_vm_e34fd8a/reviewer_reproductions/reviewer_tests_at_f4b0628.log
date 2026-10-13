@@ -1,0 +1,204 @@
+== HEAD f4b062826ae54ba4e79c5abd08eeb9fe21d48510
+== sources
+cb3bbbd81e3c56f88cb85d42205c5a99d15535cff96f922d68fed7275d88c6f0  core/registryd/tests/reviewer_storage.rs
+41ec9718ac19b87b60705a62771c51eb6261a55bfbf312df05291b5f0d2fada0  core/policyd/tests/policy_review.rs
+== reviewer_storage review_ debug
+
+running 8 tests
+
+thread 'review_failed_emergency_release_keeps_denial' panicked at core/registryd/tests/reviewer_storage.rs:1429:5:
+failed release already lifted denial
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test review_failed_emergency_release_keeps_denial ... FAILED
+
+thread 'review_policy_pending_prevents_clean_shutdown' panicked at core/registryd/tests/reviewer_storage.rs:1386:5:
+shutdown claimed clean but lost policy epoch: Ok(policy_state_t { epoch: 1, min_valid_epoch: 1, emergency_restriction: false })
+test review_policy_pending_prevents_clean_shutdown ... FAILED
+
+thread 'review_unanchored_admission_not_exposed_as_normal_view' panicked at core/registryd/tests/reviewer_storage.rs:1418:5:
+unanchored admission exposed as normal live policy view: Ok(Some(lineage_view_t { owner_uid: 1001, owner_user_id: [47, 25, 152, 194, 130, 191, 172, 49, 88, 179, 133, 202, 220, 145, 72, 24, 106, 124, 126, 87, 41, 194, 140, 11, 173, 236, 6, 223, 140, 118, 250, 63], user_state: normal, journal_seq: 4, lineage_id: [34, 177, 242, 134, 242, 74, 235, 110, 173, 78, 15, 233, 168, 176, 89, 125, 38, 139, 12, 243, 147, 54, 252, 133, 171, 171, 101, 76, 48, 103, 39, 217], trunk_head: Some(head_view_t { commit_id: [2, 223, 3, 141, 214, 189, 82, 227, 48, 154, 249, 174, 44, 218, 200, 19, 217, 208, 130, 25, 26, 173, 58, 126, 13, 104, 162, 21, 218, 94, 125, 238], placement: trunk, state: contract_state_t { grants: [grant_t { grant_id: [166, 238, 133, 149, 47, 182, 151, 139, 146, 120, 53, 42, 8, 119, 196, 29], lifetime: lifetime_t { kind: persistent, effective_start: "2026-10-13T09:00:00Z", expiration: None, session_id: None, usage_limit: None }, resource: resource_t { category: filesystem, resource_id: "home:Downloads", resource_owner_uid: 1001, operations: ["read"] }, delegation: delegation_t { permitted: false, max_depth: 0, max_operations: [], parent_grant_id: None } }] } }), temporary_heads: [], authoritative_subject: Some(subject_t { owner_uid: 1001, owner_user_id: [47, 25, 152, 194, 130, 191, 172, 49, 88, 179, 133, 202, 220, 145, 72, 24, 106, 124, 126, 87, 41, 194, 140, 11, 173, 236, 6, 223, 140, 118, 250, 63], app_id: "org.example.editor", installation_id: [112, 124, 70, 101, 108, 15, 8, 219, 22, 197, 9, 141, 100, 36, 211, 213], package_identity: "deb:editor:amd64", executable_sha256: [21, 83, 204, 98, 255, 36, 96, 68, 198, 131, 166, 30, 32, 62, 101, 84, 25, 144, 231, 252, 212, 175, 148, 67, 210, 43, 149, 87, 236, 201, 172, 84], runtime_scope: None }), origins: {[166, 238, 133, 149, 47, 182, 151, 139, 146, 120, 53, 42, 8, 119, 196, 29]: grant_origin_t { commit_id: [2, 223, 3, 141, 214, 189, 82, 227, 48, 154, 249, 174, 44, 218, 200, 19, 217, 208, 130, 25, 26, 173, 58, 126, 13, 104, 162, 21, 218, 94, 125, 238], key_id: [229, 168, 210, 167, 82, 96, 147, 184, 253, 117, 163, 74, 35, 135, 236, 143, 56, 172, 136, 105, 164, 255, 178, 196, 181, 56, 113, 202, 48, 99, 184, 124], policy_epoch: 1, key_invalidated: None, key_unknown: false }}, ended: {}, ended_sessions: {}, occupying_network: [], policy_epoch: 1, min_valid_policy_epoch: 1, emergency_restriction: false }))
+test review_unanchored_admission_not_exposed_as_normal_view ... FAILED
+
+thread 'review_anchor_identity_sequence_must_match_journal' panicked at core/registryd/tests/reviewer_storage.rs:1444:5:
+identity sequence mismatch accepted
+test review_anchor_identity_sequence_must_match_journal ... FAILED
+
+thread 'review_anchored_quarantine_ends_grants' panicked at core/registryd/tests/reviewer_storage.rs:228:9:
+{}
+test review_anchored_quarantine_ends_grants ... FAILED
+
+thread 'review_restriction_after_anchor_failure_survives_restart' panicked at core/registryd/tests/reviewer_storage.rs:1371:5:
+assertion `left != right` failed: restriction bypassed ledger after anchor failure
+  left: Ok(current)
+ right: Ok(current)
+test review_restriction_after_anchor_failure_survives_restart ... FAILED
+
+thread 'review_missing_ledger_entries_invalidates_run' panicked at core/registryd/tests/reviewer_storage.rs:1404:5:
+assertion `left == right` failed: missing ledger entries accepted as empty valid evidence
+  left: ledger_replayed
+ right: contained
+test review_missing_ledger_entries_invalidates_run ... FAILED
+
+thread 'review_replayed_pending_survives_a_second_same_boot_restart' panicked at core/registryd/tests/reviewer_storage.rs:1354:5:
+assertion `left != right` failed: restriction resurrected on second restart
+  left: Ok(current)
+ right: Ok(current)
+test review_replayed_pending_survives_a_second_same_boot_restart ... FAILED
+
+failures:
+
+failures:
+    review_anchor_identity_sequence_must_match_journal
+    review_anchored_quarantine_ends_grants
+    review_failed_emergency_release_keeps_denial
+    review_missing_ledger_entries_invalidates_run
+    review_policy_pending_prevents_clean_shutdown
+    review_replayed_pending_survives_a_second_same_boot_restart
+    review_restriction_after_anchor_failure_survives_restart
+    review_unanchored_admission_not_exposed_as_normal_view
+
+test result: FAILED. 0 passed; 8 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p cham3_registryd --test reviewer_storage`
+== policy_review debug
+  --> core/policyd/tests/policy_review.rs:43:52
+   |
+43 | use cham3_policyd::mandatory::{mandatory_policy_t, network_mode_t, prohibition_t};
+   |                                                    ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+  --> core/policyd/tests/policy_review.rs:44:64
+   |
+44 | use cham3_policyd::service::{policy_clock_t, policy_service_t, rollback_protection_t};
+   |                                                                ^^^^^^^^^^^^^^^^^^^^^
+
+  --> core/policyd/tests/policy_review.rs:49:5
+   |
+49 |     frame, lifecycle_record_t, next_chain, parse_journal, placement_t, record_body_t,
+   |     ^^^^^  ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^               ^^^^^^^^^^^^^
+50 |     registry_record_t,
+   |     ^^^^^^^^^^^^^^^^^
+
+   --> core/policyd/tests/policy_review.rs:96:5
+    |
+95  | struct world_t {
+    |        ------- fields in this struct
+96  |     root: PathBuf,
+    |     ^^^^
+...
+104 |     now: Rc<Cell<Option<i64>>>,
+    |     ^^^
+105 |     sessions: sessions_t,
+    |     ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+
+running 2 tests
+UNANCHORED: admission=ipc/storage_unavailable; unchanged_anchor=true; pending_anchor=true; decision=eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+test review_unanchored_admission_is_eligible ... ok
+FAILED_RELEASE: release=ipc/restriction_not_durable; unchanged_anchor=true; decision=eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+test review_failed_emergency_release_is_eligible ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+== reviewer_storage review_ --release
+
+running 8 tests
+
+thread 'review_failed_emergency_release_keeps_denial' panicked at core/registryd/tests/reviewer_storage.rs:1429:5:
+failed release already lifted denial
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test review_failed_emergency_release_keeps_denial ... FAILED
+
+thread 'review_policy_pending_prevents_clean_shutdown' panicked at core/registryd/tests/reviewer_storage.rs:1386:5:
+shutdown claimed clean but lost policy epoch: Ok(policy_state_t { epoch: 1, min_valid_epoch: 1, emergency_restriction: false })
+test review_policy_pending_prevents_clean_shutdown ... FAILED
+
+thread 'review_unanchored_admission_not_exposed_as_normal_view' panicked at core/registryd/tests/reviewer_storage.rs:1418:5:
+unanchored admission exposed as normal live policy view: Ok(Some(lineage_view_t { owner_uid: 1001, owner_user_id: [47, 25, 152, 194, 130, 191, 172, 49, 88, 179, 133, 202, 220, 145, 72, 24, 106, 124, 126, 87, 41, 194, 140, 11, 173, 236, 6, 223, 140, 118, 250, 63], user_state: normal, journal_seq: 4, lineage_id: [34, 177, 242, 134, 242, 74, 235, 110, 173, 78, 15, 233, 168, 176, 89, 125, 38, 139, 12, 243, 147, 54, 252, 133, 171, 171, 101, 76, 48, 103, 39, 217], trunk_head: Some(head_view_t { commit_id: [2, 223, 3, 141, 214, 189, 82, 227, 48, 154, 249, 174, 44, 218, 200, 19, 217, 208, 130, 25, 26, 173, 58, 126, 13, 104, 162, 21, 218, 94, 125, 238], placement: trunk, state: contract_state_t { grants: [grant_t { grant_id: [166, 238, 133, 149, 47, 182, 151, 139, 146, 120, 53, 42, 8, 119, 196, 29], lifetime: lifetime_t { kind: persistent, effective_start: "2026-10-13T09:00:00Z", expiration: None, session_id: None, usage_limit: None }, resource: resource_t { category: filesystem, resource_id: "home:Downloads", resource_owner_uid: 1001, operations: ["read"] }, delegation: delegation_t { permitted: false, max_depth: 0, max_operations: [], parent_grant_id: None } }] } }), temporary_heads: [], authoritative_subject: Some(subject_t { owner_uid: 1001, owner_user_id: [47, 25, 152, 194, 130, 191, 172, 49, 88, 179, 133, 202, 220, 145, 72, 24, 106, 124, 126, 87, 41, 194, 140, 11, 173, 236, 6, 223, 140, 118, 250, 63], app_id: "org.example.editor", installation_id: [112, 124, 70, 101, 108, 15, 8, 219, 22, 197, 9, 141, 100, 36, 211, 213], package_identity: "deb:editor:amd64", executable_sha256: [21, 83, 204, 98, 255, 36, 96, 68, 198, 131, 166, 30, 32, 62, 101, 84, 25, 144, 231, 252, 212, 175, 148, 67, 210, 43, 149, 87, 236, 201, 172, 84], runtime_scope: None }), origins: {[166, 238, 133, 149, 47, 182, 151, 139, 146, 120, 53, 42, 8, 119, 196, 29]: grant_origin_t { commit_id: [2, 223, 3, 141, 214, 189, 82, 227, 48, 154, 249, 174, 44, 218, 200, 19, 217, 208, 130, 25, 26, 173, 58, 126, 13, 104, 162, 21, 218, 94, 125, 238], key_id: [229, 168, 210, 167, 82, 96, 147, 184, 253, 117, 163, 74, 35, 135, 236, 143, 56, 172, 136, 105, 164, 255, 178, 196, 181, 56, 113, 202, 48, 99, 184, 124], policy_epoch: 1, key_invalidated: None, key_unknown: false }}, ended: {}, ended_sessions: {}, occupying_network: [], policy_epoch: 1, min_valid_policy_epoch: 1, emergency_restriction: false }))
+test review_unanchored_admission_not_exposed_as_normal_view ... FAILED
+
+thread 'review_anchor_identity_sequence_must_match_journal' panicked at core/registryd/tests/reviewer_storage.rs:1444:5:
+identity sequence mismatch accepted
+test review_anchor_identity_sequence_must_match_journal ... FAILED
+
+thread 'review_restriction_after_anchor_failure_survives_restart' panicked at core/registryd/tests/reviewer_storage.rs:1371:5:
+assertion `left != right` failed: restriction bypassed ledger after anchor failure
+  left: Ok(current)
+ right: Ok(current)
+
+thread 'review_anchored_quarantine_ends_grants' panicked at core/registryd/tests/reviewer_storage.rs:228:9:
+{}
+test review_restriction_after_anchor_failure_survives_restart ... FAILED
+test review_anchored_quarantine_ends_grants ... FAILED
+
+thread 'review_missing_ledger_entries_invalidates_run' panicked at core/registryd/tests/reviewer_storage.rs:1404:5:
+assertion `left == right` failed: missing ledger entries accepted as empty valid evidence
+  left: ledger_replayed
+ right: contained
+test review_missing_ledger_entries_invalidates_run ... FAILED
+
+thread 'review_replayed_pending_survives_a_second_same_boot_restart' panicked at core/registryd/tests/reviewer_storage.rs:1354:5:
+assertion `left != right` failed: restriction resurrected on second restart
+  left: Ok(current)
+ right: Ok(current)
+test review_replayed_pending_survives_a_second_same_boot_restart ... FAILED
+
+failures:
+
+failures:
+    review_anchor_identity_sequence_must_match_journal
+    review_anchored_quarantine_ends_grants
+    review_failed_emergency_release_keeps_denial
+    review_missing_ledger_entries_invalidates_run
+    review_policy_pending_prevents_clean_shutdown
+    review_replayed_pending_survives_a_second_same_boot_restart
+    review_restriction_after_anchor_failure_survives_restart
+    review_unanchored_admission_not_exposed_as_normal_view
+
+test result: FAILED. 0 passed; 8 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p cham3_registryd --test reviewer_storage`
+== policy_review --release
+  --> core/policyd/tests/policy_review.rs:43:52
+   |
+43 | use cham3_policyd::mandatory::{mandatory_policy_t, network_mode_t, prohibition_t};
+   |                                                    ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+  --> core/policyd/tests/policy_review.rs:44:64
+   |
+44 | use cham3_policyd::service::{policy_clock_t, policy_service_t, rollback_protection_t};
+   |                                                                ^^^^^^^^^^^^^^^^^^^^^
+
+  --> core/policyd/tests/policy_review.rs:49:5
+   |
+49 |     frame, lifecycle_record_t, next_chain, parse_journal, placement_t, record_body_t,
+   |     ^^^^^  ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^               ^^^^^^^^^^^^^
+50 |     registry_record_t,
+   |     ^^^^^^^^^^^^^^^^^
+
+   --> core/policyd/tests/policy_review.rs:96:5
+    |
+95  | struct world_t {
+    |        ------- fields in this struct
+96  |     root: PathBuf,
+    |     ^^^^
+...
+104 |     now: Rc<Cell<Option<i64>>>,
+    |     ^^^
+105 |     sessions: sessions_t,
+    |     ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+
+running 2 tests
+UNANCHORED: admission=ipc/storage_unavailable; unchanged_anchor=true; pending_anchor=true; decision=eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+test review_unanchored_admission_is_eligible ... ok
+FAILED_RELEASE: release=ipc/restriction_not_durable; unchanged_anchor=true; decision=eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+test review_failed_emergency_release_is_eligible ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+REVIEWER_DONE
+exit=0

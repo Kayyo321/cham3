@@ -1,0 +1,43 @@
+# Unchanged inputs, a9e47e4..e34fd8a0b97f5a606656ab87914d4d1b19517d7c
+
+## git diff --stat a9e47e4 e34fd8a
+ core/policyd/tests/current_authorization.rs |  230 +++++-
+ core/registryd/src/anchor.rs                |   65 +-
+ core/registryd/src/journal.rs               |   10 +
+ core/registryd/src/ledger.rs                |   29 +-
+ core/registryd/src/registry.rs              |  436 +++++++---
+ core/registryd/tests/storage_integrity.rs   | 1162 ++++++++++++++++++++++++++-
+ docs/specs/m2_registry_storage_v1.md        |   38 +-
+ docs/specs/m2_service_ipc_v1.md             |   10 +-
+ tests/m2/harness/test_m2_registry_policy.py |  112 ++-
+ tests/m2/test_inventory.txt                 |   16 +-
+ 10 files changed, 1902 insertions(+), 206 deletions(-)
+
+## git diff --exit-code a9e47e4 e34fd8a -- <path> (0 = unchanged)
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 docs/decisions
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 tests/m2/run_m2_tests.sh
+0 tests/m2/protection
+0 tests/m2/storage
+0 tests/static
+0 .github
+0 core/contract_format
+0 core/identityd
+0 core/vaultd
+0 core/contractd
+0 core/native
+0 core/registryd/src/bin
+0 core/registryd/src/record.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/Cargo.toml
+0 core/policyd/src
+0 core/registryd/tests/registry_operations.rs
+0 core/registryd/tests/admission_scenarios.rs
+0 core/registryd/tests/builders

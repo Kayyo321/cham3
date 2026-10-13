@@ -1,0 +1,116 @@
+== HEAD e34fd8a0b97f5a606656ab87914d4d1b19517d7c
+== sources
+cb3bbbd81e3c56f88cb85d42205c5a99d15535cff96f922d68fed7275d88c6f0  core/registryd/tests/reviewer_storage.rs
+41ec9718ac19b87b60705a62771c51eb6261a55bfbf312df05291b5f0d2fada0  core/policyd/tests/policy_review.rs
+== reviewer_storage review_ debug
+
+running 8 tests
+test review_failed_emergency_release_keeps_denial ... ok
+test review_policy_pending_prevents_clean_shutdown ... ok
+test review_unanchored_admission_not_exposed_as_normal_view ... ok
+test review_anchor_identity_sequence_must_match_journal ... ok
+test review_anchored_quarantine_ends_grants ... ok
+test review_restriction_after_anchor_failure_survives_restart ... ok
+test review_missing_ledger_entries_invalidates_run ... ok
+test review_replayed_pending_survives_a_second_same_boot_restart ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.04s
+
+== policy_review debug
+    |
+95  | struct world_t {
+    |        ------- fields in this struct
+96  |     root: PathBuf,
+    |     ^^^^
+...
+104 |     now: Rc<Cell<Option<i64>>>,
+    |     ^^^
+105 |     sessions: sessions_t,
+    |     ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+
+running 2 tests
+UNANCHORED: admission=ipc/storage_unavailable; unchanged_anchor=true; pending_anchor=true; decision=unknown(identity_unavailable)
+
+thread 'review_unanchored_admission_is_eligible' panicked at core/policyd/tests/policy_review.rs:276:5:
+assertion `left == right` failed
+  left: unknown(identity_unavailable)
+ right: eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test review_unanchored_admission_is_eligible ... FAILED
+FAILED_RELEASE: release=ipc/restriction_not_durable; unchanged_anchor=true; decision=denied(emergency_restriction)
+
+thread 'review_failed_emergency_release_is_eligible' panicked at core/policyd/tests/policy_review.rs:300:5:
+assertion `left == right` failed
+  left: denied(emergency_restriction)
+ right: eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+test review_failed_emergency_release_is_eligible ... FAILED
+
+failures:
+
+failures:
+    review_failed_emergency_release_is_eligible
+    review_unanchored_admission_is_eligible
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p cham3_policyd --test policy_review`
+== reviewer_storage review_ --release
+
+running 8 tests
+test review_failed_emergency_release_keeps_denial ... ok
+test review_policy_pending_prevents_clean_shutdown ... ok
+test review_unanchored_admission_not_exposed_as_normal_view ... ok
+test review_anchor_identity_sequence_must_match_journal ... ok
+test review_anchored_quarantine_ends_grants ... ok
+test review_missing_ledger_entries_invalidates_run ... ok
+test review_restriction_after_anchor_failure_survives_restart ... ok
+test review_replayed_pending_survives_a_second_same_boot_restart ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.02s
+
+== policy_review --release
+    |
+95  | struct world_t {
+    |        ------- fields in this struct
+96  |     root: PathBuf,
+    |     ^^^^
+...
+104 |     now: Rc<Cell<Option<i64>>>,
+    |     ^^^
+105 |     sessions: sessions_t,
+    |     ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+
+running 2 tests
+UNANCHORED: admission=ipc/storage_unavailable; unchanged_anchor=true; pending_anchor=true; decision=unknown(identity_unavailable)
+
+thread 'review_unanchored_admission_is_eligible' panicked at core/policyd/tests/policy_review.rs:276:5:
+assertion `left == right` failed
+  left: unknown(identity_unavailable)
+ right: eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test review_unanchored_admission_is_eligible ... FAILED
+FAILED_RELEASE: release=ipc/restriction_not_durable; unchanged_anchor=true; decision=denied(emergency_restriction)
+
+thread 'review_failed_emergency_release_is_eligible' panicked at core/policyd/tests/policy_review.rs:300:5:
+assertion `left == right` failed
+  left: denied(emergency_restriction)
+ right: eligible { grant_id: [239, 61, 137, 111, 120, 193, 108, 138, 116, 95, 97, 151, 53, 238, 116, 194], commit_id: [247, 236, 30, 86, 112, 199, 62, 57, 136, 12, 91, 201, 3, 246, 115, 134, 250, 189, 18, 215, 164, 16, 87, 137, 193, 95, 41, 96, 65, 11, 237, 51] }
+test review_failed_emergency_release_is_eligible ... FAILED
+
+failures:
+
+failures:
+    review_failed_emergency_release_is_eligible
+    review_unanchored_admission_is_eligible
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p cham3_policyd --test policy_review`
+REVIEWER_DONE
+exit=0
