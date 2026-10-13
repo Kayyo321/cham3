@@ -1,0 +1,28 @@
+profile release
+mount tmpfs /full-disk tmpfs rw,nosuid,nodev,noexec,relatime,size=2048k,mode=700,uid=1000,gid=1000 0 0
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+tmpfs_mount /full-disk
+ledger_started
+filler_bytes 1036288
+restrictive_append_on_full_filesystem ok seq=35
+reserve_bytes_after_release 0
+admission_refused reserve_depleted
+second_restrictive_append ok seq=36
+ledger_append_on_full_filesystem refused
+ledger_failed
+ledger_validity_removed
+previous_ledger missing
+append_after_space_returned ok seq=37
+reserve_bytes 1048576
+reserve_allocated_bytes 1048576
+reserve_promised_bytes 1048576
+reserve_preallocated
+reserve_replenished
+journal_records 37
+journal_chained
+ledger_stays_failed
+reserve_verified
+exit_status 0

@@ -1,0 +1,9 @@
+# tail of valgrind_memcheck_secure_memory.log
+==1823== HEAP SUMMARY:
+==1823==     in use at exit: 0 bytes in 0 blocks
+==1823==   total heap usage: 687 allocs, 687 frees, 468,178 bytes allocated
+==1823== 
+==1823== All heap blocks were freed -- no leaks are possible
+==1823== 
+==1823== For lists of detected and suppressed errors, rerun with: -s
+==1823== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

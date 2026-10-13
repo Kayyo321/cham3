@@ -1,0 +1,48 @@
+# Unchanged inputs, 22b6b5f..f4b062826ae54ba4e79c5abd08eeb9fe21d48510
+
+## git diff --stat 22b6b5f f4b0628
+ Cargo.lock                                        |    1 +
+ core/policyd/src/evaluate.rs                      |    4 +-
+ core/policyd/src/service.rs                       |   66 +-
+ core/policyd/tests/current_authorization.rs       |  226 +++-
+ core/registryd/Cargo.toml                         |    1 +
+ core/registryd/src/anchor.rs                      |  627 ++++++++++
+ core/registryd/src/bin/cham3_reserve_probe.rs     |   83 +-
+ core/registryd/src/journal.rs                     |   65 +-
+ core/registryd/src/ledger.rs                      |  376 ++++++
+ core/registryd/src/lib.rs                         |    2 +
+ core/registryd/src/lineage.rs                     |   59 +-
+ core/registryd/src/record.rs                      |  186 ++-
+ core/registryd/src/registry.rs                    | 1200 +++++++++++++++++--
+ core/registryd/tests/builders/mod.rs              |    4 +-
+ core/registryd/tests/builders/registry_support.rs |  115 ++
+ core/registryd/tests/registry_operations.rs       |  731 ++++++-----
+ core/registryd/tests/storage_integrity.rs         | 1333 +++++++++++++++++++++
+ docs/specs/m2_registry_storage_v1.md              |   95 ++
+ docs/specs/m2_service_ipc_v1.md                   |    6 +-
+ tests/m2/harness/test_m2_registry_policy.py       |   89 +-
+ tests/m2/storage/check_reserve_full_disk.sh       |    7 +
+ tests/m2/test_inventory.txt                       |   21 +-
+ 22 files changed, 4892 insertions(+), 405 deletions(-)
+
+## git diff --exit-code 22b6b5f f4b0628 -- <path> (0 = unchanged)
+0 Cargo.toml
+0 .cargo
+0 build
+0 PROJECT.md
+0 docs/decisions
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 tests/m2/run_m2_tests.sh
+0 tests/m2/protection
+0 tests/static
+0 .github
+0 core/contract_format
+0 core/identityd
+0 core/vaultd
+0 core/contractd
+0 core/native
+
+## Cargo.lock: the one added edge
++ "cham3_os_adapter",
