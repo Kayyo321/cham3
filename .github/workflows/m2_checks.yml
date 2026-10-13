@@ -75,6 +75,21 @@ jobs:
             -w /work \
             cham3-m2-dev \
             sh tests/m2/storage/check_reserve_full_disk.sh out/m2/storage
+      # The wrapper owns nothing on the disk (M2-005 review R3-01): the preservation
+      # cases of the harness, here against the same tmpfs (an existing root, filler
+      # or symbolic link is refused untouched; a path-free disk is left as found).
+      - name: Wrapper preservation on the tmpfs (unprivileged)
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --tmpfs "/full-disk:rw,size=2m,uid=$(id -u),gid=$(id -g),mode=0700" \
+            -e HOME=/tmp/cham3_home \
+            -e CHAM3_M2_RESERVE_PROBE=/work/out/m2/storage/target/release/cham3_reserve_probe \
+            -e CHAM3_M2_WRAPPER_DISK=/full-disk \
+            -v "${GITHUB_WORKSPACE}:/work" \
+            -w /work \
+            cham3-m2-dev \
+            python3 -I -m unittest discover -s tests/m2/harness -p test_m2_reserve_probe.py -k wrapper -v
       - name: Upload qualification evidence
         if: always()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0

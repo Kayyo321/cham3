@@ -10,6 +10,13 @@ untouched in every mode, an unknown mode or an ineligible filesystem creates not
 and only a root this invocation created is removed. Two seeded defects in a disposable
 workspace copy (adopting an existing root; removing the root whether or not it was
 created) must be caught by the preservation check.
+
+The wrapper check_reserve_full_disk.sh owns nothing on the disk either (R3-01): it
+removes nothing beforehand, refuses an existing root or filler path (file, directory
+or symbolic link) untouched, and leaves an ineligible filesystem as it found it. The
+wrapper cases run against a temporary directory, or against a fresh subdirectory of
+CHAM3_M2_WRAPPER_DISK when set (the CI step points it at the 2 MiB tmpfs). A seeded
+wrapper defect (the baseline's pre-deletion restored) must be caught.
 """
 
 import os
@@ -24,6 +31,10 @@ from m2_harness_support import RepoRoot, run
 Probe = os.environ.get("CHAM3_M2_RESERVE_PROBE", "")
 ReserveBytes = 1024 * 1024
 ProbeSource = "core/registryd/src/bin/cham3_reserve_probe.rs"
+Wrapper = os.path.join(RepoRoot, "tests", "m2", "storage", "check_reserve_full_disk.sh")
+WrapperDisk = os.environ.get("CHAM3_M2_WRAPPER_DISK", "")
+RootName = "cham3_reserve_probe_root"
+FillerName = "cham3_reserve_probe_filler"
 
 # (name, original, replacement): each must compile and be caught by the preservation check.
 SeededProbeDefects = [
@@ -162,6 +173,156 @@ class seeded_probe_defects_t(unittest.TestCase):
                     with open(path, "w", encoding="utf-8") as handle:
                         handle.write(pristine)
                 self.assertFalse(survived, "%s was not detected: %s" % (name, completed.stdout + completed.stderr))
+
+
+def wrapper_environment():
+    # The dispatcher's probe build (release/ and debug/ under one target directory).
+    target = os.path.dirname(os.path.dirname(Probe))
+    return dict(os.environ, CHAM3_REPO_ROOT=RepoRoot, CHAM3_M2_RESERVE_TARGET_DIR=target)
+
+
+class wrapper_disk_t:
+    """A disk directory for one wrapper case: a temporary directory, or a fresh
+    subdirectory of CHAM3_M2_WRAPPER_DISK (removed afterwards; only this test writes
+    there)."""
+
+    def __enter__(self):
+        if WrapperDisk:
+            self.path = tempfile.mkdtemp(prefix="wrapper_case_", dir=WrapperDisk)
+        else:
+            self.path = tempfile.mkdtemp(prefix="cham3_wrapper_disk_")
+        return self.path
+
+    def __exit__(self, *_):
+        shutil.rmtree(self.path, ignore_errors=True)
+
+
+def run_wrapper(disk, script=Wrapper):
+    with tempfile.TemporaryDirectory(prefix="cham3_wrapper_out_") as out:
+        return run(["sh", script, out, disk], cwd=RepoRoot, env=wrapper_environment())
+
+
+def listing(directory):
+    return sorted(os.listdir(directory))
+
+
+class full_disk_wrapper_t(unittest.TestCase):
+    """check_reserve_full_disk.sh on paths it does not own (R3-01)."""
+
+    def setUp(self):
+        self.assertTrue(os.path.isfile(Probe), "probe not built: %r" % Probe)
+
+    def test_existing_root_and_filler_are_refused_and_preserved(self):
+        with wrapper_disk_t() as disk:
+            root = os.path.join(disk, RootName)
+            os.mkdir(root, 0o700)
+            with open(os.path.join(root, "sentinel"), "w", encoding="utf-8") as handle:
+                handle.write("synthetic existing root must survive refusal\n")
+            with open(os.path.join(disk, FillerName), "w", encoding="utf-8") as handle:
+                handle.write("synthetic existing filler must survive refusal\n")
+            status, output = run_wrapper(disk)
+            self.assertNotEqual(status, 0, output[-2000:])
+            self.assertIn("refusing:", output)
+            self.assertNotIn("filler_bytes", output)
+            self.assertEqual(listing(disk), [FillerName, RootName])
+            self.assertEqual(listing(root), ["sentinel"])
+            with open(os.path.join(root, "sentinel"), encoding="utf-8") as handle:
+                self.assertEqual(handle.read(), "synthetic existing root must survive refusal\n")
+            with open(os.path.join(disk, FillerName), encoding="utf-8") as handle:
+                self.assertEqual(handle.read(), "synthetic existing filler must survive refusal\n")
+
+    def test_symbolic_links_and_their_targets_are_refused_and_preserved(self):
+        for dangling in (False, True):
+            with self.subTest(dangling=dangling), wrapper_disk_t() as disk, \
+                    tempfile.TemporaryDirectory(prefix="cham3_wrapper_targets_") as targets:
+                target_root = os.path.join(targets, "elsewhere")
+                os.mkdir(target_root, 0o700)
+                with open(os.path.join(target_root, "sentinel"), "w", encoding="utf-8") as handle:
+                    handle.write("synthetic link target must survive refusal\n")
+                target_filler = os.path.join(targets, "elsewhere_filler")
+                with open(target_filler, "w", encoding="utf-8") as handle:
+                    handle.write("synthetic filler target must survive refusal\n")
+                root_target = os.path.join(targets, "missing") if dangling else target_root
+                os.symlink(root_target, os.path.join(disk, RootName))
+                os.symlink(target_filler, os.path.join(disk, FillerName))
+                status, output = run_wrapper(disk)
+                self.assertNotEqual(status, 0, output[-2000:])
+                self.assertIn("refusing:", output)
+                self.assertEqual(listing(disk), [FillerName, RootName])
+                self.assertTrue(os.path.islink(os.path.join(disk, RootName)))
+                self.assertTrue(os.path.islink(os.path.join(disk, FillerName)))
+                self.assertEqual(os.readlink(os.path.join(disk, RootName)), root_target)
+                self.assertEqual(listing(target_root), ["sentinel"])
+                self.assertTrue(os.path.isfile(target_filler))
+
+    def test_a_disk_without_the_paths_is_left_as_found(self):
+        with wrapper_disk_t() as disk:
+            status, output = run_wrapper(disk)
+            # An ordinary filesystem is refused by the probe; a small tmpfs (the CI
+            # step) runs the positive path. Either way nothing is left on the disk.
+            if status == 0:
+                self.assertIn("reserve_verified", output)
+            else:
+                self.assertIn("refusing_to_fill", output)
+                self.assertNotIn("filler_bytes", output)
+            self.assertEqual(listing(disk), [])
+
+
+class seeded_wrapper_defects_t(unittest.TestCase):
+    """The baseline wrapper's pre-deletion, restored in a copy of the script, must be
+    caught by the preservation case; the unmodified copy must pass it."""
+
+    PreCheck = "for path in \"$root_path\" \"$filler_path\"; do\n"
+    ProbeCall = "    report=$out/reserve_full_disk_$profile.txt\n"
+
+    def seeded_copy(self, defect):
+        with open(Wrapper, encoding="utf-8") as handle:
+            source = handle.read()
+        if defect:
+            self.assertEqual(source.count(self.ProbeCall), 1)
+            source = source.replace(self.ProbeCall, self.ProbeCall
+                                    + "    rm -rf \"$root_path\" \"$filler_path\"\n")
+            start = source.index(self.PreCheck)
+            end = source.index("done\n", start) + len("done\n")
+            source = source[:start] + source[end:]
+        directory = tempfile.mkdtemp(prefix="cham3_wrapper_copy_")
+        path = os.path.join(directory, "check_reserve_full_disk.sh")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(source)
+        return directory, path
+
+    def existing_paths_survive(self, script):
+        with wrapper_disk_t() as disk:
+            root = os.path.join(disk, RootName)
+            os.mkdir(root, 0o700)
+            with open(os.path.join(root, "sentinel"), "w", encoding="utf-8") as handle:
+                handle.write("synthetic\n")
+            with open(os.path.join(disk, FillerName), "w", encoding="utf-8") as handle:
+                handle.write("synthetic\n")
+            status, output = run_wrapper(disk, script)
+            survived = os.path.isfile(os.path.join(root, "sentinel")) and os.path.isfile(
+                os.path.join(disk, FillerName))
+            return status, survived, output
+
+    def test_unmodified_copy_preserves_existing_paths(self):
+        directory, script = self.seeded_copy(defect=False)
+        try:
+            status, survived, output = self.existing_paths_survive(script)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+        self.assertNotEqual(status, 0, output[-2000:])
+        self.assertTrue(survived, output[-2000:])
+
+    def test_restored_pre_deletion_is_detected(self):
+        directory, script = self.seeded_copy(defect=True)
+        try:
+            status, survived, output = self.existing_paths_survive(script)
+        finally:
+            shutil.rmtree(directory, ignore_errors=True)
+        # On an eligible tmpfs the pre-deletion is followed by a successful positive run,
+        # on an ordinary filesystem by a refusal: the detection is the lost data alone.
+        del status
+        self.assertFalse(survived, "the seeded pre-deletion was not detected: " + output[-2000:])
 
 
 if __name__ == "__main__":
