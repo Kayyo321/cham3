@@ -99,6 +99,11 @@ version = "0.1.0"
 [[package]]
 name = "cham3_identityd"
 version = "0.1.0"
+dependencies = [
+ "cham3_contract_format",
+ "cham3_os_adapter",
+ "ed25519-dalek",
+]
 
 [[package]]
 name = "cham3_os_adapter"
@@ -140,6 +145,19 @@ dependencies = [
 [[package]]
 name = "cham3_vaultd"
 version = "0.1.0"
+dependencies = [
+ "argon2",
+ "chacha20poly1305",
+ "cham3_contract_format",
+ "cham3_identityd",
+ "cham3_os_adapter",
+ "cham3_secure_memory",
+ "ed25519-dalek",
+ "rustix",
+ "sha2",
+ "subtle",
+ "zeroize",
+]
 
 [[package]]
 name = "cipher"

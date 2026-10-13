@@ -16,3 +16,8 @@ workspace = true
 doctest = false
 
 [dependencies]
+cham3_contract_format = { path = "../contract_format" }
+cham3_os_adapter = { path = "../native/os_adapter" }
+
+[dev-dependencies]
+ed25519-dalek = { workspace = true }

@@ -9,7 +9,9 @@
 #              probe compared with the independent oracle, the published ECR v1
 #              vectors regenerated and re-verified by the independent ECR oracle,
 #              and the M2-003 format verifier compared with that oracle over a
-#              seeded hostile corpus (format_differential).
+#              seeded hostile corpus (format_differential); the vault's encrypted
+#              key objects against an independent libargon2/libsodium oracle
+#              (vault_object_oracle, M2-004).
 #   harness    harness sensitivity, safe-core lint controls, naming checker and
 #              deployed-profile (panic=abort, overflow trap, hardening) probes.
 #   integration, recovery, packaging
@@ -106,6 +108,12 @@ run_ecr_oracle() {
         "$CHAM3_REPO_ROOT/tests/m2/vectors/ecr_v1/vectors.json" > "$run_dir/ecr_vector_oracle.log" 2>&1
 }
 
+# shellcheck disable=SC2317
+run_vault_object_oracle() {
+    python3 -I "$CHAM3_REPO_ROOT/tests/m2/oracle/vault_object_oracle.py" \
+        --probe "$run_dir/target_debug/debug/cham3_vault_probe" > "$run_dir/vault_object_oracle.log" 2>&1
+}
+
 # Source identity must be complete (and clean when required); a failure is FAIL.
 # shellcheck disable=SC2086
 step source_identity sh "$CHAM3_REPO_ROOT/build/scripts/m2_source_identity.sh" "$run_dir/identity.txt" $identity_args
@@ -125,6 +133,9 @@ case "$suite" in
             cargo build --frozen -p cham3_contract_format --bin cham3_format_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step format_differential python3 -I "$harness" format-differential \
             --probe "$run_dir/target_debug/debug/cham3_format_probe" --run-dir "$run_dir"
+        step build_vault_probe env CARGO_TARGET_DIR="$run_dir/target_debug" \
+            cargo build --frozen -p cham3_vaultd --bin cham3_vault_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
+        step vault_object_oracle run_vault_object_oracle
         ;;
     harness)
         profile_dir=$run_dir/profile_target
@@ -132,8 +143,11 @@ case "$suite" in
             cargo build --frozen -p cham3_provider_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step build_probe_release env CARGO_TARGET_DIR="$profile_dir" \
             cargo build --frozen --release -p cham3_provider_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
+        step build_vault_protection_probe env CARGO_TARGET_DIR="$profile_dir" \
+            cargo build --frozen --release -p cham3_vaultd --bin cham3_vault_protection_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step python_harness env CHAM3_M2_PROBE_DEBUG="$profile_dir/debug/cham3_provider_probe" \
             CHAM3_M2_PROBE_RELEASE="$profile_dir/release/cham3_provider_probe" \
+            CHAM3_M2_VAULT_PROTECTION_PROBE="$profile_dir/release/cham3_vault_protection_probe" \
             python3 -I "$harness" python-suite --name harness --start-dir tests/m2/harness --run-dir "$run_dir"
         ;;
 esac

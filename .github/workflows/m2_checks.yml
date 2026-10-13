@@ -6,7 +6,8 @@
 # source manifest, dependency inventory, rustfmt/clippy/naming, debug and release
 # builds, backend selection, valgrind of the probe and of the secure-memory tests,
 # unit and harness suites) with CHAM3_M2_REQUIRE_CLEAN=1, so source identity must be
-# complete and clean. --record only writes lock proposals when the observed package
+# complete and clean; then the vault process-protection positive path with a raised
+# memlock limit (tests/m2/protection/check_vault_protection.sh). --record only writes lock proposals when the observed package
 # set differs from the committed amd64 locks; the run then FAILs.
 # No secrets, no production keys, read-only repository permissions. Results are
 # development evidence for the exact commit only and establish no M3-M6 enforcement.
@@ -44,6 +45,20 @@ jobs:
             -w /work \
             cham3-m2-dev \
             bash build/scripts/qualify_m2_rust.sh --record
+      # The qualification container's 8 MiB memlock limit cannot hold the vault's
+      # locked KDF budget, so the positive path of the vault's process protection
+      # (ADR 0005 section 5) runs here with the limit its systemd unit will set; the
+      # refusal path with the small limit is in the harness suite above.
+      - name: Vault process protection, positive path (memlock limit raised, unprivileged)
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --ulimit memlock=1073741824:1073741824 \
+            -e HOME=/tmp/cham3_home \
+            -v "${GITHUB_WORKSPACE}:/work" \
+            -w /work \
+            cham3-m2-dev \
+            sh tests/m2/protection/check_vault_protection.sh out/m2/protection
       - name: Upload qualification evidence
         if: always()
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4  # v5.0.0
@@ -60,5 +75,6 @@ jobs:
             out/m2/runs/*/*.txt
             out/m2/runs/*/*.json
             out/m2/runs/*/*.log
+            out/m2/protection/*.txt
           retention-days: 14
           if-no-files-found: error

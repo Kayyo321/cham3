@@ -41,6 +41,8 @@ pub enum os_error_t {
     lock_all_failed(Errno),
     /// `SO_PEERCRED` lookup failed.
     peer_credentials_failed(Errno),
+    /// `getrlimit`/`setrlimit(RLIMIT_MEMLOCK)` failed.
+    memlock_limit_failed(Errno),
 }
 
 impl fmt::Display for os_error_t {
@@ -53,6 +55,9 @@ impl fmt::Display for os_error_t {
             Self::lock_all_failed(errno) => write!(formatter, "mlockall failed: {errno}"),
             Self::peer_credentials_failed(errno) => {
                 write!(formatter, "SO_PEERCRED failed: {errno}")
+            }
+            Self::memlock_limit_failed(errno) => {
+                write!(formatter, "RLIMIT_MEMLOCK failed: {errno}")
             }
         }
     }
@@ -129,6 +134,32 @@ pub fn is_dumpable() -> Result<bool, os_error_t> {
 pub fn lock_all_memory() -> Result<(), os_error_t> {
     rustix::mm::mlockall(rustix::mm::MlockAllFlags::CURRENT | rustix::mm::MlockAllFlags::FUTURE)
         .map_err(os_error_t::lock_all_failed)
+}
+
+/// `RLIMIT_MEMLOCK` of this process, `(soft, hard)` in bytes; `None` is unlimited.
+pub fn memlock_limit() -> (Option<u64>, Option<u64>) {
+    let limit = rustix::process::getrlimit(rustix::process::Resource::Memlock);
+    (limit.current, limit.maximum)
+}
+
+/// Raises the soft `RLIMIT_MEMLOCK` to `bytes` (never above the hard limit, which an
+/// unprivileged process cannot raise). Fails if the hard limit is lower.
+pub fn raise_memlock_soft_limit(bytes: u64) -> Result<(), os_error_t> {
+    let (current, maximum) = memlock_limit();
+    if current.is_none_or(|current| current >= bytes) {
+        return Ok(());
+    }
+    if maximum.is_some_and(|maximum| maximum < bytes) {
+        return Err(os_error_t::memlock_limit_failed(Errno::PERM));
+    }
+    rustix::process::setrlimit(
+        rustix::process::Resource::Memlock,
+        rustix::process::Rlimit {
+            current: Some(bytes),
+            maximum,
+        },
+    )
+    .map_err(os_error_t::memlock_limit_failed)
 }
 
 /// Kernel-reported credentials of a connected Unix socket peer.
@@ -209,6 +240,45 @@ mod tests {
             peer_credentials(&file),
             Err(os_error_t::peer_credentials_failed(_))
         ));
+    }
+
+    #[test]
+    fn memlock_limit_can_be_lowered_but_not_raised_past_the_hard_limit() {
+        // Irreversible limit changes run in a child copy of this binary.
+        if std::env::var("CHAM3_OS_ADAPTER_CHILD").as_deref() == Ok("memlock") {
+            // Lower the hard limit first (always permitted), so the refusal to raise
+            // past it is observed whatever the environment's limit was.
+            let target = 1u64 << 20;
+            rustix::process::setrlimit(
+                rustix::process::Resource::Memlock,
+                rustix::process::Rlimit {
+                    current: Some(target / 2),
+                    maximum: Some(target),
+                },
+            )
+            .unwrap();
+            assert_eq!(memlock_limit(), (Some(target / 2), Some(target)));
+            raise_memlock_soft_limit(target).unwrap();
+            assert_eq!(memlock_limit(), (Some(target), Some(target)));
+            raise_memlock_soft_limit(target / 4).unwrap();
+            assert_eq!(memlock_limit().0, Some(target), "never lowers");
+            assert_eq!(
+                raise_memlock_soft_limit(target + 1),
+                Err(os_error_t::memlock_limit_failed(Errno::PERM))
+            );
+            return;
+        }
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "tests::memlock_limit_can_be_lowered_but_not_raised_past_the_hard_limit",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .env("CHAM3_OS_ADAPTER_CHILD", "memlock")
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "child output {output:?}");
     }
 
     #[test]

@@ -16,3 +16,32 @@ workspace = true
 doctest = false
 
 [dependencies]
+cham3_contract_format = { path = "../contract_format" }
+cham3_identityd = { path = "../identityd" }
+cham3_secure_memory = { path = "../native/secure_memory" }
+cham3_os_adapter = { path = "../native/os_adapter" }
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+chacha20poly1305 = { workspace = true }
+argon2 = { workspace = true }
+zeroize = { workspace = true }
+subtle = { workspace = true }
+
+[dev-dependencies]
+rustix = { workspace = true }
+
+# Key-object differential probe for tests/m2/oracle/vault_object_oracle.py. A
+# qualification tool only, never packaged; its behavior is exercised as a
+# subprocess, so it has no unit tests of its own.
+[[bin]]
+name = "cham3_vault_probe"
+path = "src/bin/cham3_vault_probe.rs"
+test = false
+
+# Process-protection probe for tests/m2/harness/test_m2_vault_protection.py and
+# tests/m2/protection/check_vault_protection.sh. A qualification tool only, never
+# packaged; exercised as a subprocess.
+[[bin]]
+name = "cham3_vault_protection_probe"
+path = "src/bin/cham3_vault_protection_probe.rs"
+test = false
