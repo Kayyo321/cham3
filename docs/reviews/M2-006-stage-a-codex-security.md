@@ -32,7 +32,7 @@ Location: `core/registryd/src/registry.rs:1523` (candidate lines 1523–1528).
 
 restrict applies denial then returns early on anchor_failed before queueing or ledgering it; same-boot restart restores current grant.
 
-Evidence: `review_restriction_after_anchor_failure_survives_restart`. The expected-invariant reviewer test fails on the unchanged candidate. 
+Evidence: `review_restriction_after_anchor_failure_survives_restart`. The expected-invariant reviewer test fails on the unchanged candidate.
 
 Required: Persist every new restrictive intent to current ledger/pending state even when prior anchor update failed; keep denial and return restriction_not_durable.
 
@@ -42,7 +42,7 @@ Location: `core/registryd/src/registry.rs:917` (candidate lines 917–949).
 
 rejournal queues/flushed old ledger entry without transferring it to new run ledger; failed journal plus another same-boot restart revives grant.
 
-Evidence: `review_replayed_pending_survives_a_second_same_boot_restart`. The expected-invariant reviewer test fails on the unchanged candidate. 
+Evidence: `review_replayed_pending_survives_a_second_same_boot_restart`. The expected-invariant reviewer test fails on the unchanged candidate.
 
 Required: Transfer unresolved replay intents durably into new ledger before publishing new running marker; preserve across repeated restarts.
 
@@ -52,7 +52,7 @@ Location: `core/registryd/src/registry.rs:1631` (candidate lines 1631–1669).
 
 change_policy anchor failure is not tracked in shutdown; clean marker can be persisted over old map and next startup discards ledger raising epoch9.
 
-Evidence: `review_policy_pending_prevents_clean_shutdown`. The expected-invariant reviewer test fails on the unchanged candidate. 
+Evidence: `review_policy_pending_prevents_clean_shutdown`. The expected-invariant reviewer test fails on the unchanged candidate.
 
 Required: Track global pending policy writes, flush policy before clean marker or refuse shutdown; expose pending policy status.
 
@@ -72,7 +72,7 @@ Location: `core/registryd/src/ledger.rs:193` (candidate lines 193–199).
 
 Matching validity with missing entries selects ledger_replayed without restriction evidence, avoiding mandatory containment.
 
-Evidence: `review_missing_ledger_entries_invalidates_run`. The expected-invariant reviewer test fails on the unchanged candidate. 
+Evidence: `review_missing_ledger_entries_invalidates_run`. The expected-invariant reviewer test fails on the unchanged candidate.
 
 Required: Missing entries with surviving validity must classify invalid and trigger containment.
 
@@ -82,7 +82,7 @@ Location: `core/registryd/src/registry.rs:611` (candidate lines 611–637).
 
 Recovery accepts checksum-valid selected anchor whose identity_seq exceeds journal count; parser/freshness invariant test fails.
 
-Evidence: `review_anchor_identity_sequence_must_match_journal`. The expected-invariant reviewer test fails on the unchanged candidate. 
+Evidence: `review_anchor_identity_sequence_must_match_journal`. The expected-invariant reviewer test fails on the unchanged candidate.
 
 Required: Check identity count against anchored prefix, allow exactly justified one-record extension, quarantine unexplained mismatch.
 
@@ -92,7 +92,7 @@ Location: `core/registryd/src/registry.rs:895` (candidate lines 895–910).
 
 Anchored quarantined/contained branch only sets slot.state; it omits lineage containment and retains current grants/branches. State still denies evaluation.
 
-Evidence: `review_anchored_quarantine_ends_grants`. The expected-invariant reviewer test fails on the unchanged candidate. 
+Evidence: `review_anchored_quarantine_ends_grants`. The expected-invariant reviewer test fails on the unchanged candidate.
 
 Required: Apply permanent grant/branch containment consistently for anchored states and test ended reasons.
 
@@ -289,4 +289,3 @@ A delegated extended validation turn was rejected with the exact tool result: �
 ## Next owner/action
 
 Claude should fix R01–R06, reconcile/test R07–R08, add discriminating negative tests, and present a new immutable stage-A candidate with qualification and CI. Close the documented incomplete fault cases before asking for APPROVE. Do not weaken denial, restore authority from missing evidence, or infer approval from passing old tests. Independent re-review is required. Only this review record is committed/pushed; implementation, ADRs, status and task docs were not edited.
-
