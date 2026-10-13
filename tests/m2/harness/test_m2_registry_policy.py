@@ -70,6 +70,10 @@ SeededDefects = [
       "            .any(|grant| grant.delegation.parent_grant_id == Some([0xa5; 16]))\n")],
      "cham3_registryd", "registry_operations", "delegated_grants_are_refused_until_their_admission_rules_exist"),
     # Service-level admission and the journal.
+    # (beyond the model) the signing key's window at registry time.
+    ("signing_window_not_checked_at_admission", [(Registry,
+      "        check_signing_window(&resolution, self.clock.utc_seconds())?;\n", "")],
+     "cham3_registryd", "registry_operations", "admission_requires_the_signing_keys_window_at_registry_time"),
     ("policy_epoch_not_checked", [(Registry,
       "        if payload.policy.epoch != self.config.policy_epoch {\n",
       "        if false && payload.policy.epoch != self.config.policy_epoch {\n")],

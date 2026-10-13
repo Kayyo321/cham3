@@ -36,7 +36,9 @@ use cham3_contract_format::schema::{
 use cham3_contract_format::{key_resolver_t, object_kind_t, payload_t, verify_object};
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::directory::{identity_directory_t, identity_effect_t, journal_record_t};
-use cham3_identityd::index::{check_commit_authority, user_state_t, utc_text};
+use cham3_identityd::index::{
+    check_commit_authority, check_signing_window, user_state_t, utc_text,
+};
 use cham3_identityd::journal::{
     MaxPageRecords, append_receipt_t, identity_journal_t, journal_entry_t, journal_page_t,
 };
@@ -630,8 +632,9 @@ impl registry_t {
     // ---------------------------------------------------------------- admission
 
     /// `admit` (`service:contractd`): layers 1–6 against the user's snapshot, layer 7,
-    /// then the current policy epoch and quotas, under the user lock immediately
-    /// before the append; durable before the reply; admitted `pending`.
+    /// the signing key's certificate window at registry time, the current policy
+    /// epoch and quotas, under the user lock immediately before the append; durable
+    /// before the reply; admitted `pending`.
     pub fn admit(
         &self,
         caller: caller_role_t,
@@ -646,6 +649,16 @@ impl registry_t {
         slot.usable()?;
         let (admission, payload) =
             check_commit_envelope(owner_uid, &slot.directory, &slot.lineages, envelope)?;
+        // (beyond the model) The signing key's certificate window must also contain
+        // registry time now, not only the commit's own timestamp: an envelope signed
+        // in a temporary key's window cannot be admitted after that window closed.
+        // Admission-time only: replay reproduces historical admissions. The ±300 s
+        // commit-timestamp check of ADR 0007 §5 joins in M2-006.
+        let resolution = slot
+            .directory
+            .resolve(&payload.key_id)
+            .ok_or(authority(authority_code_t::key_not_certified))?;
+        check_signing_window(&resolution, self.clock.utc_seconds())?;
         if payload.policy.epoch != self.config.policy_epoch {
             return Err(ipc(ipc_code_t::stale_epoch));
         }

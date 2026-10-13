@@ -1421,19 +1421,145 @@ fn delegated_grants_are_refused_until_their_admission_rules_exist() {
     let registry = open(&root);
     enroll(&registry, &alice);
     let editor = app("editor");
-    let mut parent = file_grant("delegating parent", alice.uid, "home:Shared", &["read", "write"], persistent_lifetime());
+    let mut parent = file_grant(
+        "delegating parent",
+        alice.uid,
+        "home:Shared",
+        &["read", "write"],
+        persistent_lifetime(),
+    );
     parent.delegation.permitted = true;
     parent.delegation.max_depth = 2;
     parent.delegation.max_operations = vec!["read".to_owned()];
-    let genesis = draft(&alice, &editor, commit_type_t::genesis, "delegation genesis")
-        .add(vec![parent.clone()])
-        .sign(&alice);
+    let genesis = draft(
+        &alice,
+        &editor,
+        commit_type_t::genesis,
+        "delegation genesis",
+    )
+    .add(vec![parent.clone()])
+    .sign(&alice);
     assert_eq!(admit(&registry, &alice, &genesis), Ok(placement_t::trunk));
-    let mut child = file_grant("delegated child", alice.uid, "home:Shared", &["read"], persistent_lifetime());
+    let mut child = file_grant(
+        "delegated child",
+        alice.uid,
+        "home:Shared",
+        &["read"],
+        persistent_lifetime(),
+    );
     child.delegation.parent_grant_id = Some(parent.grant_id);
     let delegated = draft(&alice, &editor, commit_type_t::revision, "delegated")
         .on(&genesis)
         .add(vec![child])
         .sign(&alice);
-    assert_eq!(code(admit(&registry, &alice, &delegated)), "admission/delegation_rule");
+    assert_eq!(
+        code(admit(&registry, &alice, &delegated)),
+        "admission/delegation_rule"
+    );
+}
+
+struct settable_clock_t {
+    now: Arc<std::sync::atomic::AtomicI64>,
+}
+
+impl registry_clock_t for settable_clock_t {
+    fn utc_seconds(&self) -> i64 {
+        self.now.load(Ordering::SeqCst)
+    }
+}
+
+#[test]
+fn admission_requires_the_signing_keys_window_at_registry_time() {
+    // T0 = 2026-10-13T08:00:00Z (every certificate's not_before); T2 =
+    // 2026-10-14T08:00:00Z (the temporary certificate's not_after).
+    const T0Utc: i64 = 1_791_878_400;
+    const T2Utc: i64 = 1_791_964_800;
+    let root = temp_root("key_window");
+    let alice = test_user(1001);
+    let now = Arc::new(std::sync::atomic::AtomicI64::new(T0Utc + 3600));
+    let open_at = |now: &Arc<std::sync::atomic::AtomicI64>| {
+        Arc::new(
+            registry_t::open(
+                &root,
+                owner_of(&root),
+                registry_config_t::default(),
+                Box::new(system_io_t),
+                Box::new(settable_clock_t {
+                    now: Arc::clone(now),
+                }),
+            )
+            .expect("registry"),
+        )
+    };
+    let registry = open_at(&now);
+    enroll(&registry, &alice);
+    let editor = app("editor");
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "window genesis")
+        .add(vec![file_grant(
+            "w",
+            alice.uid,
+            "home:W",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    let branch = |label: &str| {
+        draft(&alice, &editor, commit_type_t::temporary_grant, label)
+            .on(&genesis)
+            .add(vec![file_grant(
+                label,
+                alice.uid,
+                "home:Tmp",
+                &["read"],
+                timed_lifetime("2026-10-20T00:00:00Z"),
+            )])
+            .temporary_authority()
+            .sign(&alice)
+    };
+    // Before every certificate's not_before: refused, even for the persistent key.
+    now.store(T0Utc - 1, Ordering::SeqCst);
+    assert_eq!(
+        code(admit(&registry, &alice, &genesis)),
+        "key_authority/certificate_window"
+    );
+    now.store(T0Utc + 3600, Ordering::SeqCst);
+    assert_eq!(admit(&registry, &alice, &genesis), Ok(placement_t::trunk));
+    let early = branch("window early");
+    assert_eq!(admit(&registry, &alice, &early), Ok(placement_t::temporary));
+    // An envelope signed inside the temporary window, submitted after it closed
+    // (the commit's own timestamp is still inside it).
+    let late = branch("window late");
+    now.store(T2Utc, Ordering::SeqCst);
+    let at_end = branch("window at end");
+    assert_eq!(
+        admit(&registry, &alice, &at_end),
+        Ok(placement_t::temporary),
+        "inclusive end"
+    );
+    now.store(T2Utc + 1, Ordering::SeqCst);
+    assert_eq!(
+        code(admit(&registry, &alice, &late)),
+        "key_authority/certificate_window"
+    );
+    // The persistent key has no not_after.
+    let revision = draft(&alice, &editor, commit_type_t::revision, "window revision")
+        .on(&genesis)
+        .add(vec![file_grant(
+            "w2",
+            alice.uid,
+            "home:W2",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    assert_eq!(admit(&registry, &alice, &revision), Ok(placement_t::trunk));
+    // Replay is not an admission: the earlier temporary commits replay after the
+    // window closed.
+    drop(registry);
+    let registry = open_at(&now);
+    assert_eq!(registry.unusable_users().expect("users"), Vec::new());
+    assert_eq!(
+        registry.standing(alice.uid, &synthetic_id("grant window early")),
+        Ok(standing_t::inactive)
+    );
 }
