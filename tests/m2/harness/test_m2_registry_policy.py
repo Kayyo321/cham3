@@ -100,6 +100,17 @@ SeededDefects = [
     ("new_users_directory_not_synced_in_root", [("core/registryd/src/journal.rs",
       "            io.sync_directory(root).map_err(io_error)?;\n", "")],
      "cham3_registryd", "registry_operations", "every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledged"),
+    # M2-005 review R03 (ADR 0006 section 1): the preallocated restrictive reserve.
+    ("reserve_not_preallocated", [("core/registryd/src/journal.rs",
+      "        if allocated < ReserveBytes {\n            io.allocate(&mut reserve, allocated, ReserveBytes)\n                .map_err(io_error)?;\n        }\n", "")],
+     "cham3_registryd", "registry_operations", "the_preallocated_reserve_is_used_only_by_restrictive_records"),
+    ("admission_proceeds_into_a_depleted_reserve", [("core/registryd/src/journal.rs",
+      "        if !restrictive {\n            self.replenish_reserve(io)?;\n        }\n", "")],
+     "cham3_registryd", "registry_operations", "the_preallocated_reserve_is_used_only_by_restrictive_records"),
+    ("restrictive_append_never_releases_the_reserve", [("core/registryd/src/journal.rs",
+      "            if restrictive && out_of_space(error) {\n",
+      "            if false && restrictive && out_of_space(error) {\n")],
+     "cham3_registryd", "registry_operations", "a_torn_restrictive_write_on_a_full_filesystem_is_truncated_back_and_retried"),
     # M2-005 review R02 (ADR 0007 section 6): an ended session never becomes live again.
     ("ended_sessions_reusable_at_admission", [(Lineage,
       "                .is_some_and(|session_id| self.ended_sessions.contains(session_id))\n",
