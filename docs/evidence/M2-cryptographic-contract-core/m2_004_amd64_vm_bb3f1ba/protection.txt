@@ -1,0 +1,53 @@
+Vault process protection (ADR 0005 section 5) at bb3f1ba
+
+1. Refusal path, this VM (pinned container, unprivileged UID 1000, RLIMIT_MEMLOCK
+   8 MiB soft = hard; an unprivileged process cannot raise it):
+
+   $ /target/release/cham3_vault_protection_probe
+   protection_unavailable memlock_too_low
+   exit=3
+
+   The same check runs in the harness suite
+   (test_m2_vault_protection.vault_protection_t.test_insufficient_memlock_refuses_service,
+   PASS in harness/python_harness.json), which lowers the limit to 8 MiB in the
+   child so the result does not depend on the environment.
+
+2. Positive path, this VM: BLOCKED. The Docker daemon inherits an 8 MiB memlock
+   limit; `docker run --ulimit memlock=1073741824:1073741824` fails with "error
+   setting rlimit type 8: operation not permitted", and even root in this sandbox
+   cannot raise the limit (prlimit: "failed to set the MEMLOCK resource limit:
+   Operation not permitted"; no CAP_SYS_RESOURCE).
+
+3. Positive path, GitHub Actions m2_checks 38341512299, step "Vault process
+   protection, positive path (memlock limit raised, unprivileged)", job
+   115113321971, pinned container with --ulimit memlock=1073741824:1073741824 (no
+   --privileged, no added capabilities):
+
+   memlock_limit Max locked memory         1073741824           1073741824           bytes
+   required_memlock_bytes 805306368
+   derivation_ms 431
+   dumpable 0
+   core_limit 0
+   vm_locked_kib 3152
+   unlocked_mappings 0
+   special_mappings [vdso]
+   dontdump_mappings 4
+   protection_verified
+   exit_status 0
+   vault protection positive path: PASS
+
+   derivation_ms is one Argon2id derivation at the release calibration (256 MiB,
+   3 passes, 1 lane) inside the locked process; vm_locked_kib is measured after the
+   workspace was freed.
+
+4. Validation of the probe's mapping check (scratch copy of bb3f1ba's probe that
+   calls only harden_process and mlockall, so it fits under this VM's 8 MiB limit):
+
+   with mlockall:    unlocked []  special ["[vdso]"]  dontdump 3
+   without mlockall: unlocked ["…/cham3_vault_protection_probe" (5 mappings), "[heap]",
+                     "[anonymous]", "/usr/lib/x86_64-linux-gnu/libc.so.6", …]
+
+   The check therefore distinguishes a locked from an unlocked process. Before
+   bb3f1ba the probe compared smaps Rss with Locked; the kernel reports Locked
+   proportionally (PSS) for shared pages, so shared libraries showed partly
+   "unlocked" although their VmFlags carried lo (see attempts.md).

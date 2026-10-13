@@ -1,0 +1,9 @@
+commit bb3f1bad77080da34069af62c8d2cc390f2fcf7e
+tree e404c02385ab7de273841ac5d796fb5414e90af2
+dirty_tracked 0
+architecture amd64
+debian_version 13.7
+uname Linux 6.18.44-fc-v114 x86_64 GNU/Linux
+euid 1000
+cargo_lock_sha256 da1a17c2bf6916e145413574a7f43782048a228962789f387b9d217c78f2e28f
+identity PASS

@@ -1,0 +1,22 @@
+{
+  "cases": 5950,
+  "cases_per_object": 300,
+  "corpus_sha256": "080d0c86a6787d7a60e58c86a92717aa7e7ad71c8556c2f43de99b634c43257d",
+  "coverage": {
+    "envelope": 815,
+    "envelope_decode": 656,
+    "intrinsic": 119,
+    "ok": 534,
+    "payload_decode": 656,
+    "schema": 2907,
+    "signature": 263
+  },
+  "distinct_outcomes": 56,
+  "mismatch_count": 0,
+  "mismatches": [],
+  "probe": "/work/out/m2/runs/unit_20261013T032544Z_1769/target_debug/debug/cham3_format_probe",
+  "probe_sha256": "ea25be8bdf289fe400fa90fa806c3eeed3f0e859518106372ac3d570e82f9463",
+  "result": "PASS",
+  "seed": 3,
+  "total_tests": 5950
+}

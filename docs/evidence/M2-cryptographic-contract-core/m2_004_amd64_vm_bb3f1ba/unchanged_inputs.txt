@@ -1,0 +1,86 @@
+$ git diff --stat 20c849b bb3f1ba
+ .github/workflows/m2_checks.yml                    |   21 +-
+ Cargo.lock                                         |   18 +
+ core/identityd/Cargo.toml                          |    5 +
+ core/identityd/src/caller.rs                       |  249 +++++
+ core/identityd/src/directory.rs                    |  293 +++++
+ core/identityd/src/index.rs                        |  871 +++++++++++++++
+ core/identityd/src/journal.rs                      |  212 ++++
+ core/identityd/src/lib.rs                          |   32 +-
+ core/identityd/src/outcome.rs                      |  244 +++++
+ core/identityd/src/service.rs                      |  422 +++++++
+ core/identityd/tests/builders/mod.rs               |  202 ++++
+ core/identityd/tests/journal_scenarios.rs          |  564 ++++++++++
+ core/identityd/tests/service_operations.rs         | 1046 ++++++++++++++++++
+ core/native/os_adapter/src/lib.rs                  |   70 ++
+ core/vaultd/Cargo.toml                             |   29 +
+ core/vaultd/src/bin/cham3_vault_probe.rs           |  178 +++
+ .../vaultd/src/bin/cham3_vault_protection_probe.rs |  169 +++
+ core/vaultd/src/clock.rs                           |   53 +
+ core/vaultd/src/kdf.rs                             |  361 ++++++
+ core/vaultd/src/key_object.rs                      |  340 ++++++
+ core/vaultd/src/lib.rs                             |   38 +-
+ core/vaultd/src/links.rs                           |  121 ++
+ core/vaultd/src/protection.rs                      |  105 ++
+ core/vaultd/src/records.rs                         |  315 ++++++
+ core/vaultd/src/service.rs                         | 1153 ++++++++++++++++++++
+ core/vaultd/src/store.rs                           |  277 +++++
+ core/vaultd/tests/fixture/mod.rs                   |  285 +++++
+ core/vaultd/tests/vault_operations.rs              | 1013 +++++++++++++++++
+ core/vaultd/tests/vault_recovery.rs                |  413 +++++++
+ tests/m2/harness/test_m2_identity_vault.py         |  144 +++
+ tests/m2/harness/test_m2_vault_protection.py       |   35 +
+ tests/m2/oracle/vault_object_oracle.py             |  277 +++++
+ tests/m2/protection/check_vault_protection.sh      |   41 +
+ tests/m2/run_m2_tests.sh                           |   16 +-
+ tests/m2/test_inventory.txt                        |   53 +
+ 35 files changed, 9654 insertions(+), 11 deletions(-)
+
+$ git diff --exit-code --stat 20c849b bb3f1ba -- Cargo.toml build PROJECT.md docs tests/m2/vectors tests/m2/oracle/ecr_oracle.py tests/m2/oracle/format_differential.py tests/m2/oracle/provider_oracle.py tests/m2/lib core/contract_format core/contractd core/policyd core/registryd core/native/secure_memory core/probes
+exit 0
+
+$ git diff 20c849b bb3f1ba -- Cargo.lock
+diff --git a/Cargo.lock b/Cargo.lock
+index e2e6d07..f713d30 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -99,6 +99,11 @@ version = "0.1.0"
+ [[package]]
+ name = "cham3_identityd"
+ version = "0.1.0"
++dependencies = [
++ "cham3_contract_format",
++ "cham3_os_adapter",
++ "ed25519-dalek",
++]
+ 
+ [[package]]
+ name = "cham3_os_adapter"
+@@ -140,6 +145,19 @@ dependencies = [
+ [[package]]
+ name = "cham3_vaultd"
+ version = "0.1.0"
++dependencies = [
++ "argon2",
++ "chacha20poly1305",
++ "cham3_contract_format",
++ "cham3_identityd",
++ "cham3_os_adapter",
++ "cham3_secure_memory",
++ "ed25519-dalek",
++ "rustix",
++ "sha2",
++ "subtle",
++ "zeroize",
++]
+ 
+ [[package]]
+ name = "cipher"
+
+Cargo.lock SHA-256 at bb3f1ba: da1a17c2bf6916e145413574a7f43782048a228962789f387b9d217c78f2e28f
+
+$ git diff --stat 0e4f993 bb3f1ba  (the two fix commits)
+ .github/workflows/m2_checks.yml                    |  5 +-
+ .../vaultd/src/bin/cham3_vault_protection_probe.rs | 85 ++++++++++++++--------
+ tests/m2/protection/check_vault_protection.sh      |  0
+ 3 files changed, 59 insertions(+), 31 deletions(-)

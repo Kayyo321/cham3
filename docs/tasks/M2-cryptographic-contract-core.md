@@ -212,7 +212,7 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
 | M2-001 | DONE (owner-approved G1, 2026-10-12) | Cargo workspace on Debian 13 Rust 1.85.1 with Debian-packaged offline crates; pinned qualification container and arm64 locks; per-file crate source manifest; domain skeletons with `#![forbid(unsafe_code)]`; `core/native/secure_memory` (only unsafe) and safe `core/native/os_adapter`; provider probe with published KATs and an independent OpenSSL/libsodium/libargon2 oracle; strict dispatcher with inventory-exact validation, harness canaries, lint controls, deployed-profile probes, naming checker, dependency/unsafe inventory, `qualify_m2_rust.sh`, `build_m2_core.sh`, `m2_checks.yml`. arm64 development qualification PASS; **amd64 qualification NOT_RUN** (owner instruction: reviewer runs it in the cloud). | Done: amd64 qualification PASS (author VM, CI and the reviewer's own run); independent re-review r5 APPROVE; G1 approved with a pre-M2-007 advisory re-check condition (ADR 0003). |
 | M2-002 | DONE (owner-approved G1–G6, 2026-10-12) | APPROVED ADRs [0003 (G1)](../decisions/0003_m2_rust_toolchain_dependencies.md), [0004 (G2)](../decisions/0004_m2_wire_schema_hash.md), [0005 (G3)](../decisions/0005_m2_identity_vault_ipc.md), [0006 (G4)](../decisions/0006_m2_storage_anchor_recovery.md), [0007 (G5)](../decisions/0007_m2_lifecycle_time_consumption.md), [0008 (G6)](../decisions/0008_m2_retention_privacy_update_identity.md); [wire format](../specs/m2_wire_format_v1.md), [CDDL](../specs/m2_ecr_v1.cddl), [service IPC](../specs/m2_service_ipc_v1.md); [ECR v1 vectors](../../tests/m2/vectors/ecr_v1/vectors_readme.md) from an independent oracle. | Done: independent re-review r5 APPROVE for every gate; owner decisions ADR 0006 §9.1 A, §9.2 C1; ADR 0007 §4 A, §8 B (trusted time never lowered; forward-error recovery deferred); ADR 0008 §3 A. |
 | M2-003 | DONE (independent re-review APPROVE, 2026-10-13) | `cham3_contract_format`: strict `cham3_dcbor_v1` decoder/encoder, COSE_Sign1 envelope with strict Ed25519 verification before payload parsing, closed typed schemas with lossless re-encoding, layer-5 commit semantics, hashes; vector, mutation and oracle-differential evidence ([handoff](../handoffs/M2-003-format-verifier.md)). Review 1cb93c0 CHANGES_REQUESTED; revision 2 **8b0ccf3** with owner errata E1–E3 approved by re-review 87e9b2a ([completion handoff](../handoffs/M2-003-completion.md)). | Done. M2-004 obligation: identityd calls `public_key_is_valid` on enrolled/certified keys. |
-| M2-004 | READY → IN_PROGRESS (Claude Code) | — | Gates G1, G3, G6 approved; M2-003 DONE. |
+| M2-004 | IMPLEMENTED → IN_REVIEW (Claude Code) | `cham3_identityd`: caller roles from peer credentials, layer-6 key-authority index over the journal with scoped `resolve_key`, registration with the M2-003 key-validation obligation, restrictive invalidation; `cham3_vaultd`: encrypted key objects (Argon2id, XChaCha20-Poly1305, secret regions), restricted store, exact-proposal approval and signing, attempt limiting, restartable creation/rotation/invalidation/recovery keys, process protection ([handoff](../handoffs/M2-004-identity-vault.md)). Candidate **bb3f1ba** (implementation 0e4f993 plus fixes e5be206, bb3f1ba). | Independent review of bb3f1ba. `replace_identity` and vault-side deletion cleanup move to M2-006; transport and binaries are M2-007. |
 | M2-005 … M2-008 | DRAFT | — | Gates approved; each waits for its package dependencies (M2-003/004 interfaces, M2-005, M2-004–006, M2-003–007). |
 
 ### Independent review and revision 2 (2026-10-12)
@@ -298,6 +298,19 @@ Implementation baseline: a4bc0c4371f2298787f0876d81c0c6fd21150ea6 (clean branch 
   - The reviewer's own amd64 qualification, static checks/tests, scripts and CI comparison PASS.
   - The Codex Security plugin skill was BLOCKED again in the reviewer's environment; it remains required at the final M2-008 review.
 - M2-003 is **DONE** ([completion handoff](../handoffs/M2-003-completion.md)). M2-004 is READY and started.
+
+### M2-004 implementation (2026-10-13)
+
+- Candidate **bb3f1bad77080da34069af62c8d2cc390f2fcf7e** on base 20c849b (implementation 0e4f993, static-gate fix e5be206, protection-probe fix bb3f1ba): identityd and vaultd in safe Rust (details, decisions, evidence and the review prompt: [M2-004 handoff](../handoffs/M2-004-identity-vault.md)).
+  - Cargo.lock gains only dependency edges; no new crate or version.
+  - os_adapter adds a safe memlock limit query and raise.
+- Evidence:
+  - The published key-authority journal scenarios replay through the Rust index with 0 disagreements (318 comparisons).
+  - An independent libargon2/libsodium oracle checks the key-object format (38 checks).
+  - 14 seeded identity/vault defects are each detected.
+  - The vault's process protection fails closed without a sufficient memlock limit; its positive path runs as a CI step with a raised limit.
+- **Scope sequencing (recorded before the work):** `replace_identity` (no journal record format and no layer-6 code for a replaced identity's keys yet) and vault-side deletion cleanup (no vaultd IPC route yet) move to M2-006, with `recover_user` and deletion. registryd's journal and the ceremony operations are labeled fixtures until M2-005/006; transport, binaries, the setgid client and systemd units are M2-007.
+- M2-005 is not started (one writer on this branch); it starts after the M2-004 review.
 
 ### Final M2 review requirement (owner instruction, 2026-10-12)
 
