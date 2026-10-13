@@ -1,0 +1,29 @@
+$ git diff --stat bb3f1ba ca40c62 -- . ":(exclude)docs"
+ core/identityd/src/index.rs                |  18 ++
+ core/identityd/src/service.rs              |  32 ++-
+ core/identityd/tests/service_operations.rs |  64 ++++++
+ core/vaultd/src/service.rs                 | 184 +++++++++++++-----
+ core/vaultd/tests/fixture/mod.rs           | 115 ++++++++++-
+ core/vaultd/tests/vault_operations.rs      | 301 ++++++++++++++++++++++++++++-
+ core/vaultd/tests/vault_recovery.rs        |  89 ++++++++-
+ tests/m2/harness/test_m2_identity_vault.py |  48 ++++-
+ tests/m2/test_inventory.txt                |   7 +
+ 9 files changed, 788 insertions(+), 70 deletions(-)
+
+$ git diff --name-only d2c29ad ca40c62
+core/identityd/src/index.rs
+core/identityd/src/service.rs
+core/identityd/tests/service_operations.rs
+core/vaultd/src/service.rs
+core/vaultd/tests/fixture/mod.rs
+core/vaultd/tests/vault_operations.rs
+core/vaultd/tests/vault_recovery.rs
+tests/m2/harness/test_m2_identity_vault.py
+tests/m2/test_inventory.txt
+
+$ git diff --exit-code --stat bb3f1ba ca40c62 -- Cargo.toml Cargo.lock .cargo .github build PROJECT.md tests/m2/vectors tests/m2/oracle tests/m2/lib tests/m2/protection tests/m2/run_m2_tests.sh tests/m2/harness/test_m2_vault_protection.py core/contract_format core/contractd core/policyd core/registryd core/native core/probes core/identityd/Cargo.toml core/vaultd/Cargo.toml core/identityd/src/caller.rs core/identityd/src/directory.rs core/identityd/src/journal.rs core/identityd/src/outcome.rs core/identityd/src/lib.rs core/vaultd/src/kdf.rs core/vaultd/src/key_object.rs core/vaultd/src/store.rs core/vaultd/src/records.rs core/vaultd/src/links.rs core/vaultd/src/clock.rs core/vaultd/src/protection.rs core/vaultd/src/lib.rs core/vaultd/src/bin docs/specs docs/decisions
+exit 0
+
+$ sha256sum Cargo.lock (bb3f1ba, ca40c62)
+da1a17c2bf6916e145413574a7f43782048a228962789f387b9d217c78f2e28f  -
+da1a17c2bf6916e145413574a7f43782048a228962789f387b9d217c78f2e28f  -

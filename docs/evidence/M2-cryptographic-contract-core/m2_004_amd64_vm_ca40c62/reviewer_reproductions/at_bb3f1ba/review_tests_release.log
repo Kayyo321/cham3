@@ -1,0 +1,154 @@
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling subtle v2.6.1
+   Compiling cpufeatures v0.2.16
+   Compiling zeroize v1.8.1
+   Compiling semver v1.0.23
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling generic-array v0.14.7
+   Compiling rustc_version v0.4.0
+   Compiling bitflags v2.8.0
+   Compiling signature v2.2.0
+   Compiling fiat-crypto v0.2.2
+   Compiling curve25519-dalek v4.1.3
+   Compiling linux-raw-sys v0.4.14
+   Compiling ed25519 v2.2.3
+   Compiling opaque-debug v0.3.0
+   Compiling base64ct v1.6.0
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling inout v0.1.3
+   Compiling cipher v0.4.4
+   Compiling sha2 v0.10.8
+   Compiling universal-hash v0.5.1
+   Compiling poly1305 v0.8.0
+   Compiling chacha20 v0.9.1
+   Compiling blake2 v0.10.6
+   Compiling aead v0.5.2
+   Compiling argon2 v0.5.3
+   Compiling chacha20poly1305 v0.10.1
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling m2_004_independent_review_tests v0.1.0 (/evidence/adversarial/core/reviewer)
+warning: unused import: `verify_object`
+  --> review.rs:10:60
+   |
+10 | use cham3_contract_format::{object_kind_t, key_resolver_t, verify_object};
+   |                                                            ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `invalidation_reason_t`
+  --> review.rs:11:56
+   |
+11 | use cham3_contract_format::schema::{authority_class_t, invalidation_reason_t, commit_payload_t};
+   |                                                        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `role_map_t`
+  --> review.rs:13:62
+   |
+13 | use cham3_identityd::caller::{caller_role_t, service_name_t, role_map_t};
+   |                                                              ^^^^^^^^^^
+
+warning: unused import: `key_scope_t`
+  --> review.rs:14:77
+   |
+14 | use cham3_identityd::index::{ceremony_mode_t, record_role_t, user_record_t, key_scope_t};
+   |                                                                             ^^^^^^^^^^^
+
+warning: unused import: `vault_service_t`
+  --> review.rs:18:65
+   |
+18 | use cham3_vaultd::service::{proposal_request_t, created_keys_t, vault_service_t};
+   |                                                                 ^^^^^^^^^^^^^^^
+
+warning: unused import: `cham3_vaultd::links::in_process_identity_t`
+  --> review.rs:19:5
+   |
+19 | use cham3_vaultd::links::in_process_identity_t;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `m2_004_independent_review_tests` (lib) generated 6 warnings (run `cargo fix --lib -p m2_004_independent_review_tests` to apply 6 suggestions)
+    Finished `release` profile [optimized] target(s) in 39.80s
+     Running unittests review.rs (target/release/deps/m2_004_independent_review_tests-807dec036a47220c)
+
+running 17 tests
+test controls_ceremony_scope_and_named_objects_survive_restart ... ok
+test controls_cross_user_key_substitution ... ok
+test controls_each_clock_expires_at_equality ... ok
+test controls_forged_approval_and_immediate_replay ... ok
+test controls_head_epoch_binding_and_malformed_payloads ... ok
+test controls_journal_fault_and_corrupt_rebuild ... ok
+test controls_malformed_identity_proof_and_bad_certified_points ... ok
+test controls_peer_credential_edges ... ok
+test controls_recovery_unknown_status_keeps_objects_and_aborted_ceremony_cleans ... ok
+test controls_role_matrix_and_cross_user_approval ... ok
+test controls_substituted_and_tampered_key_objects ... ok
+test defect_certificate_expiry_during_live_proposal_prevents_signing ... FAILED
+test defect_definitive_naming_error_does_not_erase_still_nameable_keys_without_status ... FAILED
+test defect_pending_compromise_is_not_cleared_by_old_rotated_retry ... FAILED
+test defect_rechecks_authority_after_unlock_before_signature ... FAILED
+test defect_recovery_retry_authenticates_passphrase_before_naming ... FAILED
+test defect_used_proposal_identifier_cannot_be_re_registered_after_gc ... FAILED
+
+failures:
+
+---- defect_certificate_expiry_during_live_proposal_prevents_signing stdout ----
+
+thread 'defect_certificate_expiry_during_live_proposal_prevents_signing' panicked at review.rs:199:5:
+assertion `left == right` failed: a still-live proposal cannot extend the signing key's certificate window
+  left: "ACCEPTED"
+ right: "key_authority/certificate_window"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- defect_definitive_naming_error_does_not_erase_still_nameable_keys_without_status stdout ----
+
+thread 'defect_definitive_naming_error_does_not_erase_still_nameable_keys_without_status' panicked at review.rs:237:5:
+an error is not positive recovery_status evidence that held keys can never be named
+
+---- defect_pending_compromise_is_not_cleared_by_old_rotated_retry stdout ----
+
+thread 'defect_pending_compromise_is_not_cleared_by_old_rotated_retry' panicked at review.rs:176:5:
+assertion `left == right` failed: an old durable retry must not discard the stronger pending restriction
+  left: Some(rotated)
+ right: Some(compromised)
+
+---- defect_rechecks_authority_after_unlock_before_signature stdout ----
+
+thread 'defect_rechecks_authority_after_unlock_before_signature' panicked at review.rs:260:5:
+assertion `left == right` failed: deletion became visible before the actual signature
+  left: "ACCEPTED"
+ right: "key_authority/user_deleted"
+
+---- defect_recovery_retry_authenticates_passphrase_before_naming stdout ----
+
+thread 'defect_recovery_retry_authenticates_passphrase_before_naming' panicked at review.rs:207:5:
+assertion `left == right` failed: retry claiming passphrase authentication must actually check it
+  left: "ACCEPTED"
+ right: "ipc/authentication_failed"
+
+---- defect_used_proposal_identifier_cannot_be_re_registered_after_gc stdout ----
+
+thread 'defect_used_proposal_identifier_cannot_be_re_registered_after_gc' panicked at review.rs:189:5:
+assertion `left == right` failed: used proposal IDs remain single use
+  left: "ACCEPTED"
+ right: "ipc/duplicate_identifier"
+
+
+failures:
+    defect_certificate_expiry_during_live_proposal_prevents_signing
+    defect_definitive_naming_error_does_not_erase_still_nameable_keys_without_status
+    defect_pending_compromise_is_not_cleared_by_old_rotated_retry
+    defect_rechecks_authority_after_unlock_before_signature
+    defect_recovery_retry_authenticates_passphrase_before_naming
+    defect_used_proposal_identifier_cannot_be_re_registered_after_gc
+
+test result: FAILED. 11 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.83s
+
+error: test failed, to rerun pass `--lib`

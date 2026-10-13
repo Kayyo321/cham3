@@ -1,0 +1,31 @@
+Vault process protection (ADR 0005 section 5) at ca40c62
+
+Revision 2 changes neither core/vaultd/src/protection.rs nor the protection
+probe (unchanged_inputs.txt), so the method is that of the bb3f1ba evidence
+(../m2_004_amd64_vm_bb3f1ba/protection.txt).
+
+1. Refusal path, this VM: PASS.
+   test_m2_vault_protection.vault_protection_t.test_insufficient_memlock_refuses_service
+   (harness/python_harness.json) runs the release probe with RLIMIT_MEMLOCK
+   lowered to 8 MiB in the child: protection_unavailable memlock_too_low, exit 3.
+
+2. Positive path, this VM: BLOCKED, as before (the Docker daemon and root in
+   this sandbox cannot raise the memlock limit; no CAP_SYS_RESOURCE).
+
+3. Positive path, GitHub Actions m2_checks 38347259191, step "Vault process
+   protection, positive path (memlock limit raised, unprivileged)", job
+   115131427974, pinned container with --ulimit memlock=1073741824:1073741824
+   (no --privileged, no added capabilities): PASS.
+
+   memlock_limit Max locked memory         1073741824           1073741824           bytes
+   required_memlock_bytes 805306368
+   derivation_ms 471
+   dumpable 0
+   core_limit 0
+   vm_locked_kib 3156
+   unlocked_mappings 0
+   special_mappings [vdso]
+   dontdump_mappings 4
+   protection_verified
+   exit_status 0
+   vault protection positive path: PASS

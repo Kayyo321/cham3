@@ -1,0 +1,62 @@
+commit ca40c62ed7a5fc29ba8910fef514f3ce29ea4fba
+tree f3ae30934d6140910d44ba5f7357cd15e267e75a
+dirty_tracked 0
+architecture amd64
+debian_version 13.7
+uname Linux 6.18.44-fc-v114 x86_64 GNU/Linux
+euid 1000
+cargo_lock_sha256 da1a17c2bf6916e145413574a7f43782048a228962789f387b9d217c78f2e28f
+identity PASS
+PASS source_identity (commit ca40c62ed7a5fc29ba8910fef514f3ce29ea4fba)
+PASS platform_debian_13
+INFO target_architecture (amd64: M2 qualification target)
+PASS toolchain_identity (rustc/cargo 1.85.1)
+PASS package_pins
+PASS installed_packages_lock (build/m2/debian_lock_amd64.txt)
+PASS downloaded_debs_lock (build/m2/debian_debs_amd64.sha256)
+PASS cargo_metadata_locked_offline
+PASS crate_sources
+PASS dependency_inventory
+PASS rustfmt
+PASS clippy
+PASS rust_naming
+PASS profile_settings
+PASS build_debug
+PASS build_release
+PASS soft_backends (chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat)
+PASS curve25519_fiat_backend (2 build-script outputs)
+PASS valgrind_memcheck_probe
+PASS valgrind_memcheck_secure_memory (10 tests, 0 errors; child fault processes not instrumented)
+NOT_AVAILABLE miri (requires a nightly toolchain; not provided by Debian 13)
+NOT_AVAILABLE sanitizers (-Zsanitizer requires nightly; valgrind memcheck used instead)
+NOT_AVAILABLE coverage_guided_fuzzing (cargo-fuzz/libfuzzer-sys not packaged in Debian 13 and require nightly; bounded property/mutation tests are used instead)
+PASS suite_unit
+PASS suite_harness
+== qualification summary (/work/out/m2/qualification/amd64_20261013T043646Z_7)
+PASS source_identity (commit ca40c62ed7a5fc29ba8910fef514f3ce29ea4fba)
+PASS platform_debian_13
+INFO target_architecture (amd64: M2 qualification target)
+PASS toolchain_identity (rustc/cargo 1.85.1)
+PASS package_pins
+PASS installed_packages_lock (build/m2/debian_lock_amd64.txt)
+PASS downloaded_debs_lock (build/m2/debian_debs_amd64.sha256)
+PASS cargo_metadata_locked_offline
+PASS crate_sources
+PASS dependency_inventory
+PASS rustfmt
+PASS clippy
+PASS rust_naming
+PASS profile_settings
+PASS build_debug
+PASS build_release
+PASS soft_backends (chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat)
+PASS curve25519_fiat_backend (2 build-script outputs)
+PASS valgrind_memcheck_probe
+PASS valgrind_memcheck_secure_memory (10 tests, 0 errors; child fault processes not instrumented)
+NOT_AVAILABLE miri (requires a nightly toolchain; not provided by Debian 13)
+NOT_AVAILABLE sanitizers (-Zsanitizer requires nightly; valgrind memcheck used instead)
+NOT_AVAILABLE coverage_guided_fuzzing (cargo-fuzz/libfuzzer-sys not packaged in Debian 13 and require nightly; bounded property/mutation tests are used instead)
+PASS suite_unit
+PASS suite_harness
+m2 qualification: PASS
+qualify_exit=0
