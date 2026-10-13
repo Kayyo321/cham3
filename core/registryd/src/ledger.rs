@@ -10,8 +10,11 @@
 //! that a restart in the same boot can tell which entries the journal already holds and
 //! re-journal the rest; a policy entry carries the global policy state.
 //!
-//! If the ledger cannot be written, the validity file is removed and registryd stops
-//! serving eligible decisions; the next start then sees an unverifiable run.
+//! If the ledger cannot be written, the validity file is removed (emptied, if it cannot
+//! be removed: an empty validity file is invalid), registryd records the run as
+//! unverifiable in the anchor's run marker and stops serving eligible decisions; the
+//! next start then sees an unverifiable run. A validity file without an entries file
+//! is no complete ledger either: `start` writes the entries file first.
 
 use std::fs;
 use std::io::{self, ErrorKind};
@@ -190,8 +193,10 @@ pub fn read_previous(directory: &Path, owner: u32) -> previous_ledger_t {
     if magic != ValidityMagic || boot_id.is_empty() || boot_id.len() > MaxBootIdBytes {
         return previous_ledger_t::invalid;
     }
+    // `start` writes the entries file before the validity file, so a validity file
+    // without one is no complete ledger (M2-006-A-R06).
     let entries = match read_private_file(&directory.join(EntriesFileName), owner) {
-        Ok(None) => Vec::new(),
+        Ok(None) => return previous_ledger_t::invalid,
         Ok(Some(bytes)) => match decode_entries(&bytes) {
             Some(entries) if entries.iter().all(|entry| entry.run_id == run_id) => entries,
             _ => return previous_ledger_t::invalid,
@@ -237,11 +242,7 @@ impl ledger_t {
         let validity_path = directory.join(ValidityFileName);
         // The old validity file goes first: a crash between the two writes leaves no
         // validity file (an unverifiable run), never a stale one over new entries.
-        match fs::remove_file(&validity_path) {
-            Ok(()) => {}
-            Err(error) if error.kind() == ErrorKind::NotFound => {}
-            Err(error) => return Err(io_error(error)),
-        }
+        io.remove_file(&validity_path).map_err(io_error)?;
         io.replace_file(&directory.join(EntriesFileName), &[])
             .map_err(io_error)?;
         let mut validity = Vec::with_capacity(20usize.saturating_add(boot_id.len()));
@@ -273,8 +274,11 @@ impl ledger_t {
         self.failed
     }
 
-    /// Appends one entry durably. On failure the validity file is removed and the
-    /// ledger is marked failed; the error is returned.
+    /// Appends one entry durably. On failure the ledger is marked failed and its
+    /// validity file is removed — emptied, if it cannot be removed (an empty validity
+    /// file is invalid); the registry also records the run as unverifiable in the
+    /// anchor's run marker. The error is returned: `io` for the failure itself,
+    /// `failed_earlier` for every later append.
     pub fn append(
         &mut self,
         io: &dyn journal_io_t,
@@ -296,7 +300,10 @@ impl ledger_t {
             Ok(()) => Ok(()),
             Err(_) => {
                 self.failed = true;
-                let _ = fs::remove_file(self.directory.join(ValidityFileName));
+                let validity = self.directory.join(ValidityFileName);
+                if io.remove_file(&validity).is_err() {
+                    let _ = io.replace_file(&validity, &[]);
+                }
                 Err(store_error_t::io)
             }
         }

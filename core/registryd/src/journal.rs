@@ -136,6 +136,16 @@ pub trait journal_io_t: Send + Sync {
         file.write_all(bytes)?;
         file.sync_data()
     }
+
+    /// Removes the private file at `path` (the ledger's validity file, ADR 0006 §3);
+    /// a file that does not exist is already removed.
+    fn remove_file(&self, path: &Path) -> io::Result<()> {
+        match fs::remove_file(path) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error),
+        }
+    }
 }
 
 /// The real file system.

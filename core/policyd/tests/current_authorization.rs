@@ -20,10 +20,12 @@ mod builders;
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
+use std::io;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use builders::*;
 use cham3_contract_format::hash::digest_t;
@@ -42,7 +44,7 @@ use cham3_policyd::evaluate::{
 };
 use cham3_policyd::mandatory::{mandatory_policy_t, network_mode_t, prohibition_t};
 use cham3_policyd::service::{policy_clock_t, policy_service_t, rollback_protection_t};
-use cham3_registryd::journal::system_io_t;
+use cham3_registryd::journal::{journal_io_t, system_io_t};
 use cham3_registryd::record::{
     frame, lifecycle_record_t, next_chain, parse_journal, placement_t, record_body_t,
     registry_record_t,
@@ -112,16 +114,46 @@ fn temp_root(label: &str) -> PathBuf {
 }
 
 fn world_at(root: &Path, config: registry_config_t, policy: mandatory_policy_t) -> world_t {
+    world_at_with(root, config, policy, Box::new(system_io_t))
+}
+
+/// Every anchor slot write fails while armed; the journal and the ledger are fine.
+#[derive(Clone)]
+struct anchor_fault_io_t {
+    armed: Arc<AtomicBool>,
+}
+
+impl journal_io_t for anchor_fault_io_t {
+    fn write_all(&self, file: &mut fs::File, bytes: &[u8]) -> io::Result<()> {
+        system_io_t.write_all(file, bytes)
+    }
+
+    fn sync_data(&self, file: &fs::File) -> io::Result<()> {
+        system_io_t.sync_data(file)
+    }
+
+    fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        system_io_t.sync_directory(path)
+    }
+
+    fn replace_file(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
+        if self.armed.load(Ordering::SeqCst) {
+            return Err(io::Error::other("injected anchor write failure"));
+        }
+        system_io_t.replace_file(path, bytes)
+    }
+}
+
+fn world_at_with(
+    root: &Path,
+    config: registry_config_t,
+    policy: mandatory_policy_t,
+    io: Box<dyn journal_io_t>,
+) -> world_t {
     let owner = fs::metadata(root).expect("root").uid();
     let registry = Arc::new(
-        registry_t::open(
-            root,
-            owner,
-            config,
-            Box::new(system_io_t),
-            Box::new(registry_clock_fixed_t),
-        )
-        .expect("registry"),
+        registry_t::open(root, owner, config, io, Box::new(registry_clock_fixed_t))
+            .expect("registry"),
     );
     let identity: identity_t = Rc::new(RefCell::new(
         identity_service_t::start(registry_identity_store_t {
@@ -1469,4 +1501,184 @@ fn a_contained_user_is_denied_until_recovered() {
             .to_string(),
         "key_authority/contained"
     );
+}
+
+#[test]
+fn an_admission_whose_anchor_update_failed_is_not_eligible_until_it_is_anchored() {
+    // M2-006-A-R01 (ADR 0006 §§2, 4): an admission reported `storage_unavailable`
+    // because its anchor update failed is a durable but unanchored record; policyd
+    // evaluating that lineage gets no snapshot (`unknown`, denied) until the record is
+    // anchored — here by the retry the next read makes once the anchor can be written.
+    // The first refusal comes from identityd, whose index refresh reads the same
+    // user's identity records; registryd's `lineage_head` refuses the same way.
+    let root = temp_root("unanchored_admission");
+    let armed = Arc::new(AtomicBool::new(false));
+    let mut world = world_at_with(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+        Box::new(anchor_fault_io_t {
+            armed: Arc::clone(&armed),
+        }),
+    );
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let identity = runtime(&alice, &editor);
+    let grant = file_grant(
+        "unanchored",
+        alice.uid,
+        "home:Unanchored",
+        &["read"],
+        persistent_lifetime(),
+    );
+    let genesis = draft(
+        &alice,
+        &editor,
+        commit_type_t::genesis,
+        "unanchored genesis",
+    )
+    .add(vec![grant.clone()])
+    .sign(&alice);
+    let request = files(alice.uid, "home:Unanchored", "read");
+    world.enroll(&alice);
+    assert!(!is_eligible(world.evaluate(&identity, &request)));
+    let anchored_before = world.registry.anchored_user(alice.uid).unwrap();
+    armed.store(true, Ordering::SeqCst);
+    assert_eq!(
+        world
+            .contract
+            .submit_signed(
+                caller_role_t::trusted_client { uid: alice.uid },
+                &genesis.envelope
+            )
+            .unwrap_err()
+            .to_string(),
+        "ipc/storage_unavailable"
+    );
+    assert_eq!(
+        world.registry.anchored_user(alice.uid).unwrap(),
+        anchored_before
+    );
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        decision_t::unknown(unknown_reason_t::identity_unavailable),
+        "nothing of the unanchored state is served"
+    );
+    assert_eq!(
+        world.policy.network_mode(Launcher, &identity).unwrap(),
+        network_decision_t::offline_unknown(unknown_reason_t::identity_unavailable)
+    );
+    assert_eq!(
+        world
+            .registry
+            .lineage_head(Contractd, alice.uid, &genesis.payload.lineage_id)
+            .unwrap_err()
+            .to_string(),
+        "ipc/storage_unavailable"
+    );
+    assert_eq!(
+        world
+            .registry
+            .rollback_status(Contractd)
+            .unwrap()
+            .pending_restrictions,
+        vec![alice.uid]
+    );
+    // The anchor can be written again: the next read anchors the record and serves it.
+    armed.store(false, Ordering::SeqCst);
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        decision_t::eligible {
+            grant_id: grant.grant_id,
+            commit_id: genesis.commit_id,
+        }
+    );
+    assert_eq!(
+        world
+            .registry
+            .anchored_user(alice.uid)
+            .unwrap()
+            .map(|entry| entry.seq),
+        Some(4),
+        "the enrollment, two certificates and the admission"
+    );
+    assert!(
+        world
+            .registry
+            .rollback_status(Contractd)
+            .unwrap()
+            .pending_restrictions
+            .is_empty()
+    );
+}
+
+#[test]
+fn a_failed_emergency_release_keeps_everyone_denied() {
+    // M2-006-A-R05 (ADR 0007 §1 rule 1): a release of the persisted emergency
+    // restriction whose anchor update fails is reported `restriction_not_durable` and
+    // changes nothing: every evaluation stays denied until a release is durable.
+    let root = temp_root("failed_release");
+    let armed = Arc::new(AtomicBool::new(false));
+    let mut world = world_at_with(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+        Box::new(anchor_fault_io_t {
+            armed: Arc::clone(&armed),
+        }),
+    );
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let identity = runtime(&alice, &editor);
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "release genesis")
+        .add(vec![file_grant(
+            "release",
+            alice.uid,
+            "home:Release",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    let request = files(alice.uid, "home:Release", "read");
+    world.enroll(&alice);
+    world.submit(&alice, &genesis);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    world
+        .policy
+        .set_emergency_restriction(caller_role_t::admin, true)
+        .expect("set");
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::emergency_restriction)
+    );
+    let counter = world.registry.anchor_counter().unwrap();
+    armed.store(true, Ordering::SeqCst);
+    assert_eq!(
+        world
+            .policy
+            .set_emergency_restriction(caller_role_t::admin, false)
+            .unwrap_err()
+            .to_string(),
+        "ipc/restriction_not_durable"
+    );
+    assert_eq!(world.registry.anchor_counter().unwrap(), counter);
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::emergency_restriction),
+        "a release that is not durable is not in force"
+    );
+    assert!(
+        world
+            .policy
+            .policy_status(Contractd)
+            .unwrap()
+            .emergency_restriction
+    );
+    armed.store(false, Ordering::SeqCst);
+    let status = world
+        .policy
+        .set_emergency_restriction(caller_role_t::admin, false)
+        .expect("released");
+    assert!(!status.emergency_restriction);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
 }

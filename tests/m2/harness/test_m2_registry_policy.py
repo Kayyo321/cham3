@@ -2,9 +2,11 @@
 
 Seeded defects in a disposable copy of the workspace (never the checkout), one at a
 time. Each removes or weakens one admission rule (wire format sections 6.5-6.12, 7),
-one journal, durability or reserve rule (ADR 0006 section 1), one current-authorization
-rule (ADR 0007 section 1) or one submission check, and the named Rust test must then fail
-(not merely fail to build); the unmodified copy passes the same tests.
+one journal, durability or reserve rule (ADR 0006 section 1), one storage-integrity rule
+of the anchor, run marker, restriction ledger or recovery table (ADR 0006 sections 2-4,
+6; the M2-006 stage A review findings R01-R08), one current-authorization rule (ADR 0007
+section 1) or one submission check, and the named Rust test must then fail (not merely
+fail to build); the unmodified copy passes the same tests.
 """
 
 import os
@@ -222,7 +224,7 @@ SeededDefects = [
       "                Some(_) => None,\n")],
      "cham3_registryd", "storage_integrity", "tombstones_in_the_anchor_keep_a_deleted_users_files_out"),
     ("quarantine_leaves_grants_live", [(Registry,
-      "            slot.lineages.contain(end_reason_t::quarantined);\n", "")],
+      "        self.lineages.contain(end_reason_t::quarantined);\n", "")],
      "cham3_registryd", "storage_integrity", "tombstones_in_the_anchor_keep_a_deleted_users_files_out"),
     ("cross_boot_run_replayed", [(Registry,
       "                } if *marker_boot == boot_id && ledger_run == *run_id && ledger_boot == boot_id => {\n",
@@ -241,22 +243,23 @@ SeededDefects = [
       "                ended.extend(state.grants.iter().map(|grant| grant.grant_id));\n            }\n        }\n        let _ = (ended, reason);\n")],
      "cham3_registryd", "storage_integrity", "an_unclean_run_across_boots_contains_every_user"),
     ("restriction_not_ledgered", [(Registry,
-      "            let _ = ledger.append(\n                self.io.as_ref(),\n                entry_kind_t::journal_record,\n                slot.uid,\n                &encoded,\n            );\n",
-      "            let _ = (&ledger, &encoded);\n")],
+      "            ledger.append(\n                self.io.as_ref(),\n                entry_kind_t::journal_record,\n                slot.uid,\n                &encoded,\n            )\n        };\n",
+      "            let _ = (&ledger, &encoded);\n            Ok(())\n        };\n")],
      "cham3_registryd", "storage_integrity", "a_restriction_is_denied_in_memory_and_ledgered_before_any_disk_write"),
     ("failed_ledger_keeps_serving", [(Registry,
       "    fn ready(&self, slot: &mut user_slot_t) -> service_result_t<()> {\n        if lock(&self.ledger)?.failed() {\n            return Err(storage_unavailable());\n        }\n",
       "    fn ready(&self, slot: &mut user_slot_t) -> service_result_t<()> {\n")],
      "cham3_registryd", "storage_integrity", "a_failed_ledger_stops_eligible_decisions_and_the_next_start_contains"),
     ("failed_ledger_keeps_its_validity", [("core/registryd/src/ledger.rs",
-      "                let _ = fs::remove_file(self.directory.join(ValidityFileName));\n", "")],
+      "                if io.remove_file(&validity).is_err() {\n                    let _ = io.replace_file(&validity, &[]);\n                }\n",
+      "                let _ = &validity;\n")],
      "cham3_registryd", "storage_integrity", "a_failed_ledger_stops_eligible_decisions_and_the_next_start_contains"),
     ("anchor_failure_not_remembered", [(Registry,
       "                slot.anchor_failed = true;\n", "")],
-     "cham3_registryd", "storage_integrity", "a_failed_anchor_write_after_a_durable_record_denies_until_the_next_start_rolls_forward"),
+     "cham3_registryd", "storage_integrity", "a_failed_anchor_write_denies_the_user_until_the_record_is_anchored"),
     ("shutdown_clean_with_pending_writes", [(Registry,
-      "            if !slot.pending.is_empty() && self.flush_pending(&mut slot).is_err() {\n                clean = false;\n            }\n",
-      "            let _ = &mut slot;\n")],
+      "            if owed && self.flush_pending(&mut slot).is_err() {\n                clean = false;\n            }\n",
+      "            let _ = (owed, &mut slot);\n")],
      "cham3_registryd", "storage_integrity", "a_restriction_is_denied_in_memory_and_ledgered_before_any_disk_write"),
     ("policy_epoch_lowered", [(Registry,
       "        self.change_policy(|policy| {\n            policy.epoch = policy.epoch.max(epoch);\n",
@@ -278,6 +281,95 @@ SeededDefects = [
       "    if snapshot.policy.emergency(identity.owner_uid) || snapshot.view.emergency_restriction {\n",
       "    if snapshot.policy.emergency(identity.owner_uid) {\n")],
      "cham3_policyd", "current_authorization", "an_emergency_restriction_set_through_registryd_denies_everyone_and_persists"),
+    # M2-006 stage A review (M2-006-A-R01..R08) and the fault cases it left open.
+    # R01: a read serves the unanchored state.
+    ("unanchored_state_served", [(Registry,
+      "        self.anchored_for_reading(&mut slot)?;\n        Ok(Some(self.view(&slot, lineage_id)?))\n",
+      "        Ok(Some(self.view(&slot, lineage_id)?))\n")],
+     "cham3_registryd", "storage_integrity", "a_failed_anchor_write_denies_the_user_until_the_record_is_anchored"),
+    ("unanchored_admission_evaluated", [(Registry,
+      "        self.anchored_for_reading(&mut slot)?;\n        Ok(Some(self.view(&slot, lineage_id)?))\n",
+      "        Ok(Some(self.view(&slot, lineage_id)?))\n")],
+     "cham3_policyd", "current_authorization", "an_admission_whose_anchor_update_failed_is_not_eligible_until_it_is_anchored"),
+    # R02: a restriction or key invalidation after an anchor failure is dropped.
+    ("restriction_dropped_after_anchor_failure", [(Registry,
+      "        slot.lineages.apply_record(record);\n        self.restrictive_write(&mut slot, time, record_body_t::lifecycle(record.clone()))\n",
+      "        slot.lineages.apply_record(record);\n        if slot.anchor_failed {\n            return Err(storage_unavailable());\n        }\n        self.restrictive_write(&mut slot, time, record_body_t::lifecycle(record.clone()))\n")],
+     "cham3_registryd", "storage_integrity", "a_restriction_after_an_anchor_failure_is_held_in_memory_and_ledger_until_journaled"),
+    ("invalidation_dropped_after_anchor_failure", [(Registry,
+      "            let sequence = self.restrictive_write(slot, time, body)?;\n",
+      "            if slot.anchor_failed {\n                return Err(storage_unavailable());\n            }\n            let sequence = self.restrictive_write(slot, time, body)?;\n")],
+     "cham3_registryd", "storage_integrity", "a_key_invalidation_after_an_anchor_failure_is_ledgered_pending_and_replayed"),
+    # The invariant behind R01/R02: nothing is appended beyond an unanchored record.
+    ("second_unanchored_record_appended", [(Registry,
+      "        if slot.anchor_failed && self.anchor_slot(slot).is_err() {\n",
+      "        if false && slot.anchor_failed && self.anchor_slot(slot).is_err() {\n")],
+     "cham3_registryd", "storage_integrity", "a_restriction_after_an_anchor_failure_is_held_in_memory_and_ledger_until_journaled"),
+    # R03: a replayed entry is not transferred into the new run's ledger.
+    ("replayed_entries_not_reledgered", [(Registry,
+      "        let _ = self.restrictive_write(&mut slot, record.time.clone(), record.body.clone());\n",
+      "        slot.pending.push(pending_write_t {\n            time: record.time.clone(),\n            body: record.body.clone(),\n        });\n        let _ = self.flush_pending(&mut slot);\n")],
+     "cham3_registryd", "storage_integrity", "a_replayed_restriction_enters_the_new_runs_ledger_before_anything_is_served"),
+    # R04: a pending policy change is lost by a clean shutdown, not published by the
+    # next slot write, or not reported.
+    ("pending_policy_lost_at_shutdown", [(Registry,
+      "                map.policy = policy_now;\n                if let Some(marker) = &mut map.run_marker {\n                    marker.state = run_state_t::clean;\n",
+      "                if let Some(marker) = &mut map.run_marker {\n                    marker.state = run_state_t::clean;\n")],
+     "cham3_registryd", "storage_integrity", "a_policy_change_whose_anchor_update_failed_stays_pending_until_published"),
+    ("pending_policy_not_published_by_slot_writes", [(Registry,
+      "            map.policy = policy_now;\n            map.users.insert(uid, entry);\n",
+      "            map.users.insert(uid, entry);\n")],
+     "cham3_registryd", "storage_integrity", "a_policy_change_whose_anchor_update_failed_stays_pending_until_published"),
+    ("pending_policy_not_reported", [(Registry,
+      "            policy_pending: policy != anchored_policy,\n",
+      "            policy_pending: false,\n")],
+     "cham3_registryd", "storage_integrity", "a_policy_change_whose_anchor_update_failed_stays_pending_until_published"),
+    # R05: a release is in force before it is durable.
+    ("emergency_release_in_force_before_durable", [(Registry,
+      "        let mut anchor = lock(&self.anchor)?;\n        anchor\n            .update(self.io.as_ref(), |map| map.policy = next)\n            .map_err(|_| not_durable())?;\n        *policy = next;\n",
+      "        *policy = next;\n        let mut anchor = lock(&self.anchor)?;\n        anchor\n            .update(self.io.as_ref(), |map| map.policy = next)\n            .map_err(|_| not_durable())?;\n")],
+     "cham3_registryd", "storage_integrity", "an_emergency_release_takes_effect_only_once_it_is_durable"),
+    ("failed_release_evaluated_as_released", [(Registry,
+      "        let mut anchor = lock(&self.anchor)?;\n        anchor\n            .update(self.io.as_ref(), |map| map.policy = next)\n            .map_err(|_| not_durable())?;\n        *policy = next;\n",
+      "        *policy = next;\n        let mut anchor = lock(&self.anchor)?;\n        anchor\n            .update(self.io.as_ref(), |map| map.policy = next)\n            .map_err(|_| not_durable())?;\n")],
+     "cham3_policyd", "current_authorization", "a_failed_emergency_release_keeps_everyone_denied"),
+    # R06: a validity file without its entries file is taken as an empty valid ledger.
+    ("missing_ledger_entries_accepted", [("core/registryd/src/ledger.rs",
+      "        Ok(None) => return previous_ledger_t::invalid,\n",
+      "        Ok(None) => Vec::new(),\n")],
+     "cham3_registryd", "storage_integrity", "an_unclean_run_with_a_missing_or_invalid_ledger_contains_every_user"),
+    # R07: the anchor's identity count is not reconciled with the journal.
+    ("identity_count_not_reconciled", [(Registry,
+      "            && anchored.is_some_and(|entry| entry.identity_seq != identity_at_anchor)\n",
+      "            && anchored.is_some_and(|entry| entry.identity_seq != entry.identity_seq)\n")],
+     "cham3_registryd", "storage_integrity", "an_anchor_whose_identity_count_disagrees_with_the_journal_quarantines"),
+    # R08: an anchored quarantine or containment sets the state without ending grants.
+    ("anchored_quarantine_leaves_grants_live", [(Registry,
+      "                        slot.quarantine(quarantine_reason_t::anchored);\n",
+      "                        slot.state = slot_state_t::quarantined(quarantine_reason_t::anchored);\n")],
+     "cham3_registryd", "storage_integrity", "an_anchored_quarantine_or_containment_ends_every_grant_at_start"),
+    ("anchored_containment_leaves_grants_live", [(Registry,
+      "                    if slot.state == slot_state_t::normal {\n                        slot.contain();\n                    }\n",
+      "                    if slot.state == slot_state_t::normal {\n                        slot.state = slot_state_t::contained;\n                    }\n")],
+     "cham3_registryd", "storage_integrity", "an_anchored_quarantine_or_containment_ends_every_grant_at_start"),
+    # The fault cases the review left open: a ledger failure whose validity file
+    # survives, equal slot counters, entries of quarantined users.
+    ("ledger_failure_not_marked_in_anchor", [(Registry,
+      "        if appended == Err(store_error_t::io) {\n            self.mark_run_unverifiable();\n        }\n        self.flush_pending(slot)\n",
+      "        let _ = appended;\n        self.flush_pending(slot)\n")],
+     "cham3_registryd", "storage_integrity", "a_failed_ledger_marks_the_run_unverifiable_even_if_its_validity_file_survives"),
+    ("unverifiable_marker_resumed", [(Registry,
+      "            Some(run_marker_t {\n                state: run_state_t::unverifiable,\n                ..\n            }) => (run_decision_t::contained, Vec::new()),\n",
+      "            Some(run_marker_t {\n                state: run_state_t::unverifiable,\n                ..\n            }) => (run_decision_t::resumed, Vec::new()),\n")],
+     "cham3_registryd", "storage_integrity", "a_failed_ledger_marks_the_run_unverifiable_even_if_its_validity_file_survives"),
+    ("equal_slot_counters_accepted", [("core/registryd/src/anchor.rs",
+      "        if equal_counters {\n            best = None;\n        }\n",
+      "        let _ = equal_counters;\n")],
+     "cham3_registryd", "storage_integrity", "anchor_slots_with_equal_counters_or_of_another_store_quarantine_every_user"),
+    ("quarantined_users_entries_rejournaled", [(Registry,
+      "        if let slot_state_t::quarantined(_) = slot.state {\n            return;\n        }\n        if slot.holds(&record.body) {\n",
+      "        if slot.holds(&record.body) {\n")],
+     "cham3_registryd", "storage_integrity", "ledger_entries_of_unknown_held_or_quarantined_users_are_dropped_or_skipped"),
 ]
 
 

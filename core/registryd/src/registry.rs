@@ -12,9 +12,13 @@
 //! record is durable.
 //!
 //! **Anchor (ADR 0006 §2).** Every durable append is followed by an anchor update
-//! naming the user's new sequence and chain before the caller is answered; a failed
-//! anchor update after a durable admission reports the admission failed and denies
-//! the user for the rest of the run (the next start rolls the anchor forward, §4).
+//! naming the user's new sequence and chain before the caller is answered; every
+//! anchor update also publishes the policy state in force. A failed anchor update
+//! after a durable admission reports the admission failed and denies the user —
+//! writes and reads alike, so that nothing of the unanchored state is served — until
+//! that record is anchored: by the retry every later operation of the user makes
+//! first, or by the roll-forward of the next start (§4). Nothing is appended beyond
+//! an unanchored record.
 //!
 //! **Restrictive write path (ADR 0006 §3).** A restriction (a lifecycle record, a key
 //! invalidation, containment, a policy raise) is denied in memory first, then written
@@ -36,8 +40,10 @@
 //!
 //! **Locks.** `users` (the map of slots) is held only to find or create a slot; a
 //! user lock is never taken while `users` is held, except for a slot created under
-//! it. Lock order: `users` → user → anchor; `ledger` is taken under the user lock
-//! and released before the anchor lock.
+//! it. Lock order: `users` → user → `policy` → `ledger` → `anchor`. The `policy`
+//! lock is held across a policy publication (its ledger entry and anchor update) and
+//! across every slot's anchor update, so that no older copy of the policy state can
+//! overwrite a newer publication; `ledger` is released before `anchor` is taken.
 //!
 //! Limits (stage A): in-process composition; the socket transport and process
 //! boundary are M2-007. Registry time is the system clock; ADR 0007's trusted-time
@@ -185,6 +191,9 @@ pub enum quarantine_reason_t {
     deletion_pending,
     /// The anchor recorded the user as quarantined in an earlier run.
     anchored,
+    /// The anchor's identity count for the user disagrees with the identity records
+    /// of the anchored prefix: the entry does not describe this journal.
+    identity_mismatch,
 }
 
 /// Why a user's journal is unusable in this run.
@@ -249,10 +258,14 @@ pub struct user_slot_t {
     state: slot_state_t,
     /// Identity records in the journal (the anchor's `identity_seq`).
     identity_count: u64,
+    /// Every lifecycle record the journal holds (replayed or written durably), so
+    /// that a ledger entry the journal already holds is never re-journaled.
+    lifecycle_records: Vec<lifecycle_record_t>,
     /// Restrictive records denied in memory whose durable write is still owed.
     pending: Vec<pending_write_t>,
-    /// A durable record whose anchor update failed: denied until restart (the next
-    /// start rolls the anchor forward).
+    /// The journal's last record is durable but its anchor update failed: the user is
+    /// denied, reads included, and nothing is appended, until a retry anchors it (or
+    /// the next start rolls the anchor forward).
     anchor_failed: bool,
 }
 
@@ -341,6 +354,10 @@ pub struct rollback_status_t {
     /// Users whose restrictive reserve is not full (R03; reported here until the
     /// status operations of stage B).
     pub depleted_reserves: Vec<u32>,
+    /// The policy state in force (`policy`) is not yet in the anchor: a restrictive
+    /// change whose anchor update failed, published by the next successful anchor
+    /// write.
+    pub policy_pending: bool,
     pub policy: policy_state_t,
 }
 
@@ -457,6 +474,27 @@ impl user_slot_t {
         }
     }
 
+    /// Quarantine (ADR 0006 §4): every grant of a live state ends `quarantined` and
+    /// every branch ends, permanently; the slot keeps the verified prefix that
+    /// `recover_user` (stage C) accepts.
+    fn quarantine(&mut self, reason: quarantine_reason_t) {
+        self.lineages.contain(end_reason_t::quarantined);
+        self.state = slot_state_t::quarantined(reason);
+    }
+
+    /// Containment (§3): every grant admitted before this point ends `suspended`,
+    /// permanently; only the recovery ceremony (stage C) re-authorizes scope.
+    fn contain(&mut self) {
+        self.lineages.contain(end_reason_t::suspended);
+        self.state = slot_state_t::contained;
+    }
+
+    /// The sequence a restrictive record queued now will get: behind the pending ones.
+    fn intended_sequence(&self) -> Option<u64> {
+        let queued = u64::try_from(self.pending.len()).ok()?;
+        self.journal.next_sequence()?.checked_add(queued)
+    }
+
     /// Applies one replayed record at `sequence` (position `sequence − 1`); the same
     /// path applies a record this run writes, once it is durable.
     fn replay(&mut self, record: registry_record_t) -> service_result_t<()> {
@@ -491,6 +529,7 @@ impl user_slot_t {
             record_body_t::lifecycle(lifecycle) => {
                 self.lineages.check_record(&lifecycle, &record.time)?;
                 self.lineages.apply_record(&lifecycle);
+                self.lifecycle_records.push(lifecycle);
             }
             record_body_t::user(user_record) => {
                 // identityd's index checks the record against the user's state
@@ -516,46 +555,37 @@ impl user_slot_t {
         Ok(())
     }
 
-    /// Whether the journal already holds `(time, body)` at or after `from`: a ledger
-    /// entry that was journaled before the crash.
-    fn holds(&self, from: u64, time: &str, body: &record_body_t) -> bool {
-        let _ = from;
-        self.identity_entries
-            .iter()
-            .any(|entry| match (&entry.record, body) {
-                (
-                    journal_record_t::identity { kind, object },
-                    record_body_t::identity { kind: k, object: o },
-                ) => kind == k && object == o,
-                (journal_record_t::user(record), record_body_t::user(other)) => record == other,
-                _ => false,
-            })
-            || self.lineage_holds(time, body)
-    }
-
-    fn lineage_holds(&self, _time: &str, body: &record_body_t) -> bool {
+    /// Whether the journal already holds the record of a ledger entry (journaled
+    /// before the crash): the same identity object, user record or lifecycle record.
+    fn holds(&self, body: &record_body_t) -> bool {
         match body {
-            record_body_t::lifecycle(lifecycle_record_t::restriction { grant_ids }) => grant_ids
+            record_body_t::lifecycle(lifecycle) => self.lifecycle_records.contains(lifecycle),
+            record_body_t::commit_admitted { .. } => false,
+            record_body_t::identity { .. } | record_body_t::user(_) => self
+                .identity_entries
                 .iter()
-                .all(|id| self.lineages.ended(id) == Some(end_reason_t::restriction)),
-            record_body_t::lifecycle(lifecycle_record_t::expired { grant_id }) => {
-                self.lineages.ended(grant_id) == Some(end_reason_t::expired)
-            }
-            record_body_t::lifecycle(lifecycle_record_t::session_ended { session_id }) => {
-                self.lineages.session_ended(session_id)
-            }
-            _ => false,
+                .any(|entry| match (&entry.record, body) {
+                    (
+                        journal_record_t::identity { kind, object },
+                        record_body_t::identity { kind: k, object: o },
+                    ) => kind == k && object == o,
+                    (journal_record_t::user(record), record_body_t::user(other)) => record == other,
+                    _ => false,
+                }),
         }
     }
 }
 
-/// Replays one user's parsed journal.
+/// Replays one user's parsed journal. Returns the slot and the identity records among
+/// the first `anchored_seq` records, which the anchor's `identity_seq` must equal
+/// (ADR 0006 §2).
 fn replay_user(
     store: &journal_store_t,
     uid: u32,
     prefix: &crate::record::journal_prefix_t,
     io: &dyn journal_io_t,
-) -> Result<user_slot_t, unusable_reason_t> {
+    anchored_seq: u64,
+) -> Result<(user_slot_t, u64), unusable_reason_t> {
     let parsed = &prefix.parsed;
     let journal = store
         .open_journal(uid, parsed, prefix.valid_length, io)
@@ -569,9 +599,11 @@ fn replay_user(
         identity_entries: Vec::new(),
         state: slot_state_t::normal,
         identity_count: 0,
+        lifecycle_records: Vec::new(),
         pending: Vec::new(),
         anchor_failed: false,
     };
+    let mut identity_at_anchor = 0u64;
     for (position, bytes) in parsed.records.iter().enumerate() {
         let expected = u64::try_from(position)
             .ok()
@@ -601,8 +633,11 @@ fn replay_user(
         {
             return Err(failed);
         }
+        if expected == anchored_seq {
+            identity_at_anchor = slot.identity_count;
+        }
     }
-    Ok(slot)
+    Ok((slot, identity_at_anchor))
 }
 
 /// The per-user recovery decision of ADR 0006 §4 for a parsed journal of `m` records
@@ -705,6 +740,11 @@ impl registry_t {
                 state: run_state_t::clean,
                 ..
             }) => (run_decision_t::resumed, Vec::new()),
+            // The ledger failed in that run: unverifiable, whatever its files hold.
+            Some(run_marker_t {
+                state: run_state_t::unverifiable,
+                ..
+            }) => (run_decision_t::contained, Vec::new()),
             Some(run_marker_t {
                 state: run_state_t::running,
                 run_id,
@@ -884,27 +924,41 @@ impl registry_t {
             (None, Err(reason)) => return Err(unusable_reason_t::quarantine(reason)),
             (None, Ok(forward)) => forward,
         };
-        let mut slot = replay_user(store, uid, &prefix, io).map_err(|reason| match reason {
-            unusable_reason_t::replay { .. } => {
-                unusable_reason_t::quarantine(quarantine_reason_t::replay_defect)
-            }
-            other => other,
-        })?;
+        let anchored_seq = anchored.map_or(0, |entry| entry.seq);
+        let (mut slot, identity_at_anchor) = replay_user(store, uid, &prefix, io, anchored_seq)
+            .map_err(|reason| match reason {
+                unusable_reason_t::replay { .. } => {
+                    unusable_reason_t::quarantine(quarantine_reason_t::replay_defect)
+                }
+                other => other,
+            })?;
+        // The anchor's identity count must describe the anchored prefix exactly (§2);
+        // an entry that disagrees is no anchor of this journal (M2-006-A-R07). The one
+        // unanchored record of a roll-forward may itself be an identity record.
+        if quarantine.is_none()
+            && anchored.is_some_and(|entry| entry.identity_seq != identity_at_anchor)
+        {
+            return Err(unusable_reason_t::quarantine(
+                quarantine_reason_t::identity_mismatch,
+            ));
+        }
         if let Some(reason) = quarantine {
             // Quarantine denies every grant and key of the user (§4); the slot keeps
             // the verified prefix for `recover_user` (stage C).
-            slot.lineages.contain(end_reason_t::quarantined);
-            slot.state = slot_state_t::quarantined(reason);
+            slot.quarantine(reason);
         } else if let Some(entry) = anchored {
-            // The anchor's state is authoritative over the records' (a containment
-            // whose record is not yet durable is still in force).
+            // The anchor's state is authoritative over the records' (a containment or
+            // quarantine whose record is not durable is still in force), and ends the
+            // grants exactly as the record would (M2-006-A-R08).
             match entry.state {
                 anchored_state_t::quarantined => {
-                    slot.state = slot_state_t::quarantined(quarantine_reason_t::anchored)
+                    if !matches!(slot.state, slot_state_t::quarantined(_)) {
+                        slot.quarantine(quarantine_reason_t::anchored);
+                    }
                 }
                 anchored_state_t::contained => {
                     if slot.state == slot_state_t::normal {
-                        slot.state = slot_state_t::contained;
+                        slot.contain();
                     }
                 }
                 anchored_state_t::normal => {}
@@ -914,9 +968,14 @@ impl registry_t {
     }
 
     /// Re-journals a ledger entry whose record the journal does not hold (§3, same
-    /// boot): applied in memory, appended restrictively, anchored; failures leave it
-    /// pending. Entries for unknown or unusable users are dropped: their users are
-    /// denied anyway.
+    /// boot): its in-memory effect is applied exactly as the operation that ledgered
+    /// it applies it, then it takes the restrictive path again — this run's ledger
+    /// first, so that the intent survives any further unclean restart in this boot
+    /// (M2-006-A-R03), then the journal and the anchor; a failure leaves it pending,
+    /// retried by every later operation of the user. An entry for a user the store
+    /// does not know is dropped (nothing to deny); a quarantined user's journal is left
+    /// as found (every grant and key of the user is denied already, and the verified
+    /// prefix belongs to the ceremony of stage C).
     fn rejournal(&self, entry: &ledger_entry_t) {
         let Ok(record) = registry_record_t::decode(&entry.payload) else {
             return;
@@ -927,26 +986,45 @@ impl registry_t {
         let Ok(mut slot) = lock(&slot) else {
             return;
         };
-        if slot.holds(record.sequence, &record.time, &record.body) {
+        if let slot_state_t::quarantined(_) = slot.state {
             return;
         }
-        let body = record.body.clone();
-        let sequence = slot.journal.next_sequence().unwrap_or(u64::MAX);
-        if slot
-            .replay(registry_record_t {
-                sequence,
-                time: record.time.clone(),
-                body: body.clone(),
-            })
-            .is_err()
-        {
+        if slot.holds(&record.body) {
             return;
         }
-        slot.pending.push(pending_write_t {
-            time: record.time,
-            body,
-        });
-        let _ = self.flush_pending(&mut slot);
+        let uid = slot.uid;
+        match &record.body {
+            record_body_t::lifecycle(lifecycle) => {
+                if slot.lineages.check_record(lifecycle, &record.time).is_err() {
+                    return;
+                }
+                slot.lineages.apply_record(lifecycle);
+            }
+            record_body_t::identity { kind, object } => {
+                let Ok(verified) = slot.directory.verify_identity_object(*kind, object) else {
+                    return;
+                };
+                let Some(intended) = slot.intended_sequence() else {
+                    return;
+                };
+                if slot
+                    .directory
+                    .apply_identity_object(uid, &verified, intended)
+                    .is_err()
+                {
+                    return;
+                }
+            }
+            // Containment is applied by the restrictive path itself; no other user
+            // record is ledgered in stage A.
+            record_body_t::user(user_record) => {
+                if *user_record != user_record_t::containment {
+                    return;
+                }
+            }
+            record_body_t::commit_admitted { .. } => return,
+        }
+        let _ = self.restrictive_write(&mut slot, record.time.clone(), record.body.clone());
     }
 
     /// Contains every usable, not yet contained or quarantined user (§3).
@@ -1017,20 +1095,29 @@ impl registry_t {
         }
     }
 
-    /// A user's slot for an operation: pending restrictive writes are retried first;
-    /// a slot whose anchor update failed, or whose ledger failed, is unavailable.
+    /// A user's slot for a write: with a failed ledger or journal nothing is written;
+    /// otherwise what the slot owes — the anchor update of an unanchored record first,
+    /// then the pending restrictive records — is retried, and the operation proceeds
+    /// only once nothing is owed.
     fn ready(&self, slot: &mut user_slot_t) -> service_result_t<()> {
         if lock(&self.ledger)?.failed() {
-            return Err(storage_unavailable());
-        }
-        if slot.anchor_failed {
             return Err(storage_unavailable());
         }
         if slot.journal.failed() {
             return Err(storage_unavailable());
         }
-        if !slot.pending.is_empty() {
+        if slot.anchor_failed || !slot.pending.is_empty() {
             self.flush_pending(slot)?;
+        }
+        Ok(())
+    }
+
+    /// A user's slot for a read: a durable record whose anchor update failed is
+    /// anchored first, and the read is refused while that keeps failing, so that
+    /// nothing of the unanchored state is served (M2-006-A-R01).
+    fn anchored_for_reading(&self, slot: &mut user_slot_t) -> service_result_t<()> {
+        if slot.anchor_failed {
+            self.anchor_slot(slot)?;
         }
         Ok(())
     }
@@ -1074,9 +1161,16 @@ impl registry_t {
         self.anchor_slot(&mut slot)
     }
 
+    /// Anchors the slot's current sequence, chain and state, and publishes the policy
+    /// state in force with it (a policy change whose own update failed becomes durable
+    /// with the next successful slot write); the slot's `min_valid_policy_epoch` is
+    /// kept. The policy lock is held across the write (lock order), so that no older
+    /// copy of the policy state can overwrite a newer publication.
     fn anchor_slot(&self, slot: &mut user_slot_t) -> service_result_t<()> {
         let mut entry = slot.anchored();
         let uid = slot.uid;
+        let policy = lock(&self.policy)?;
+        let policy_now = *policy;
         let mut anchor = lock(&self.anchor)?;
         entry.min_valid_policy_epoch = anchor
             .map()
@@ -1084,9 +1178,13 @@ impl registry_t {
             .get(&uid)
             .map_or(0, |existing| existing.min_valid_policy_epoch);
         match anchor.update(self.io.as_ref(), |map| {
+            map.policy = policy_now;
             map.users.insert(uid, entry);
         }) {
-            Ok(()) => Ok(()),
+            Ok(()) => {
+                slot.anchor_failed = false;
+                Ok(())
+            }
             Err(_) => {
                 slot.anchor_failed = true;
                 Err(storage_unavailable())
@@ -1107,9 +1205,11 @@ impl registry_t {
 
     /// The restrictive write path (ADR 0006 §3): the in-memory effect is already
     /// applied by the caller; this writes the ledger entry, the journal record and the
-    /// anchor update. A ledger failure invalidates the ledger (no eligible decisions
-    /// until restart) but the record is still written; a journal or anchor failure
-    /// leaves the change pending and reports `restriction_not_durable`.
+    /// anchor update, behind whatever the slot still owes. A ledger failure
+    /// invalidates the ledger (no eligible decisions until restart; the run is marked
+    /// unverifiable) but the record is still written; a journal or anchor failure
+    /// leaves the change pending and reports `restriction_not_durable`. Returns the
+    /// record's sequence.
     fn restrictive_write(
         &self,
         slot: &mut user_slot_t,
@@ -1119,12 +1219,11 @@ impl registry_t {
         // The in-memory denial for records the caller did not apply (containment).
         if let record_body_t::user(user_record) = &body {
             if *user_record == user_record_t::containment && slot.state == slot_state_t::normal {
-                slot.lineages.contain(end_reason_t::suspended);
-                slot.state = slot_state_t::contained;
+                slot.contain();
             }
         }
+        let sequence = slot.intended_sequence().unwrap_or(0);
         slot.pending.push(pending_write_t { time, body });
-        let sequence = slot.journal.next_sequence().unwrap_or(0);
         let encoded = {
             let Some(last) = slot.pending.last() else {
                 return Err(storage_unavailable());
@@ -1136,21 +1235,54 @@ impl registry_t {
             }
             .encode()
         };
-        {
+        let appended = {
             let mut ledger = lock(&self.ledger)?;
-            let _ = ledger.append(
+            ledger.append(
                 self.io.as_ref(),
                 entry_kind_t::journal_record,
                 slot.uid,
                 &encoded,
-            );
+            )
+        };
+        if appended == Err(store_error_t::io) {
+            self.mark_run_unverifiable();
         }
-        self.flush_pending(slot).map(|_| sequence)
+        self.flush_pending(slot)
     }
 
-    /// Writes every pending restrictive record of the slot, in order, then anchors.
+    /// The ledger failed: besides the removal of its validity file, the run marker
+    /// records the run as unverifiable, so that the next start contains even when the
+    /// validity file could not be removed. A failure here is ignored: the ledger is
+    /// marked failed and nothing eligible is served for the rest of the run.
+    fn mark_run_unverifiable(&self) {
+        let Ok(mut anchor) = lock(&self.anchor) else {
+            return;
+        };
+        let _ = anchor.update(self.io.as_ref(), |map| {
+            if let Some(marker) = &mut map.run_marker {
+                marker.state = run_state_t::unverifiable;
+            }
+        });
+    }
+
+    /// Makes what the slot owes durable, in order (ADR 0006 §§3, 6): a durable record
+    /// whose anchor update failed is anchored first — nothing is appended beyond it
+    /// until it is, so that a start finds at most one unanchored record (§4 rolls it
+    /// forward) and nothing of the unanchored state is served — then every pending
+    /// restrictive record is appended, then the anchor names the result. A failure
+    /// leaves the rest owed: `storage_unavailable` when only the anchor is owed,
+    /// `restriction_not_durable` when a restrictive record is. Returns the sequence of
+    /// the last record appended (the journal's count when none was).
     fn flush_pending(&self, slot: &mut user_slot_t) -> service_result_t<u64> {
+        if slot.anchor_failed && self.anchor_slot(slot).is_err() {
+            return Err(if slot.pending.is_empty() {
+                storage_unavailable()
+            } else {
+                not_durable()
+            });
+        }
         let mut last_sequence = slot.journal.record_count();
+        let mut appended = false;
         while let Some(pending) = slot.pending.first().cloned() {
             let sequence = slot.journal.next_sequence().ok_or(not_durable())?;
             let record = registry_record_t {
@@ -1174,31 +1306,31 @@ impl registry_t {
             }
             // Durable: the indexes already hold the effect for lifecycle records the
             // caller applied; identity and user records enter the entries here.
-            match &record.body {
+            match record.body {
                 record_body_t::identity { kind, object } => {
                     slot.identity_entries.push(journal_entry_t {
                         sequence,
-                        record: journal_record_t::identity {
-                            kind: *kind,
-                            object: object.clone(),
-                        },
+                        record: journal_record_t::identity { kind, object },
                     });
                     slot.identity_count = slot.identity_count.saturating_add(1);
                 }
                 record_body_t::user(user_record) => {
                     slot.identity_entries.push(journal_entry_t {
                         sequence,
-                        record: journal_record_t::user(user_record.clone()),
+                        record: journal_record_t::user(user_record),
                     });
                 }
-                record_body_t::lifecycle(_) | record_body_t::commit_admitted { .. } => {}
+                record_body_t::lifecycle(lifecycle) => slot.lifecycle_records.push(lifecycle),
+                record_body_t::commit_admitted { .. } => {}
             }
             slot.pending.remove(0);
             last_sequence = sequence;
+            appended = true;
         }
-        if self.anchor_slot(slot).is_err() {
-            // The records are durable; the anchor will roll forward at the next
-            // start. Until then the user is denied (anchor_failed).
+        if appended && self.anchor_slot(slot).is_err() {
+            // The records are durable; the anchor is retried by every later operation
+            // of the user, or rolled forward at the next start. Until then the user is
+            // denied (anchor_failed).
             return Err(not_durable());
         }
         Ok(last_sequence)
@@ -1253,15 +1385,13 @@ impl registry_t {
         };
         if restrictive {
             // Denial first (the directory holds the invalidation), then the ledger,
-            // the journal and the anchor.
-            let ready = self.ready(slot);
-            let intended = slot.journal.next_sequence().ok_or(storage_unavailable())?;
+            // the journal and the anchor — behind whatever the slot owes, an
+            // unanchored record included (M2-006-A-R02).
+            let time = self.now_text()?;
+            let intended = slot.intended_sequence().ok_or(storage_unavailable())?;
             slot.directory
                 .apply_identity_object(slot.uid, &verified, intended)?;
-            if ready.is_err() && slot.anchor_failed {
-                return Err(storage_unavailable());
-            }
-            let sequence = self.restrictive_write(slot, self.now_text()?, body)?;
+            let sequence = self.restrictive_write(slot, time, body)?;
             return Ok(append_receipt_t {
                 journal_seq: sequence,
                 already_present: false,
@@ -1365,6 +1495,7 @@ impl registry_t {
             }],
             state: slot_state_t::normal,
             identity_count: 1,
+            lifecycle_records: Vec::new(),
             pending: Vec::new(),
             anchor_failed: false,
         };
@@ -1394,7 +1525,7 @@ impl registry_t {
                 next: None,
             });
         };
-        let slot = lock(&slot)?;
+        let mut slot = lock(&slot)?;
         if let slot_state_t::quarantined(_) = slot.state {
             // Every key of a quarantined user is denied (ADR 0006 §4, §5): identityd
             // learns the quarantine instead of the records.
@@ -1403,6 +1534,7 @@ impl registry_t {
         if slot.journal.failed() {
             return Err(storage_unavailable());
         }
+        self.anchored_for_reading(&mut slot)?;
         let mut remaining = slot
             .identity_entries
             .iter()
@@ -1516,13 +1648,9 @@ impl registry_t {
         }
         let time = self.now_text()?;
         slot.lineages.check_record(record, &time)?;
-        // Denial first, whatever the writes do.
+        // Denial first, whatever the writes do; the write joins the queue behind
+        // whatever the slot owes, an unanchored record included (M2-006-A-R02).
         slot.lineages.apply_record(record);
-        // Earlier pending writes keep their order; this one joins the queue.
-        let ready = self.ready(&mut slot);
-        if ready.is_err() && slot.anchor_failed {
-            return Err(storage_unavailable());
-        }
         self.restrictive_write(&mut slot, time, record_body_t::lifecycle(record.clone()))
     }
 
@@ -1546,39 +1674,67 @@ impl registry_t {
     }
 
     /// `set_emergency_restriction` (`admin`): sets or releases the emergency
-    /// restriction of everyone (ADR 0007 §1 rule 1). Releasing it restores no grant
-    /// by itself. Setting it is restrictive (ledger first); releasing it is ordinary.
+    /// restriction of everyone (ADR 0007 §1 rule 1). Setting it is restrictive (in
+    /// force at once, ledgered, then anchored). Releasing it restores no grant by
+    /// itself and is permissive: it takes effect only once the anchor holds it, and a
+    /// release whose anchor update fails changes nothing (M2-006-A-R05).
     pub fn set_emergency_restriction(
         &self,
         caller: caller_role_t,
         restricted: bool,
     ) -> service_result_t<policy_state_t> {
         require(caller, &[Admin])?;
-        self.change_policy(|policy| policy.emergency_restriction = restricted)
+        if restricted {
+            self.change_policy(|policy| policy.emergency_restriction = true)
+        } else {
+            self.release_policy(|policy| policy.emergency_restriction = false)
+        }
     }
 
+    /// A restrictive policy change (ADR 0006 §3): in force at once, ledgered, then
+    /// anchored; with its anchor update failed it stays in force and pending, published
+    /// by the next successful anchor write (`rollback_status` reports it). The policy
+    /// lock is held throughout: publications never overtake each other.
     fn change_policy(
         &self,
         change: impl Fn(&mut policy_state_t),
     ) -> service_result_t<policy_state_t> {
-        let next = {
-            let mut policy = lock(&self.policy)?;
-            change(&mut policy);
-            *policy
-        };
-        {
+        let mut policy = lock(&self.policy)?;
+        change(&mut policy);
+        let next = *policy;
+        let appended = {
             let mut ledger = lock(&self.ledger)?;
-            let _ = ledger.append(
+            ledger.append(
                 self.io.as_ref(),
                 entry_kind_t::policy,
                 0,
                 &policy_payload(next.epoch, next.min_valid_epoch, next.emergency_restriction),
-            );
+            )
+        };
+        if appended == Err(store_error_t::io) {
+            self.mark_run_unverifiable();
         }
         let mut anchor = lock(&self.anchor)?;
         anchor
             .update(self.io.as_ref(), |map| map.policy = next)
             .map_err(|_| not_durable())?;
+        Ok(next)
+    }
+
+    /// A permissive policy change: durable in the anchor first, in force only then; a
+    /// failed anchor update leaves the state as it was (`restriction_not_durable`).
+    fn release_policy(
+        &self,
+        change: impl Fn(&mut policy_state_t),
+    ) -> service_result_t<policy_state_t> {
+        let mut policy = lock(&self.policy)?;
+        let mut next = *policy;
+        change(&mut next);
+        let mut anchor = lock(&self.anchor)?;
+        anchor
+            .update(self.io.as_ref(), |map| map.policy = next)
+            .map_err(|_| not_durable())?;
+        *policy = next;
         Ok(next)
     }
 
@@ -1627,24 +1783,33 @@ impl registry_t {
             }
         }
         quarantined.sort_by_key(|(uid, _)| *uid);
+        // One lock at a time, in lock order.
+        let policy = *lock(&self.policy)?;
+        let (anchor_mode, anchored_policy) = {
+            let anchor = lock(&self.anchor)?;
+            (anchor.mode(), anchor.map().policy)
+        };
+        let ledger_failed = lock(&self.ledger)?.failed();
         Ok(rollback_status_t {
-            anchor_mode: lock(&self.anchor)?.mode(),
+            anchor_mode,
             run_decision: self.run_decision,
             quarantined,
             unusable,
             contained,
             open_ceremonies: Vec::new(),
             pending_restrictions: pending,
-            ledger_failed: lock(&self.ledger)?.failed(),
+            ledger_failed,
             depleted_reserves: depleted,
-            policy: *lock(&self.policy)?,
+            policy_pending: policy != anchored_policy,
+            policy,
         })
     }
 
-    /// Orderly shutdown (ADR 0006 §3): once every pending restrictive write is
-    /// durable the run marker becomes `clean`, so the next start resumes without the
-    /// ledger. With anything still pending, or a failed ledger, the marker stays
-    /// `running` and `restriction_not_durable` is reported.
+    /// Orderly shutdown (ADR 0006 §3): once everything owed is durable — every pending
+    /// restrictive write, every unanchored record, the policy state in force — the run
+    /// marker becomes `clean`, in the same slot write as the policy state, so the next
+    /// start resumes without the ledger. With anything still owed, or a failed ledger,
+    /// the marker stays as it is and `restriction_not_durable` is reported.
     pub fn shutdown(&self) -> service_result_t<()> {
         let slots: Vec<Arc<Mutex<user_slot_t>>> = lock(&self.users)?
             .values()
@@ -1656,19 +1821,20 @@ impl registry_t {
         let mut clean = !lock(&self.ledger)?.failed();
         for slot in slots {
             let mut slot = lock(&slot)?;
-            if !slot.pending.is_empty() && self.flush_pending(&mut slot).is_err() {
-                clean = false;
-            }
-            if slot.anchor_failed {
+            let owed = !slot.pending.is_empty() || slot.anchor_failed;
+            if owed && self.flush_pending(&mut slot).is_err() {
                 clean = false;
             }
         }
         if !clean {
             return Err(not_durable());
         }
+        let policy = lock(&self.policy)?;
+        let policy_now = *policy;
         let mut anchor = lock(&self.anchor)?;
         anchor
             .update(self.io.as_ref(), |map| {
+                map.policy = policy_now;
                 if let Some(marker) = &mut map.run_marker {
                     marker.state = run_state_t::clean;
                 }
@@ -1678,7 +1844,8 @@ impl registry_t {
 
     /// `lineage_head` (`service:contractd`, `service:policyd`): one lineage from a
     /// consistent snapshot. `None` if the user has no journal. Refused while the
-    /// ledger cannot be written (no eligible decision is served, ADR 0006 §3).
+    /// ledger cannot be written (no eligible decision is served, ADR 0006 §3) and
+    /// while the user's last record is unanchored (M2-006-A-R01).
     pub fn lineage_head(
         &self,
         caller: caller_role_t,
@@ -1692,10 +1859,11 @@ impl registry_t {
         let Some(slot) = self.slot_any(owner_uid)? else {
             return Ok(None);
         };
-        let slot = lock(&slot)?;
+        let mut slot = lock(&slot)?;
         if slot.journal.failed() {
             return Err(storage_unavailable());
         }
+        self.anchored_for_reading(&mut slot)?;
         Ok(Some(self.view(&slot, lineage_id)?))
     }
 

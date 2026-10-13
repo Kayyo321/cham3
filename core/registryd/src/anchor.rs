@@ -50,6 +50,10 @@ pub enum run_state_t {
     running,
     /// An orderly shutdown made every restrictive change durable.
     clean,
+    /// The restriction ledger of this run failed (ADR 0006 §3 mechanism 2): whatever
+    /// the ledger files hold, the run cannot be verified, and the next start contains
+    /// every user.
+    unverifiable,
 }
 
 /// The run marker.
@@ -256,6 +260,7 @@ pub fn encode_slot(counter: u64, map: &anchor_map_t) -> Option<Vec<u8>> {
             writer.u8(match marker.state {
                 run_state_t::running => 1,
                 run_state_t::clean => 2,
+                run_state_t::unverifiable => 3,
             });
             writer.fixed(&marker.run_id);
             let boot_id = marker.boot_id.as_bytes();
@@ -309,7 +314,7 @@ pub fn decode_slot(bytes: &[u8]) -> Option<(u64, anchor_map_t)> {
     let counter = reader.u64()?;
     let run_marker = match reader.u8()? {
         0 => None,
-        state @ (1 | 2) => {
+        state @ 1..=3 => {
             let run_id = <[u8; 16]>::try_from(reader.take(16)?).ok()?;
             let length = usize::from(reader.u8()?);
             if length > MaxBootIdBytes {
@@ -319,10 +324,10 @@ pub fn decode_slot(bytes: &[u8]) -> Option<(u64, anchor_map_t)> {
             Some(run_marker_t {
                 run_id,
                 boot_id,
-                state: if state == 1 {
-                    run_state_t::running
-                } else {
-                    run_state_t::clean
+                state: match state {
+                    1 => run_state_t::running,
+                    2 => run_state_t::clean,
+                    _ => run_state_t::unverifiable,
                 },
             })
         }
@@ -451,11 +456,20 @@ impl anchor_t {
         };
         let mut best: Option<(usize, u64, anchor_map_t)> = None;
         let mut present = 0usize;
+        // The writer alternates the slots with strictly increasing counters: two valid
+        // slots with the same counter never come from it, and neither is trusted.
+        let mut equal_counters = false;
         for (index, name) in SlotFileNames.iter().enumerate() {
             match read_slot(&directory.join(name), owner) {
                 Ok(None) => {}
                 Ok(Some((counter, map))) => {
                     present = present.saturating_add(1);
+                    if best
+                        .as_ref()
+                        .is_some_and(|(_, current, _)| counter == *current)
+                    {
+                        equal_counters = true;
+                    }
                     if best
                         .as_ref()
                         .is_none_or(|(_, current, _)| counter > *current)
@@ -468,6 +482,9 @@ impl anchor_t {
                 // An invalid slot counts as present but unusable.
                 Err(_) => present = present.saturating_add(1),
             }
+        }
+        if equal_counters {
+            best = None;
         }
         let anchor = match best {
             Some((slot, counter, map)) => (
@@ -614,6 +631,44 @@ mod tests {
         });
         let bytes = encode_slot(1, &empty).expect("encodable");
         assert_eq!(decode_slot(&bytes), Some((1, empty)));
+    }
+
+    #[test]
+    fn the_unverifiable_marker_round_trips_and_malformed_slots_are_rejected() {
+        let mut map = sample();
+        if let Some(marker) = &mut map.run_marker {
+            marker.state = run_state_t::unverifiable;
+        }
+        let bytes = encode_slot(7, &map).expect("encodable");
+        assert_eq!(decode_slot(&bytes), Some((7, map.clone())));
+        // Malformed bodies behind a valid checksum are rejected by the parser itself:
+        // an unknown marker byte, a boot id longer than the limit, a user count beyond
+        // the data and a trailing byte. Offsets: magic 4, version 2, counter 8, marker
+        // byte at 14, run id 15..31, boot id length at 31, boot id (36) 32..68, policy
+        // 68..85, user count 85..89.
+        let body = &bytes[..bytes.len() - 32];
+        let sealed = |body: &[u8]| {
+            let mut sealed = body.to_vec();
+            sealed.extend_from_slice(&sha256(body));
+            sealed
+        };
+        assert_eq!(decode_slot(&sealed(body)), Some((7, map)));
+        let mut marker = body.to_vec();
+        marker[14] = 4;
+        assert_eq!(decode_slot(&sealed(&marker)), None, "unknown marker state");
+        let mut boot = body.to_vec();
+        boot[31] = 65;
+        assert_eq!(decode_slot(&sealed(&boot)), None, "boot id of 65 bytes");
+        let mut count = body.to_vec();
+        count[85..89].copy_from_slice(&u32::MAX.to_be_bytes());
+        assert_eq!(
+            decode_slot(&sealed(&count)),
+            None,
+            "user count beyond the data"
+        );
+        let mut trailing = body.to_vec();
+        trailing.push(0);
+        assert_eq!(decode_slot(&sealed(&trailing)), None, "trailing byte");
     }
 
     #[test]
