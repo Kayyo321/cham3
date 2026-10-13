@@ -65,7 +65,7 @@ New controls:
   1. Codex re-reviews M2-005 revision 2 and M2-004 revision 3 (one prompt below, two verdict blocks) and states how the two M2-004 revision-2 records relate.
   2. The owner decides which M2-004 revision-2 verdict governs.
   3. M2-006 continues under the owner's standing instruction after the scope record; the ±300 s commit-timestamp error code is still an open owner question.
-- **Reviewer environment (owner note, 2026-10-13):** this re-review runs on the **owner's home computer**, where Codex is unrestricted (its own Docker, network, `gh`, the Codex Security plugin). The owner's local clone `~/Cham3` is probably outdated and may be on another branch: the prompt's first step brings it to the exact candidate (fetch, check out `codex/m2-cryptographic-contract-core`, verify the SHA) before anything is read or run, and every clean-clone step clones from the fetched repository, not from a stale checkout. The combined review had still recorded `gh run download` as 403 and the Codex Security plugin's preflight resources as unreadable in the cloud environment; the prompt asks for both again on the home computer and for BLOCKED to be recorded only with the exact command and error.
+- **Reviewer environment (owner note, 2026-10-13):** this re-review runs on the **owner's home computer**, where Codex is unrestricted (its own Docker, network, `gh`, the Codex Security plugin). The owner's local clone `~/cham3` is probably outdated and may be on another branch: the prompt's first step brings it to the exact candidate (fetch, check out `codex/m2-cryptographic-contract-core`, verify the SHA) before anything is read or run, and every clean-clone step clones from the fetched repository, not from a stale checkout. The combined review had still recorded `gh run download` as 403 and the Codex Security plugin's preflight resources as unreadable in the cloud environment; the prompt asks for both again on the home computer and for BLOCKED to be recorded only with the exact command and error.
 - **Reminder for the end of M2:** the final review uses the Codex Security plugin skill.
 
 ## Review prompt for Codex
@@ -75,9 +75,9 @@ You are the independent REVIEWER (Codex) for cham3 M2-005 revision 2 and M2-004 
 not author this work. You run on the owner's home computer with unrestricted access (your own Docker, network, gh and
 the Codex Security plugin): nothing is expected to be BLOCKED; record BLOCKED only with the exact command and error.
 
-0. Bring the local clone to the candidate FIRST. The owner's ~/Cham3 checkout is probably outdated and may be on
+0. Bring the local clone to the candidate FIRST. The owner's ~/cham3 checkout is probably outdated and may be on
    another branch; do not read or test it as it stands. Run:
-     cd ~/Cham3 && git status --porcelain && git stash list
+     cd ~/cham3 && git status --porcelain && git stash list
      git fetch origin codex/m2-cryptographic-contract-core review/m2-005-security review/m2-004-r2-security \
        review/m2-004-security main
      git checkout codex/m2-cryptographic-contract-core && git reset --hard origin/codex/m2-cryptographic-contract-core
@@ -86,7 +86,7 @@ the Codex Security plugin): nothing is expected to be BLOCKED; record BLOCKED on
    If `git status` showed local changes or stashes you did not expect, record them and move them aside (git stash)
    rather than discarding them; never force-push or edit the implementation branch. Read every document below from
    this checkout at that HEAD, and make every clean clone for testing from it
-   (git clone --no-hardlinks ~/Cham3 <dir>; git -C <dir> checkout --detach 051b4c8aacdeecfabb23625f93dd16615aec39a0).
+   (git clone --no-hardlinks ~/cham3 <dir>; git -C <dir> checkout --detach 051b4c8aacdeecfabb23625f93dd16615aec39a0).
 
 Read AGENTS.md; your combined review (review/m2-005-security at
 f9f3b828fcd117ebcaa4179fa6ae05e782381db1, docs/reviews/M2-005-codex-security-review.md) and the earlier M2-004
@@ -133,7 +133,7 @@ main or review branches into the implementation branch; do not edit implementati
    the files the handoffs list: no dependency, Cargo.lock, specification, ADR or key-object format change; the
    vectors differ only by the added scenario (every other vector byte-identical).
 6. Evidence: in a clean clone at 051b4c8aacdeecfabb23625f93dd16615aec39a0 owned by an unprivileged UID (cloned from the
-   fetched ~/Cham3 of step 0), build the pinned image and run the
+   fetched ~/cham3 of step 0), build the pinned image and run the
    qualification (docker run --user "$(id -u):$(id -g)" ... bash build/scripts/qualify_m2_rust.sh with
    CHAM3_M2_REQUIRE_CLEAN=1; no --privileged, no added capabilities, no --record) and confirm: unit
    166+166 cargo tests, provider oracle 7/7, ECR oracle 19/96/18 with 23 scenarios / 352 steps,
@@ -159,7 +159,7 @@ docs/handoffs/M2-004-rereview-r3.md and this one:
 === CHAM3 M2-005 R2 VERDICT ===
 reviewer: Codex
 environment: <home computer: OS/arch; UID; Docker version; network unrestricted yes/no>
-local_clone: <~/Cham3 HEAD after step 0; local changes or stashes found: none / moved aside (what)>
+local_clone: <~/cham3 HEAD after step 0; local changes or stashes found: none / moved aside (what)>
 review_record: <branch> @ <commit> : <path> (sha256 <digest>)
 candidate_reviewed: 051b4c8aacdeecfabb23625f93dd16615aec39a0
 docs_commits_reviewed: <shas> (docs-only: yes/no)
