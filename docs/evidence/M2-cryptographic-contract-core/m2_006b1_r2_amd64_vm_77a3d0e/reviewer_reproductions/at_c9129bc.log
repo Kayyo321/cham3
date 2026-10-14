@@ -1,0 +1,238 @@
+commit c9129bca0e6c4b1e6caf72774e05a27e09a4d542
+c33ade322b722bee4494f532fd2e7ae6b7cff00d7741760f32412f6af983b25b  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/policy_reviewer_snippet.rs
+014db1de90301e29a0c03e19133929705598164f4a71a9496cdaf5109b1cba47  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/registry_reviewer_snippet.rs
+=== profile debug
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling subtle v2.6.1
+   Compiling cpufeatures v0.2.16
+   Compiling semver v1.0.23
+   Compiling zeroize v1.8.1
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling linux-raw-sys v0.4.14
+   Compiling fiat-crypto v0.2.2
+   Compiling bitflags v2.8.0
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling generic-array v0.14.7
+   Compiling opaque-debug v0.3.0
+   Compiling base64ct v1.6.0
+   Compiling rustc_version v0.4.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.3
+   Compiling universal-hash v0.5.1
+   Compiling aead v0.5.2
+   Compiling cipher v0.4.4
+   Compiling digest v0.10.7
+   Compiling poly1305 v0.8.0
+   Compiling sha2 v0.10.8
+   Compiling blake2 v0.10.6
+   Compiling chacha20 v0.9.1
+   Compiling chacha20poly1305 v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.38s
+     Running tests/reviewer_b1.rs (out/reviewer-target/debug/deps/reviewer_b1-ca5f6c75079dd68d)
+
+running 5 tests
+test reviewer_equal_start_and_error_at_admission ... ok
+test reviewer_forward_sample_without_fault_expires_the_grant ... ok
+test reviewer_network_time_sample_failure_stays_offline ... network direct after failed ledger=mode { mode: direct, grant_id: [98, 108, 165, 3, 167, 132, 58, 134, 60, 28, 32, 1, 192, 134, 72, 25] }
+network tor after failed ledger=mode { mode: tor, grant_id: [215, 143, 92, 171, 178, 52, 62, 198, 103, 75, 210, 37, 221, 234, 44, 148] }
+
+thread 'reviewer_network_time_sample_failure_stays_offline' panicked at core/policyd/tests/reviewer_b1.rs:1903:5:
+network must be Offline after ledger failure
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test reviewer_restore_and_merge_keep_future_start_observed_delay ... ok
+test reviewer_time_sample_ledger_failure_denies_current_evaluation ... ledger_failed=true; current=eligible { grant_id: [102, 205, 35, 10, 121, 43, 177, 251, 201, 12, 33, 213, 231, 64, 166, 112], commit_id: [67, 182, 232, 238, 68, 122, 219, 121, 121, 68, 143, 16, 29, 59, 109, 63, 212, 114, 183, 187, 88, 24, 122, 183, 151, 37, 115, 53, 204, 152, 85, 231] }
+next=unknown(registry_unavailable)
+
+thread 'reviewer_time_sample_ledger_failure_denies_current_evaluation' panicked at core/policyd/tests/reviewer_b1.rs:1875:5:
+mandatory denial: ledger failed during this evaluation
+FAILED
+
+failures:
+
+failures:
+    reviewer_network_time_sample_failure_stays_offline
+    reviewer_time_sample_ledger_failure_denies_current_evaluation
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.12s
+
+error: test failed, to rerun pass `-p cham3_policyd --test reviewer_b1`
+policy_exit=101
+   Compiling subtle v2.6.1
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling sha2 v0.10.8
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.11s
+     Running tests/reviewer_b1.rs (out/reviewer-target/debug/deps/reviewer_b1-93b0b363a31fa49f)
+
+running 9 tests
+test reviewer_anomaly_episode_survives_same_boot_restart ... after restart anomalies=[(1791882000, 400), (1791882000, 400)]
+
+thread 'reviewer_anomaly_episode_survives_same_boot_restart' panicked at core/registryd/tests/reviewer_b1.rs:669:5:
+assertion `left == right` failed: same episode never returned within 300s
+  left: 2
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test reviewer_anomaly_pending_blocks_admission ... ok
+test reviewer_concurrent_floor_publications_keep_maximum_offsets ... ok
+test reviewer_failed_new_boot_start_detects_the_old_boot_again ... ok
+test reviewer_foreign_run_ledger_is_not_a_time_floor ... ok
+test reviewer_invalid_anchor_discards_floor_and_quarantines ... ok
+test reviewer_new_boot_pending_termination_replays_from_ledger ... ok
+test reviewer_quarantined_user_anomaly_does_not_write_its_journal ... ok
+test reviewer_timestamp_refusal_leaves_settled_storage_byte_identical ... ok
+
+failures:
+
+failures:
+    reviewer_anomaly_episode_survives_same_boot_restart
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.16s
+
+error: test failed, to rerun pass `-p cham3_registryd --test reviewer_b1`
+registry_exit=101
+=== profile --release
+   Compiling typenum v1.17.0
+   Compiling version_check v0.9.5
+   Compiling subtle v2.6.1
+   Compiling semver v1.0.23
+   Compiling zeroize v1.8.1
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling signature v2.2.0
+   Compiling fiat-crypto v0.2.2
+   Compiling bitflags v2.8.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling ed25519 v2.2.3
+   Compiling generic-array v0.14.7
+   Compiling opaque-debug v0.3.0
+   Compiling base64ct v1.6.0
+   Compiling rustc_version v0.4.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.3
+   Compiling cipher v0.4.4
+   Compiling universal-hash v0.5.1
+   Compiling aead v0.5.2
+   Compiling digest v0.10.7
+   Compiling poly1305 v0.8.0
+   Compiling chacha20 v0.9.1
+   Compiling sha2 v0.10.8
+   Compiling blake2 v0.10.6
+   Compiling chacha20poly1305 v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+    Finished `release` profile [optimized] target(s) in 11.68s
+     Running tests/reviewer_b1.rs (out/reviewer-target/release/deps/reviewer_b1-fb41842b04cdd7ac)
+
+running 5 tests
+test reviewer_equal_start_and_error_at_admission ... ok
+test reviewer_forward_sample_without_fault_expires_the_grant ... ok
+test reviewer_network_time_sample_failure_stays_offline ... network direct after failed ledger=mode { mode: direct, grant_id: [98, 108, 165, 3, 167, 132, 58, 134, 60, 28, 32, 1, 192, 134, 72, 25] }
+network tor after failed ledger=mode { mode: tor, grant_id: [215, 143, 92, 171, 178, 52, 62, 198, 103, 75, 210, 37, 221, 234, 44, 148] }
+
+thread 'reviewer_network_time_sample_failure_stays_offline' panicked at core/policyd/tests/reviewer_b1.rs:1903:5:
+network must be Offline after ledger failure
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test reviewer_restore_and_merge_keep_future_start_observed_delay ... ok
+test reviewer_time_sample_ledger_failure_denies_current_evaluation ... 
+thread 'reviewer_time_sample_ledger_failure_denies_current_evaluation' panicked at core/policyd/tests/reviewer_b1.rs:1875:5:
+mandatory denial: ledger failed during this evaluation
+ledger_failed=true; current=eligible { grant_id: [102, 205, 35, 10, 121, 43, 177, 251, 201, 12, 33, 213, 231, 64, 166, 112], commit_id: [67, 182, 232, 238, 68, 122, 219, 121, 121, 68, 143, 16, 29, 59, 109, 63, 212, 114, 183, 187, 88, 24, 122, 183, 151, 37, 115, 53, 204, 152, 85, 231] }
+next=unknown(registry_unavailable)
+FAILED
+
+failures:
+
+failures:
+    reviewer_network_time_sample_failure_stays_offline
+    reviewer_time_sample_ledger_failure_denies_current_evaluation
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p cham3_policyd --test reviewer_b1`
+policy_exit=101
+   Compiling typenum v1.17.0
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling signature v2.2.0
+   Compiling fiat-crypto v0.2.2
+   Compiling digest v0.10.7
+   Compiling zeroize v1.8.1
+   Compiling subtle v2.6.1
+   Compiling bitflags v2.8.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling ed25519 v2.2.3
+   Compiling sha2 v0.10.8
+   Compiling curve25519-dalek v4.1.3
+   Compiling generic-array v0.14.7
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling rustix v0.38.37
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+    Finished `release` profile [optimized] target(s) in 10.68s
+     Running tests/reviewer_b1.rs (out/reviewer-target/release/deps/reviewer_b1-a351e2f64a716289)
+
+running 9 tests
+test reviewer_anomaly_episode_survives_same_boot_restart ... after restart anomalies=[(1791882000, 400), (1791882000, 400)]
+
+thread 'reviewer_anomaly_episode_survives_same_boot_restart' panicked at core/registryd/tests/reviewer_b1.rs:669:5:
+assertion `left == right` failed: same episode never returned within 300s
+  left: 2
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test reviewer_anomaly_pending_blocks_admission ... ok
+test reviewer_concurrent_floor_publications_keep_maximum_offsets ... ok
+test reviewer_failed_new_boot_start_detects_the_old_boot_again ... ok
+test reviewer_foreign_run_ledger_is_not_a_time_floor ... ok
+test reviewer_invalid_anchor_discards_floor_and_quarantines ... ok
+test reviewer_new_boot_pending_termination_replays_from_ledger ... ok
+test reviewer_quarantined_user_anomaly_does_not_write_its_journal ... ok
+test reviewer_timestamp_refusal_leaves_settled_storage_byte_identical ... ok
+
+failures:
+
+failures:
+    reviewer_anomaly_episode_survives_same_boot_restart
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.08s
+
+error: test failed, to rerun pass `-p cham3_registryd --test reviewer_b1`
+registry_exit=101
+REVIEWER_DONE

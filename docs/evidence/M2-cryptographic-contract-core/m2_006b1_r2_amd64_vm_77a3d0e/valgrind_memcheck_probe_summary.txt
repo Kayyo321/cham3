@@ -1,0 +1,9 @@
+# tail of valgrind_memcheck_probe.log
+==1787== HEAP SUMMARY:
+==1787==     in use at exit: 0 bytes in 0 blocks
+==1787==   total heap usage: 140 allocs, 140 frees, 67,279,774 bytes allocated
+==1787== 
+==1787== All heap blocks were freed -- no leaks are possible
+==1787== 
+==1787== For lists of detected and suppressed errors, rerun with: -s
+==1787== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

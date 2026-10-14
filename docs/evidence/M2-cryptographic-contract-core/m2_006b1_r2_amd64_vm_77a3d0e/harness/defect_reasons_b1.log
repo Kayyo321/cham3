@@ -1,0 +1,53 @@
+=== offset_follows_backward_samples -> the_clock_agrees_with_the_reference_model_on_every_case (exit 101)
+    ["thread 'the_clock_agrees_with_the_reference_model_on_every_case' panicked at core/registryd/tests/trusted_time_model.rs:206:5:"] 2080 disagreements, first: ["forward_step_then_correction_then_idle step 2: trusted Some(1791810000), model 1791813601", "forward_step_then_correction_then_idle step 3: trusted Some(1791810000), model 1791817201", "same_boot_restart_from_the_largest_floor step 1: trusted Some(1791806400), model 1791811480", "new_boot_from_the_last_floor step 1: trusted Some(1791802810), model 1791813610", "new_boot_from_the_last_floor step 2: floor time_floor_t { boot_id: \"boot-b\", boottime: 15, trusted: 1791802810, observed: 7010, anomaly: 0 }, model time_floor_t { boot_id: \"boot-b\", boottime: 15, trusted: 1791813610, observed: 7010, anomaly: 0 }"] | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace | 
+=== same_boot_floors_ignored -> a_same_boot_restart_resumes_from_the_ledger_and_from_the_anchor_floor (exit 101)
+    ["thread 'a_same_boot_restart_resumes_from_the_ledger_and_from_the_anchor_floor' panicked at core/registryd/tests/trusted_time.rs:202:5:"] assertion `left == right` failed | left: 1791882000 | right: 1791885600
+=== new_boot_starts_from_the_wall_clock -> a_new_boot_starts_no_earlier_than_the_last_floor (exit 101)
+    ["thread 'a_new_boot_starts_no_earlier_than_the_last_floor' panicked at core/registryd/tests/trusted_time.rs:226:5:"] assertion `left == right` failed | left: 1791878400 | right: 1791889200
+=== observed_counter_follows_the_wall_clock -> a_forward_clock_error_after_admission_does_not_advance_a_future_start (exit 101)
+    ["thread 'a_forward_clock_error_after_admission_does_not_advance_a_future_start' panicked at core/policyd/tests/current_authorization.rs:1734:5:"] assertion `left == right` failed | left: eligible { grant_id: [97, 144, 86, 24, 11, 240, 40, 203, 191, 3, 205, 246, 210, 148, 8, 112], commit_id: [80, 21, 82, 61, 21, 192, 93, 108, 174, 66, 35, 3, 47, 199, 178, 233, 208, 249, 217, 237, 156, 42, 64, 138, 250, 30, 100, 56, 90, 32, 197, 158] } | right: denied(not_started)
+=== anomaly_at_exactly_300_seconds -> a_clock_anomaly_is_recorded_once_per_user_per_episode (exit 101)
+    ["thread 'a_clock_anomaly_is_recorded_once_per_user_per_episode' panicked at core/registryd/tests/trusted_time.rs:455:5:"] assertion `left == right` failed | left: [(1791882000, 300)] | right: []
+=== timestamp_window_unchecked -> the_commit_timestamp_rule_is_checked_against_trusted_now (exit 101)
+    ["thread 'the_commit_timestamp_rule_is_checked_against_trusted_now' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got trunk | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace | 
+=== timestamp_parent_clause_unchecked -> the_commit_timestamp_rule_is_checked_against_trusted_now (exit 101)
+    ["thread 'the_commit_timestamp_rule_is_checked_against_trusted_now' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got trunk | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace | 
+=== concurrent_floor_write_regresses -> clock::tests::merged_floors_never_regress (exit 101)
+    ["thread 'clock::tests::merged_floors_never_regress' panicked at core/registryd/src/clock.rs:531:9:"] assertion `left == right` failed | left: time_floor_t { boot_id: "b", boottime: 100, trusted: 4000, observed: 60, anomaly: 0 } | right: time_floor_t { boot_id: "b", boottime: 200, trusted: 5200, observed: 160, anomaly: 0 }
+=== timestamp_rule_skipped_at_admission -> admission_scenarios_match_the_oracle (exit 101)
+    ["thread 'admission_scenarios_match_the_oracle' panicked at core/registryd/tests/admission_scenarios.rs:197:5:"] [ | "timestamp_rule_skew_bounds step 0: expected Some((\"admission\", \"timestamp_rule\")), got None", | "timestamp_rule_skew_bounds step 1: expected Some((\"admission\", \"timestamp_rule\")), got Some((\"admission\", \"stale_head\"))",
+=== branches_survive_a_new_boot -> a_new_boot_ends_every_live_temporary_branch_durably (exit 101)
+    ["thread 'a_new_boot_ends_every_live_temporary_branch_durably' panicked at core/registryd/tests/trusted_time.rs:286:5:"] assertion `left == right` failed | left: Ok(current) | right: Ok(inactive)
+=== new_boot_not_detected -> a_new_boot_ends_every_live_temporary_branch_durably (exit 101)
+    ["thread 'a_new_boot_ends_every_live_temporary_branch_durably' panicked at core/registryd/tests/trusted_time.rs:286:5:"] assertion `left == right` failed | left: Ok(current) | right: Ok(inactive)
+=== raise_adopted_without_the_ledger -> an_offset_increase_that_cannot_be_ledgered_is_not_relied_on (exit 101)
+    ["thread 'an_offset_increase_that_cannot_be_ledgered_is_not_relied_on' panicked at core/registryd/tests/trusted_time.rs:182:5:"] assertion `left == right` failed: not adopted | left: 1791885600 | right: 1791882000
+=== time_sample_adopted_without_the_ledger -> time_sample_raises_through_the_ledger_and_refuses_other_boots (exit 101)
+    ["thread 'time_sample_raises_through_the_ledger_and_refuses_other_boots' panicked at core/registryd/tests/trusted_time.rs:522:5:"] assertion `left == right` failed | left: 1791882020 | right: 1791882010
+=== time_sample_of_another_boot_accepted -> time_sample_raises_through_the_ledger_and_refuses_other_boots (exit 101)
+    ["thread 'time_sample_raises_through_the_ledger_and_refuses_other_boots' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got time_view_t { boot_id: "boot-1", offset: 1791881010, observed_offset: -1000 } | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace | 
+=== floor_never_refreshed -> the_anchor_floor_is_refreshed_at_least_every_sixty_seconds (exit 101)
+    ["thread 'the_anchor_floor_is_refreshed_at_least_every_sixty_seconds' panicked at core/registryd/tests/trusted_time.rs:326:5:"] assertion `left == right` failed | left: 1000 | right: 1060
+=== anomaly_recorded_at_every_operation -> a_clock_anomaly_is_recorded_once_per_user_per_episode (exit 101)
+    ["thread 'a_clock_anomaly_is_recorded_once_per_user_per_episode' panicked at core/registryd/tests/trusted_time.rs:460:5:"] assertion `left == right` failed: once per episode | left: 2 | right: 1
+=== anomaly_not_recorded_by_reads -> a_clock_anomaly_is_recorded_once_per_user_per_episode (exit 101)
+    ["thread 'a_clock_anomaly_is_recorded_once_per_user_per_episode' panicked at core/registryd/tests/trusted_time.rs:458:5:"] assertion `left == right` failed | left: [] | right: [(1791882000, 301)]
+=== admission_on_a_stale_clock -> a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction (exit 101)
+    ["thread 'a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got trunk | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace | 
+=== admission_observed_time_not_recorded -> an_admission_records_its_trusted_and_observed_time (exit 101)
+    ["thread 'an_admission_records_its_trusted_and_observed_time' panicked at core/registryd/tests/trusted_time.rs:415:5:"] assertion failed: matches!(record.body, record_body_t::commit_admitted { observed: 100, .. }) | note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace | 
+=== observed_start_not_checked -> a_forward_clock_error_after_admission_does_not_advance_a_future_start (exit 101)
+    ["thread 'a_forward_clock_error_after_admission_does_not_advance_a_future_start' panicked at core/policyd/tests/current_authorization.rs:1734:5:"] assertion `left == right` failed | left: eligible { grant_id: [97, 144, 86, 24, 11, 240, 40, 203, 191, 3, 205, 246, 210, 148, 8, 112], commit_id: [80, 21, 82, 61, 21, 192, 93, 108, 174, 66, 35, 3, 47, 199, 178, 233, 208, 249, 217, 237, 156, 42, 64, 138, 250, 30, 100, 56, 90, 32, 197, 158] } | right: denied(not_started)
+=== policyd_never_reports_a_forward_sample -> policyd_reports_a_forward_sample_and_relies_on_it_only_after_registryd_took_it (exit 101)
+    ["thread 'policyd_reports_a_forward_sample_and_relies_on_it_only_after_registryd_took_it' panicked at core/policyd/tests/current_authorization.rs:1777:5:"] assertion `left == right` failed | left: Some(1791881060) | right: Some(1791881065)
+=== policyd_evaluates_another_boot -> a_snapshot_of_another_boot_is_unknown (exit 101)
+    ["thread 'a_snapshot_of_another_boot_is_unknown' panicked at core/policyd/tests/current_authorization.rs:1828:5:"] assertion `left == right` failed | left: eligible { grant_id: [109, 205, 206, 136, 167, 222, 95, 206, 11, 187, 236, 10, 65, 27, 94, 84], commit_id: [35, 224, 172, 78, 53, 165, 244, 22, 42, 175, 171, 164, 190, 195, 163, 124, 231, 255, 129, 110, 178, 72, 36, 45, 170, 49, 220, 196, 139, 173, 54, 230] } | right: unknown(clock_unavailable)
+=== failed_time_sample_ignored -> a_time_sample_whose_ledger_append_fails_denies_the_current_evaluation (exit 101)
+    ["thread 'a_time_sample_whose_ledger_append_fails_denies_the_current_evaluation' panicked at core/policyd/tests/current_authorization.rs:1914:5:"] assertion `left == right` failed: nothing is decided from the snapshot read before the failure | left: eligible { grant_id: [235, 89, 12, 58, 116, 33, 140, 181, 44, 58, 36, 15, 161, 92, 239, 72], commit_id: [117, 209, 253, 22, 254, 2, 80, 124, 59, 19, 116, 72, 233, 194, 23, 131, 79, 233, 145, 94, 183, 67, 23, 192, 130, 150, 13, 157, 12, 80, 24, 235] } | right: unknown(registry_unavailable)
+=== anomaly_episode_not_resumed -> a_clock_anomaly_episode_survives_same_boot_restarts (exit 101)
+    ["thread 'a_clock_anomaly_episode_survives_same_boot_restarts' panicked at core/registryd/tests/trusted_time.rs:719:5:"] assertion `left == right` failed | left: (1, true) | right: (2, true)
+=== anomaly_transition_not_ledgered -> a_clock_anomaly_episode_survives_same_boot_restarts (exit 101)
+    ["thread 'a_clock_anomaly_episode_survives_same_boot_restarts' panicked at core/registryd/tests/trusted_time.rs:719:5:"] assertion `left == right` failed | left: (1, true) | right: (2, true)
+=== replayed_anomaly_records_ignored -> a_clock_anomaly_episode_survives_same_boot_restarts (exit 101)
+    ["thread 'a_clock_anomaly_episode_survives_same_boot_restarts' panicked at core/registryd/tests/trusted_time.rs:700:5:"] assertion `left == right` failed | left: [("boot-1", 1), ("boot-1", 1)] | right: [("boot-1", 1)]
+exit=0

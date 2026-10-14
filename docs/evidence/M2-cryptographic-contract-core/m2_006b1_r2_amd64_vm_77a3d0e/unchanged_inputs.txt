@@ -1,0 +1,39 @@
+ core/policyd/src/service.rs                        |  30 ++--
+ core/policyd/tests/current_authorization.rs        | 158 ++++++++++++++++++++-
+ core/registryd/src/anchor.rs                       |   8 +-
+ core/registryd/src/clock.rs                        |  98 ++++++++++++-
+ core/registryd/src/ledger.rs                       |  12 +-
+ core/registryd/src/record.rs                       |  14 +-
+ core/registryd/src/registry.rs                     |  42 +++++-
+ core/registryd/tests/trusted_time.rs               |  80 +++++++++++
+ core/registryd/tests/trusted_time_model.rs         |   8 +-
+ .../0007_m2_lifecycle_time_consumption.md          |   6 +
+ docs/decisions/README.md                           |   2 +-
+ docs/specs/m2_registry_storage_v1.md               |  16 +--
+ docs/specs/m2_service_ipc_v1.md                    |   2 +-
+ tests/m2/harness/test_m2_registry_policy.py        |  32 ++++-
+ tests/m2/test_inventory.txt                        |   5 +
+ 15 files changed, 465 insertions(+), 48 deletions(-)
+
+# git diff --exit-code b4e4cdc 77a3d0e -- <path>: exit status per path
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 .github
+0 core/contract_format
+0 core/contractd
+0 core/vaultd
+0 core/native
+0 core/identityd
+0 core/registryd/Cargo.toml
+0 core/policyd/Cargo.toml
+0 core/policyd/src/evaluate.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/src/bin
+0 tests/m2/lib
+0 tests/m2/storage
+0 tests/m2/oracle
+0 tests/m2/vectors
