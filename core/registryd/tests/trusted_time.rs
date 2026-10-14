@@ -733,3 +733,56 @@ fn a_clock_anomaly_episode_survives_same_boot_restarts() {
         vec![one(1), one(2), ("boot-2".to_owned(), 1)]
     );
 }
+
+#[test]
+fn a_startup_sample_within_300_seconds_ends_the_resumed_episode() {
+    // M2-006-B1-R2-01: the start's own sample is an observation like any other. Within
+    // 300 s of trusted time it ends the resumed episode, durably before anything is
+    // served, so the next lag is a new episode; more than 300 s behind it continues
+    // the episode. A restart alone ends nothing. Clean and unclean restarts alike.
+    let one = |episode: u64| ("boot-1".to_owned(), episode);
+    for clean in [true, false] {
+        for in_range in [false, true] {
+            let root = temp_root(&format!("time_startup_episode_{clean}_{in_range}"));
+            let alice = test_user(1001);
+            let time = test_time_t::at(T1Seconds);
+            let registry = start(&root, "boot-1", &time);
+            enroll(&registry, &alice);
+            time.step_wall_clock(T1Seconds - 400);
+            registry
+                .lineage_head(Policyd, alice.uid, &NoLineage)
+                .expect("view");
+            if clean {
+                registry.shutdown().expect("clean shutdown");
+            }
+            drop(registry);
+            if in_range {
+                time.step_wall_clock(T1Seconds);
+            }
+            let registry = start(&root, "boot-1", &time);
+            let mark = newest_anchor(&root).time_floor.map(|floor| floor.anomaly);
+            assert_eq!(
+                mark,
+                Some(if in_range { 3 } else { 2 }),
+                "{clean} {in_range}"
+            );
+            // The ended episode stays ended through another unclean restart.
+            drop(registry);
+            time.step_wall_clock(T1Seconds - 400);
+            let registry = start(&root, "boot-1", &time);
+            registry
+                .lineage_head(Policyd, alice.uid, &NoLineage)
+                .expect("view");
+            let expected = if in_range {
+                vec![one(1), one(2)]
+            } else {
+                vec![one(1)]
+            };
+            assert_eq!(
+                anomaly_episodes(&root, alice.uid),
+                expected,
+                "clean {clean}, in range {in_range}"
+            );
+        }
+    }
+}

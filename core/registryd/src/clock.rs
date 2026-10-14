@@ -243,7 +243,12 @@ impl trusted_clock_t {
     /// Starts the clock from a sample and the persisted floors (rules 1, 3 and 6;
     /// option B). Floors of this boot: resume from the largest offsets. Floors of
     /// earlier boots only: start no earlier than the last trusted and observed values.
-    /// The observed counter of a store without floors starts at zero.
+    /// The observed counter of a store without floors starts at zero. The anomaly
+    /// episode of this boot is resumed, then the start's own sample is taken into
+    /// account like any other (erratum E6; M2-006-B1-R2-01): within 300 s of trusted
+    /// time it ends a resumed episode, more than 300 s behind it opens or continues
+    /// one. A restart alone never ends an episode. The caller persists the result
+    /// before serving (the run marker's anchor write publishes the floor).
     pub fn start(
         boot_id: &str,
         sample: time_sample_t,
@@ -279,13 +284,17 @@ impl trusted_clock_t {
                 observed_offset = observed_offset.max(floor.observed_offset()?);
             }
         }
-        Some(trusted_clock_t {
+        let mut clock = trusted_clock_t {
             boot_id: boot_id.to_owned(),
             offset,
             observed_offset,
             last_boottime: sample.boottime,
             anomaly,
-        })
+        };
+        // The offset already covers the sample's own (it is the start value or
+        // larger), so this changes only the episode.
+        clock.observe(sample, false);
+        Some(clock)
     }
 
     pub fn boot_id(&self) -> &str {
@@ -428,6 +437,30 @@ mod tests {
     }
 
     #[test]
+    fn the_start_sample_ends_or_continues_the_resumed_episode() {
+        let open_floor = time_floor_t {
+            anomaly: 2,
+            ..floor("b", 100, 5_000, 90)
+        };
+        // Within 300 s of trusted time (5 010 at boottime 110): the episode ends.
+        let ended = trusted_clock_t::start("b", sample(4_710, 110), &[open_floor.clone()]).unwrap();
+        assert_eq!(ended.anomaly().mark(), 3);
+        // More than 300 s behind: the episode continues.
+        let continued =
+            trusted_clock_t::start("b", sample(4_709, 110), &[open_floor.clone()]).unwrap();
+        assert_eq!(continued.anomaly().mark(), 2);
+        // After an ended episode, a lag at the start opens the next one.
+        let closed_floor = time_floor_t {
+            anomaly: 3,
+            ..open_floor
+        };
+        let next = trusted_clock_t::start("b", sample(4_000, 110), &[closed_floor]).unwrap();
+        assert_eq!(next.anomaly().mark(), 4);
+        // The start's sample is never a raise to adopt: the offset is the start value.
+        assert_eq!(ended.now(), Some(5_010));
+    }
+
+    #[test]
     fn anomaly_episodes_resume_in_the_same_boot_only() {
         let open = anomaly_state_t {
             episode: 3,
@@ -461,8 +494,12 @@ mod tests {
         ];
         let resumed = trusted_clock_t::start("b", sample(4_000, 130), &floors).unwrap();
         assert_eq!(resumed.anomaly().mark(), 6);
+        // Another boot counts its own episodes: its start, 1 020 s behind the last floor,
+        // opens episode 1; a start within 300 s of it opens none.
         let rebooted = trusted_clock_t::start("c", sample(4_000, 5), &floors).unwrap();
-        assert_eq!(rebooted.anomaly().mark(), 0);
+        assert_eq!(rebooted.anomaly().mark(), 2);
+        let settled = trusted_clock_t::start("c", sample(5_020, 5), &floors).unwrap();
+        assert_eq!(settled.anomaly().mark(), 0);
         // The resumed episode continues: a sample still behind belongs to it.
         let mut clock = resumed;
         assert_eq!(clock.observe(sample(4_000, 140), true), Some(3));

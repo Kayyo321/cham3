@@ -7,7 +7,7 @@ of the anchor, run marker, restriction ledger or recovery table (ADR 0006 sectio
 6; the M2-006 stage A review findings R01-R08, R2-01-R2-04 and R3-01), one trusted-time
 rule of M2-006 stage B1 (ADR 0007 section 5 and section 8 option B, errata E4 and E6: the
 offset rule, floors, the observed counter, anomalies, time_sample, the commit-timestamp
-rule, the end of temporary branches at a new boot, and the B1 review findings R01-R02),
+rule, the end of temporary branches at a new boot, and the B1 review findings R01-R02 and R2-01),
 one current-authorization rule (ADR 0007 section 1) or one submission check, and the
 named Rust test must then fail (not merely fail to build); the unmodified copy passes the
 same tests.
@@ -557,6 +557,11 @@ SeededDefects = [
       "            if slot.anomaly_episode == episode || reported {\n",
       "            if slot.anomaly_episode == episode {\n")],
      "cham3_registryd", "trusted_time", "a_clock_anomaly_episode_survives_same_boot_restarts"),
+    # M2-006-B1-R2-01 (stage B1 revision 3): the start's own sample ends a resumed episode.
+    ("startup_sample_not_reconciled", [(Clock,
+      "        clock.observe(sample, false);\n        Some(clock)\n",
+      "        Some(clock)\n")],
+     "cham3_registryd", "trusted_time", "a_startup_sample_within_300_seconds_ends_the_resumed_episode"),
 ]
 
 
