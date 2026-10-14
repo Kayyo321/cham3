@@ -1,0 +1,33 @@
+ core/registryd/src/clock.rs                 | 45 +++++++++++++++++++++---
+ core/registryd/tests/trusted_time.rs        | 53 +++++++++++++++++++++++++++++
+ docs/specs/m2_registry_storage_v1.md        |  4 +--
+ tests/m2/harness/test_m2_registry_policy.py |  7 +++-
+ tests/m2/test_inventory.txt                 |  2 ++
+ 5 files changed, 104 insertions(+), 7 deletions(-)
+
+# git diff --exit-code 0ec854d 5ea2407 -- <path>: exit status per path
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 .github
+0 docs/decisions
+0 core/contract_format
+0 core/contractd
+0 core/vaultd
+0 core/native
+0 core/identityd
+0 core/policyd
+0 core/registryd/Cargo.toml
+0 core/registryd/src/registry.rs
+0 core/registryd/src/anchor.rs
+0 core/registryd/src/ledger.rs
+0 core/registryd/src/record.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/src/bin
+0 tests/m2/lib
+0 tests/m2/storage
+0 tests/m2/oracle
+0 tests/m2/vectors

@@ -1,0 +1,205 @@
+commit 77a3d0e65072b60f4ce1780a709dd342fdda67f7
+c33ade322b722bee4494f532fd2e7ae6b7cff00d7741760f32412f6af983b25b  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/policy_reviewer_snippet.rs
+014db1de90301e29a0c03e19133929705598164f4a71a9496cdaf5109b1cba47  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/registry_reviewer_snippet.rs
+8fe2672661c33aabb8aed713dd59e31b91f2e03dbcfa0034aebac6227df05e1d  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/r2_policy_controls.rs
+de0eb57e9905cef44105d95f938c74ec3f91ecb6333cd59b59b36d24e711c043  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/r2_registry_controls.rs
+bbb3b9ad90bcd2252a85d8b74a28a06a22bcfab2ad325424bb46c33be9441287  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/r2_startup_control.rs
+=== profile debug
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling subtle v2.6.1
+   Compiling semver v1.0.23
+   Compiling cpufeatures v0.2.16
+   Compiling zeroize v1.8.1
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling fiat-crypto v0.2.2
+   Compiling signature v2.2.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling bitflags v2.8.0
+   Compiling ed25519 v2.2.3
+   Compiling opaque-debug v0.3.0
+   Compiling generic-array v0.14.7
+   Compiling base64ct v1.6.0
+   Compiling rustc_version v0.4.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.3
+   Compiling universal-hash v0.5.1
+   Compiling aead v0.5.2
+   Compiling cipher v0.4.4
+   Compiling digest v0.10.7
+   Compiling poly1305 v0.8.0
+   Compiling sha2 v0.10.8
+   Compiling blake2 v0.10.6
+   Compiling chacha20 v0.9.1
+   Compiling chacha20poly1305 v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.43s
+     Running tests/rereview_r2.rs (out/r2-target/debug/deps/rereview_r2-e7b20b9a66ca54b4)
+
+running 1 test
+test rereview_refused_samples_after_fresh_and_successful_evaluations ... PASS fresh=true malformed=false network=false offset=None
+PASS fresh=true malformed=false network=true offset=None
+PASS fresh=true malformed=true network=false offset=None
+PASS fresh=true malformed=true network=true offset=None
+PASS fresh=false malformed=false network=false offset=Some(1791881065)
+PASS fresh=false malformed=false network=true offset=Some(1791881065)
+PASS fresh=false malformed=true network=false offset=Some(1791881065)
+PASS fresh=false malformed=true network=true offset=Some(1791881065)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.12s
+
+policy_exit=0
+   Compiling subtle v2.6.1
+   Compiling digest v0.10.7
+   Compiling sha2 v0.10.8
+   Compiling curve25519-dalek v4.1.3
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.15s
+     Running tests/rereview_r2.rs (out/r2-target/debug/deps/rereview_r2-ea8b223a93e442de)
+
+running 4 tests
+test rereview_episode_contained_and_invalid_anchor_start ... ok
+test rereview_ledger_only_closure_and_equal_payload_episodes ... ok
+test rereview_mark_encoding_merge_and_record_domain ... ok
+test rereview_startup_sample_closes_the_resumed_episode ... clean=true startup_in_range=false startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1)]
+clean=true startup_in_range=true startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1), ("boot-1", 2)]
+clean=false startup_in_range=false startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1)]
+clean=false startup_in_range=true startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1), ("boot-1", 2)]
+
+thread 'rereview_startup_sample_closes_the_resumed_episode' panicked at core/registryd/tests/rereview_r2.rs:991:5:
+startup's actual in-range sample must close the episode; anomalous startup must resume it
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    rereview_startup_sample_closes_the_resumed_episode
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.15s
+
+error: test failed, to rerun pass `-p cham3_registryd --test rereview_r2`
+registry_exit=101
+=== profile --release
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling subtle v2.6.1
+   Compiling semver v1.0.23
+   Compiling cpufeatures v0.2.16
+   Compiling zeroize v1.8.1
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling signature v2.2.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling fiat-crypto v0.2.2
+   Compiling bitflags v2.8.0
+   Compiling ed25519 v2.2.3
+   Compiling generic-array v0.14.7
+   Compiling opaque-debug v0.3.0
+   Compiling base64ct v1.6.0
+   Compiling rustc_version v0.4.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.3
+   Compiling universal-hash v0.5.1
+   Compiling aead v0.5.2
+   Compiling cipher v0.4.4
+   Compiling digest v0.10.7
+   Compiling poly1305 v0.8.0
+   Compiling chacha20 v0.9.1
+   Compiling sha2 v0.10.8
+   Compiling blake2 v0.10.6
+   Compiling chacha20poly1305 v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+    Finished `release` profile [optimized] target(s) in 12.52s
+     Running tests/rereview_r2.rs (out/r2-target/release/deps/rereview_r2-889f0643f9d75e5c)
+
+running 1 test
+test rereview_refused_samples_after_fresh_and_successful_evaluations ... PASS fresh=true malformed=false network=false offset=None
+PASS fresh=true malformed=false network=true offset=None
+PASS fresh=true malformed=true network=false offset=None
+PASS fresh=true malformed=true network=true offset=None
+PASS fresh=false malformed=false network=false offset=Some(1791881065)
+PASS fresh=false malformed=false network=true offset=Some(1791881065)
+PASS fresh=false malformed=true network=false offset=Some(1791881065)
+PASS fresh=false malformed=true network=true offset=Some(1791881065)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 25 filtered out; finished in 0.06s
+
+policy_exit=0
+   Compiling typenum v1.17.0
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling signature v2.2.0
+   Compiling fiat-crypto v0.2.2
+   Compiling zeroize v1.8.1
+   Compiling digest v0.10.7
+   Compiling subtle v2.6.1
+   Compiling bitflags v2.8.0
+   Compiling ed25519 v2.2.3
+   Compiling linux-raw-sys v0.4.14
+   Compiling sha2 v0.10.8
+   Compiling curve25519-dalek v4.1.3
+   Compiling generic-array v0.14.7
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling rustix v0.38.37
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+    Finished `release` profile [optimized] target(s) in 11.28s
+     Running tests/rereview_r2.rs (out/r2-target/release/deps/rereview_r2-50d8ca27b29291c3)
+
+running 4 tests
+test rereview_episode_contained_and_invalid_anchor_start ... ok
+test rereview_ledger_only_closure_and_equal_payload_episodes ... ok
+test rereview_mark_encoding_merge_and_record_domain ... ok
+test rereview_startup_sample_closes_the_resumed_episode ... clean=true startup_in_range=false startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1)]
+clean=true startup_in_range=true startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1), ("boot-1", 2)]
+clean=false startup_in_range=false startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1)]
+clean=false startup_in_range=true startup_mark=2; episodes=[("boot-1", 1)]; expected=[("boot-1", 1), ("boot-1", 2)]
+
+thread 'rereview_startup_sample_closes_the_resumed_episode' panicked at core/registryd/tests/rereview_r2.rs:991:5:
+startup's actual in-range sample must close the episode; anomalous startup must resume it
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    rereview_startup_sample_closes_the_resumed_episode
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p cham3_registryd --test rereview_r2`
+registry_exit=101
+REREVIEW_DONE

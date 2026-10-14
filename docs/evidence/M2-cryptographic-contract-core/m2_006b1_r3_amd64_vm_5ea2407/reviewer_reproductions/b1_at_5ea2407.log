@@ -1,0 +1,186 @@
+commit 5ea2407ff2c639361ec2976bc20bc95f5acbce95
+c33ade322b722bee4494f532fd2e7ae6b7cff00d7741760f32412f6af983b25b  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/policy_reviewer_snippet.rs
+014db1de90301e29a0c03e19133929705598164f4a71a9496cdaf5109b1cba47  /tmp/claude-1001/-home-dev-cham3/6ec58a3f-7807-42cc-8d7a-3281cf1f347e/scratchpad/reviewer_b1/registry_reviewer_snippet.rs
+=== profile debug
+   Compiling version_check v0.9.5
+   Compiling typenum v1.17.0
+   Compiling subtle v2.6.1
+   Compiling cpufeatures v0.2.16
+   Compiling zeroize v1.8.1
+   Compiling semver v1.0.23
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling bitflags v2.8.0
+   Compiling signature v2.2.0
+   Compiling linux-raw-sys v0.4.14
+   Compiling fiat-crypto v0.2.2
+   Compiling ed25519 v2.2.3
+   Compiling opaque-debug v0.3.0
+   Compiling base64ct v1.6.0
+   Compiling generic-array v0.14.7
+   Compiling rustc_version v0.4.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.3
+   Compiling universal-hash v0.5.1
+   Compiling aead v0.5.2
+   Compiling cipher v0.4.4
+   Compiling digest v0.10.7
+   Compiling poly1305 v0.8.0
+   Compiling sha2 v0.10.8
+   Compiling blake2 v0.10.6
+   Compiling chacha20 v0.9.1
+   Compiling chacha20poly1305 v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.38s
+     Running tests/reviewer_b1.rs (out/reviewer-target/debug/deps/reviewer_b1-ca5f6c75079dd68d)
+
+running 5 tests
+test reviewer_equal_start_and_error_at_admission ... ok
+test reviewer_forward_sample_without_fault_expires_the_grant ... ok
+test reviewer_network_time_sample_failure_stays_offline ... network direct after failed ledger=offline_unknown(registry_unavailable)
+network tor after failed ledger=offline_unknown(registry_unavailable)
+ok
+test reviewer_restore_and_merge_keep_future_start_observed_delay ... ok
+test reviewer_time_sample_ledger_failure_denies_current_evaluation ... ledger_failed=true; current=unknown(registry_unavailable)
+next=unknown(registry_unavailable)
+ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.12s
+
+policy_exit=0
+   Compiling digest v0.10.7
+   Compiling subtle v2.6.1
+   Compiling sha2 v0.10.8
+   Compiling curve25519-dalek v4.1.3
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.08s
+     Running tests/reviewer_b1.rs (out/reviewer-target/debug/deps/reviewer_b1-93b0b363a31fa49f)
+
+running 9 tests
+test reviewer_anomaly_episode_survives_same_boot_restart ... after restart anomalies=[(1791882000, 400)]
+ok
+test reviewer_anomaly_pending_blocks_admission ... ok
+test reviewer_concurrent_floor_publications_keep_maximum_offsets ... ok
+test reviewer_failed_new_boot_start_detects_the_old_boot_again ... ok
+test reviewer_foreign_run_ledger_is_not_a_time_floor ... ok
+test reviewer_invalid_anchor_discards_floor_and_quarantines ... ok
+test reviewer_new_boot_pending_termination_replays_from_ledger ... ok
+test reviewer_quarantined_user_anomaly_does_not_write_its_journal ... ok
+test reviewer_timestamp_refusal_leaves_settled_storage_byte_identical ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.17s
+
+registry_exit=0
+=== profile --release
+   Compiling typenum v1.17.0
+   Compiling version_check v0.9.5
+   Compiling subtle v2.6.1
+   Compiling semver v1.0.23
+   Compiling zeroize v1.8.1
+   Compiling cpufeatures v0.2.16
+   Compiling cfg-if v1.0.0
+   Compiling rustix v0.38.37
+   Compiling signature v2.2.0
+   Compiling bitflags v2.8.0
+   Compiling fiat-crypto v0.2.2
+   Compiling linux-raw-sys v0.4.14
+   Compiling ed25519 v2.2.3
+   Compiling generic-array v0.14.7
+   Compiling opaque-debug v0.3.0
+   Compiling base64ct v1.6.0
+   Compiling rustc_version v0.4.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling crypto-common v0.1.6
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.3
+   Compiling universal-hash v0.5.1
+   Compiling aead v0.5.2
+   Compiling cipher v0.4.4
+   Compiling digest v0.10.7
+   Compiling poly1305 v0.8.0
+   Compiling chacha20 v0.9.1
+   Compiling sha2 v0.10.8
+   Compiling blake2 v0.10.6
+   Compiling chacha20poly1305 v0.10.1
+   Compiling argon2 v0.5.3
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+   Compiling cham3_secure_memory v0.1.0 (/work/core/native/secure_memory)
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_vaultd v0.1.0 (/work/core/vaultd)
+   Compiling cham3_contractd v0.1.0 (/work/core/contractd)
+   Compiling cham3_policyd v0.1.0 (/work/core/policyd)
+    Finished `release` profile [optimized] target(s) in 11.99s
+     Running tests/reviewer_b1.rs (out/reviewer-target/release/deps/reviewer_b1-fb41842b04cdd7ac)
+
+running 5 tests
+test reviewer_equal_start_and_error_at_admission ... ok
+test reviewer_forward_sample_without_fault_expires_the_grant ... ok
+test reviewer_network_time_sample_failure_stays_offline ... network direct after failed ledger=offline_unknown(registry_unavailable)
+network tor after failed ledger=offline_unknown(registry_unavailable)
+ok
+test reviewer_restore_and_merge_keep_future_start_observed_delay ... ok
+test reviewer_time_sample_ledger_failure_denies_current_evaluation ... ledger_failed=true; current=unknown(registry_unavailable)
+next=unknown(registry_unavailable)
+ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.06s
+
+policy_exit=0
+   Compiling typenum v1.17.0
+   Compiling cfg-if v1.0.0
+   Compiling cpufeatures v0.2.16
+   Compiling fiat-crypto v0.2.2
+   Compiling signature v2.2.0
+   Compiling zeroize v1.8.1
+   Compiling digest v0.10.7
+   Compiling subtle v2.6.1
+   Compiling linux-raw-sys v0.4.14
+   Compiling bitflags v2.8.0
+   Compiling ed25519 v2.2.3
+   Compiling sha2 v0.10.8
+   Compiling curve25519-dalek v4.1.3
+   Compiling generic-array v0.14.7
+   Compiling ed25519-dalek v2.1.1
+   Compiling cham3_contract_format v0.1.0 (/work/core/contract_format)
+   Compiling rustix v0.38.37
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling cham3_identityd v0.1.0 (/work/core/identityd)
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+   Compiling cham3_os_adapter v0.1.0 (/work/core/native/os_adapter)
+    Finished `release` profile [optimized] target(s) in 10.76s
+     Running tests/reviewer_b1.rs (out/reviewer-target/release/deps/reviewer_b1-a351e2f64a716289)
+
+running 9 tests
+test reviewer_anomaly_episode_survives_same_boot_restart ... after restart anomalies=[(1791882000, 400)]
+ok
+test reviewer_anomaly_pending_blocks_admission ... ok
+test reviewer_concurrent_floor_publications_keep_maximum_offsets ... ok
+test reviewer_failed_new_boot_start_detects_the_old_boot_again ... ok
+test reviewer_foreign_run_ledger_is_not_a_time_floor ... ok
+test reviewer_invalid_anchor_discards_floor_and_quarantines ... ok
+test reviewer_new_boot_pending_termination_replays_from_ledger ... ok
+test reviewer_quarantined_user_anomaly_does_not_write_its_journal ... ok
+test reviewer_timestamp_refusal_leaves_settled_storage_byte_identical ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.09s
+
+registry_exit=0
+REVIEWER_DONE
