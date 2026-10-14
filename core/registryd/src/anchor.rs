@@ -410,6 +410,11 @@ pub struct anchor_t {
     /// existence is no proof that its entry is durable (M2-005 R2-01), so the first
     /// write to each slot in a run syncs the directory.
     entry_synced: [bool; 2],
+    /// Set once this run is unverifiable (a failed ledger, M2-006-A-R3-01): every
+    /// later image of the anchor carries the run marker `unverifiable`, whatever the
+    /// write it belongs to, so that no anchor write of this run can publish `running`
+    /// or `clean` again.
+    unverifiable: bool,
 }
 
 fn io_error(_: io::Error) -> store_error_t {
@@ -505,6 +510,7 @@ impl anchor_t {
                     counter,
                     current_slot: slot,
                     entry_synced: [false; 2],
+                    unverifiable: false,
                 },
                 anchor_start_t::loaded,
             ),
@@ -516,6 +522,7 @@ impl anchor_t {
                     counter: highest,
                     current_slot: 1,
                     entry_synced: [false; 2],
+                    unverifiable: false,
                 },
                 if present == 0 {
                     anchor_start_t::absent
@@ -539,6 +546,21 @@ impl anchor_t {
         self.counter
     }
 
+    /// Makes this run unverifiable for the rest of its life: every later write
+    /// carries the run marker `unverifiable` (M2-006-A-R3-01). Nothing is written
+    /// here; the durable map shows whether a write has published it yet.
+    pub fn hold_unverifiable(&mut self) {
+        self.unverifiable = true;
+    }
+
+    /// Whether the durable anchor already says this run is `unverifiable`.
+    pub fn publishes_unverifiable(&self) -> bool {
+        self.map
+            .run_marker
+            .as_ref()
+            .is_some_and(|marker| marker.state == run_state_t::unverifiable)
+    }
+
     /// Applies `change` to a copy of the map, writes it to the older slot and makes it
     /// durable — the slot's entry in the directory included, the first time this run
     /// writes that slot; only then does the in-memory map take the change (ADR 0006
@@ -551,6 +573,11 @@ impl anchor_t {
     ) -> Result<(), store_error_t> {
         let mut next = self.map.clone();
         change(&mut next);
+        if self.unverifiable {
+            if let Some(marker) = &mut next.run_marker {
+                marker.state = run_state_t::unverifiable;
+            }
+        }
         let counter = self
             .counter
             .checked_add(1)

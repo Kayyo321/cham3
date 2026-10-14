@@ -81,6 +81,8 @@ struct fault_io_t {
     on_first_ledger_append: Arc<Mutex<Option<fault_t>>>,
     /// Journal frame writes still allowed before they fail (`None`: unlimited).
     journal_budget: Arc<Mutex<Option<usize>>>,
+    /// The next anchor slot writes that fail, whatever else is armed.
+    anchor_failures: Arc<Mutex<usize>>,
 }
 
 impl fault_io_t {
@@ -89,6 +91,7 @@ impl fault_io_t {
             fault: Arc::new(Mutex::new(fault_t::none)),
             on_first_ledger_append: Arc::new(Mutex::new(None)),
             journal_budget: Arc::new(Mutex::new(None)),
+            anchor_failures: Arc::new(Mutex::new(0)),
         }
     }
 
@@ -102,6 +105,10 @@ impl fault_io_t {
 
     fn journal_budget(&self, budget: Option<usize>) {
         *self.journal_budget.lock().unwrap() = budget;
+    }
+
+    fn fail_next_anchor_writes(&self, count: usize) {
+        *self.anchor_failures.lock().unwrap() = count;
     }
 
     fn armed(&self, fault: fault_t) -> bool {
@@ -145,6 +152,13 @@ impl journal_io_t for fault_io_t {
         };
         if refused {
             return Err(io::Error::other("injected replace failure"));
+        }
+        if SlotFileNames.contains(&name) {
+            let mut failures = self.anchor_failures.lock().unwrap();
+            if *failures > 0 {
+                *failures -= 1;
+                return Err(io::Error::other("injected anchor write failure"));
+            }
         }
         system_io_t.replace_file(path, bytes)
     }
@@ -2882,10 +2896,10 @@ fn a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_ma
     // restriction is held in memory and in the pending queue, the run owes its
     // `unverifiable` marker and the ledger its invalidation, and every later
     // operation retries both until one succeeds; from then on a same-boot restart
-    // contains. The window before the first successful write is the residual recorded
-    // in storage formats §7: a process death inside it loses the restriction to a
-    // same-boot restart (a reboot contains). That residual awaits the owner's decision
-    // (handoff r3); this test records the window exactly.
+    // contains. The window before the first successful write is the limit the owner
+    // accepted as ADR 0006 §3 erratum E5 (storage formats §7): a process death inside
+    // it loses the restriction to a same-boot restart (a reboot contains); this test
+    // records the window exactly.
     let alice = test_user(1001);
     let editor = app("editor");
     let lineage = lineage(&alice, &editor);
@@ -2951,8 +2965,8 @@ fn a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_ma
                 Ok(standing_t::ended(end_reason_t::suspended))
             );
         } else {
-            // The residual (storage formats §7, owner question in handoff r3): the
-            // process dies before any write succeeds. The ledger files look complete
+            // The limit of erratum E5 (storage formats §7): the process dies before
+            // any write succeeds. The ledger files look complete
             // and the marker says `running`, so the same boot resumes without the
             // restriction. A reboot contains.
             drop(registry);
@@ -2961,7 +2975,7 @@ fn a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_ma
             assert_eq!(
                 registry.standing(alice.uid, &lineage.grant.grant_id),
                 Ok(standing_t::current),
-                "the recorded residual: lost to a same-boot restart"
+                "the limit of erratum E5: lost to a same-boot restart"
             );
             drop(registry);
             let registry = open_with(&root, booted("boot-2"), Box::new(system_io_t));
@@ -2972,4 +2986,301 @@ fn a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_ma
             );
         }
     }
+}
+
+/// The operations of the registry's IPC surface, each called once after storage
+/// recovered from a compound failure (M2-006-A-R3-01). Where an operation has an
+/// early return, the input takes it, so that the retry must come before it.
+const RetryOperations: [&str; 16] = [
+    "lineage_head",
+    "identity_state",
+    "journal_users",
+    "policy_state",
+    "unusable_users",
+    "append_identity_already_present",
+    "append_identity_new_user",
+    "admit_unknown_user",
+    "restrict",
+    "set_policy_epoch_malformed",
+    "set_emergency_restriction",
+    "release_emergency_restriction",
+    "rollback_status",
+    "shutdown",
+    "append_identity_commit_kind",
+    "admit_wrong_caller_then_admit",
+];
+
+fn call_operation(
+    registry: &Arc<registry_t>,
+    root: &Path,
+    operation: &str,
+    alice: &test_user_t,
+    lineage: &lineage_t,
+) {
+    let bob = test_user(1002);
+    let lineage_id = lineage.genesis.payload.lineage_id;
+    match operation {
+        "lineage_head" => {
+            let _ = registry.lineage_head(Policyd, alice.uid, &lineage_id);
+        }
+        "identity_state" => {
+            let _ = registry.identity_state(Identityd, alice.uid, 0);
+        }
+        "journal_users" => {
+            let _ = registry.journal_users(Identityd);
+        }
+        "policy_state" => {
+            let _ = registry.policy_state();
+        }
+        "unusable_users" => {
+            let _ = registry.unusable_users();
+        }
+        "append_identity_already_present" => {
+            let receipt = registry
+                .append_identity(
+                    Identityd,
+                    alice.uid,
+                    object_kind_t::identity_enrollment,
+                    &alice.enrollment,
+                )
+                .expect("idempotent");
+            assert!(receipt.already_present);
+        }
+        "append_identity_new_user" => assert_eq!(
+            code(registry.append_identity(
+                Identityd,
+                bob.uid,
+                object_kind_t::identity_enrollment,
+                &bob.enrollment,
+            )),
+            "ipc/storage_unavailable"
+        ),
+        "append_identity_commit_kind" => assert_eq!(
+            code(registry.append_identity(Identityd, alice.uid, object_kind_t::commit, &[])),
+            "ipc/malformed_request"
+        ),
+        "admit_unknown_user" => {
+            let _ = registry.admit(Contractd, bob.uid, &lineage.revision.envelope);
+        }
+        "admit_wrong_caller_then_admit" => {
+            // A refused caller writes nothing; the authorized call then retries.
+            assert_eq!(
+                code(registry.admit(Policyd, bob.uid, &[])),
+                "ipc/role_denied"
+            );
+            assert!(
+                matches!(
+                    read_previous(&ledger_dir(root), owner_of(root)),
+                    previous_ledger_t::valid { .. }
+                ),
+                "the role check comes first"
+            );
+            let _ = registry.admit(Contractd, bob.uid, &lineage.revision.envelope);
+        }
+        "restrict" => {
+            let _ = registry.restrict(Admin, alice.uid, &restriction(&lineage.grant));
+        }
+        "set_policy_epoch_malformed" => assert_eq!(
+            code(registry.set_policy_epoch(Admin, 1, 2)),
+            "ipc/malformed_request"
+        ),
+        "set_emergency_restriction" => {
+            let _ = registry.set_emergency_restriction(Admin, true);
+        }
+        "release_emergency_restriction" => {
+            let _ = registry.set_emergency_restriction(Admin, false);
+        }
+        "rollback_status" => {
+            let _ = registry.rollback_status(Policyd);
+        }
+        "shutdown" => assert_eq!(code(registry.shutdown()), "ipc/restriction_not_durable"),
+        other => panic!("unknown operation {other}"),
+    }
+}
+
+#[test]
+fn every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers() {
+    // M2-006-A-R3-01 (ADR 0006 §3 erratum E5): after a compound failure (ledger
+    // append, both invalidations, anchor and journal), the first IPC operation of any
+    // kind after storage recovers retries both owed writes, before any early return
+    // of its own: the validity file is gone, the anchor says `unverifiable`, nothing
+    // eligible is served for the rest of the run, and a same-boot restart contains.
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let lineage = lineage(&alice, &editor);
+    let lineage_id = lineage.genesis.payload.lineage_id;
+    for operation in RetryOperations {
+        let root = temp_root(&format!("retry_{operation}"));
+        let io = fault_io_t::new();
+        let registry = open_with(&root, booted("boot-1"), Box::new(io.clone()));
+        enroll(&registry, &alice);
+        assert_eq!(
+            admit(&registry, &alice, &lineage.genesis),
+            Ok(placement_t::trunk)
+        );
+        let counter = registry.anchor_counter().unwrap();
+        io.set(fault_t::all_writes);
+        assert_eq!(
+            code(registry.restrict(Admin, alice.uid, &restriction(&lineage.grant))),
+            "ipc/restriction_not_durable"
+        );
+        assert!(matches!(
+            read_previous(&ledger_dir(&root), owner_of(&root)),
+            previous_ledger_t::valid { .. }
+        ));
+        assert_eq!(registry.anchor_counter().unwrap(), counter);
+        io.set(fault_t::none);
+        call_operation(&registry, &root, operation, &alice, &lineage);
+        assert_eq!(
+            read_previous(&ledger_dir(&root), owner_of(&root)),
+            previous_ledger_t::missing,
+            "{operation}: the invalidation is retried"
+        );
+        let (_, newest, map) = newest_slot(&root);
+        assert!(newest > counter, "{operation}: the anchor was written");
+        assert_eq!(
+            map.run_marker.map(|marker| marker.state),
+            Some(run_state_t::unverifiable),
+            "{operation}: the marker is retried"
+        );
+        assert_eq!(
+            code(registry.lineage_head(Policyd, alice.uid, &lineage_id)),
+            "ipc/storage_unavailable",
+            "{operation}: nothing eligible for the rest of the run"
+        );
+        assert_eq!(code(registry.shutdown()), "ipc/restriction_not_durable");
+        drop(registry);
+        let registry = open_with(&root, booted("boot-1"), Box::new(system_io_t));
+        assert_eq!(
+            registry.run_decision(),
+            run_decision_t::contained,
+            "{operation}"
+        );
+        assert!(
+            matches!(
+                registry.standing(alice.uid, &lineage.grant.grant_id),
+                Ok(standing_t::ended(
+                    end_reason_t::suspended | end_reason_t::restriction
+                ))
+            ),
+            "{operation}: the grant stays ended"
+        );
+    }
+}
+
+#[test]
+fn no_anchor_write_of_an_unverifiable_run_publishes_running() {
+    // M2-006-A-R3-01: once the ledger failed, every anchor image of the run carries
+    // the marker `unverifiable`, whichever write it belongs to. Here the retry's own
+    // marker write fails and the release of the emergency restriction (a permissive
+    // anchor write of its own) succeeds: its image must say `unverifiable` too, and a
+    // later status read finds nothing owed without writing again.
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let lineage = lineage(&alice, &editor);
+    let root = temp_root("sticky_unverifiable");
+    let io = fault_io_t::new();
+    let registry = open_with(&root, booted("boot-1"), Box::new(io.clone()));
+    enroll(&registry, &alice);
+    assert_eq!(
+        admit(&registry, &alice, &lineage.genesis),
+        Ok(placement_t::trunk)
+    );
+    io.set(fault_t::all_writes);
+    assert_eq!(
+        code(registry.restrict(Admin, alice.uid, &restriction(&lineage.grant))),
+        "ipc/restriction_not_durable"
+    );
+    let counter = registry.anchor_counter().unwrap();
+    io.set(fault_t::ledger_appends_and_unlink);
+    io.fail_next_anchor_writes(1);
+    registry
+        .set_emergency_restriction(Admin, false)
+        .expect("the release's own anchor write succeeds");
+    let (_, newest, map) = newest_slot(&root);
+    assert_eq!(newest, counter + 1, "one image: the release's");
+    assert_eq!(
+        map.run_marker.map(|marker| marker.state),
+        Some(run_state_t::unverifiable)
+    );
+    let status = registry.rollback_status(Policyd).unwrap();
+    assert!(
+        status.unverifiable_owed,
+        "the validity file is still intact"
+    );
+    assert_eq!(
+        registry.anchor_counter().unwrap(),
+        counter + 1,
+        "the published marker is not written again"
+    );
+    drop(registry);
+    let registry = open_with(&root, booted("boot-1"), Box::new(system_io_t));
+    assert_eq!(registry.run_decision(), run_decision_t::contained);
+    assert_eq!(
+        registry.standing(alice.uid, &lineage.grant.grant_id),
+        Ok(standing_t::ended(end_reason_t::suspended))
+    );
+}
+
+#[test]
+fn a_journal_only_retry_keeps_the_restriction_precisely_without_containing() {
+    // M2-006-A-R3-02 (ADR 0006 §3 erratum E5, corrected wording): after a compound
+    // failure, a retry in which only the restriction's journal record becomes durable
+    // (the ledger, both invalidations and the anchor still failing) ends the window
+    // without containment: the same-boot start rolls the one unanchored record
+    // forward, replays the ledger and keeps the restriction in force.
+    let alice = test_user(1001);
+    let editor = app("editor");
+    let lineage = lineage(&alice, &editor);
+    let root = temp_root("journal_only_retry");
+    let io = fault_io_t::new();
+    let registry = open_with(&root, booted("boot-1"), Box::new(io.clone()));
+    enroll(&registry, &alice);
+    assert_eq!(
+        admit(&registry, &alice, &lineage.genesis),
+        Ok(placement_t::trunk)
+    );
+    let before = records_of(&root, alice.uid).len();
+    io.set(fault_t::all_writes);
+    assert_eq!(
+        code(registry.restrict(Admin, alice.uid, &restriction(&lineage.grant))),
+        "ipc/restriction_not_durable"
+    );
+    io.set(fault_t::ledger_appends_and_unlink);
+    io.fail_next_anchor_writes(usize::MAX);
+    assert_eq!(code(registry.shutdown()), "ipc/restriction_not_durable");
+    assert_eq!(
+        records_of(&root, alice.uid).len(),
+        before + 1,
+        "the restriction reached the journal"
+    );
+    assert!(matches!(
+        read_previous(&ledger_dir(&root), owner_of(&root)),
+        previous_ledger_t::valid { .. }
+    ));
+    assert_eq!(
+        newest_slot(&root).2.run_marker.map(|marker| marker.state),
+        Some(run_state_t::running),
+        "no anchor write succeeded"
+    );
+    drop(registry);
+    let registry = open_with(&root, booted("boot-1"), Box::new(system_io_t));
+    assert_eq!(registry.run_decision(), run_decision_t::ledger_replayed);
+    assert_eq!(
+        registry.standing(alice.uid, &lineage.grant.grant_id),
+        Ok(standing_t::ended(end_reason_t::restriction)),
+        "precise: the restriction itself, not a suspension"
+    );
+    assert!(
+        registry
+            .rollback_status(Policyd)
+            .unwrap()
+            .contained
+            .is_empty()
+    );
+    assert_eq!(
+        registry.anchored_user(alice.uid).unwrap().unwrap().seq as usize,
+        before + 1,
+        "the unanchored record was rolled forward"
+    );
 }

@@ -4,7 +4,7 @@ Seeded defects in a disposable copy of the workspace (never the checkout), one a
 time. Each removes or weakens one admission rule (wire format sections 6.5-6.12, 7),
 one journal, durability or reserve rule (ADR 0006 section 1), one storage-integrity rule
 of the anchor, run marker, restriction ledger or recovery table (ADR 0006 sections 2-4,
-6; the M2-006 stage A review findings R01-R08 and R2-01-R2-04), one current-authorization rule (ADR 0007
+6; the M2-006 stage A review findings R01-R08, R2-01-R2-04 and R3-01), one current-authorization rule (ADR 0007
 section 1) or one submission check, and the named Rust test must then fail (not merely
 fail to build); the unmodified copy passes the same tests.
 """
@@ -383,8 +383,8 @@ SeededDefects = [
      "cham3_registryd", "storage_integrity", "rejected_anchor_slots_are_outranked_and_the_quarantine_holds_at_every_later_start"),
     # R2-02: the start publishes `running` although its ledger failed.
     ("start_marker_ignores_failed_ledger", [(Registry,
-      "            state: if ledger_failed {\n                run_state_t::unverifiable\n            } else {\n                run_state_t::running\n            },\n",
-      "            state: run_state_t::running,\n")],
+      "        anchor.hold_unverifiable();\n",
+      "")],
      "cham3_registryd", "storage_integrity", "a_ledger_failure_during_the_start_leaves_the_run_unverifiable"),
     # R2-03: a failed ledger's invalidation, or the unverifiable marker, is not retried.
     ("ledger_invalidation_not_retried", [("core/registryd/src/ledger.rs",
@@ -395,6 +395,48 @@ SeededDefects = [
       "        if !*owed {\n            return;\n        }\n",
       "        if *owed || !*owed {\n            return;\n        }\n")],
      "cham3_registryd", "storage_integrity", "a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_marker"),
+    # R3-01: an operation skips what a failed ledger owes, or an anchor write of an
+    # unverifiable run publishes `running`.
+    ("policy_state_skips_retry", [(Registry,
+      "    pub fn policy_state(&self) -> service_result_t<policy_state_t> {\n        self.retry_unverifiable();\n        Ok(*lock(&self.policy)?)\n",
+      "    pub fn policy_state(&self) -> service_result_t<policy_state_t> {\n        Ok(*lock(&self.policy)?)\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("unusable_users_skips_retry", [(Registry,
+      "    pub fn unusable_users(&self) -> service_result_t<Vec<(u32, unusable_reason_t)>> {\n        self.retry_unverifiable();\n        Ok(lock(&self.users)?\n",
+      "    pub fn unusable_users(&self) -> service_result_t<Vec<(u32, unusable_reason_t)>> {\n        Ok(lock(&self.users)?\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("append_identity_skips_retry", [(Registry,
+      "        require(caller, &[Identityd])?;\n        self.retry_unverifiable();\n        if kind == object_kind_t::commit {\n",
+      "        require(caller, &[Identityd])?;\n        if kind == object_kind_t::commit {\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("journal_users_skips_retry", [(Registry,
+      "        require(caller, &[Identityd])?;\n        self.retry_unverifiable();\n        Ok(lock(&self.users)?.keys().copied().collect())\n",
+      "        require(caller, &[Identityd])?;\n        Ok(lock(&self.users)?.keys().copied().collect())\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("admit_skips_retry", [(Registry,
+      "        require(caller, &[Contractd])?;\n        self.retry_unverifiable();\n        let slot = self\n",
+      "        require(caller, &[Contractd])?;\n        let slot = self\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("set_policy_epoch_skips_retry", [(Registry,
+      "        require(caller, &[Admin])?;\n        self.retry_unverifiable();\n        if min_valid_epoch > epoch {\n",
+      "        require(caller, &[Admin])?;\n        if min_valid_epoch > epoch {\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("set_emergency_restriction_skips_retry", [(Registry,
+      "        require(caller, &[Admin])?;\n        self.retry_unverifiable();\n        if restricted {\n",
+      "        require(caller, &[Admin])?;\n        if restricted {\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("retry_before_role_check", [(Registry,
+      "        require(caller, &[Contractd])?;\n        self.retry_unverifiable();\n        let slot = self\n",
+      "        self.retry_unverifiable();\n        require(caller, &[Contractd])?;\n        let slot = self\n")],
+     "cham3_registryd", "storage_integrity", "every_operation_retries_what_a_failed_ledger_owes_once_storage_recovers"),
+    ("unverifiable_not_sticky", [("core/registryd/src/anchor.rs",
+      "            if let Some(marker) = &mut next.run_marker {\n                marker.state = run_state_t::unverifiable;\n",
+      "            if let Some(marker) = &mut next.run_marker {\n                let _ = marker;\n")],
+     "cham3_registryd", "storage_integrity", "no_anchor_write_of_an_unverifiable_run_publishes_running"),
+    ("published_marker_written_again", [(Registry,
+      "        if anchor.publishes_unverifiable() || anchor.update(self.io.as_ref(), |_| {}).is_ok() {\n",
+      "        if anchor.update(self.io.as_ref(), |_| {}).is_ok() {\n")],
+     "cham3_registryd", "storage_integrity", "no_anchor_write_of_an_unverifiable_run_publishes_running"),
     # R2-04: the queue is appended in full before the anchor names anything.
     ("queue_appended_before_anchoring", [(Registry,
       "            if self.anchor_slot(slot).is_err() {\n                return Err(not_durable());\n            }\n        }\n        Ok(last_sequence)\n",

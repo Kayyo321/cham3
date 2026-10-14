@@ -879,19 +879,13 @@ impl registry_t {
         }
         // The policy state and the run marker, durable before anything is served. A
         // ledger that failed during the start (a re-journaled intent that could not
-        // enter this run's ledger) makes this run unverifiable from its first moment:
-        // the marker says so, and is never replaced by `running` (M2-006-A-R2-02).
-        let ledger_failed = lock(&registry.ledger)
-            .map_err(|_| registry_start_error_t::store(store_error_t::io))?
-            .failed();
+        // enter this run's ledger) has already made the anchor hold this run
+        // unverifiable (`mark_run_unverifiable`): this write then publishes
+        // `unverifiable`, never `running` (M2-006-A-R2-02, R3-01).
         let marker = run_marker_t {
             run_id,
             boot_id,
-            state: if ledger_failed {
-                run_state_t::unverifiable
-            } else {
-                run_state_t::running
-            },
+            state: run_state_t::running,
         };
         let policy_now = *lock(&registry.policy)
             .map_err(|_| registry_start_error_t::store(store_error_t::io))?;
@@ -1093,6 +1087,7 @@ impl registry_t {
 
     /// The policy state in force.
     pub fn policy_state(&self) -> service_result_t<policy_state_t> {
+        self.retry_unverifiable();
         Ok(*lock(&self.policy)?)
     }
 
@@ -1100,6 +1095,7 @@ impl registry_t {
     /// quarantined without a usable slot), with the reason. Quarantined users with a
     /// readable journal are in `rollback_status`.
     pub fn unusable_users(&self) -> service_result_t<Vec<(u32, unusable_reason_t)>> {
+        self.retry_unverifiable();
         Ok(lock(&self.users)?
             .iter()
             .filter_map(|(uid, entry)| match entry {
@@ -1291,9 +1287,13 @@ impl registry_t {
 
     /// Retries what a failed ledger still owes (M2-006-A-R2-03): the invalidation of
     /// its validity file and the `unverifiable` run marker. Both are owed until they
-    /// succeed; every operation of the registry retries them first, so that the
-    /// window in which a same-boot restart could trust the failed ledger closes as
-    /// soon as any of the two writes succeeds. Lock order: ledger, then anchor.
+    /// succeed. Every IPC operation of the registry retries them right after its role
+    /// check, before anything else it does (M2-006-A-R3-01), so that the window in
+    /// which a same-boot restart could trust the failed ledger closes at the first
+    /// operation after storage recovers. The anchor holds the run unverifiable from
+    /// the first failure on: any anchor write of this run, this retry's or another
+    /// operation's, publishes the marker `unverifiable`. Lock order: ledger, then
+    /// anchor; called with neither held.
     fn retry_unverifiable(&self) {
         if let Ok(mut ledger) = lock(&self.ledger) {
             ledger.retry_invalidation(self.io.as_ref());
@@ -1307,12 +1307,8 @@ impl registry_t {
         let Ok(mut anchor) = lock(&self.anchor) else {
             return;
         };
-        let written = anchor.update(self.io.as_ref(), |map| {
-            if let Some(marker) = &mut map.run_marker {
-                marker.state = run_state_t::unverifiable;
-            }
-        });
-        if written.is_ok() {
+        anchor.hold_unverifiable();
+        if anchor.publishes_unverifiable() || anchor.update(self.io.as_ref(), |_| {}).is_ok() {
             *owed = false;
         }
     }
@@ -1411,6 +1407,7 @@ impl registry_t {
         object: &[u8],
     ) -> service_result_t<append_receipt_t> {
         require(caller, &[Identityd])?;
+        self.retry_unverifiable();
         if kind == object_kind_t::commit {
             return Err(ipc(ipc_code_t::malformed_request));
         }
@@ -1612,6 +1609,7 @@ impl registry_t {
     /// UIDs with a journal, including unusable ones (identityd then fails them).
     pub fn journal_users(&self, caller: caller_role_t) -> service_result_t<Vec<u32>> {
         require(caller, &[Identityd])?;
+        self.retry_unverifiable();
         Ok(lock(&self.users)?.keys().copied().collect())
     }
 
@@ -1630,6 +1628,7 @@ impl registry_t {
         envelope: &[u8],
     ) -> service_result_t<admission_receipt_t> {
         require(caller, &[Contractd])?;
+        self.retry_unverifiable();
         let slot = self
             .slot_any(owner_uid)?
             .ok_or(authority(authority_code_t::key_not_certified))?;
@@ -1726,6 +1725,7 @@ impl registry_t {
         min_valid_epoch: u64,
     ) -> service_result_t<policy_state_t> {
         require(caller, &[Admin])?;
+        self.retry_unverifiable();
         if min_valid_epoch > epoch {
             return Err(ipc(ipc_code_t::malformed_request));
         }
@@ -1746,6 +1746,7 @@ impl registry_t {
         restricted: bool,
     ) -> service_result_t<policy_state_t> {
         require(caller, &[Admin])?;
+        self.retry_unverifiable();
         if restricted {
             self.change_policy(|policy| policy.emergency_restriction = true)
         } else {
@@ -1802,11 +1803,11 @@ impl registry_t {
 
     /// `rollback_status` (`service:*`, `trusted_client`).
     pub fn rollback_status(&self, caller: caller_role_t) -> service_result_t<rollback_status_t> {
-        self.retry_unverifiable();
         match caller {
             caller_role_t::service(_) | caller_role_t::trusted_client { .. } => {}
             _ => return Err(ipc(ipc_code_t::role_denied)),
         }
+        self.retry_unverifiable();
         let mut quarantined = Vec::new();
         let mut unusable = Vec::new();
         let mut contained = Vec::new();
