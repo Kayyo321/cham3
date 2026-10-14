@@ -1,0 +1,53 @@
+# Unchanged inputs, 908c391..db5bb59fcf461034461d9e0d2f21f5816986134c
+
+## git log --oneline 908c391..db5bb59
+db5bb59 registryd(m2): stage A revision 4 — owed retries at every operation, sticky unverifiable anchor, E5 wording (M2-006-A-R3-01, R3-02)
+
+## git diff --stat 908c391 db5bb59
+ core/registryd/src/anchor.rs                      |  27 ++
+ core/registryd/src/registry.rs                    |  41 +--
+ core/registryd/tests/storage_integrity.rs         | 325 +++++++++++++++++++++-
+ docs/decisions/0006_m2_storage_anchor_recovery.md |  19 +-
+ docs/specs/m2_registry_storage_v1.md              |   6 +-
+ docs/specs/m2_service_ipc_v1.md                   |   2 +-
+ tests/m2/harness/test_m2_registry_policy.py       |  48 +++-
+ tests/m2/test_inventory.txt                       |   3 +
+ 8 files changed, 432 insertions(+), 39 deletions(-)
+
+## git diff --exit-code 908c391 db5bb59 -- <path> (0 = unchanged)
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 docs/decisions/0001_eternal_contract_repository.md
+0 docs/decisions/0002_default_right_taskbar_layout.md
+0 docs/decisions/0003_m2_rust_toolchain_dependencies.md
+0 docs/decisions/0004_m2_wire_schema_hash.md
+0 docs/decisions/0005_m2_identity_vault_ipc.md
+0 docs/decisions/0007_m2_lifecycle_time_consumption.md
+0 docs/decisions/0008_m2_retention_privacy_update_identity.md
+0 docs/decisions/README.md
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 tests/m2/run_m2_tests.sh
+0 tests/m2/protection
+0 tests/m2/storage
+0 tests/static
+0 .github
+0 core/contract_format
+0 core/identityd
+0 core/vaultd
+0 core/contractd
+0 core/native
+0 core/policyd
+0 core/registryd/src/bin
+0 core/registryd/src/record.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/src/ledger.rs
+0 core/registryd/Cargo.toml
+0 core/registryd/tests/registry_operations.rs
+0 core/registryd/tests/admission_scenarios.rs
+0 core/registryd/tests/builders

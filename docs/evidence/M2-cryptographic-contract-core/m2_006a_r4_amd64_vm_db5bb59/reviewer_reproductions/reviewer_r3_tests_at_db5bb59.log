@@ -1,0 +1,33 @@
+== HEAD db5bb59fcf461034461d9e0d2f21f5816986134c
+== source
+5331ddd1356d4bc9d64ff4c0a64f26462051a24c631774efd775e4189bc9ec9b  core/registryd/tests/review_r3_validation.rs
+== review_r3_validation review_r3_ debug
+test review_r3_four_marks_matrix ... bits=00000 decision=ledger_replayed standing=ended(restriction)
+test review_r3_long_queue_every_failure_and_restart ... anchor_failure=false position=0: PASS
+test review_r3_only_journal_retry_preserves_without_containment ... journal-only successful retry: ledger_replayed, precise restriction retained, no containment
+test review_r3_rejected_anchor_multistart_matrix ... counter=100 swap=false: PASS
+test review_r3_retry_each_witness_and_reboot ... witness=0: contained
+test review_r3_retry_emergency_release ... operation=emergency_release invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_idempotent_identity ... operation=idempotent_identity invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_identity_state_control ... operation=identity_state invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_journal_users ... operation=journal_users invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_lineage_control ... operation=lineage_head invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_new_enrollment ... operation=new_enrollment invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_policy_state ... operation=policy_state invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 27 filtered out; finished in 2.10s
+== review_r3_validation review_r3_ --release
+test review_r3_four_marks_matrix ... bits=00000 decision=ledger_replayed standing=ended(restriction)
+test review_r3_long_queue_every_failure_and_restart ... anchor_failure=false position=0: PASS
+test review_r3_only_journal_retry_preserves_without_containment ... journal-only successful retry: ledger_replayed, precise restriction retained, no containment
+test review_r3_rejected_anchor_multistart_matrix ... counter=100 swap=false: PASS
+test review_r3_retry_each_witness_and_reboot ... witness=0: contained
+test review_r3_retry_emergency_release ... operation=emergency_release invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_idempotent_identity ... operation=idempotent_identity invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_identity_state_control ... operation=identity_state invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_journal_users ... operation=journal_users invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_lineage_control ... operation=lineage_head invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_new_enrollment ... operation=new_enrollment invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test review_r3_retry_policy_state ... operation=policy_state invalid=true marker=unverifiable restart=contained standing=ended(suspended)
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 27 filtered out; finished in 1.05s
+REVIEWER_R3_DONE
+exit=0
