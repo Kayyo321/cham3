@@ -1,0 +1,109 @@
+== HEAD e34fd8a0b97f5a606656ab87914d4d1b19517d7c
+== sources
+bd6e59153e9fa89dd1439b5addb31800d4a4f6bf1c127ea3240a5f582d84236f  core/registryd/tests/review_r2_storage.rs
+2e1d442c68ab17b17438e28388d453a6d420a1ba8c8bc0b8112818dc52987953  core/registryd/tests/queue_validation.rs
+e10c6e40a87431dcfb621ddafe63c16191165a070ebef6c97279a3b9c4352fce  core/registryd/tests/reviewer_matrix.rs
+== review_r2_storage review_r2_ debug
+replay=false fail_invalidation=true before death marker=running ledger=valid { run_id: [120, 213, 140, 158, 106, 93, 40, 36, 117, 48, 174, 41, 222, 223, 90, 77], boot_id: "review-boot", entries: [] }; pending=[1001]
+replay=false fail_invalidation=false before death marker=running ledger=missing; pending=[1001]
+equal=false first quarantined=[]; counter=Ok(102)
+equal=true first quarantined=[(1001, anchor_invalid)]; counter=Ok(1)
+replay=true fail_invalidation=false before death marker=running ledger=missing; pending=[1001]
+replay=true fail_invalidation=true before death marker=running ledger=valid { run_id: [108, 158, 90, 173, 163, 137, 56, 170, 13, 106, 177, 45, 121, 180, 12, 210], boot_id: "review-boot", entries: [] }; pending=[1001]
+replay=false fail_invalidation=true after death run=ledger_replayed standing=Ok(current)
+thread 'review_r2_compound_failure_must_preserve_restriction' panicked at core/registryd/tests/review_r2_storage.rs:2592:5:
+assertion `left != right` failed: restriction must not revive after storage failures and same-boot restart
+  left: Ok(current)
+ right: Ok(current)
+test review_r2_compound_failure_must_preserve_restriction ... FAILED
+equal=true second run=resumed quarantined=[] standing=Ok(current)
+equal=false second run=ledger_replayed
+thread 'review_r2_equal_counter_second_restart_must_remain_quarantined' panicked at core/registryd/tests/review_r2_storage.rs:2544:9:
+assertion `left == right` failed: quarantine must survive a second restart without admin recovery
+  left: Ok(current)
+ right: Ok(ended(quarantined))
+test review_r2_equal_counter_second_restart_must_remain_quarantined ... FAILED
+test review_r2_unequal_counter_control_resumes ... ok
+replay=false fail_invalidation=false after death run=contained standing=Ok(ended(suspended))
+replay=true fail_invalidation=true after death run=ledger_replayed standing=Ok(current)
+thread 'review_r2_replay_marker_must_survive_second_restart' panicked at core/registryd/tests/review_r2_storage.rs:2592:5:
+assertion `left != right` failed: restriction must not revive after storage failures and same-boot restart
+  left: Ok(current)
+ right: Ok(current)
+test review_r2_compound_validity_control_contains ... ok
+test review_r2_replay_marker_must_survive_second_restart ... FAILED
+replay=true fail_invalidation=false after death run=contained standing=Ok(ended(suspended))
+test review_r2_replay_validity_control_contains ... ok
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.03s
+== queue_validation queue_ debug
+BOUND: before=4 journal=6 anchor=4 unanchored=2
+thread 'queue_expected_at_most_one_unanchored' panicked at core/registryd/tests/queue_validation.rs:2549:5:
+test queue_expected_at_most_one_unanchored ... FAILED
+PARTIAL: journal=5 anchor=4 read_ok=true view_seq=Some(5)
+thread 'queue_expected_partial_flush_read_gate' panicked at core/registryd/tests/queue_validation.rs:2579:5:
+test queue_expected_partial_flush_read_gate ... FAILED
+RESTART: decision=ledger_replayed, quarantined=[(1001, unexplained_records)], unusable=[]
+thread 'queue_expected_sameboot_replay_without_quarantine' panicked at core/registryd/tests/queue_validation.rs:2562:5:
+POSITIVE: two restrictions fully flushed; clean same-boot restart normal
+test queue_expected_sameboot_replay_without_quarantine ... FAILED
+test queue_positive_recovery_after_fault_clear ... ok
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.03s
+== reviewer_matrix review_matrix debug
+test review_matrix_failed_emergency_release_survives_new_boot ... ok
+test review_matrix_containment_ledger_survives_four_failed_restarts ... ok
+test review_matrix_anchor_failure_second_admission_restriction_invalidation_crash_points ... ok
+test review_matrix_three_four_failed_restarts_preserve_lifecycle_and_identity ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.23s
+== review_r2_storage review_r2_ --release
+replay=false fail_invalidation=true before death marker=running ledger=valid { run_id: [107, 3, 32, 210, 206, 195, 94, 89, 184, 145, 236, 214, 224, 14, 245, 66], boot_id: "review-boot", entries: [] }; pending=[1001]
+equal=true first quarantined=[(1001, anchor_invalid)]; counter=Ok(1)
+replay=false fail_invalidation=false before death marker=running ledger=missing; pending=[1001]
+equal=false first quarantined=[]; counter=Ok(102)
+replay=true fail_invalidation=false before death marker=running ledger=missing; pending=[1001]
+replay=true fail_invalidation=true before death marker=running ledger=valid { run_id: [125, 41, 254, 10, 208, 128, 119, 43, 15, 109, 41, 57, 148, 179, 179, 38], boot_id: "review-boot", entries: [] }; pending=[1001]
+equal=true second run=resumed quarantined=[] standing=Ok(current)
+replay=false fail_invalidation=true after death run=ledger_replayed standing=Ok(current)
+thread 'review_r2_equal_counter_second_restart_must_remain_quarantined' panicked at core/registryd/tests/review_r2_storage.rs:2544:9:
+assertion `left == right` failed: quarantine must survive a second restart without admin recovery
+  left: Ok(current)
+ right: Ok(ended(quarantined))
+thread 'review_r2_compound_failure_must_preserve_restriction' panicked at core/registryd/tests/review_r2_storage.rs:2592:5:
+assertion `left != right` failed: restriction must not revive after storage failures and same-boot restart
+  left: Ok(current)
+ right: Ok(current)
+test review_r2_equal_counter_second_restart_must_remain_quarantined ... FAILED
+test review_r2_compound_failure_must_preserve_restriction ... FAILED
+replay=true fail_invalidation=true after death run=ledger_replayed standing=Ok(current)
+thread 'review_r2_replay_marker_must_survive_second_restart' panicked at core/registryd/tests/review_r2_storage.rs:2592:5:
+assertion `left != right` failed: restriction must not revive after storage failures and same-boot restart
+  left: Ok(current)
+ right: Ok(current)
+test review_r2_replay_marker_must_survive_second_restart ... FAILED
+equal=false second run=ledger_replayed quarantined=[] standing=Ok(current)
+test review_r2_unequal_counter_control_resumes ... ok
+replay=false fail_invalidation=false after death run=contained standing=Ok(ended(suspended))
+test review_r2_compound_validity_control_contains ... ok
+replay=true fail_invalidation=false after death run=contained standing=Ok(ended(suspended))
+test review_r2_replay_validity_control_contains ... ok
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.02s
+== queue_validation queue_ --release
+BOUND: before=4 journal=6 anchor=4 unanchored=2
+thread 'queue_expected_at_most_one_unanchored' panicked at core/registryd/tests/queue_validation.rs:2549:5:
+test queue_expected_at_most_one_unanchored ... FAILED
+PARTIAL: journal=5 anchor=4 read_ok=true view_seq=Some(5)
+thread 'queue_expected_partial_flush_read_gate' panicked at core/registryd/tests/queue_validation.rs:2579:5:
+test queue_expected_partial_flush_read_gate ... FAILED
+RESTART: decision=ledger_replayed, quarantined=[(1001, unexplained_records)], unusable=[]
+thread 'queue_expected_sameboot_replay_without_quarantine' panicked at core/registryd/tests/queue_validation.rs:2562:5:
+test queue_expected_sameboot_replay_without_quarantine ... FAILED
+POSITIVE: two restrictions fully flushed; clean same-boot restart normal
+test queue_positive_recovery_after_fault_clear ... ok
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.02s
+== reviewer_matrix review_matrix --release
+test review_matrix_failed_emergency_release_survives_new_boot ... ok
+test review_matrix_containment_ledger_survives_four_failed_restarts ... ok
+test review_matrix_anchor_failure_second_admission_restriction_invalidation_crash_points ... ok
+test review_matrix_three_four_failed_restarts_preserve_lifecycle_and_identity ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.30s
+REVIEWER_R2_DONE
+exit=0

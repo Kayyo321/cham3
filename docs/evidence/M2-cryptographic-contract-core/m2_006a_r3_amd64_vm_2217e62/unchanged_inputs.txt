@@ -1,0 +1,103 @@
+# Unchanged inputs, fc147e0..2217e62ddf42c42573346155727c983d937addc0
+
+## git log --oneline fc147e0..2217e62
+2217e62 docs(m2): ADR 0006 §3 erratum E5 — the limit under a simultaneous failure of every write (M2-006-A-R2-03)
+a2d0ebd build(m2): refresh the amd64 Debian locks for libcurl 8.14.1-2+deb13u7
+9633ce3 registryd(m2): stage A revision 3 — counter continuation, start marker, ledger retries, queue anchoring (M2-006-A-R2-01–R2-04)
+
+## git diff --stat fc147e0 2217e62
+ build/m2/debian_debs_amd64.sha256                  |   4 +-
+ build/m2/debian_lock_amd64.txt                     |   4 +-
+ core/registryd/src/anchor.rs                       |  12 +-
+ core/registryd/src/ledger.rs                       |  30 +-
+ core/registryd/src/registry.rs                     |  95 +++-
+ core/registryd/tests/storage_integrity.rs          | 516 ++++++++++++++++++++-
+ .../0003_m2_rust_toolchain_dependencies.md         |   1 +
+ docs/decisions/0006_m2_storage_anchor_recovery.md  |  10 +
+ docs/decisions/README.md                           |   2 +-
+ docs/specs/m2_registry_storage_v1.md               |  14 +-
+ docs/specs/m2_service_ipc_v1.md                    |   2 +-
+ tests/m2/harness/test_m2_registry_policy.py        |  40 +-
+ tests/m2/test_inventory.txt                        |   4 +
+ 13 files changed, 694 insertions(+), 40 deletions(-)
+
+## git diff --stat 9633ce3 2217e62 (the two commits after the code: no code change)
+ build/m2/debian_debs_amd64.sha256                     |  4 ++--
+ build/m2/debian_lock_amd64.txt                        |  4 ++--
+ docs/decisions/0003_m2_rust_toolchain_dependencies.md |  1 +
+ docs/decisions/0006_m2_storage_anchor_recovery.md     | 10 ++++++++++
+ docs/decisions/README.md                              |  2 +-
+ docs/specs/m2_registry_storage_v1.md                  |  2 +-
+ 6 files changed, 17 insertions(+), 6 deletions(-)
+
+## git diff --exit-code fc147e0 2217e62 -- <path> (0 = unchanged)
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build/m2/dev_container.dockerfile
+0 build/m2/debian_packages.txt
+0 build/m2/crate_sources.sha256
+0 build/m2/debian_lock_arm64.txt
+0 build/m2/debian_debs_arm64.sha256
+0 build/scripts
+0 PROJECT.md
+0 docs/decisions/0001_eternal_contract_repository.md
+0 docs/decisions/0002_default_right_taskbar_layout.md
+0 docs/decisions/0004_m2_wire_schema_hash.md
+0 docs/decisions/0005_m2_identity_vault_ipc.md
+0 docs/decisions/0007_m2_lifecycle_time_consumption.md
+0 docs/decisions/0008_m2_retention_privacy_update_identity.md
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 tests/m2/run_m2_tests.sh
+0 tests/m2/protection
+0 tests/m2/storage
+0 tests/static
+0 .github
+0 core/contract_format
+0 core/identityd
+0 core/vaultd
+0 core/contractd
+0 core/native
+0 core/policyd
+0 core/registryd/src/bin
+0 core/registryd/src/record.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/Cargo.toml
+0 core/registryd/tests/registry_operations.rs
+0 core/registryd/tests/admission_scenarios.rs
+0 core/registryd/tests/builders
+
+## git diff 9633ce3 2217e62 -- build/m2/debian_lock_amd64.txt build/m2/debian_debs_amd64.sha256
+diff --git a/build/m2/debian_debs_amd64.sha256 b/build/m2/debian_debs_amd64.sha256
+index 90ddb98..c1db75c 100644
+--- a/build/m2/debian_debs_amd64.sha256
++++ b/build/m2/debian_debs_amd64.sha256
+@@ -68,8 +68,8 @@ d7f9269295c9835b24074ddf9f8e823eeeef8d485857c76ffe2ed77588f87bf5  libconst-fast-
+ 98e2333aea8d64ca68f9b75c16256d3a05492fd8f9e6dba96adbc6f19e4f5a09  libcrypt-dev_1%3a4.4.38-1_amd64.deb
+ e280b2be3db6e584500e865c251605b95c346767d87ccb2524e44992048fc657  libctf-nobfd0_2.44-3_amd64.deb
+ 120cafcd93132a276fa92a8fb4cf39b23d14e5a3e348f4f5580638d71ca95ac5  libctf0_2.44-3_amd64.deb
+-19da93544615a4c9a3d7df473f5bf8ebca99442454622e9b0460168dadf7b8ae  libcurl3t64-gnutls_8.14.1-2+deb13u5_amd64.deb
+-0dedddfe614fc4a4335c9167b73c64a50136edd76b7991aa851408d0795163eb  libcurl4t64_8.14.1-2+deb13u5_amd64.deb
++9475c591b338b81859ee6d06bf2a9fbb01b52f184c235afa7f6e7f1652136e55  libcurl3t64-gnutls_8.14.1-2+deb13u7_amd64.deb
++4f89bd3e7a33bbd8f7422817a8a8e2233c9e194fda9c331e33bf98705f525bfc  libcurl4t64_8.14.1-2+deb13u7_amd64.deb
+ 35b8595ec7a9e907fdd898e600b35432c8b7b73f2d7c1fd4176887e8d2fb50ab  libdata-dpath-perl_0.60-1_all.deb
+ 0e2cc166b382dd3047eac25df4176a473df0c16237ee0a14eff506217910df75  libdata-messagepack-perl_1.02-2_amd64.deb
+ cedbb74d891679cde4f10a1ad1e47e99da825ec22f55c8667657d1a80f37eb65  libdata-optlist-perl_0.114-1_all.deb
+diff --git a/build/m2/debian_lock_amd64.txt b/build/m2/debian_lock_amd64.txt
+index 0fbd58f..82bc28c 100644
+--- a/build/m2/debian_lock_amd64.txt
++++ b/build/m2/debian_lock_amd64.txt
+@@ -99,8 +99,8 @@ libcrypt-dev:amd64=1:4.4.38-1
+ libcrypt1:amd64=1:4.4.38-1
+ libctf-nobfd0:amd64=2.44-3
+ libctf0:amd64=2.44-3
+-libcurl3t64-gnutls:amd64=8.14.1-2+deb13u5
+-libcurl4t64:amd64=8.14.1-2+deb13u5
++libcurl3t64-gnutls:amd64=8.14.1-2+deb13u7
++libcurl4t64:amd64=8.14.1-2+deb13u7
+ libdata-dpath-perl:all=0.60-1
+ libdata-messagepack-perl:amd64=1.02-2
+ libdata-optlist-perl:all=0.114-1

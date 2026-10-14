@@ -1,0 +1,11 @@
+rustc 1.85.1 (4eb161250 2025-03-15) (built from a source tarball)
+binary: rustc
+commit-hash: 4eb161250e340c8f48f66e2b929ef4a5bed7c181
+commit-date: 2025-03-15
+host: x86_64-unknown-linux-gnu
+release: 1.85.1
+LLVM version: 19.1.7
+cargo 1.85.1 (d73d2caf9 2024-12-31)
+cc (Debian 14.2.0-19) 14.2.0
+GNU ld (GNU Binutils for Debian) 2.44
+ldd (Debian GLIBC 2.41-12+deb13u4) 2.41

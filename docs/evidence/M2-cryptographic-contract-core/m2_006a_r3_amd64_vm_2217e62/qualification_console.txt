@@ -1,0 +1,165 @@
+clone /home/dev/cham3-m2006a-r3/qual at 2217e62ddf42c42573346155727c983d937addc0 (UID 1001, cham3-m2-dev, --ulimit nofile=1024:1024)
+commit 2217e62ddf42c42573346155727c983d937addc0
+tree 5f82bac03e478fc258084ab48f19d33141a0a80b
+dirty_tracked 0
+architecture amd64
+debian_version 13.7
+uname Linux 7.1.13+deb13-amd64 x86_64 GNU/Linux
+euid 1001
+cargo_lock_sha256 9801453aa7023cffc1e3f5b1ec327c284d365c2ce4b9cdd4dc41efddee384c57
+identity PASS
+PASS source_identity (commit 2217e62ddf42c42573346155727c983d937addc0)
+PASS platform_debian_13
+INFO target_architecture (amd64: M2 qualification target)
+PASS toolchain_identity (rustc/cargo 1.85.1)
+PASS package_pins
+PASS installed_packages_lock (build/m2/debian_lock_amd64.txt)
+PASS downloaded_debs_lock (build/m2/debian_debs_amd64.sha256)
+PASS cargo_metadata_locked_offline
+PASS crate_sources
+PASS dependency_inventory
+PASS rustfmt
+PASS clippy
+PASS rust_naming
+PASS profile_settings
+PASS build_debug
+PASS build_release
+PASS soft_backends (chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat)
+PASS curve25519_fiat_backend (2 build-script outputs)
+PASS valgrind_memcheck_probe
+PASS valgrind_memcheck_secure_memory (10 tests, 0 errors; child fault processes not instrumented)
+NOT_AVAILABLE miri (requires a nightly toolchain; not provided by Debian 13)
+NOT_AVAILABLE sanitizers (-Zsanitizer requires nightly; valgrind memcheck used instead)
+NOT_AVAILABLE coverage_guided_fuzzing (cargo-fuzz/libfuzzer-sys not packaged in Debian 13 and require nightly; bounded property/mutation tests are used instead)
+PASS suite_unit
+PASS suite_harness
+== qualification summary (/work/out/m2/qualification/amd64_20261014T145210Z_7)
+PASS source_identity (commit 2217e62ddf42c42573346155727c983d937addc0)
+PASS platform_debian_13
+INFO target_architecture (amd64: M2 qualification target)
+PASS toolchain_identity (rustc/cargo 1.85.1)
+PASS package_pins
+PASS installed_packages_lock (build/m2/debian_lock_amd64.txt)
+PASS downloaded_debs_lock (build/m2/debian_debs_amd64.sha256)
+PASS cargo_metadata_locked_offline
+PASS crate_sources
+PASS dependency_inventory
+PASS rustfmt
+PASS clippy
+PASS rust_naming
+PASS profile_settings
+PASS build_debug
+PASS build_release
+PASS soft_backends (chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat)
+PASS curve25519_fiat_backend (2 build-script outputs)
+PASS valgrind_memcheck_probe
+PASS valgrind_memcheck_secure_memory (10 tests, 0 errors; child fault processes not instrumented)
+NOT_AVAILABLE miri (requires a nightly toolchain; not provided by Debian 13)
+NOT_AVAILABLE sanitizers (-Zsanitizer requires nightly; valgrind memcheck used instead)
+NOT_AVAILABLE coverage_guided_fuzzing (cargo-fuzz/libfuzzer-sys not packaged in Debian 13 and require nightly; bounded property/mutation tests are used instead)
+PASS suite_unit
+PASS suite_harness
+m2 qualification: PASS
+qualify_exit=0
+== shellcheck (26 files)
+== py_compile (69 files)
+== yamllint (5 files)
+== scan_secrets
+scan_secrets: PASS (no matches for the configured patterns)
+
+== summary
+PASS shellcheck
+PASS py_compile
+PASS yamllint
+PASS scan_secrets
+static checks: PASS
+static_checks_exit=0
+== tests/static (static, repo: /work, out: /work/out) ==
+test_build_failure_after_config_publishes_nothing (test_build_image_failure_paths.build_image_failure_paths_t.test_build_failure_after_config_publishes_nothing) ... ok
+test_config_failure_stops_before_build_and_publishes_nothing (test_build_image_failure_paths.build_image_failure_paths_t.test_config_failure_stops_before_build_and_publishes_nothing) ... ok
+test_successful_stub_build_publishes_artifacts (test_build_image_failure_paths.build_image_failure_paths_t.test_successful_stub_build_publishes_artifacts) ... ok
+test_work_dir_entry_failure_runs_no_live_build (test_build_image_failure_paths.build_image_failure_paths_t.test_work_dir_entry_failure_runs_no_live_build) ... ok
+test_out_dir_root_is_refused (test_build_image_guards.build_image_guards_t.test_out_dir_root_is_refused) ... ok
+test_work_dir_equal_to_out_dir_is_refused_and_nothing_removed (test_build_image_guards.build_image_guards_t.test_work_dir_equal_to_out_dir_is_refused_and_nothing_removed) ... ok
+test_work_dir_root_is_refused (test_build_image_guards.build_image_guards_t.test_work_dir_root_is_refused) ... ok
+test_artifact_retention_is_short (test_ci_workflow.ci_workflow_t.test_artifact_retention_is_short) ... ok
+test_git_installed_and_safe_directory_configured (test_ci_workflow.ci_workflow_t.test_git_installed_and_safe_directory_configured) ... ok
+test_jobs_run_in_debian_trixie_containers (test_ci_workflow.ci_workflow_t.test_jobs_run_in_debian_trixie_containers) ... ok
+test_no_secrets_context_or_pull_request_target (test_ci_workflow.ci_workflow_t.test_no_secrets_context_or_pull_request_target) ... ok
+test_no_write_permission_grants (test_ci_workflow.ci_workflow_t.test_no_write_permission_grants) ... ok
+test_runs_static_packages_image_and_boot_steps (test_ci_workflow.ci_workflow_t.test_runs_static_packages_image_and_boot_steps) ... ok
+test_third_party_actions_pinned_to_full_sha (test_ci_workflow.ci_workflow_t.test_third_party_actions_pinned_to_full_sha) ... ok
+test_top_level_permissions_are_contents_read_only (test_ci_workflow.ci_workflow_t.test_top_level_permissions_are_contents_read_only) ... ok
+test_workflow_triggers (test_ci_workflow.ci_workflow_t.test_workflow_triggers) ... ok
+test_each_entry_is_one_debian_package_name (test_host_packages.host_packages_t.test_each_entry_is_one_debian_package_name) ... ok
+test_no_duplicate_entries (test_host_packages.host_packages_t.test_no_duplicate_entries) ... ok
+test_required_build_host_packages_listed (test_host_packages.host_packages_t.test_required_build_host_packages_listed) ... ok
+test_apt_authentication_is_not_disabled (test_live_build_config.live_build_config_t.test_apt_authentication_is_not_disabled) ... ok
+test_architecture_is_amd64 (test_live_build_config.live_build_config_t.test_architecture_is_amd64) ... ok
+test_archive_areas_are_main_only (test_live_build_config.live_build_config_t.test_archive_areas_are_main_only) ... ok
+test_binary_image_is_iso_hybrid (test_live_build_config.live_build_config_t.test_binary_image_is_iso_hybrid) ... ok
+test_debian_installer_disabled (test_live_build_config.live_build_config_t.test_debian_installer_disabled) ... ok
+test_distribution_is_trixie (test_live_build_config.live_build_config_t.test_distribution_is_trixie) ... ok
+test_iso_metadata_names_m0_development_image (test_live_build_config.live_build_config_t.test_iso_metadata_names_m0_development_image) ... ok
+test_lb_config_is_invoked_noauto (test_live_build_config.live_build_config_t.test_lb_config_is_invoked_noauto) ... ok
+test_mirrors_are_official_debian_hosts (test_live_build_config.live_build_config_t.test_mirrors_are_official_debian_hosts) ... ok
+test_non_free_firmware_is_off (test_live_build_config.live_build_config_t.test_non_free_firmware_is_off) ... ok
+test_package_lists_add_no_out_of_scope_components (test_live_build_config.live_build_config_t.test_package_lists_add_no_out_of_scope_components) ... ok
+test_package_name_rule_rejects_out_of_scope_names (test_live_build_config.live_build_config_t.test_package_name_rule_rejects_out_of_scope_names) ... ok
+test_security_and_updates_are_not_disabled (test_live_build_config.live_build_config_t.test_security_and_updates_are_not_disabled) ... ok
+test_serial_console_boot_parameters_present (test_live_build_config.live_build_config_t.test_serial_console_boot_parameters_present) ... ok
+test_binary_stanza_metadata_and_dependencies (test_package_source.package_source_t.test_binary_stanza_metadata_and_dependencies) ... ok
+test_changelog_and_control_emails_are_reserved (test_package_source.package_source_t.test_changelog_and_control_emails_are_reserved) ... ok
+test_changelog_version_and_distribution (test_package_source.package_source_t.test_changelog_version_and_distribution) ... ok
+test_copyright_reflects_agpl_and_pending_license_choice (test_package_source.package_source_t.test_copyright_reflects_agpl_and_pending_license_choice) ... ok
+test_description_states_m0_skeleton_limits (test_package_source.package_source_t.test_description_states_m0_skeleton_limits) ... ok
+test_install_and_dirs_stay_under_doc_directory (test_package_source.package_source_t.test_install_and_dirs_stay_under_doc_directory) ... ok
+test_license_file_is_agpl_v3 (test_package_source.package_source_t.test_license_file_is_agpl_v3) ... ok
+test_maintainer_is_reserved_placeholder (test_package_source.package_source_t.test_maintainer_is_reserved_placeholder) ... ok
+test_no_maintainer_scripts_conffiles_or_units (test_package_source.package_source_t.test_no_maintainer_scripts_conffiles_or_units) ... ok
+test_rules_is_executable_and_no_compat_file (test_package_source.package_source_t.test_rules_is_executable_and_no_compat_file) ... ok
+test_source_format_is_native_3_0 (test_package_source.package_source_t.test_source_format_is_native_3_0) ... ok
+test_source_stanza_metadata (test_package_source.package_source_t.test_source_stanza_metadata) ... ok
+test_gitignore_ignores_out_directory (test_repository_hygiene.repository_hygiene_t.test_gitignore_ignores_out_directory) ... ok
+test_new_build_and_test_names_are_snake_case (test_repository_hygiene.repository_hygiene_t.test_new_build_and_test_names_are_snake_case) ... ok
+test_no_build_outputs_are_tracked (test_repository_hygiene.repository_hygiene_t.test_no_build_outputs_are_tracked) ... ok
+test_scripts_and_shebang_files_are_executable (test_repository_hygiene.repository_hygiene_t.test_scripts_and_shebang_files_are_executable) ... ok
+test_shell_scripts_have_shebang_and_strict_mode (test_repository_hygiene.repository_hygiene_t.test_shell_scripts_have_shebang_and_strict_mode) ... ok
+test_snake_case_rule_detects_camel_case (test_repository_hygiene.repository_hygiene_t.test_snake_case_rule_detects_camel_case) ... ok
+test_clean_input_passes_with_real_grep (test_secret_scanner.secret_scanner_dependency_t.test_clean_input_passes_with_real_grep) ... ok
+test_crash_on_one_file_with_clean_other_is_scan_error (test_secret_scanner.secret_scanner_dependency_t.test_crash_on_one_file_with_clean_other_is_scan_error) ... ok
+test_crashing_grep_is_scan_error (test_secret_scanner.secret_scanner_dependency_t.test_crashing_grep_is_scan_error) ... ok
+test_finding_is_reported_with_real_grep (test_secret_scanner.secret_scanner_dependency_t.test_finding_is_reported_with_real_grep) ... ok
+test_finding_takes_precedence_over_crash_on_other_file (test_secret_scanner.secret_scanner_dependency_t.test_finding_takes_precedence_over_crash_on_other_file) ... ok
+test_missing_grep_is_scan_error (test_secret_scanner.secret_scanner_dependency_t.test_missing_grep_is_scan_error) ... ok
+test_non_executable_grep_is_scan_error (test_secret_scanner.secret_scanner_dependency_t.test_non_executable_grep_is_scan_error) ... ok
+test_unexpected_grep_status_is_scan_error (test_secret_scanner.secret_scanner_dependency_t.test_unexpected_grep_status_is_scan_error) ... ok
+test_finding_in_colon_named_file_reports_path_and_line (test_secret_scanner.secret_scanner_regression_t.test_finding_in_colon_named_file_reports_path_and_line) ... ok
+test_finding_in_file_with_space_reports_path_and_line (test_secret_scanner.secret_scanner_regression_t.test_finding_in_file_with_space_reports_path_and_line) ... ok
+test_lone_dangling_symlink_exits_zero (test_secret_scanner.secret_scanner_regression_t.test_lone_dangling_symlink_exits_zero) ... ok
+test_symlink_inside_scanned_dir_to_outside_secret_is_detected (test_secret_scanner.secret_scanner_regression_t.test_symlink_inside_scanned_dir_to_outside_secret_is_detected) ... ok
+test_unreadable_file_inside_scanned_directory_is_error (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_inside_scanned_directory_is_error) ... ok
+test_unreadable_file_is_error_exit_two (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_is_error_exit_two) ... ok
+test_unreadable_file_plus_finding_exits_one_and_reports_both (test_secret_scanner.secret_scanner_regression_t.test_unreadable_file_plus_finding_exits_one_and_reports_both) ... ok
+test_aws_access_key_id_is_detected (test_secret_scanner.secret_scanner_t.test_aws_access_key_id_is_detected) ... ok
+test_clean_file_exits_zero (test_secret_scanner.secret_scanner_t.test_clean_file_exits_zero) ... ok
+test_github_tokens_are_detected_and_not_printed_in_full (test_secret_scanner.secret_scanner_t.test_github_tokens_are_detected_and_not_printed_in_full) ... ok
+test_pem_private_key_blocks_are_detected (test_secret_scanner.secret_scanner_t.test_pem_private_key_blocks_are_detected) ... ok
+test_public_key_block_is_not_flagged (test_secret_scanner.secret_scanner_t.test_public_key_block_is_not_flagged) ... ok
+test_recursive_directory_scan_finds_nested_secret (test_secret_scanner.secret_scanner_t.test_recursive_directory_scan_finds_nested_secret) ... ok
+test_repository_default_scan_is_clean (test_secret_scanner.secret_scanner_t.test_repository_default_scan_is_clean) ... ok
+test_scanner_does_not_flag_itself (test_secret_scanner.secret_scanner_t.test_scanner_does_not_flag_itself) ... ok
+test_slack_tokens_are_detected (test_secret_scanner.secret_scanner_t.test_slack_tokens_are_detected) ... ok
+test_truncated_aws_prefix_is_not_flagged (test_secret_scanner.secret_scanner_t.test_truncated_aws_prefix_is_not_flagged) ... ok
+test_usage_error_exits_two (test_secret_scanner.secret_scanner_t.test_usage_error_exits_two) ... ok
+test_tree_without_git_fails_file_discovery (test_static_check_runner.static_check_file_discovery_t.test_tree_without_git_fails_file_discovery) ... ok
+test_clean_clone_of_head_passes (test_static_check_runner.static_check_runner_t.test_clean_clone_of_head_passes) ... ok
+test_defective_python_file_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_python_file_fails_runner) ... ok
+test_defective_shell_script_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_shell_script_fails_runner) ... ok
+test_defective_workflow_yaml_fails_runner (test_static_check_runner.static_check_runner_t.test_defective_workflow_yaml_fails_runner) ... ok
+
+----------------------------------------------------------------------
+Ran 82 tests in 25.775s
+
+OK
+static_tests_exit=0
