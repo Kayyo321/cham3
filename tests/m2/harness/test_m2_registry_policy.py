@@ -4,7 +4,7 @@ Seeded defects in a disposable copy of the workspace (never the checkout), one a
 time. Each removes or weakens one admission rule (wire format sections 6.5-6.12, 7),
 one journal, durability or reserve rule (ADR 0006 section 1), one storage-integrity rule
 of the anchor, run marker, restriction ledger or recovery table (ADR 0006 sections 2-4,
-6; the M2-006 stage A review findings R01-R08), one current-authorization rule (ADR 0007
+6; the M2-006 stage A review findings R01-R08 and R2-01-R2-04), one current-authorization rule (ADR 0007
 section 1) or one submission check, and the named Rust test must then fail (not merely
 fail to build); the unmodified copy passes the same tests.
 """
@@ -247,12 +247,12 @@ SeededDefects = [
       "            let _ = (&ledger, &encoded);\n            Ok(())\n        };\n")],
      "cham3_registryd", "storage_integrity", "a_restriction_is_denied_in_memory_and_ledgered_before_any_disk_write"),
     ("failed_ledger_keeps_serving", [(Registry,
-      "    fn ready(&self, slot: &mut user_slot_t) -> service_result_t<()> {\n        if lock(&self.ledger)?.failed() {\n            return Err(storage_unavailable());\n        }\n",
-      "    fn ready(&self, slot: &mut user_slot_t) -> service_result_t<()> {\n")],
+      "        self.retry_unverifiable();\n        if lock(&self.ledger)?.failed() {\n            return Err(storage_unavailable());\n        }\n        if slot.journal.failed() {\n",
+      "        self.retry_unverifiable();\n        if slot.journal.failed() {\n")],
      "cham3_registryd", "storage_integrity", "a_failed_ledger_stops_eligible_decisions_and_the_next_start_contains"),
     ("failed_ledger_keeps_its_validity", [("core/registryd/src/ledger.rs",
-      "                if io.remove_file(&validity).is_err() {\n                    let _ = io.replace_file(&validity, &[]);\n                }\n",
-      "                let _ = &validity;\n")],
+      "                self.invalidation_owed = true;\n                self.retry_invalidation(io);\n",
+      "                let _ = io;\n")],
      "cham3_registryd", "storage_integrity", "a_failed_ledger_stops_eligible_decisions_and_the_next_start_contains"),
     ("anchor_failure_not_remembered", [(Registry,
       "                slot.anchor_failed = true;\n", "")],
@@ -370,6 +370,36 @@ SeededDefects = [
       "        if let slot_state_t::quarantined(_) = slot.state {\n            return;\n        }\n        if slot.holds(&record.body) {\n",
       "        if slot.holds(&record.body) {\n")],
      "cham3_registryd", "storage_integrity", "ledger_entries_of_unknown_held_or_quarantined_users_are_dropped_or_skipped"),
+    # M2-006 stage A re-review (R2-01..R2-04).
+    # R2-01: the fresh anchor does not outrank the rejected slots, or the quarantine
+    # they leave is not anchored.
+    ("rejected_counter_not_continued", [("core/registryd/src/anchor.rs",
+      "                    counter: highest,\n",
+      "                    counter: 0,\n")],
+     "cham3_registryd", "storage_integrity", "rejected_anchor_slots_are_outranked_and_the_quarantine_holds_at_every_later_start"),
+    ("anchor_quarantine_not_anchored", [(Registry,
+      "        for uid in roll_forward.into_iter().chain(anchor_quarantined) {\n",
+      "        for uid in roll_forward.into_iter().chain(anchor_quarantined.into_iter().take(0)) {\n")],
+     "cham3_registryd", "storage_integrity", "rejected_anchor_slots_are_outranked_and_the_quarantine_holds_at_every_later_start"),
+    # R2-02: the start publishes `running` although its ledger failed.
+    ("start_marker_ignores_failed_ledger", [(Registry,
+      "            state: if ledger_failed {\n                run_state_t::unverifiable\n            } else {\n                run_state_t::running\n            },\n",
+      "            state: run_state_t::running,\n")],
+     "cham3_registryd", "storage_integrity", "a_ledger_failure_during_the_start_leaves_the_run_unverifiable"),
+    # R2-03: a failed ledger's invalidation, or the unverifiable marker, is not retried.
+    ("ledger_invalidation_not_retried", [("core/registryd/src/ledger.rs",
+      "        if !self.invalidation_owed {\n            return;\n        }\n",
+      "        if self.invalidation_owed || !self.invalidation_owed {\n            return;\n        }\n")],
+     "cham3_registryd", "storage_integrity", "a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_marker"),
+    ("unverifiable_marker_not_retried", [(Registry,
+      "        if !*owed {\n            return;\n        }\n",
+      "        if *owed || !*owed {\n            return;\n        }\n")],
+     "cham3_registryd", "storage_integrity", "a_compound_storage_failure_keeps_retrying_the_ledgers_invalidation_and_the_marker"),
+    # R2-04: the queue is appended in full before the anchor names anything.
+    ("queue_appended_before_anchoring", [(Registry,
+      "            if self.anchor_slot(slot).is_err() {\n                return Err(not_durable());\n            }\n        }\n        Ok(last_sequence)\n",
+      "        }\n        if self.anchor_slot(slot).is_err() {\n            return Err(not_durable());\n        }\n        Ok(last_sequence)\n")],
+     "cham3_registryd", "storage_integrity", "a_queue_of_restrictions_is_journaled_and_anchored_one_record_at_a_time"),
 ]
 
 

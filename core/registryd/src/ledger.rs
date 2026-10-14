@@ -218,6 +218,10 @@ pub struct ledger_t {
     boot_id: String,
     /// Writing failed once: the validity file is gone and nothing is written again.
     failed: bool,
+    /// The validity file could neither be removed nor emptied when the ledger failed:
+    /// its invalidation is still owed and retried by every later operation
+    /// (M2-006-A-R2-03).
+    invalidation_owed: bool,
 }
 
 impl ledger_t {
@@ -257,6 +261,7 @@ impl ledger_t {
             run_id,
             boot_id: boot_id.to_owned(),
             failed: false,
+            invalidation_owed: false,
         })
     }
 
@@ -300,12 +305,29 @@ impl ledger_t {
             Ok(()) => Ok(()),
             Err(_) => {
                 self.failed = true;
-                let validity = self.directory.join(ValidityFileName);
-                if io.remove_file(&validity).is_err() {
-                    let _ = io.replace_file(&validity, &[]);
-                }
+                self.invalidation_owed = true;
+                self.retry_invalidation(io);
                 Err(store_error_t::io)
             }
+        }
+    }
+
+    /// Whether the failed ledger's validity file is still intact (neither removed nor
+    /// emptied): a same-boot restart would then find a complete-looking ledger.
+    pub fn invalidation_owed(&self) -> bool {
+        self.invalidation_owed
+    }
+
+    /// Retries the invalidation of a failed ledger's validity file: removed, or
+    /// emptied when it cannot be removed (an empty validity file is invalid). Owed
+    /// until one of the two succeeds (M2-006-A-R2-03).
+    pub fn retry_invalidation(&mut self, io: &dyn journal_io_t) {
+        if !self.invalidation_owed {
+            return;
+        }
+        let validity = self.directory.join(ValidityFileName);
+        if io.remove_file(&validity).is_ok() || io.replace_file(&validity, &[]).is_ok() {
+            self.invalidation_owed = false;
         }
     }
 

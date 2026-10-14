@@ -439,6 +439,11 @@ impl anchor_t {
     /// parent) for a store whose root is on device `store_device`. Returns the anchor
     /// and what the slots held; with nothing or only invalid slots the map is a fresh
     /// one over `policy`, and the caller decides what that means for the store.
+    /// The fresh anchor's counter continues above the highest counter any rejected
+    /// slot (invalid, or two valid ones with equal counters) carried, so that the
+    /// first write of this run — the run marker at the latest — outranks every
+    /// rejected image and none of them can become authoritative at a later start
+    /// (M2-006-A-R2-01).
     pub fn open(
         directory: &Path,
         owner: u32,
@@ -456,6 +461,10 @@ impl anchor_t {
         };
         let mut best: Option<(usize, u64, anchor_map_t)> = None;
         let mut present = 0usize;
+        // The highest counter any checksum-valid slot carries, trusted or not: a
+        // fresh anchor continues above it, so that no rejected slot can outrank the
+        // slots this run writes (M2-006-A-R2-01).
+        let mut highest = 0u64;
         // The writer alternates the slots with strictly increasing counters: two valid
         // slots with the same counter never come from it, and neither is trusted.
         let mut equal_counters = false;
@@ -464,6 +473,7 @@ impl anchor_t {
                 Ok(None) => {}
                 Ok(Some((counter, map))) => {
                     present = present.saturating_add(1);
+                    highest = highest.max(counter);
                     if best
                         .as_ref()
                         .is_some_and(|(_, current, _)| counter == *current)
@@ -503,7 +513,7 @@ impl anchor_t {
                     directory: directory.to_path_buf(),
                     mode,
                     map: anchor_map_t::new(policy),
-                    counter: 0,
+                    counter: highest,
                     current_slot: 1,
                     entry_synced: [false; 2],
                 },

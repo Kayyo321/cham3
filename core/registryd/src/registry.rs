@@ -351,6 +351,10 @@ pub struct rollback_status_t {
     pub pending_restrictions: Vec<u32>,
     /// The ledger can no longer be written: no eligible decision is served.
     pub ledger_failed: bool,
+    /// The failed ledger's validity file is still intact or the `unverifiable` run
+    /// marker is not yet written: both are retried by every operation; until one
+    /// succeeds, a same-boot restart would trust the failed ledger (M2-006-A-R2-03).
+    pub unverifiable_owed: bool,
     /// Users whose restrictive reserve is not full (R03; reported here until the
     /// status operations of stage B).
     pub depleted_reserves: Vec<u32>,
@@ -374,6 +378,10 @@ pub struct registry_t {
     policy: Mutex<policy_state_t>,
     run_decision: run_decision_t,
     owner: u32,
+    /// The ledger failed but the run marker could not be written `unverifiable`:
+    /// the marker write is still owed and retried by every later operation
+    /// (M2-006-A-R2-03).
+    unverifiable_owed: Mutex<bool>,
 }
 
 fn storage_unavailable() -> service_error_t {
@@ -786,6 +794,7 @@ impl registry_t {
         let anchor_lost = anchor_start == anchor_start_t::absent && journals_exist;
         let mut users = BTreeMap::new();
         let mut roll_forward: Vec<u32> = Vec::new();
+        let mut anchor_quarantined: Vec<u32> = Vec::new();
         for uid in store.users().map_err(registry_start_error_t::store)? {
             let anchored = anchor.map().users.get(&uid).copied();
             let entry = match store.read(uid, config.quota_bytes) {
@@ -811,6 +820,8 @@ impl registry_t {
                         Ok((slot, forward)) => {
                             if forward {
                                 roll_forward.push(uid);
+                            } else if anchor_invalid || anchor_lost {
+                                anchor_quarantined.push(uid);
                             }
                             user_entry_t::usable(Arc::new(Mutex::new(slot)))
                         }
@@ -845,9 +856,13 @@ impl registry_t {
             policy: Mutex::new(policy),
             run_decision: decision,
             owner,
+            unverifiable_owed: Mutex::new(false),
         };
-        // Roll the anchor forward for the durable but unanchored records (§4).
-        for uid in roll_forward {
+        // Roll the anchor forward for the durable but unanchored records (§4), and
+        // make the quarantine of every user the unusable anchor quarantined durable
+        // in the fresh anchor, so that it holds at every later start
+        // (M2-006-A-R2-01).
+        for uid in roll_forward.into_iter().chain(anchor_quarantined) {
             registry
                 .anchor_user(uid)
                 .map_err(|_| registry_start_error_t::store(store_error_t::io))?;
@@ -862,11 +877,21 @@ impl registry_t {
         if decision == run_decision_t::contained {
             registry.contain_everyone();
         }
-        // The policy state and the run marker, durable before anything is served.
+        // The policy state and the run marker, durable before anything is served. A
+        // ledger that failed during the start (a re-journaled intent that could not
+        // enter this run's ledger) makes this run unverifiable from its first moment:
+        // the marker says so, and is never replaced by `running` (M2-006-A-R2-02).
+        let ledger_failed = lock(&registry.ledger)
+            .map_err(|_| registry_start_error_t::store(store_error_t::io))?
+            .failed();
         let marker = run_marker_t {
             run_id,
             boot_id,
-            state: run_state_t::running,
+            state: if ledger_failed {
+                run_state_t::unverifiable
+            } else {
+                run_state_t::running
+            },
         };
         let policy_now = *lock(&registry.policy)
             .map_err(|_| registry_start_error_t::store(store_error_t::io))?;
@@ -1100,6 +1125,7 @@ impl registry_t {
     /// then the pending restrictive records — is retried, and the operation proceeds
     /// only once nothing is owed.
     fn ready(&self, slot: &mut user_slot_t) -> service_result_t<()> {
+        self.retry_unverifiable();
         if lock(&self.ledger)?.failed() {
             return Err(storage_unavailable());
         }
@@ -1255,21 +1281,54 @@ impl registry_t {
     /// validity file could not be removed. A failure here is ignored: the ledger is
     /// marked failed and nothing eligible is served for the rest of the run.
     fn mark_run_unverifiable(&self) {
+        let Ok(mut owed) = lock(&self.unverifiable_owed) else {
+            return;
+        };
+        *owed = true;
+        drop(owed);
+        self.retry_unverifiable();
+    }
+
+    /// Retries what a failed ledger still owes (M2-006-A-R2-03): the invalidation of
+    /// its validity file and the `unverifiable` run marker. Both are owed until they
+    /// succeed; every operation of the registry retries them first, so that the
+    /// window in which a same-boot restart could trust the failed ledger closes as
+    /// soon as any of the two writes succeeds. Lock order: ledger, then anchor.
+    fn retry_unverifiable(&self) {
+        if let Ok(mut ledger) = lock(&self.ledger) {
+            ledger.retry_invalidation(self.io.as_ref());
+        }
+        let Ok(mut owed) = lock(&self.unverifiable_owed) else {
+            return;
+        };
+        if !*owed {
+            return;
+        }
         let Ok(mut anchor) = lock(&self.anchor) else {
             return;
         };
-        let _ = anchor.update(self.io.as_ref(), |map| {
+        let written = anchor.update(self.io.as_ref(), |map| {
             if let Some(marker) = &mut map.run_marker {
                 marker.state = run_state_t::unverifiable;
             }
         });
+        if written.is_ok() {
+            *owed = false;
+        }
+    }
+
+    /// Whether a failed ledger still owes its invalidation or the `unverifiable`
+    /// marker (`rollback_status`).
+    fn unverifiable_owed(&self) -> service_result_t<bool> {
+        let ledger_owed = lock(&self.ledger)?.invalidation_owed();
+        Ok(ledger_owed || *lock(&self.unverifiable_owed)?)
     }
 
     /// Makes what the slot owes durable, in order (ADR 0006 §§3, 6): a durable record
     /// whose anchor update failed is anchored first — nothing is appended beyond it
     /// until it is, so that a start finds at most one unanchored record (§4 rolls it
     /// forward) and nothing of the unanchored state is served — then every pending
-    /// restrictive record is appended, then the anchor names the result. A failure
+    /// restrictive record is appended and anchored, one at a time. A failure
     /// leaves the rest owed: `storage_unavailable` when only the anchor is owed,
     /// `restriction_not_durable` when a restrictive record is. Returns the sequence of
     /// the last record appended (the journal's count when none was).
@@ -1282,7 +1341,6 @@ impl registry_t {
             });
         }
         let mut last_sequence = slot.journal.record_count();
-        let mut appended = false;
         while let Some(pending) = slot.pending.first().cloned() {
             let sequence = slot.journal.next_sequence().ok_or(not_durable())?;
             let record = registry_record_t {
@@ -1325,13 +1383,15 @@ impl registry_t {
             }
             slot.pending.remove(0);
             last_sequence = sequence;
-            appended = true;
-        }
-        if appended && self.anchor_slot(slot).is_err() {
-            // The records are durable; the anchor is retried by every later operation
-            // of the user, or rolled forward at the next start. Until then the user is
-            // denied (anchor_failed).
-            return Err(not_durable());
+            // Each durable record is anchored before the next one is appended, so
+            // that at most one record is ever unanchored, whatever fails next
+            // (M2-006-A-R2-04). With the anchor update failed the record is durable
+            // and unanchored: the user is denied (`anchor_failed`), the rest of the
+            // queue stays owed, and every later operation of the user retries the
+            // anchor first (or the next start rolls it forward).
+            if self.anchor_slot(slot).is_err() {
+                return Err(not_durable());
+            }
         }
         Ok(last_sequence)
     }
@@ -1519,6 +1579,7 @@ impl registry_t {
         after: u64,
     ) -> service_result_t<journal_page_t> {
         require(caller, &[Identityd])?;
+        self.retry_unverifiable();
         let Some(slot) = self.slot_any(owner_uid)? else {
             return Ok(journal_page_t {
                 entries: Vec::new(),
@@ -1639,6 +1700,7 @@ impl registry_t {
         record: &lifecycle_record_t,
     ) -> service_result_t<u64> {
         require(caller, &[Contractd, Policyd, Identityd, Admin])?;
+        self.retry_unverifiable();
         let slot = self
             .slot_any(owner_uid)?
             .ok_or(authority(authority_code_t::key_not_certified))?;
@@ -1740,6 +1802,7 @@ impl registry_t {
 
     /// `rollback_status` (`service:*`, `trusted_client`).
     pub fn rollback_status(&self, caller: caller_role_t) -> service_result_t<rollback_status_t> {
+        self.retry_unverifiable();
         match caller {
             caller_role_t::service(_) | caller_role_t::trusted_client { .. } => {}
             _ => return Err(ipc(ipc_code_t::role_denied)),
@@ -1790,6 +1853,7 @@ impl registry_t {
             (anchor.mode(), anchor.map().policy)
         };
         let ledger_failed = lock(&self.ledger)?.failed();
+        let unverifiable_owed = self.unverifiable_owed()?;
         Ok(rollback_status_t {
             anchor_mode,
             run_decision: self.run_decision,
@@ -1799,6 +1863,7 @@ impl registry_t {
             open_ceremonies: Vec::new(),
             pending_restrictions: pending,
             ledger_failed,
+            unverifiable_owed,
             depleted_reserves: depleted,
             policy_pending: policy != anchored_policy,
             policy,
@@ -1811,6 +1876,7 @@ impl registry_t {
     /// start resumes without the ledger. With anything still owed, or a failed ledger,
     /// the marker stays as it is and `restriction_not_durable` is reported.
     pub fn shutdown(&self) -> service_result_t<()> {
+        self.retry_unverifiable();
         let slots: Vec<Arc<Mutex<user_slot_t>>> = lock(&self.users)?
             .values()
             .filter_map(|entry| match entry {
@@ -1853,6 +1919,7 @@ impl registry_t {
         lineage_id: &digest_t,
     ) -> service_result_t<Option<lineage_view_t>> {
         require(caller, &[Contractd, Policyd])?;
+        self.retry_unverifiable();
         if lock(&self.ledger)?.failed() {
             return Err(storage_unavailable());
         }
