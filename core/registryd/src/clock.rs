@@ -24,6 +24,12 @@
 //! (`commit_admitted.observed`), and a future `effective_start` is eligible only once
 //! enough observed time has passed since admission (`cham3_policyd`).
 //!
+//! **Anomaly episodes (erratum E6; M2-006-B1-R02).** The episode state is persisted
+//! with every floor as one monotonic mark (`2·episode` while open, `2·episode + 1`
+//! once closed), so the larger mark is always the later state. A same-boot restart
+//! resumes the episode, open or closed, and a `clock_anomaly` record names its
+//! episode, so replay knows which users have reported it.
+//!
 //! The executable reference is `tests/m2/oracle/trusted_time_model.py`. The
 //! `trusted_time_model` cargo test checks this clock against vectors that model
 //! produced.
@@ -109,6 +115,8 @@ pub struct time_floor_t {
     pub boottime: u64,
     pub trusted: u64,
     pub observed: u64,
+    /// The anomaly episode state of this boot ([`anomaly_state_t::mark`]).
+    pub anomaly: u64,
 }
 
 fn signed(value: u64) -> Option<i64> {
@@ -149,6 +157,7 @@ pub fn merge_floor(existing: Option<time_floor_t>, next: time_floor_t) -> time_f
             boottime,
             trusted: at(boottime, offset)?,
             observed: at(boottime, observed_offset)?,
+            anomaly: existing.anomaly.max(next.anomaly),
         })
     })();
     merged.unwrap_or(next)
@@ -192,8 +201,31 @@ pub struct anomaly_state_t {
     /// Episodes so far in this run; the current one when `open`.
     pub episode: u64,
     pub open: bool,
-    /// The largest lag seen in the current or the last episode.
+    /// The largest lag seen in the current or the last episode (this run's samples
+    /// only: not persisted).
     pub behind: u64,
+}
+
+impl anomaly_state_t {
+    /// The persisted form: 0 before any episode, `2·episode` while it is open,
+    /// `2·episode + 1` once it closed. Later states have larger marks.
+    pub fn mark(&self) -> u64 {
+        let base = self.episode.saturating_mul(2);
+        if self.episode == 0 || self.open {
+            base
+        } else {
+            base.saturating_add(1)
+        }
+    }
+
+    /// The state a persisted mark records.
+    pub fn from_mark(mark: u64) -> anomaly_state_t {
+        anomaly_state_t {
+            episode: mark / 2,
+            open: mark != 0 && mark % 2 == 0,
+            behind: 0,
+        }
+    }
 }
 
 /// One service's trusted time in one boot.
@@ -224,6 +256,14 @@ impl trusted_clock_t {
             .iter()
             .filter(|floor| floor.boot_id == boot_id)
             .collect();
+        // Episodes are counted per boot: a same-boot restart resumes the latest one.
+        let anomaly = anomaly_state_t::from_mark(
+            same_boot
+                .iter()
+                .map(|floor| floor.anomaly)
+                .max()
+                .unwrap_or(0),
+        );
         if same_boot.is_empty() {
             let earlier = floors.iter();
             if let Some(last_trusted) = earlier.clone().map(|floor| floor.trusted).max() {
@@ -244,7 +284,7 @@ impl trusted_clock_t {
             offset,
             observed_offset,
             last_boottime: sample.boottime,
-            anomaly: anomaly_state_t::default(),
+            anomaly,
         })
     }
 
@@ -324,6 +364,7 @@ impl trusted_clock_t {
             boottime: self.last_boottime,
             trusted: self.now()?,
             observed: self.observed_now()?,
+            anomaly: self.anomaly.mark(),
         })
     }
 
@@ -335,6 +376,7 @@ impl trusted_clock_t {
             boottime: self.last_boottime,
             trusted: at(self.last_boottime, self.offset.max(offset))?,
             observed: self.observed_now()?,
+            anomaly: self.anomaly.mark(),
         })
     }
 
@@ -381,7 +423,59 @@ mod tests {
             boottime,
             trusted,
             observed,
+            anomaly: 0,
         }
+    }
+
+    #[test]
+    fn anomaly_episodes_resume_in_the_same_boot_only() {
+        let open = anomaly_state_t {
+            episode: 3,
+            open: true,
+            behind: 400,
+        };
+        let closed = anomaly_state_t {
+            open: false,
+            ..open
+        };
+        assert_eq!(open.mark(), 6);
+        assert_eq!(closed.mark(), 7);
+        assert_eq!(anomaly_state_t::default().mark(), 0);
+        assert_eq!(
+            anomaly_state_t::from_mark(6),
+            anomaly_state_t { behind: 0, ..open }
+        );
+        assert_eq!(anomaly_state_t::from_mark(7).episode, 3);
+        assert!(!anomaly_state_t::from_mark(7).open);
+        assert_eq!(anomaly_state_t::from_mark(0), anomaly_state_t::default());
+        // A restart in the same boot resumes the latest state; another boot starts over.
+        let floors = [
+            time_floor_t {
+                anomaly: 6,
+                ..floor("b", 100, 5_000, 90)
+            },
+            time_floor_t {
+                anomaly: 4,
+                ..floor("b", 120, 5_020, 110)
+            },
+        ];
+        let resumed = trusted_clock_t::start("b", sample(4_000, 130), &floors).unwrap();
+        assert_eq!(resumed.anomaly().mark(), 6);
+        let rebooted = trusted_clock_t::start("c", sample(4_000, 5), &floors).unwrap();
+        assert_eq!(rebooted.anomaly().mark(), 0);
+        // The resumed episode continues: a sample still behind belongs to it.
+        let mut clock = resumed;
+        assert_eq!(clock.observe(sample(4_000, 140), true), Some(3));
+        assert_eq!(clock.anomaly().episode, 3);
+        // Its end is a later state, and the next episode a later one still.
+        clock.observe(sample(5_040, 140), true);
+        assert_eq!(clock.anomaly().mark(), 7);
+        clock.observe(sample(4_000, 150), true);
+        assert_eq!(clock.anomaly().mark(), 8);
+        assert_eq!(
+            merge_floor(Some(floors[0].clone()), floors[1].clone()).anomaly,
+            6
+        );
     }
 
     #[test]

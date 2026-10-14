@@ -1785,16 +1785,18 @@ fn policyd_reports_a_forward_sample_and_relies_on_it_only_after_registryd_took_i
         T1Seconds + 65
     );
     // A sample registryd refuses (its CLOCK_BOOTTIME is far ahead of registryd's own)
-    // is not relied on: policyd keeps the shared offset.
+    // is not relied on, and nothing is decided from the snapshot read before it: the
+    // services disagree on the clock (M2-006-B1-R01).
     let refused = test_time_t::at(base.realtime + 500);
     refused.set_available(true, base.realtime + 500, base.boottime + 100);
     let mut policy = policy_with_clock(&world, &refused, &kernel_boot_id());
-    assert!(is_eligible(
+    assert_eq!(
         policy
             .evaluate(Launcher, &identity, &request)
-            .expect("evaluate")
-    ));
-    assert_eq!(policy.clock().offset(), Some(shared + 5));
+            .expect("evaluate"),
+        decision_t::unknown(unknown_reason_t::clock_unavailable)
+    );
+    assert_eq!(policy.clock().offset(), None, "nothing adopted");
     assert_eq!(
         world
             .registry
@@ -1832,5 +1834,151 @@ fn a_snapshot_of_another_boot_is_unknown() {
             )
             .expect("evaluate"),
         decision_t::unknown(unknown_reason_t::clock_unavailable)
+    );
+}
+
+/// Ledger appends fail while armed (the time entry of a forward sample included).
+#[derive(Clone)]
+struct ledger_fault_io_t {
+    armed: Arc<AtomicBool>,
+}
+
+impl journal_io_t for ledger_fault_io_t {
+    fn write_all(&self, file: &mut fs::File, bytes: &[u8]) -> io::Result<()> {
+        system_io_t.write_all(file, bytes)
+    }
+
+    fn sync_data(&self, file: &fs::File) -> io::Result<()> {
+        system_io_t.sync_data(file)
+    }
+
+    fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        system_io_t.sync_directory(path)
+    }
+
+    fn append_file(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
+        if self.armed.load(Ordering::SeqCst) {
+            return Err(io::Error::other("injected ledger append failure"));
+        }
+        system_io_t.append_file(path, bytes)
+    }
+}
+
+/// A world whose ledger can be made to fail, with one granted lineage, and a policyd
+/// whose wall clock reads 140 s ahead of registryd's at the same CLOCK_BOOTTIME.
+fn ahead_of_a_failing_ledger(
+    label: &str,
+    grant: cham3_contract_format::schema::grant_t,
+) -> (
+    world_t,
+    Arc<AtomicBool>,
+    policy_service_t<cham3_policyd::service::in_process_identity_t<registry_identity_store_t>>,
+    test_user_t,
+    app_t,
+) {
+    let armed = Arc::new(AtomicBool::new(false));
+    let mut world = world_at_with(
+        &temp_root(label),
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+        Box::new(ledger_fault_io_t {
+            armed: Arc::clone(&armed),
+        }),
+    );
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let editor = app("editor");
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, label)
+        .add(vec![grant])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let base = world.time.current().expect("clock");
+    let ahead = test_time_t::at(base.realtime + 140);
+    ahead.set_available(true, base.realtime + 140, base.boottime);
+    let policy = policy_with_clock(&world, &ahead, &kernel_boot_id());
+    (world, armed, policy, alice, editor)
+}
+
+#[test]
+fn a_time_sample_whose_ledger_append_fails_denies_the_current_evaluation() {
+    // M2-006-B1-R01: the grant expires 40 s after registryd's trusted now and 100 s
+    // before policyd's sample; the sample's ledger append fails.
+    let mut expiring = persistent_lifetime();
+    expiring.expiration = Some("2026-10-13T09:01:40Z".to_owned());
+    let grant = file_grant("expiring", 1001, "home:Expiring", &["read"], expiring);
+    let (world, armed, mut policy, alice, editor) =
+        ahead_of_a_failing_ledger("sample_failure_evaluate", grant);
+    let identity = runtime(&alice, &editor);
+    let request = files(alice.uid, "home:Expiring", "read");
+    armed.store(true, Ordering::SeqCst);
+    assert_eq!(
+        policy
+            .evaluate(Launcher, &identity, &request)
+            .expect("evaluate"),
+        decision_t::unknown(unknown_reason_t::registry_unavailable),
+        "nothing is decided from the snapshot read before the failure"
+    );
+    assert!(
+        world
+            .registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .ledger_failed
+    );
+    assert_eq!(
+        policy.clock().offset(),
+        None,
+        "the refused raise is not adopted"
+    );
+    assert_eq!(
+        policy
+            .evaluate(Launcher, &identity, &request)
+            .expect("evaluate"),
+        decision_t::unknown(unknown_reason_t::registry_unavailable)
+    );
+}
+
+#[test]
+fn a_time_sample_whose_ledger_append_fails_leaves_the_network_offline() {
+    for mode in ["direct", "tor"] {
+        let grant = network_grant(mode, 1001, mode, persistent_lifetime());
+        let (_world, armed, mut policy, alice, editor) =
+            ahead_of_a_failing_ledger(&format!("sample_failure_network_{mode}"), grant);
+        let identity = runtime(&alice, &editor);
+        armed.store(true, Ordering::SeqCst);
+        assert_eq!(
+            policy.network_mode(Launcher, &identity).expect("mode"),
+            network_decision_t::offline_unknown(unknown_reason_t::registry_unavailable),
+            "{mode}"
+        );
+    }
+}
+
+#[test]
+fn a_forward_sample_registryd_takes_expires_the_grant_at_once() {
+    // The no-fault control of the two tests above: the same sample, ledgered.
+    let mut expiring = persistent_lifetime();
+    expiring.expiration = Some("2026-10-13T09:01:40Z".to_owned());
+    let grant = file_grant("expiring", 1001, "home:Expiring", &["read"], expiring);
+    let (world, _armed, mut policy, alice, editor) =
+        ahead_of_a_failing_ledger("sample_success_expires", grant);
+    assert_eq!(
+        policy
+            .evaluate(
+                Launcher,
+                &runtime(&alice, &editor),
+                &files(alice.uid, "home:Expiring", "read")
+            )
+            .expect("evaluate"),
+        denied(deny_reason_t::expired)
+    );
+    assert_eq!(
+        world
+            .registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .clock
+            .trusted_now,
+        T1Seconds + 200
     );
 }

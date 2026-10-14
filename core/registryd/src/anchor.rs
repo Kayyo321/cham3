@@ -311,6 +311,7 @@ pub fn encode_slot(counter: u64, map: &anchor_map_t) -> Option<Vec<u8>> {
             writer.u64(floor.boottime);
             writer.u64(floor.trusted);
             writer.u64(floor.observed);
+            writer.u64(floor.anomaly);
         }
     }
     let checksum = sha256(&writer.bytes);
@@ -415,6 +416,7 @@ pub fn decode_slot(bytes: &[u8]) -> Option<(u64, anchor_map_t)> {
                 boottime: reader.u64()?,
                 trusted: reader.u64()?,
                 observed: reader.u64()?,
+                anomaly: reader.u64()?,
             })
         }
         _ => return None,
@@ -688,6 +690,7 @@ mod tests {
             boottime: 4_000,
             trusted: 1_791_882_000,
             observed: 9_000,
+            anomaly: 3,
         });
         map
     }
@@ -703,8 +706,8 @@ mod tests {
             sealed.extend_from_slice(&sha256(body));
             sealed
         };
-        // The floor is the last field: flag, boot id length, boot id (36), three u64.
-        let floor_at = body.len() - (1 + 1 + 36 + 24);
+        // The floor is the last field: flag, boot id length, boot id (36), four u64.
+        let floor_at = body.len() - (1 + 1 + 36 + 32);
         let mut flag = body.to_vec();
         flag[floor_at] = 2;
         assert_eq!(decode_slot(&sealed(&flag)), None, "unknown floor flag");
@@ -720,6 +723,7 @@ mod tests {
             boottime: 0,
             trusted: 0,
             observed: 0,
+            anomaly: 0,
         });
         assert_eq!(
             encode_slot(1, &empty_floor),

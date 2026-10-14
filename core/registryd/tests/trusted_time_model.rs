@@ -52,6 +52,8 @@ fn floor_of(value: &json_t) -> time_floor_t {
         boottime: number(value, "boottime"),
         trusted: number(value, "trusted"),
         observed: number(value, "observed"),
+        // The model has no episode state (erratum E6 is registryd's).
+        anomaly: 0,
     }
 }
 
@@ -153,7 +155,11 @@ fn replay() -> totals_t {
                     );
                 }
                 "floor" => {
-                    let floor = clock.floor().expect("floor");
+                    // The episode mark is not part of the model: compare the rest.
+                    let floor = time_floor_t {
+                        anomaly: 0,
+                        ..clock.floor().expect("floor")
+                    };
                     let model = floor_of(step);
                     if floor != model {
                         found.push(format!(

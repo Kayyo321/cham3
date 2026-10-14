@@ -93,9 +93,12 @@ pub enum lifecycle_record_t {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum registry_event_t {
     /// A wall-clock sample more than 300 s behind trusted time, first seen for this
-    /// user in this episode (ADR 0007 §5 rule 2, erratum E6). No effect on authority.
+    /// user in anomaly episode `episode` of boot `boot_id` (ADR 0007 §5 rule 2,
+    /// erratum E6; the episode makes the record once per user per episode across
+    /// same-boot restarts, M2-006-B1-R02). No effect on authority.
     clock_anomaly {
         boot_id: String,
+        episode: u64,
         trusted: u64,
         behind_seconds: u64,
     },
@@ -213,11 +216,13 @@ impl registry_record_t {
             }
             record_body_t::event(registry_event_t::clock_anomaly {
                 boot_id,
+                episode,
                 trusted,
                 behind_seconds,
             }) => {
                 pairs.push(("kind", value_t::text_of("clock_anomaly")));
                 pairs.push(("boot_id", value_t::text_of(boot_id)));
+                pairs.push(("episode", uint(*episode)));
                 pairs.push(("trusted", uint(*trusted)));
                 pairs.push(("behind_seconds", uint(*behind_seconds)));
             }
@@ -321,10 +326,14 @@ impl registry_record_t {
             "clock_anomaly" => (
                 record_body_t::event(registry_event_t::clock_anomaly {
                     boot_id: boot_id(field("boot_id")?)?,
+                    episode: match unsigned(field("episode")?)? {
+                        0 => return Err(record_error_t::malformed),
+                        episode => episode,
+                    },
                     trusted: unsigned(field("trusted")?)?,
                     behind_seconds: unsigned(field("behind_seconds")?)?,
                 }),
-                &["behind_seconds", "boot_id", "trusted"],
+                &["behind_seconds", "boot_id", "episode", "trusted"],
             ),
             "branch_terminated" => (
                 record_body_t::event(registry_event_t::branch_terminated {
@@ -649,6 +658,7 @@ mod tests {
             },
             record_body_t::event(registry_event_t::clock_anomaly {
                 boot_id: "boot".to_owned(),
+                episode: 2,
                 trusted: 1_791_882_000,
                 behind_seconds: 3_600,
             }),

@@ -653,3 +653,83 @@ fn a_registry_whose_clock_cannot_be_sampled_does_not_start() {
         Err(registry_start_error_t::clock_unavailable)
     ));
 }
+
+/// Each `clock_anomaly` record of a user: (boot id, episode).
+fn anomaly_episodes(root: &Path, uid: u32) -> Vec<(String, u64)> {
+    decoded(root, uid)
+        .into_iter()
+        .filter_map(|record| match record.body {
+            record_body_t::event(registry_event_t::clock_anomaly {
+                boot_id, episode, ..
+            }) => Some((boot_id, episode)),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_clock_anomaly_episode_survives_same_boot_restarts() {
+    // M2-006-B1-R02: an episode ends only at a sample within 300 s of trusted time,
+    // never at a restart; its end is persisted too, so that a later episode is new.
+    let root = temp_root("time_anomaly_restart");
+    let alice = test_user(1001);
+    let bob = test_user(1002);
+    let time = test_time_t::at(T1Seconds);
+    let registry = start(&root, "boot-1", &time);
+    enroll(&registry, &alice);
+    enroll(&registry, &bob);
+    let look = |registry: &registry_t, user: &test_user_t| {
+        registry
+            .lineage_head(Policyd, user.uid, &NoLineage)
+            .expect("view");
+    };
+    let one = |episode: u64| ("boot-1".to_owned(), episode);
+    time.step_wall_clock(T1Seconds - 400);
+    look(&registry, &alice);
+    assert_eq!(anomaly_episodes(&root, alice.uid), vec![one(1)]);
+    // A clean restart in the same boot, at the same clocks: the episode continues.
+    registry.shutdown().expect("clean shutdown");
+    drop(registry);
+    let registry = start(&root, "boot-1", &time);
+    let status = registry.rollback_status(Policyd).expect("status");
+    assert_eq!(
+        (status.clock.anomaly.episode, status.clock.anomaly.open),
+        (1, true)
+    );
+    look(&registry, &alice);
+    assert_eq!(anomaly_episodes(&root, alice.uid), vec![one(1)]);
+    // Another user reports the resumed episode once.
+    look(&registry, &bob);
+    look(&registry, &bob);
+    assert_eq!(anomaly_episodes(&root, bob.uid), vec![one(1)]);
+    // An unclean restart (the ledger holds the episode): still the same episode.
+    drop(registry);
+    let registry = start(&root, "boot-1", &time);
+    assert_eq!(registry.run_decision(), run_decision_t::ledger_replayed);
+    look(&registry, &alice);
+    assert_eq!(anomaly_episodes(&root, alice.uid), vec![one(1)]);
+    // A sample within 300 s ends it; the end survives an unclean restart, and the next
+    // lag is a new episode that each user reports once.
+    time.step_wall_clock(T1Seconds);
+    look(&registry, &alice);
+    drop(registry);
+    time.step_wall_clock(T1Seconds - 500);
+    let registry = start(&root, "boot-1", &time);
+    let status = registry.rollback_status(Policyd).expect("status");
+    assert_eq!(
+        (status.clock.anomaly.episode, status.clock.anomaly.open),
+        (2, true)
+    );
+    look(&registry, &alice);
+    look(&registry, &alice);
+    assert_eq!(anomaly_episodes(&root, alice.uid), vec![one(1), one(2)]);
+    // A new boot counts its own episodes.
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    let registry = start(&root, "boot-2", &time);
+    look(&registry, &alice);
+    assert_eq!(
+        anomaly_episodes(&root, alice.uid),
+        vec![one(1), one(2), ("boot-2".to_owned(), 1)]
+    );
+}

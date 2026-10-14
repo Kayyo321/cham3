@@ -196,15 +196,27 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
             .and_then(|(realtime, boottime)| realtime.checked_sub(boottime))
             .ok_or(unavailable)?;
         if sample_offset > offset {
-            // Reported first; relied on only after registryd ledgered it.
-            if let Ok(reply) = self.registry.time_sample(
-                Policyd,
-                &self.clock.boot_id,
-                sample.boottime,
-                sample.realtime,
-            ) {
-                offset = offset.max(sample_offset).max(reply.offset);
-            }
+            // Reported first; relied on only after registryd ledgered it. A refused
+            // report decides nothing from the snapshot read before it (M2-006-B1-R01):
+            // a ledger that failed meanwhile serves no eligible decision (ADR 0006 §3),
+            // and a sample registryd cannot take means the services disagree on the
+            // clock. Either way the outcome is unknown (denied; Offline).
+            let reply = self
+                .registry
+                .time_sample(
+                    Policyd,
+                    &self.clock.boot_id,
+                    sample.boottime,
+                    sample.realtime,
+                )
+                .map_err(|error| {
+                    if error.code() == ipc_code_t::malformed_request.as_str() {
+                        unavailable
+                    } else {
+                        unknown_reason_t::registry_unavailable
+                    }
+                })?;
+            offset = offset.max(sample_offset).max(reply.offset);
         }
         self.clock.offset = Some(offset);
         let now = i64::try_from(sample.boottime)

@@ -7,9 +7,10 @@ of the anchor, run marker, restriction ledger or recovery table (ADR 0006 sectio
 6; the M2-006 stage A review findings R01-R08, R2-01-R2-04 and R3-01), one trusted-time
 rule of M2-006 stage B1 (ADR 0007 section 5 and section 8 option B, errata E4 and E6: the
 offset rule, floors, the observed counter, anomalies, time_sample, the commit-timestamp
-rule and the end of temporary branches at a new boot), one current-authorization rule
-(ADR 0007 section 1) or one submission check, and the named Rust test must then fail (not
-merely fail to build); the unmodified copy passes the same tests.
+rule, the end of temporary branches at a new boot, and the B1 review findings R01-R02),
+one current-authorization rule (ADR 0007 section 1) or one submission check, and the
+named Rust test must then fail (not merely fail to build); the unmodified copy passes the
+same tests.
 """
 
 import os
@@ -512,7 +513,7 @@ SeededDefects = [
       "                    || boottime.saturating_sub(floor.boottime) >= u64::MAX\n")],
      "cham3_registryd", "trusted_time", "the_anchor_floor_is_refreshed_at_least_every_sixty_seconds"),
     ("anomaly_recorded_at_every_operation", [(Registry,
-      "        if slot.anomaly_episode == episode {\n            return;\n        }\n",
+      "            if slot.anomaly_episode == episode || reported {\n                return;\n            }\n",
       "")],
      "cham3_registryd", "trusted_time", "a_clock_anomaly_is_recorded_once_per_user_per_episode"),
     ("anomaly_not_recorded_by_reads", [(Registry,
@@ -531,14 +532,31 @@ SeededDefects = [
       "        if elapsed.is_none_or(|elapsed| elapsed < needed) {\n",
       "        if false && elapsed.is_none_or(|elapsed| elapsed < needed) {\n")],
      "cham3_policyd", "current_authorization", "a_forward_clock_error_after_admission_does_not_advance_a_future_start"),
-    ("policyd_relies_on_an_unreported_sample", [(Service,
-      "        self.clock.offset = Some(offset);\n",
-      "        self.clock.offset = Some(offset.max(sample_offset));\n")],
+    ("policyd_never_reports_a_forward_sample", [(Service,
+      "        if sample_offset > offset {\n",
+      "        if false && sample_offset > offset {\n")],
      "cham3_policyd", "current_authorization", "policyd_reports_a_forward_sample_and_relies_on_it_only_after_registryd_took_it"),
     ("policyd_evaluates_another_boot", [(Service,
       "        if shared.boot_id != self.clock.boot_id {\n",
       "        if false && shared.boot_id != self.clock.boot_id {\n")],
      "cham3_policyd", "current_authorization", "a_snapshot_of_another_boot_is_unknown"),
+    # M2-006-B1-R01, R02 (stage B1 revision 2).
+    ("failed_time_sample_ignored", [(Service,
+      "                })?;\n            offset = offset.max(sample_offset).max(reply.offset);\n",
+      "                });\n            if let Ok(reply) = reply {\n                offset = offset.max(sample_offset).max(reply.offset);\n            }\n")],
+     "cham3_policyd", "current_authorization", "a_time_sample_whose_ledger_append_fails_denies_the_current_evaluation"),
+    ("anomaly_episode_not_resumed", [(Clock,
+      "        let anomaly = anomaly_state_t::from_mark(\n",
+      "        let anomaly = anomaly_state_t::default();\n        let _ = anomaly_state_t::from_mark(\n")],
+     "cham3_registryd", "trusted_time", "a_clock_anomaly_episode_survives_same_boot_restarts"),
+    ("anomaly_transition_not_ledgered", [(Registry,
+      "            if clock.anomaly().mark() != before {\n",
+      "            if false && clock.anomaly().mark() != before {\n")],
+     "cham3_registryd", "trusted_time", "a_clock_anomaly_episode_survives_same_boot_restarts"),
+    ("replayed_anomaly_records_ignored", [(Registry,
+      "            if slot.anomaly_episode == episode || reported {\n",
+      "            if slot.anomaly_episode == episode {\n")],
+     "cham3_registryd", "trusted_time", "a_clock_anomaly_episode_survives_same_boot_restarts"),
 ]
 
 

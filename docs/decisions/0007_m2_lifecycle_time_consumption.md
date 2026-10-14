@@ -78,6 +78,11 @@ Commit timestamps must be within ±300 s of trusted now at admission and not ear
 
 The rule itself, its stated limits (§5.7) and option B of §8 are unchanged.
 
+**Clarifications of E4 and E6 (owner, 2026-10-14, after the independent review of M2-006 stage B1 at 792f5f0; each the recommended option; wording only, no mechanism change):**
+
+1. **E4, "no other durable change":** the refusal itself writes nothing — no journal record, no index or anchor change for the refused commit. Clock persistence that the same call performs anyway under §5 rules 2–3 and erratum E6 (a ledger entry for an accepted forward sample, a refreshed anchor floor, a `clock_anomaly` record) may precede the timestamp check; with a settled clock a refusal changes no stored byte.
+2. **E6, which observation counts:** the clock-anomaly observation is registryd's own sample. policyd's evaluation reaches registryd through `lineage_head`, which samples the clock and records the anomaly for that user; a backward sample that only policyd sees is not reported separately and is recorded by registryd's next operation for the user. No IPC change.
+
 ### 6. Sessions
 
 Session-bound grants (including temporary network grants) require positive, recent liveness from the session source; ended sessions are recorded and never become live again (session ids are random and single-use). Unknown liveness denies. All sessions end at a new boot.
@@ -135,4 +140,5 @@ All planned; nothing has run except the oracle network-slot scenarios (wire form
 - **Owner approval evidence:** On 2026-10-12, after the independent revision-5 re-review recommended APPROVE for M2-001 and every gate G1–G6, the project owner (requesting user) answered the concrete approval question for G1–G6 with **“Approve all six”**, chose §4 **Option A** (reservation consumes), §8 **Option B** (observed-time start eligibility), and for the §8 open question chose **“Defer; never lower”** (no M2 operation lowers trusted time; recovery from a large accepted forward error is left to a later ADR).
 - **Errata (owner, 2026-10-13):** **E4** — the M2-005 scope record found that no error code was assigned to the §5 commit-timestamp check. The owner answered the explicit question with the recommended option: a new layer-7 code `timestamp_rule`, one code for both clauses, admission-only refusal without a journal record (§5). Wire format §7 and the IPC error vocabulary are corrected; no type, byte format or vector change. Implemented by M2-006.
 - **Errata (owner, 2026-10-14):** **E6** — where registryd persists trusted time (the floor is a field of the global anchor, plus ledger time entries) and clock anomalies (a per-user `clock_anomaly` record, once per episode); answered with the recommended options before the M2-006 stage B1 implementation (§5). No change to the rule.
+- **Clarifications (owner, 2026-10-14):** E4 (a refusal itself writes nothing; required clock persistence may precede it) and E6 (registryd's own sample is the anomaly observation), after the stage-B1 review at 792f5f0 (§5).
 - **Supersedes / is superseded by:** revision 4 supersedes revision 3 (commit 84fa6ef172b3fad21bb079549776252bb65624d6), which superseded revision 2 (commit a2bbb370c867da57fdc72274fb17ca19a23426e4), which superseded revision 1 (commit f1437f0d254af2968c3598bf14d1a9b2b8e791cd). Implements ADR 0001's approved lifecycle decision.

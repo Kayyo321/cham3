@@ -1339,7 +1339,22 @@ impl registry_t {
                     }
                 }
             }
-            (clock.observe(sample, raised), clock.boottime())
+            let before = clock.anomaly().mark();
+            let episode = clock.observe(sample, raised);
+            // An episode that opened or ended is persisted at once, so that a restart
+            // in this boot resumes it (erratum E6; M2-006-B1-R02). The anchor floor
+            // publishes it too.
+            if clock.anomaly().mark() != before {
+                let payload = clock.floor().as_ref().and_then(time_payload);
+                if let (Some(payload), Ok(mut ledger)) = (payload, lock(&self.ledger)) {
+                    if ledger.append(self.io.as_ref(), entry_kind_t::time, 0, &payload)
+                        == Err(store_error_t::io)
+                    {
+                        ledger_failed = true;
+                    }
+                }
+            }
+            (episode, clock.boottime())
         };
         if ledger_failed {
             self.mark_run_unverifiable();
@@ -1386,14 +1401,14 @@ impl registry_t {
 
     /// Records a clock anomaly for the user the operation concerns, once per episode
     /// (erratum E6): a narrowing `clock_anomaly` record through the restrictive path.
-    /// A quarantined user's journal is left as found.
+    /// "Once" holds across same-boot restarts: the episode is resumed from the
+    /// persisted mark, and a record of this boot and episode that the journal already
+    /// holds (replayed or written this run) counts (M2-006-B1-R02). A quarantined
+    /// user's journal is left as found.
     fn record_anomaly(&self, slot: &mut user_slot_t, observed: &time_observation_t) {
         let Some(episode) = observed.episode else {
             return;
         };
-        if slot.anomaly_episode == episode {
-            return;
-        }
         if let slot_state_t::quarantined(_) = slot.state {
             return;
         }
@@ -1404,8 +1419,23 @@ impl registry_t {
             let Some(trusted) = clock.now() else {
                 return;
             };
+            let boot_id = clock.boot_id().to_owned();
+            let reported = slot.events.iter().any(|event| {
+                matches!(
+                    event,
+                    registry_event_t::clock_anomaly {
+                        boot_id: recorded_boot,
+                        episode: recorded,
+                        ..
+                    } if *recorded_boot == boot_id && *recorded == episode
+                )
+            });
+            if slot.anomaly_episode == episode || reported {
+                return;
+            }
             registry_event_t::clock_anomaly {
-                boot_id: clock.boot_id().to_owned(),
+                boot_id,
+                episode,
                 trusted,
                 behind_seconds: clock.anomaly().behind,
             }
