@@ -1,0 +1,57 @@
+ core/contract_format/tests/ecr_vectors.rs         |   3 +-
+ core/contractd/tests/submission.rs                |  14 +-
+ core/identityd/src/outcome.rs                     |   4 +
+ core/policyd/src/evaluate.rs                      |  19 +-
+ core/policyd/src/service.rs                       | 107 +++-
+ core/policyd/tests/current_authorization.rs       | 248 ++++++--
+ core/policyd/tests/end_to_end.rs                  |  33 +-
+ core/registryd/src/anchor.rs                      |  87 ++-
+ core/registryd/src/clock.rs                       | 467 +++++++++++++++
+ core/registryd/src/ledger.rs                      |  67 ++-
+ core/registryd/src/lib.rs                         |   1 +
+ core/registryd/src/lineage.rs                     |  55 +-
+ core/registryd/src/record.rs                      |  99 +++-
+ core/registryd/src/registry.rs                    | 492 ++++++++++++++--
+ core/registryd/tests/admission_scenarios.rs       |  50 +-
+ core/registryd/tests/builders/registry_support.rs |  82 ++-
+ core/registryd/tests/registry_operations.rs       | 129 +++--
+ core/registryd/tests/storage_integrity.rs         |   4 +-
+ core/registryd/tests/trusted_time.rs              | 655 ++++++++++++++++++++++
+ core/registryd/tests/trusted_time_model.rs        | 210 +++++++
+ docs/specs/m2_registry_storage_v1.md              |  28 +-
+ docs/specs/m2_service_ipc_v1.md                   |   8 +-
+ docs/specs/m2_wire_format_v1.md                   |   2 +-
+ tests/m2/harness/test_m2_ecr_oracle.py            |   2 +-
+ tests/m2/harness/test_m2_registry_policy.py       | 149 ++++-
+ tests/m2/harness/test_m2_trusted_time.py          |  40 +-
+ tests/m2/oracle/ecr_oracle.py                     |  80 ++-
+ tests/m2/oracle/trusted_time_model.py             |  11 +-
+ tests/m2/oracle/trusted_time_vectors.py           | 201 +++++++
+ tests/m2/run_m2_tests.sh                          |   9 +
+ tests/m2/test_inventory.txt                       |  27 +
+ tests/m2/vectors/ecr_v1/vectors.json              | 130 +++++
+ tests/m2/vectors/ecr_v1/vectors_readme.md         |   4 +-
+ tests/m2/vectors/trusted_time_v1/vectors.json     | 172 ++++++
+ 34 files changed, 3392 insertions(+), 297 deletions(-)
+
+# git diff --exit-code e7803ef c9129bc -- <path>: exit status per path
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 docs/decisions
+0 .github
+0 core/contract_format/src
+0 core/contractd/src
+0 core/vaultd
+0 core/native
+0 core/registryd/Cargo.toml
+0 core/policyd/Cargo.toml
+0 core/registryd/src/journal.rs
+0 core/registryd/src/bin
+0 tests/m2/lib
+0 tests/m2/storage
+1 tests/m2/oracle/trusted_time_model.py
+# trusted_time_model.py differs only in docstrings:
+11
