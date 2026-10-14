@@ -390,6 +390,16 @@ def parse_time(value):
     return datetime.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
+# ADR 0007 section 5, erratum E4: a commit timestamp must be within 300 s of trusted now
+# at admission and not earlier than any parent's timestamp minus 300 s (timestamp_rule).
+AdmissionSkewSeconds = 300
+
+
+def shifted_time(value, seconds):
+    """The utc_time `seconds` after (or before) `value`."""
+    return (parse_time(value) + datetime.timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def check_pattern_text(value, path, pattern, minimum, maximum):
     if not isinstance(value, str):
         schema_error("wrong_type", path)
@@ -974,7 +984,10 @@ class journal_t:
             return "branch", parent
         admission_error("stale_head", "parent is not the trunk head or a live temporary head")
 
-    def admit_commit(self, data):
+    def admit_commit(self, data, now=None):
+        """`now`: the admission's trusted time (a datetime), or None when the step states
+        none (replay, and every scenario before M2-006): the commit-timestamp rule is
+        admission-only."""
         payload = verify(data, "commit", self.resolver)
         commit_id = hashlib.sha256(data).digest()
         if self.key_authority:
@@ -986,6 +999,13 @@ class journal_t:
                 admission_error("lineage_mismatch", "cross-lineage parent")
         lineage = self.lineages.get(payload["lineage_id"]) or lineage_state_t()
         position, branch_head = self.placement(lineage, payload)
+        if now is not None:
+            stamp = parse_time(payload["timestamp"])
+            if abs((stamp - now).total_seconds()) > AdmissionSkewSeconds:
+                admission_error("timestamp_rule", "timestamp more than 300 s from trusted now")
+            for parent in payload["parents"]:
+                if (stamp - parse_time(self.commits[parent]["timestamp"])).total_seconds() < -AdmissionSkewSeconds:
+                    admission_error("timestamp_rule", "timestamp earlier than a parent's minus 300 s")
         commit_type = payload["commit_type"]
         if commit_type == "genesis":
             base = EmptyState
@@ -1258,9 +1278,9 @@ class registry_service_t:
         """Startup roll-forward of a complete, durable but unanchored tail record."""
         self.settle()
 
-    def admit(self, data, anchor_fault=False):
+    def admit(self, data, anchor_fault=False, now=None):
         self.settle(anchor_fault)
-        return self.journal.admit_commit(data)
+        return self.journal.admit_commit(data, now)
 
     def record(self, record, anchor_fault=False):
         self.settle(anchor_fault)
@@ -2460,6 +2480,55 @@ def build_journal_scenarios(keys, kate, ids, payloads):
                  name_keys(fails("admission", "recovery_rule"), named=(abandoned, None)),
                  counted(commit(kate_recovered, check={"current": renewed_ids}), 19)],
              key_authority=True)
+    # ------------------------------------------------ E4: the commit-timestamp rule
+    # M2-006 stage B1 (ADR 0007 section 5, erratum E4). A step with "now" is admitted at
+    # that trusted time; the rule is checked once the parents and the placement are
+    # known and before the state checks (wire format section 7).
+    def at(step, now):
+        step["now"] = now
+        return step
+
+    clock_app = lineage_builder_t(keys, 1001, "user_1001_identity", "org.example.clock", "deb:clock:amd64")
+    stamp = Times[2]
+    notes = make_grant("clock notes", "filesystem", "home:Notes", ["read"])
+    clock_genesis = clock_app.payload("clock genesis", "genesis", persistent, [], EmptyState,
+                                      {"add_grants": [notes], "remove_grant_ids": []}, stamp, "Allow the clock app to read Notes")
+    clock_genesis_data, clock_genesis_id = sign_commit(persistent, clock_genesis)
+    clock_state = clock_genesis["result_state"]
+
+    def clock_revision(label, time, base_state=None):
+        grant = make_grant("clock " + label, "filesystem", "home:" + label, ["read"])
+        payload = clock_app.payload("clock " + label, "revision", persistent, [clock_genesis_id],
+                                    clock_state if base_state is None else base_state,
+                                    {"add_grants": [grant], "remove_grant_ids": []}, time, "Clock revision " + label)
+        data, commit_id = sign_commit(persistent, payload)
+        return data, grant
+
+    scenario("timestamp_rule_skew_bounds", "E4",
+             "A commit timestamp more than 300 s from trusted now is refused either way; exactly 300 s is admitted",
+             [at(commit(clock_genesis_data, fails("admission", "timestamp_rule")), shifted_time(stamp, 301)),
+              at(commit(clock_genesis_data, fails("admission", "timestamp_rule")), shifted_time(stamp, -301)),
+              at(commit(clock_genesis_data, check={"current": [gid(notes)]}), shifted_time(stamp, 300)),
+              at(commit(clock_revision("ahead", shifted_time(stamp, 600))[0]), shifted_time(stamp, 300))])
+    early_data, early_grant = clock_revision("early", shifted_time(stamp, -301))
+    edge_data, edge_grant = clock_revision("edge", shifted_time(stamp, -300))
+    scenario("timestamp_rule_parent_clause", "E4",
+             "A commit timestamp earlier than its parent's minus 300 s is refused, even within 300 s of trusted now",
+             [at(commit(clock_genesis_data), stamp),
+              at(commit(early_data, fails("admission", "timestamp_rule"), check={"unknown": [gid(early_grant)]}), shifted_time(stamp, -1)),
+              at(commit(edge_data, check={"current": [gid(edge_grant)]}), shifted_time(stamp, -1))])
+    first_data, _ = clock_revision("first", stamp)
+    stale_data, _ = clock_revision("stale", shifted_time(stamp, 1000))
+    scenario("timestamp_rule_after_stale_head", "E4",
+             "A commit that is both stale and outside the window reports stale_head: placement is checked first",
+             [at(commit(clock_genesis_data), stamp), at(commit(first_data), stamp),
+              at(commit(stale_data, fails("admission", "stale_head")), stamp)])
+    wrong_base_data, _ = clock_revision("wrong base", shifted_time(stamp, 1000), base_state=EmptyState)
+    scenario("timestamp_rule_before_base_state", "E4",
+             "A commit outside the window with a wrong base state reports timestamp_rule: it precedes the state checks",
+             [at(commit(clock_genesis_data), stamp),
+              at(commit(wrong_base_data, fails("admission", "timestamp_rule")), stamp),
+              commit(wrong_base_data, fails("admission", "base_state_mismatch"), note="without a trusted now, the state check decides")])
     return scenarios
 
 
@@ -2471,16 +2540,17 @@ def run_scenario(scenario, valid_by_name, resolver):
     failures = []
     for index, step in enumerate(scenario["steps"]):
         fault = step.get("anchor_fault", False)
+        now = parse_time(step["now"]) if "now" in step else None
         result = None
         try:
             if "valid" in step:
                 kind, data = valid_by_name[step["valid"]]
                 if kind == "commit":
-                    service.admit(data, fault)
+                    service.admit(data, fault, now)
                 else:
                     service.call("service:identityd", "append_identity", {"kind": kind, "object": data}, anchor_fault=fault)
             elif "commit" in step:
-                service.admit(bytes.fromhex(step["commit"]), fault)
+                service.admit(bytes.fromhex(step["commit"]), fault, now)
             elif "identity" in step:
                 service.call("service:identityd", "append_identity", {"kind": step["kind"], "object": bytes.fromhex(step["identity"])},
                              anchor_fault=fault)

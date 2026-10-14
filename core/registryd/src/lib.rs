@@ -23,6 +23,7 @@
 )]
 
 pub mod anchor;
+pub mod clock;
 pub mod journal;
 pub mod ledger;
 pub mod lineage;

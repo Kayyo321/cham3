@@ -50,6 +50,9 @@ pub enum rule_code_t {
     parent_unknown,
     lineage_mismatch,
     stale_head,
+    /// ADR 0007 §5 erratum E4: the commit timestamp is not within ±300 s of trusted
+    /// now, or is earlier than a parent's timestamp minus 300 s (admission only).
+    timestamp_rule,
     base_state_mismatch,
     result_state_mismatch,
     delta_rule,
@@ -69,6 +72,7 @@ impl rule_code_t {
             rule_code_t::parent_unknown => "parent_unknown",
             rule_code_t::lineage_mismatch => "lineage_mismatch",
             rule_code_t::stale_head => "stale_head",
+            rule_code_t::timestamp_rule => "timestamp_rule",
             rule_code_t::base_state_mismatch => "base_state_mismatch",
             rule_code_t::result_state_mismatch => "result_state_mismatch",
             rule_code_t::delta_rule => "delta_rule",

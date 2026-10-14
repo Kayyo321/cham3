@@ -26,7 +26,9 @@ use cham3_contract_format::schema::{
 };
 use cham3_identityd::outcome::{rule, rule_code_t, service_result_t};
 
-use cham3_identityd::index::user_record_t;
+use cham3_identityd::index::{user_record_t, utc_seconds};
+
+use crate::clock::timestamp_acceptable;
 
 use crate::record::{lifecycle_record_t, placement_t};
 
@@ -78,6 +80,14 @@ pub enum commit_status_t {
     pending,
 }
 
+/// When a commit was admitted: the trusted time (its record's `time`) and the
+/// observed-time counter (ADR 0007 §8 option B).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct admitted_at_t {
+    pub trusted: i64,
+    pub observed: u64,
+}
+
 /// An admitted commit.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct commit_entry_t {
@@ -86,6 +96,7 @@ pub struct commit_entry_t {
     pub sequence: u64,
     pub placement: placement_t,
     pub status: commit_status_t,
+    pub admitted: admitted_at_t,
 }
 
 /// One lineage.
@@ -318,11 +329,16 @@ impl lineage_index_t {
     }
 
     /// Layer 7 for a commit that passed layers 1–6, in wire format §7 order. Pure:
-    /// the index is unchanged.
+    /// the index is unchanged. `trusted_now` is the admission's trusted time: the
+    /// commit-timestamp rule (ADR 0007 §5, erratum E4: `timestamp_rule`) is checked
+    /// against it once the parents and the placement are known and before the state
+    /// checks. Replay passes `None`: the rule is admission-only, and replay reproduces
+    /// historical admissions.
     pub fn check_commit(
         &self,
         commit_id: &digest_t,
         payload: &commit_payload_t,
+        trusted_now: Option<i64>,
     ) -> service_result_t<admission_t> {
         for parent in &payload.parents {
             let Some(entry) = self.commits.get(parent) else {
@@ -336,6 +352,23 @@ impl lineage_index_t {
         let empty_lineage = lineage_t::default();
         let lineage = existing.unwrap_or(&empty_lineage);
         let (placement, branch_head) = self.placement(lineage, payload)?;
+        if let Some(now) = trusted_now {
+            let timestamp =
+                utc_seconds(&payload.timestamp).ok_or(rule(rule_code_t::timestamp_rule))?;
+            let parents = payload
+                .parents
+                .iter()
+                .map(|parent| {
+                    self.commits
+                        .get(parent)
+                        .and_then(|entry| utc_seconds(&entry.payload.timestamp))
+                })
+                .collect::<Option<Vec<i64>>>()
+                .ok_or(rule(rule_code_t::timestamp_rule))?;
+            if !timestamp_acceptable(timestamp, now, &parents) {
+                return reject(rule_code_t::timestamp_rule);
+            }
+        }
         let empty_state = contract_state_t::default();
         let base = if payload.commit_type == commit_type_t::genesis {
             &empty_state
@@ -523,6 +556,7 @@ impl lineage_index_t {
         payload: Box<commit_payload_t>,
         envelope: Vec<u8>,
         sequence: u64,
+        admitted: admitted_at_t,
     ) {
         let lineage = self.lineages.entry(admission.lineage_id).or_default();
         if matches!(
@@ -567,8 +601,25 @@ impl lineage_index_t {
                 sequence,
                 placement: admission.placement,
                 status: commit_status_t::pending,
+                admitted,
             },
         );
+    }
+
+    /// Whether any lineage has a live temporary branch.
+    pub fn has_live_branches(&self) -> bool {
+        self.lineages
+            .values()
+            .any(|lineage| !lineage.branches.is_empty())
+    }
+
+    /// A new boot (ADR 0007 §5 rule 6, `branch_terminated`): every live temporary
+    /// branch ends, and with it every temporary grant (timed, session, one-shot) and
+    /// any network slot such a grant occupied. Trunk heads are unchanged.
+    pub fn end_branches(&mut self) {
+        for lineage in self.lineages.values_mut() {
+            lineage.branches.clear();
+        }
     }
 
     /// Validates a lifecycle record observed at `time` (`lifecycle_rule`).

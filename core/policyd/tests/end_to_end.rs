@@ -17,7 +17,7 @@
 #[path = "../../registryd/tests/builders/mod.rs"]
 mod builders;
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
@@ -44,9 +44,8 @@ use cham3_policyd::evaluate::{
 use cham3_policyd::mandatory::mandatory_policy_t;
 use cham3_policyd::service::{policy_clock_t, policy_service_t};
 use cham3_registryd::journal::system_io_t;
-use cham3_registryd::registry::{
-    registry_clock_t, registry_config_t, registry_identity_store_t, registry_t,
-};
+use cham3_registryd::ledger::{boot_id_source_t, kernel_boot_id_t};
+use cham3_registryd::registry::{registry_config_t, registry_identity_store_t, registry_t};
 use cham3_secure_memory::secret_region_t;
 use cham3_vaultd::clock::vault_clock_t;
 use cham3_vaultd::kdf::kdf_params_t;
@@ -60,14 +59,6 @@ const T1Utc: i64 = 1_791_882_000;
 
 type identity_t = Rc<RefCell<identity_service_t<registry_identity_store_t>>>;
 
-struct fixed_time_t;
-
-impl registry_clock_t for fixed_time_t {
-    fn utc_seconds(&self) -> i64 {
-        T1Utc
-    }
-}
-
 #[derive(Clone, Copy)]
 struct vault_time_t;
 
@@ -78,16 +69,6 @@ impl vault_clock_t for vault_time_t {
 
     fn utc_seconds(&self) -> i64 {
         T1Utc
-    }
-}
-
-struct trusted_now_t {
-    now: Rc<Cell<i64>>,
-}
-
-impl policy_clock_t for trusted_now_t {
-    fn trusted_now(&self) -> Option<i64> {
-        Some(self.now.get())
     }
 }
 
@@ -142,13 +123,16 @@ fn root(label: &str) -> PathBuf {
 fn start(root: &Path) -> services_t {
     let registry_root = root.join("registry");
     let owner = fs::metadata(&registry_root).expect("root").uid();
+    // Both services sample the same clocks (ADR 0007 §5), a minute after T1.
+    let time = test_time_t::at(T1Seconds + 60);
+    let boot_id = kernel_boot_id_t.boot_id().expect("boot id");
     let registry = Arc::new(
         registry_t::open(
             &registry_root,
             owner,
             registry_config_t::default(),
             Box::new(system_io_t),
-            Box::new(fixed_time_t),
+            Box::new(time.clone()),
         )
         .expect("registryd"),
     );
@@ -158,7 +142,6 @@ fn start(root: &Path) -> services_t {
         })
         .expect("identityd"),
     ));
-    let now = Rc::new(Cell::new(T1Utc + 60));
     services_t {
         contract: contract_service_t::new(
             cham3_contractd::submit::in_process_identity_t {
@@ -172,7 +155,7 @@ fn start(root: &Path) -> services_t {
                 service: Rc::clone(&identity),
             },
             mandatory_policy_t::default(),
-            Box::new(trusted_now_t { now }),
+            policy_clock_t::new(Box::new(time), &boot_id),
             Box::new(no_sessions_t),
         ),
         registry,

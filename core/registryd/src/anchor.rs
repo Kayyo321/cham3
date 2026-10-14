@@ -8,8 +8,9 @@
 //!
 //! The map holds, per user, `(seq, chain, state, user_id, identity_seq,
 //! min_valid_policy_epoch)`; the deleted-user tombstones (§7); the run marker (§3);
-//! and the policy state that restrictive administrative changes persist (policy
-//! epoch, minimum valid epoch, emergency restriction; ADR 0007 §1 rule 4). The
+//! the policy state that restrictive administrative changes persist (policy
+//! epoch, minimum valid epoch, emergency restriction; ADR 0007 §1 rule 4); and the
+//! trusted-time floor (ADR 0007 §5 rule 3, erratum E6: format version 2). The
 //! serialization is a fixed binary layout rather than `cham3_dcbor_v1`, whose profile
 //! caps a container at 256 items: an anchor names every enrolled user (author
 //! decision, revisable).
@@ -30,11 +31,13 @@ use std::path::{Path, PathBuf};
 
 use cham3_contract_format::hash::{digest_t, sha256};
 
+use crate::clock::time_floor_t;
 use crate::journal::{journal_io_t, store_error_t};
 
 /// Magic of an anchor slot.
 pub const AnchorMagic: [u8; 4] = *b"C3AN";
-pub const AnchorVersion: u16 = 1;
+/// Version 2 adds the trusted-time floor (ADR 0007 erratum E6).
+pub const AnchorVersion: u16 = 2;
 /// The two slot files under the anchor directory.
 pub const SlotFileNames: [&str; 2] = ["slot_a", "slot_b"];
 /// Longest boot identifier stored (the kernel's UUID text is 36 bytes).
@@ -115,6 +118,9 @@ pub struct anchor_map_t {
     pub users: BTreeMap<u32, anchored_user_t>,
     /// Keyed by `user_id`.
     pub tombstones: BTreeMap<digest_t, tombstone_t>,
+    /// The trusted-time floor (ADR 0007 §5 rule 3, erratum E6), published with every
+    /// write that carries one.
+    pub time_floor: Option<time_floor_t>,
 }
 
 impl anchor_map_t {
@@ -124,6 +130,7 @@ impl anchor_map_t {
             policy,
             users: BTreeMap::new(),
             tombstones: BTreeMap::new(),
+            time_floor: None,
         }
     }
 }
@@ -292,6 +299,20 @@ pub fn encode_slot(counter: u64, map: &anchor_map_t) -> Option<Vec<u8>> {
             tombstone_state_t::deleted => 2,
         });
     }
+    match &map.time_floor {
+        None => writer.u8(0),
+        Some(floor) => {
+            writer.u8(1);
+            let boot_id = floor.boot_id.as_bytes();
+            writer.u8(u8::try_from(boot_id.len())
+                .ok()
+                .filter(|length| (1..=MaxBootIdBytes).contains(&usize::from(*length)))?);
+            writer.fixed(boot_id);
+            writer.u64(floor.boottime);
+            writer.u64(floor.trusted);
+            writer.u64(floor.observed);
+        }
+    }
     let checksum = sha256(&writer.bytes);
     writer.fixed(&checksum);
     Some(writer.bytes)
@@ -381,6 +402,23 @@ pub fn decode_slot(bytes: &[u8]) -> Option<(u64, anchor_map_t)> {
         };
         tombstones.insert(user_id, tombstone);
     }
+    let time_floor = match reader.u8()? {
+        0 => None,
+        1 => {
+            let length = usize::from(reader.u8()?);
+            if !(1..=MaxBootIdBytes).contains(&length) {
+                return None;
+            }
+            let boot_id = String::from_utf8(reader.take(length)?.to_vec()).ok()?;
+            Some(time_floor_t {
+                boot_id,
+                boottime: reader.u64()?,
+                trusted: reader.u64()?,
+                observed: reader.u64()?,
+            })
+        }
+        _ => return None,
+    };
     if !reader.finished() {
         return None;
     }
@@ -391,6 +429,7 @@ pub fn decode_slot(bytes: &[u8]) -> Option<(u64, anchor_map_t)> {
             policy,
             users,
             tombstones,
+            time_floor,
         },
     ))
 }
@@ -644,7 +683,49 @@ mod tests {
                 state: tombstone_state_t::deleted,
             },
         );
+        map.time_floor = Some(time_floor_t {
+            boot_id: "0f3c1e2a-0000-4000-8000-000000000001".to_owned(),
+            boottime: 4_000,
+            trusted: 1_791_882_000,
+            observed: 9_000,
+        });
         map
+    }
+
+    #[test]
+    fn the_time_floor_round_trips_and_malformed_floors_are_rejected() {
+        let map = sample();
+        let bytes = encode_slot(3, &map).expect("encodable");
+        assert_eq!(decode_slot(&bytes), Some((3, map.clone())));
+        let body = &bytes[..bytes.len() - 32];
+        let sealed = |body: &[u8]| {
+            let mut sealed = body.to_vec();
+            sealed.extend_from_slice(&sha256(body));
+            sealed
+        };
+        // The floor is the last field: flag, boot id length, boot id (36), three u64.
+        let floor_at = body.len() - (1 + 1 + 36 + 24);
+        let mut flag = body.to_vec();
+        flag[floor_at] = 2;
+        assert_eq!(decode_slot(&sealed(&flag)), None, "unknown floor flag");
+        let mut length = body.to_vec();
+        length[floor_at + 1] = 0;
+        assert_eq!(decode_slot(&sealed(&length)), None, "empty boot id");
+        let mut version = body.to_vec();
+        version[4..6].copy_from_slice(&1u16.to_be_bytes());
+        assert_eq!(decode_slot(&sealed(&version)), None, "format version 1");
+        let mut empty_floor = map;
+        empty_floor.time_floor = Some(time_floor_t {
+            boot_id: String::new(),
+            boottime: 0,
+            trusted: 0,
+            observed: 0,
+        });
+        assert_eq!(
+            encode_slot(1, &empty_floor),
+            None,
+            "a floor needs a boot id"
+        );
     }
 
     #[test]

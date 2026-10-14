@@ -174,8 +174,10 @@ pub struct snapshot_t<'inputs> {
     /// identityd's answer for every origin key of the view.
     pub key_states: &'inputs BTreeMap<digest_t, key_state_t>,
     pub policy: &'inputs mandatory_policy_t,
-    /// Trusted now (UTC seconds).
+    /// Trusted now (UTC seconds; ADR 0007 §5).
     pub now: i64,
+    /// The observed-time counter now (ADR 0007 §8 option B).
+    pub observed_now: u64,
     pub sessions: &'inputs dyn session_source_t,
     /// One-shot grants with a reservation (ADR 0007 §4; reservations are M2-006).
     pub reserved: &'inputs BTreeSet<random_id_t>,
@@ -252,6 +254,21 @@ fn check_grant(
         .ok_or(decision_t::unknown(unknown_reason_t::snapshot_inconsistent))?;
     if snapshot.now < start {
         return denied(deny_reason_t::not_started);
+    }
+    // ADR 0007 §8 option B: a start later than the admission is reached only once at
+    // least that much observed time has passed since the admission, so a forward
+    // clock error accepted after admission cannot advance it.
+    if let Some(needed) = start
+        .checked_sub(origin.admitted.trusted)
+        .filter(|needed| *needed > 0)
+    {
+        let elapsed = snapshot
+            .observed_now
+            .checked_sub(origin.admitted.observed)
+            .and_then(|elapsed| i64::try_from(elapsed).ok());
+        if elapsed.is_none_or(|elapsed| elapsed < needed) {
+            return denied(deny_reason_t::not_started);
+        }
     }
     if let Some(expiration) = &lifetime.expiration {
         let end = utc_seconds(expiration)

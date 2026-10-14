@@ -9,17 +9,25 @@ revision-2 inequalities are kept as a contrast showing the counterexample. Revis
 lag and acceleration of an already-admitted future start by an accepted forward error —
 with the reviewer's reproductions, a seeded check of the corrected lag bound, and the
 owner option B model of section 8 (PROPOSED, not selected). This is a design model, not
-the service clock (NOT_RUN until M2-006).
+the service clock: M2-006 stage B1 implements it in core/registryd/src/clock.rs, and
+the published vectors tests/m2/vectors/trusted_time_v1/vectors.json, generated from this
+model by tests/m2/oracle/trusted_time_vectors.py, are replayed through it by the cargo
+test trusted_time_model.
 """
 
 import importlib.util
+import json
 import os
 import random
+import subprocess
+import sys
 import unittest
 
 from m2_harness_support import RepoRoot
 
 ModelPath = os.path.join(RepoRoot, "tests", "m2", "oracle", "trusted_time_model.py")
+VectorScript = os.path.join(RepoRoot, "tests", "m2", "oracle", "trusted_time_vectors.py")
+VectorPath = os.path.join(RepoRoot, "tests", "m2", "vectors", "trusted_time_v1", "vectors.json")
 
 
 def load_model():
@@ -37,6 +45,36 @@ class trusted_time_t(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = load_model()
+
+    def test_published_vectors_are_the_models(self):
+        result = subprocess.run([sys.executable, "-I", VectorScript, "--check", VectorPath],
+                                capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        with open(VectorPath, encoding="utf-8") as handle:
+            document = json.load(handle)
+        operations = {step["op"] for case in document["cases"] for step in case["steps"]}
+        self.assertEqual(operations, {"sample", "adopt", "floor", "restart"})
+        self.assertGreaterEqual(len(document["cases"]), 165)
+        anomalies = [step["anomaly"] for case in document["cases"] for step in case["steps"] if step["op"] == "sample"]
+        self.assertIn(True, anomalies)
+        self.assertIn(False, anomalies)
+        boots = {step["boot_id"] for case in document["cases"] for step in case["steps"] if step["op"] == "restart"}
+        self.assertGreater(len(boots), 1, "restarts in a new boot")
+
+    def test_a_changed_vector_is_detected(self):
+        with open(VectorPath, encoding="utf-8") as handle:
+            text = handle.read()
+        changed = text.replace('"trusted":1791813601', '"trusted":1791813602', 1)
+        self.assertNotEqual(changed, text)
+        path = os.path.join(os.environ.get("TMPDIR", "/tmp"), "cham3_trusted_time_changed_%d.json" % os.getpid())
+        try:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(changed)
+            result = subprocess.run([sys.executable, "-I", VectorScript, "--check", path],
+                                    capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 1, result.stdout)
+        finally:
+            os.remove(path)
 
     def reviewer_sequence(self, clock):
         clock.sample(Noon, 0)

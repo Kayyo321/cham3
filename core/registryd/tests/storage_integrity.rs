@@ -1430,7 +1430,7 @@ fn the_anchor_survives_one_invalid_slot_and_rewrites_it() {
             owner_of(&root),
             booted("boot-1"),
             Box::new(system_io_t),
-            Box::new(fixed_clock_t),
+            fixed_clock(),
         )
         .is_err()
     );
@@ -2669,7 +2669,7 @@ fn a_ledger_failure_during_the_start_leaves_the_run_unverifiable() {
             owner_of(&root),
             booted("boot-1"),
             Box::new(io.clone()),
-            Box::new(fixed_clock_t),
+            fixed_clock(),
         );
         match started {
             Ok(registry) => {

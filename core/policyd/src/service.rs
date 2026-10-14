@@ -7,10 +7,17 @@
 //! [`crate::evaluate`]. Anything that cannot be read makes the outcome `unknown`
 //! (denied) or Offline.
 //!
-//! Limits (M2-005): in-process composition; the transport is M2-007. Trusted now
-//! comes from a [`policy_clock_t`] (ADR 0007 §5's offset rule and `time_sample` are
-//! M2-006); one-shot reservations do not exist before M2-006, so the reserved set is
-//! empty; the session source is a test stand-in until sessiond exists.
+//! **Trusted time (ADR 0007 §5 rule 4, §8 option B; M2-006 stage B1).** policyd
+//! evaluates with `max(own offset, offset of the snapshot)`, from its own
+//! `(realtime, boottime)` sample ([`policy_clock_t`]). A sample ahead of that is
+//! reported to registryd (`time_sample`), and policyd relies on the increase only
+//! after the `ok` reply. The observed counter comes from the snapshot's offset. A
+//! snapshot of another boot, or a sample that cannot be taken, makes the outcome
+//! `unknown` (`clock_unavailable`).
+//!
+//! Limits: in-process composition; the transport is M2-007. One-shot reservations
+//! are stage B2, so the reserved set is empty. The session source is a test
+//! stand-in until sessiond exists.
 
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
@@ -24,6 +31,7 @@ use cham3_identityd::journal::identity_journal_t;
 use cham3_identityd::outcome::{ipc, ipc_code_t, service_error_t, service_result_t};
 use cham3_identityd::service::{identity_service_t, user_identity_t};
 use cham3_registryd::anchor::anchor_mode_t;
+use cham3_registryd::clock::{time_source_t, time_view_t};
 use cham3_registryd::registry::{lineage_view_t, registry_t};
 
 use crate::evaluate::{
@@ -34,9 +42,35 @@ use crate::mandatory::mandatory_policy_t;
 
 const Policyd: caller_role_t = caller_role_t::service(service_name_t::policyd);
 
-/// Trusted now (UTC seconds), or `None` when it cannot be established.
-pub trait policy_clock_t {
-    fn trusted_now(&self) -> Option<i64>;
+/// policyd's trusted time (ADR 0007 §5 rule 4): its own offset in this boot, only
+/// ever raised.
+pub struct policy_clock_t {
+    source: Box<dyn time_source_t>,
+    boot_id: String,
+    offset: Option<i64>,
+}
+
+impl policy_clock_t {
+    /// A clock over `source` in the boot `boot_id` (the kernel's boot id in
+    /// deployment).
+    pub fn new(source: Box<dyn time_source_t>, boot_id: &str) -> policy_clock_t {
+        policy_clock_t {
+            source,
+            boot_id: boot_id.to_owned(),
+            offset: None,
+        }
+    }
+
+    /// policyd's own offset (diagnostics and tests).
+    pub fn offset(&self) -> Option<i64> {
+        self.offset
+    }
+}
+
+/// Trusted and observed now for one evaluation.
+struct evaluation_time_t {
+    now: i64,
+    observed_now: u64,
 }
 
 /// identityd as policyd uses it (role `service:policyd`).
@@ -97,7 +131,7 @@ pub struct policy_service_t<identity_link_impl_t: policy_identity_link_t> {
     registry: Arc<registry_t>,
     identity: identity_link_impl_t,
     policy: mandatory_policy_t,
-    clock: Box<dyn policy_clock_t>,
+    clock: policy_clock_t,
     sessions: Box<dyn session_source_t>,
 }
 
@@ -113,6 +147,7 @@ struct inputs_t {
     view: lineage_view_t,
     key_states: BTreeMap<digest_t, key_state_t>,
     now: i64,
+    observed_now: u64,
 }
 
 impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_link_impl_t> {
@@ -120,7 +155,7 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
         registry: Arc<registry_t>,
         identity: identity_link_impl_t,
         policy: mandatory_policy_t,
-        clock: Box<dyn policy_clock_t>,
+        clock: policy_clock_t,
         sessions: Box<dyn session_source_t>,
     ) -> policy_service_t<identity_link_impl_t> {
         policy_service_t {
@@ -134,6 +169,50 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
 
     pub fn policy(&self) -> &mandatory_policy_t {
         &self.policy
+    }
+
+    pub fn clock(&self) -> &policy_clock_t {
+        &self.clock
+    }
+
+    /// Trusted and observed now against one snapshot's shared offsets (ADR 0007 §5
+    /// rule 4, §8 option B).
+    fn evaluation_time(
+        &mut self,
+        shared: &time_view_t,
+    ) -> Result<evaluation_time_t, unknown_reason_t> {
+        let unavailable = unknown_reason_t::clock_unavailable;
+        if shared.boot_id != self.clock.boot_id {
+            return Err(unavailable);
+        }
+        let sample = self.clock.source.sample().ok_or(unavailable)?;
+        let mut offset = self
+            .clock
+            .offset
+            .map_or(shared.offset, |own| own.max(shared.offset));
+        let sample_offset = i64::try_from(sample.realtime)
+            .ok()
+            .zip(i64::try_from(sample.boottime).ok())
+            .and_then(|(realtime, boottime)| realtime.checked_sub(boottime))
+            .ok_or(unavailable)?;
+        if sample_offset > offset {
+            // Reported first; relied on only after registryd ledgered it.
+            if let Ok(reply) = self.registry.time_sample(
+                Policyd,
+                &self.clock.boot_id,
+                sample.boottime,
+                sample.realtime,
+            ) {
+                offset = offset.max(sample_offset).max(reply.offset);
+            }
+        }
+        self.clock.offset = Some(offset);
+        let now = i64::try_from(sample.boottime)
+            .ok()
+            .and_then(|boottime| boottime.checked_add(offset))
+            .ok_or(unavailable)?;
+        let observed_now = shared.observed_at(sample.boottime).ok_or(unavailable)?;
+        Ok(evaluation_time_t { now, observed_now })
     }
 
     fn inputs(&mut self, identity: &runtime_identity_t) -> Result<inputs_t, unknown_reason_t> {
@@ -165,14 +244,12 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
                 },
             );
         }
-        let now = self
-            .clock
-            .trusted_now()
-            .ok_or(unknown_reason_t::clock_unavailable)?;
+        let time = self.evaluation_time(&view.time)?;
         Ok(inputs_t {
             view,
             key_states,
-            now,
+            now: time.now,
+            observed_now: time.observed_now,
         })
     }
 
@@ -210,6 +287,7 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
             key_states: &inputs.key_states,
             policy: &self.policy,
             now: inputs.now,
+            observed_now: inputs.observed_now,
             sessions: self.sessions.as_ref(),
             reserved: &reserved,
         };
@@ -238,6 +316,7 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
             key_states: &inputs.key_states,
             policy: &self.policy,
             now: inputs.now,
+            observed_now: inputs.observed_now,
             sessions: self.sessions.as_ref(),
             reserved: &reserved,
         };

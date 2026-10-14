@@ -8,7 +8,9 @@
 //! write is attempted: `{run_id, kind, uid, payload}`, where a journal entry's payload
 //! is the exact record registryd intends to append (its sequence and time included) so
 //! that a restart in the same boot can tell which entries the journal already holds and
-//! re-journal the rest; a policy entry carries the global policy state.
+//! re-journal the rest; a policy entry carries the global policy state; a time entry
+//! carries a trusted-time floor, appended at every offset increase before the clock
+//! relies on it (ADR 0007 §5 rule 3, erratum E6).
 //!
 //! If the ledger cannot be written, the validity file is removed (emptied, if it cannot
 //! be removed: an empty validity file is invalid), registryd records the run as
@@ -24,6 +26,7 @@ use std::path::{Path, PathBuf};
 use cham3_contract_format::hash::sha256;
 
 use crate::anchor::MaxBootIdBytes;
+use crate::clock::time_floor_t;
 use crate::journal::{ensure_directory, journal_io_t, store_error_t};
 
 pub const ValidityMagic: [u8; 4] = *b"C3RV";
@@ -42,6 +45,9 @@ pub enum entry_kind_t {
     journal_record,
     /// The global policy state (payload: epoch ‖ min_valid_epoch ‖ emergency byte).
     policy,
+    /// A trusted-time floor (payload: boot_id length ‖ boot_id ‖ boottime ‖ trusted ‖
+    /// observed; ADR 0007 §5 rule 3).
+    time,
 }
 
 /// One ledger entry.
@@ -98,6 +104,7 @@ fn encode_entry(entry: &ledger_entry_t) -> Option<Vec<u8>> {
     body.push(match entry.kind {
         entry_kind_t::journal_record => 1,
         entry_kind_t::policy => 2,
+        entry_kind_t::time => 3,
     });
     body.extend_from_slice(&entry.uid.to_be_bytes());
     body.extend_from_slice(&u32::try_from(entry.payload.len()).ok()?.to_be_bytes());
@@ -134,6 +141,7 @@ fn decode_entries(data: &[u8]) -> Option<Vec<ledger_entry_t>> {
         let kind = match body.get(16)? {
             1 => entry_kind_t::journal_record,
             2 => entry_kind_t::policy,
+            3 => entry_kind_t::time,
             _ => return None,
         };
         let uid = u32::from_be_bytes(<[u8; 4]>::try_from(body.get(17..21)?).ok()?);
@@ -365,9 +373,66 @@ pub fn parse_policy_payload(payload: &[u8]) -> Option<(u64, u64, bool)> {
     ))
 }
 
+/// The payload of a `time` entry.
+pub fn time_payload(floor: &time_floor_t) -> Option<Vec<u8>> {
+    let boot_id = floor.boot_id.as_bytes();
+    let length = u8::try_from(boot_id.len())
+        .ok()
+        .filter(|length| (1..=MaxBootIdBytes).contains(&usize::from(*length)))?;
+    let mut payload = Vec::with_capacity(boot_id.len().checked_add(25)?);
+    payload.push(length);
+    payload.extend_from_slice(boot_id);
+    payload.extend_from_slice(&floor.boottime.to_be_bytes());
+    payload.extend_from_slice(&floor.trusted.to_be_bytes());
+    payload.extend_from_slice(&floor.observed.to_be_bytes());
+    Some(payload)
+}
+
+/// Parses a `time` payload.
+pub fn parse_time_payload(payload: &[u8]) -> Option<time_floor_t> {
+    let (length, rest) = payload.split_first()?;
+    let length = usize::from(*length);
+    if !(1..=MaxBootIdBytes).contains(&length) {
+        return None;
+    }
+    let (boot_id, rest) = rest.split_at_checked(length)?;
+    let (boottime, rest) = rest.split_at_checked(8)?;
+    let (trusted, observed) = rest.split_at_checked(8)?;
+    Some(time_floor_t {
+        boot_id: String::from_utf8(boot_id.to_vec()).ok()?,
+        boottime: u64::from_be_bytes(<[u8; 8]>::try_from(boottime).ok()?),
+        trusted: u64::from_be_bytes(<[u8; 8]>::try_from(trusted).ok()?),
+        observed: u64::from_be_bytes(<[u8; 8]>::try_from(observed).ok()?),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn time_payloads_round_trip_and_reject_malformed_ones() {
+        let floor = time_floor_t {
+            boot_id: "boot".to_owned(),
+            boottime: 12,
+            trusted: 1_791_882_000,
+            observed: 40,
+        };
+        let payload = time_payload(&floor).expect("encodable");
+        assert_eq!(parse_time_payload(&payload), Some(floor.clone()));
+        assert_eq!(parse_time_payload(&payload[..payload.len() - 1]), None);
+        let mut longer = payload.clone();
+        longer.push(0);
+        assert_eq!(parse_time_payload(&longer), None);
+        let mut empty = payload;
+        empty[0] = 0;
+        assert_eq!(parse_time_payload(&empty), None);
+        let nameless = time_floor_t {
+            boot_id: String::new(),
+            ..floor
+        };
+        assert_eq!(time_payload(&nameless), None);
+    }
 
     #[test]
     fn entries_round_trip_and_reject_corruption() {

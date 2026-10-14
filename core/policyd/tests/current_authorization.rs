@@ -17,7 +17,7 @@
 #[path = "../../registryd/tests/builders/mod.rs"]
 mod builders;
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io;
@@ -45,13 +45,12 @@ use cham3_policyd::evaluate::{
 use cham3_policyd::mandatory::{mandatory_policy_t, network_mode_t, prohibition_t};
 use cham3_policyd::service::{policy_clock_t, policy_service_t, rollback_protection_t};
 use cham3_registryd::journal::{journal_io_t, system_io_t};
+use cham3_registryd::ledger::{boot_id_source_t, kernel_boot_id_t};
 use cham3_registryd::record::{
     frame, lifecycle_record_t, next_chain, parse_journal, placement_t, record_body_t,
     registry_record_t,
 };
-use cham3_registryd::registry::{
-    registry_clock_t, registry_config_t, registry_identity_store_t, registry_t,
-};
+use cham3_registryd::registry::{registry_config_t, registry_identity_store_t, registry_t};
 
 const Contractd: caller_role_t = caller_role_t::service(service_name_t::contractd);
 const Launcher: caller_role_t = caller_role_t::fixture_consumer;
@@ -61,25 +60,6 @@ const Vaultd: caller_role_t = caller_role_t::service(service_name_t::vaultd);
 const T1Utc: i64 = 1_791_882_000;
 
 type identity_t = Rc<RefCell<identity_service_t<registry_identity_store_t>>>;
-
-struct registry_clock_fixed_t;
-
-impl registry_clock_t for registry_clock_fixed_t {
-    fn utc_seconds(&self) -> i64 {
-        T1Utc
-    }
-}
-
-#[derive(Clone)]
-struct clock_t {
-    now: Rc<Cell<Option<i64>>>,
-}
-
-impl policy_clock_t for clock_t {
-    fn trusted_now(&self) -> Option<i64> {
-        self.now.get()
-    }
-}
 
 #[derive(Clone, Default)]
 struct sessions_t {
@@ -101,7 +81,8 @@ struct world_t {
     >,
     policy:
         policy_service_t<cham3_policyd::service::in_process_identity_t<registry_identity_store_t>>,
-    now: Rc<Cell<Option<i64>>>,
+    /// The clocks every service of the world samples (ADR 0007 §5).
+    time: test_time_t,
     sessions: sessions_t,
 }
 
@@ -151,9 +132,14 @@ fn world_at_with(
     io: Box<dyn journal_io_t>,
 ) -> world_t {
     let owner = fs::metadata(root).expect("root").uid();
+    let time = test_time_t::at(T1Seconds + 60);
+    let boot_id = config
+        .boot_id
+        .clone()
+        .or_else(|| kernel_boot_id_t.boot_id())
+        .expect("boot id");
     let registry = Arc::new(
-        registry_t::open(root, owner, config, io, Box::new(registry_clock_fixed_t))
-            .expect("registry"),
+        registry_t::open(root, owner, config, io, Box::new(time.clone())).expect("registry"),
     );
     let identity: identity_t = Rc::new(RefCell::new(
         identity_service_t::start(registry_identity_store_t {
@@ -161,7 +147,6 @@ fn world_at_with(
         })
         .expect("identityd"),
     ));
-    let now = Rc::new(Cell::new(Some(T1Utc + 60)));
     let sessions = sessions_t::default();
     world_t {
         root: root.to_path_buf(),
@@ -177,14 +162,12 @@ fn world_at_with(
                 service: Rc::clone(&identity),
             },
             policy,
-            Box::new(clock_t {
-                now: Rc::clone(&now),
-            }),
+            policy_clock_t::new(Box::new(time.clone()), &boot_id),
             Box::new(sessions.clone()),
         ),
         registry,
         identity,
-        now,
+        time,
         sessions,
     }
 }
@@ -274,13 +257,11 @@ fn eligible_grants_pass_and_every_rule_denies_despite_valid_signatures() {
         &["read"],
         persistent_lifetime(),
     );
-    let timed = file_grant(
-        "timed",
-        alice.uid,
-        "home:Timed",
-        &["read"],
-        timed_lifetime("2026-10-13T10:00:00Z"),
-    );
+    // Starts two minutes after T1: admitted at T1 + 60, so a minute of observed time
+    // must also pass (ADR 0007 §8 option B).
+    let mut timed_window = timed_lifetime("2026-10-13T10:00:00Z");
+    timed_window.effective_start = "2026-10-13T09:02:00Z".to_owned();
+    let timed = file_grant("timed", alice.uid, "home:Timed", &["read"], timed_window);
     let genesis = draft(&alice, &editor, commit_type_t::genesis, "rules genesis")
         .add(vec![read.clone()])
         .sign(&alice);
@@ -343,31 +324,40 @@ fn eligible_grants_pass_and_every_rule_denies_despite_valid_signatures() {
     .sign(&alice);
     assert_eq!(world.submit(&alice, &branch), placement_t::temporary);
     let timed_request = files(alice.uid, "home:Timed", "read");
-    world.now.set(Some(T1Utc - 1));
     assert_eq!(
         world.evaluate(&identity, &timed_request),
         denied(deny_reason_t::not_started)
     );
-    world.now.set(Some(T1Utc));
+    world.time.pass_until(T1Seconds + 119);
+    assert_eq!(
+        world.evaluate(&identity, &timed_request),
+        denied(deny_reason_t::not_started)
+    );
+    world.time.pass_until(T1Seconds + 120);
     assert!(is_eligible(world.evaluate(&identity, &timed_request)));
-    world.now.set(Some(T1Utc + 3599));
+    world.time.pass_until(T1Seconds + 3599);
     assert!(is_eligible(world.evaluate(&identity, &timed_request)));
-    world.now.set(Some(T1Utc + 3600));
+    world.time.pass_until(T1Seconds + 3600);
     assert_eq!(
         world.evaluate(&identity, &timed_request),
         denied(deny_reason_t::expired)
     );
-    world.now.set(None);
+    let before = world.time.current().expect("clock");
+    world.time.set_available(false, 0, 0);
     assert_eq!(
         world.evaluate(&identity, &timed_request),
         decision_t::unknown(unknown_reason_t::clock_unavailable)
     );
-    world.now.set(Some(T1Utc + 60));
+    world
+        .time
+        .set_available(true, before.realtime, before.boottime);
     // Revocation: a removed grant is no longer in the current state, and the trunk
-    // commit ends the temporary branch with its timed grant.
+    // commit ends the temporary branch with its timed grant. Its timestamp is trusted
+    // now (the commit-timestamp rule).
     let revocation = draft(&alice, &editor, commit_type_t::revocation, "rules revoke")
         .on(&genesis)
         .remove(vec![read.grant_id])
+        .timestamp("2026-10-13T10:00:00Z")
         .sign(&alice);
     world.submit(&alice, &revocation);
     assert_eq!(
@@ -822,7 +812,6 @@ fn a_durably_ended_session_denies_every_grant_bound_to_it_whatever_the_attestati
         mandatory_policy_t::default(),
     );
     let now = T1Utc + 60;
-    world.now.set(Some(now));
     let mut identity = runtime(&alice, &browser);
     identity.session_id = Some(session_id);
     // A still-fresh attestation from just before the durable end.
@@ -901,6 +890,7 @@ fn a_durably_ended_session_denies_every_grant_bound_to_it_whatever_the_attestati
                 key_states: &key_states,
                 policy: &policy,
                 now,
+                observed_now: 0,
                 sessions: &world.sessions,
                 reserved: &reserved,
             },
@@ -961,6 +951,7 @@ fn network_mode_follows_the_single_eligible_network_grant() {
     let direct_revision = draft(&alice, &browser, commit_type_t::revision, "direct trunk")
         .on(&genesis)
         .add(vec![direct.clone()])
+        .timestamp("2026-10-13T10:00:00Z")
         .sign(&alice);
     {
         let mut world = world_at(
@@ -997,7 +988,7 @@ fn network_mode_follows_the_single_eligible_network_grant() {
                 grant_id: tor.grant_id
             }
         );
-        world.now.set(Some(T1Utc + 3600));
+        world.time.pass_until(T1Seconds + 3600);
         assert_eq!(
             world
                 .policy
@@ -1005,7 +996,6 @@ fn network_mode_follows_the_single_eligible_network_grant() {
                 .expect("mode"),
             network_decision_t::offline(None)
         );
-        world.now.set(Some(T1Utc + 60));
         // A trunk commit with a persistent Direct grant ends the branch: Direct.
         world.submit(&alice, &direct_revision);
         assert_eq!(
@@ -1152,6 +1142,7 @@ fn conservative_evaluation_of_inconsistent_snapshots() {
             key_states,
             policy: &policy,
             now: T1Utc + 60,
+            observed_now: 0,
             sessions: &sessions,
             reserved,
         };
@@ -1255,6 +1246,7 @@ fn conservative_evaluation_of_inconsistent_snapshots() {
                 key_states: &key_states,
                 policy: &policy,
                 now: T1Utc + 60,
+                observed_now: 0,
                 sessions: &sessions,
                 reserved,
             },
@@ -1681,4 +1673,164 @@ fn a_failed_emergency_release_keeps_everyone_denied() {
         .expect("released");
     assert!(!status.emergency_restriction);
     assert!(is_eligible(world.evaluate(&identity, &request)));
+}
+
+// ------------------------------------------------ trusted time (M2-006 stage B1)
+
+/// A policyd over the world's registry and identityd with its own clocks and boot id.
+fn policy_with_clock(
+    world: &world_t,
+    time: &test_time_t,
+    boot_id: &str,
+) -> policy_service_t<cham3_policyd::service::in_process_identity_t<registry_identity_store_t>> {
+    policy_service_t::new(
+        Arc::clone(&world.registry),
+        cham3_policyd::service::in_process_identity_t {
+            service: Rc::clone(&world.identity),
+        },
+        mandatory_policy_t::default(),
+        policy_clock_t::new(Box::new(time.clone()), boot_id),
+        Box::new(world.sessions.clone()),
+    )
+}
+
+fn kernel_boot_id() -> String {
+    kernel_boot_id_t.boot_id().expect("boot id")
+}
+
+#[test]
+fn a_forward_clock_error_after_admission_does_not_advance_a_future_start() {
+    // ADR 0007 §8 option B: the grant starts an hour after T1 and is admitted at T1 +
+    // 60, so 3 540 s of observed time must pass, whatever the wall clock says.
+    let mut world = world("observed_start");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let editor = app("editor");
+    let mut later = persistent_lifetime();
+    later.effective_start = "2026-10-13T10:00:00Z".to_owned();
+    let grant = file_grant("later", alice.uid, "home:Later", &["read"], later);
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "observed start")
+        .add(vec![grant.clone()])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let identity = runtime(&alice, &editor);
+    let request = files(alice.uid, "home:Later", "read");
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::not_started)
+    );
+    // The wall clock jumps an hour forward: trusted time accepts it, but no observed
+    // time has passed since the admission.
+    world.time.step_wall_clock(T1Seconds + 3600);
+    assert_eq!(
+        world
+            .registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .clock
+            .trusted_now,
+        T1Seconds + 3600
+    );
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::not_started)
+    );
+    world.time.advance(3539);
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::not_started)
+    );
+    world.time.advance(1);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+}
+
+#[test]
+fn policyd_reports_a_forward_sample_and_relies_on_it_only_after_registryd_took_it() {
+    let mut world = world("time_sample_path");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let editor = app("editor");
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "sample path")
+        .add(vec![file_grant(
+            "files",
+            alice.uid,
+            "home:Files",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let identity = runtime(&alice, &editor);
+    let request = files(alice.uid, "home:Files", "read");
+    let base = world.time.current().expect("clock");
+    let shared = (T1Seconds + 60) as i64 - base.boottime as i64;
+    // policyd's wall clock reads 5 s ahead of registryd's: it reports the sample, and
+    // registryd ledgers and adopts it before policyd relies on it.
+    let ahead = test_time_t::at(base.realtime + 5);
+    ahead.set_available(true, base.realtime + 5, base.boottime);
+    let mut policy = policy_with_clock(&world, &ahead, &kernel_boot_id());
+    assert!(is_eligible(
+        policy
+            .evaluate(Launcher, &identity, &request)
+            .expect("evaluate")
+    ));
+    assert_eq!(policy.clock().offset(), Some(shared + 5));
+    assert_eq!(
+        world
+            .registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .clock
+            .trusted_now,
+        T1Seconds + 65
+    );
+    // A sample registryd refuses (its CLOCK_BOOTTIME is far ahead of registryd's own)
+    // is not relied on: policyd keeps the shared offset.
+    let refused = test_time_t::at(base.realtime + 500);
+    refused.set_available(true, base.realtime + 500, base.boottime + 100);
+    let mut policy = policy_with_clock(&world, &refused, &kernel_boot_id());
+    assert!(is_eligible(
+        policy
+            .evaluate(Launcher, &identity, &request)
+            .expect("evaluate")
+    ));
+    assert_eq!(policy.clock().offset(), Some(shared + 5));
+    assert_eq!(
+        world
+            .registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .clock
+            .trusted_now,
+        T1Seconds + 65
+    );
+}
+
+#[test]
+fn a_snapshot_of_another_boot_is_unknown() {
+    let mut world = world("other_boot");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let editor = app("editor");
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "other boot")
+        .add(vec![file_grant(
+            "files",
+            alice.uid,
+            "home:Files",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let mut policy = policy_with_clock(&world, &world.time, "a-boot-that-is-not-this-one");
+    assert_eq!(
+        policy
+            .evaluate(
+                Launcher,
+                &runtime(&alice, &editor),
+                &files(alice.uid, "home:Files", "read")
+            )
+            .expect("evaluate"),
+        decision_t::unknown(unknown_reason_t::clock_unavailable)
+    );
 }

@@ -19,10 +19,13 @@ grow within a boot but accumulates across boots whose wall clock starts behind (
 only by the unobserved intervals since trusted time last equalled actual time, not by
 the age of the latest floor), and an accepted forward error is never corrected, so an
 already-admitted future start can become eligible arbitrarily early. observed_clock_t
-and observed_start_eligible model owner option B of ADR 0007 section 8 (PROPOSED, not
-selected), which removes the second limit for starts.
+and observed_start_eligible model owner option B of ADR 0007 section 8 (selected by the
+owner on 2026-10-12), which removes the second limit for starts.
 
-Status: PROPOSED G5 design (ADR 0007, not approved). Status of the real clock: NOT_RUN.
+Status: ADR 0007 is approved (G5). M2-006 stage B1 implements the clock in
+core/registryd/src/clock.rs. tests/m2/oracle/trusted_time_vectors.py turns this model
+into the published vectors tests/m2/vectors/trusted_time_v1/vectors.json, which the
+cargo test trusted_time_model replays through the implementation.
 """
 
 AnomalySeconds = 300
@@ -105,7 +108,7 @@ def admission_timestamp_ok(clock, timestamp, boottime):
 
 
 class observed_clock_t(trusted_clock_t):
-    """Owner option B (ADR 0007 section 8, PROPOSED, not selected): CLOCK_BOOTTIME seconds
+    """Owner option B (ADR 0007 section 8, selected 2026-10-12): CLOCK_BOOTTIME seconds
     observed by cham3 across boots. Persisted with every floor and resumed from the
     largest persisted value (same boot) or the last one (new boot); powered-off time and
     wall-clock samples never advance it."""

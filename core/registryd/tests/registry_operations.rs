@@ -34,8 +34,7 @@ use cham3_registryd::record::{
     parse_journal, placement_t, record_body_t, registry_record_t,
 };
 use cham3_registryd::registry::{
-    quarantine_reason_t, registry_clock_t, registry_config_t, registry_start_error_t, registry_t,
-    unusable_reason_t,
+    quarantine_reason_t, registry_config_t, registry_start_error_t, registry_t, unusable_reason_t,
 };
 
 /// Every role a peer can map to (service IPC §1).
@@ -512,6 +511,7 @@ fn the_journal_file_holds_exactly_the_chained_records() {
                 }
                 record_body_t::lifecycle(_) => "lifecycle".to_owned(),
                 record_body_t::user(_) => "user".to_owned(),
+                record_body_t::event(_) => "event".to_owned(),
             }
         })
         .collect();
@@ -743,6 +743,7 @@ fn a_correctly_chained_record_must_still_pass_every_check_on_replay() {
                 lineage_id: commit.payload.lineage_id,
                 placement,
                 envelope: commit.envelope.clone(),
+                observed: 0,
             },
         )
     };
@@ -819,6 +820,7 @@ fn a_correctly_chained_record_must_still_pass_every_check_on_replay() {
                     lineage_id: lineage.revision.payload.lineage_id,
                     placement: placement_t::trunk,
                     envelope: forged_signature.clone(),
+                    observed: 0,
                 },
             )),
             replay_defect,
@@ -991,7 +993,7 @@ fn every_created_directory_entry_is_durable_before_the_enrollment_is_acknowledge
             owner_of(&parent),
             registry_config_t::default(),
             Box::new(spy.clone()),
-            Box::new(fixed_clock_t),
+            fixed_clock(),
         )
         .expect("registry start"),
     );
@@ -1109,7 +1111,7 @@ fn a_failed_startup_directory_sync_is_repeated_at_the_next_start() {
             owner_of(&parent),
             registry_config_t::default(),
             Box::new(spy.clone()),
-            Box::new(fixed_clock_t),
+            fixed_clock(),
         )
         .is_err()
     );
@@ -1122,7 +1124,7 @@ fn a_failed_startup_directory_sync_is_repeated_at_the_next_start() {
             owner_of(&parent),
             registry_config_t::default(),
             Box::new(spy.clone()),
-            Box::new(fixed_clock_t),
+            fixed_clock(),
         )
         .expect("second start"),
     );
@@ -1154,7 +1156,7 @@ fn a_failed_startup_directory_sync_is_repeated_at_the_next_start() {
             owner_of(&root),
             registry_config_t::default(),
             Box::new(spy.clone()),
-            Box::new(fixed_clock_t),
+            fixed_clock(),
         )
         .is_err()
     );
@@ -1394,6 +1396,7 @@ fn an_ended_session_refuses_every_later_grant_bound_to_it() {
             lineage_id: again.payload.lineage_id,
             placement: placement_t::temporary,
             envelope: again.envelope.clone(),
+            observed: 0,
         },
     ));
     write_chained(&root, alice.uid, &alice.identity.key_id, &forged);
@@ -2181,7 +2184,7 @@ fn stale_epochs_lineage_limits_and_unknown_users_are_refused() {
                 owner_of(&root),
                 config,
                 Box::new(system_io_t),
-                Box::new(fixed_clock_t)
+                fixed_clock()
             )
             .err(),
             Some(registry_start_error_t::invalid_config)
@@ -2346,15 +2349,23 @@ fn the_byte_quota_keeps_its_reserve_for_restrictive_records() {
         )),
         "ipc/quota_exhausted"
     );
-    let invalidation = invalidation(
-        &alice.identity,
-        &alice.temporary.key_id,
-        invalidation_reason_t::retired,
-        "quota",
-    );
-    identity
-        .register_invalidation(Vaultd, alice.uid, &invalidation)
-        .expect("restrictive record within the reserve");
+    // Invalidations of the extra keys are accepted until the journal is past the
+    // quota minus the reserve: they are written from the reserve.
+    let mut invalidated = 0usize;
+    while fs::metadata(journal_path(&root, alice.uid)).unwrap().len() <= limit {
+        assert!(invalidated < certificates, "the reserve was never used");
+        let extra = test_key(&format!("quota extra persistent {invalidated}"));
+        let invalidation = invalidation(
+            &alice.identity,
+            &extra.key_id,
+            invalidation_reason_t::retired,
+            &format!("quota {invalidated}"),
+        );
+        identity
+            .register_invalidation(Vaultd, alice.uid, &invalidation)
+            .expect("restrictive record within the reserve");
+        invalidated += 1;
+    }
     assert!(fs::metadata(journal_path(&root, alice.uid)).unwrap().len() > limit);
 }
 
@@ -2560,7 +2571,7 @@ fn unsafe_store_paths_are_refused() {
             owner_of(&root),
             registry_config_t::default(),
             Box::new(system_io_t),
-            Box::new(fixed_clock_t)
+            fixed_clock()
         ),
         Err(registry_start_error_t::store(_))
     ));
@@ -2575,7 +2586,7 @@ fn unsafe_store_paths_are_refused() {
             owner_of(&root),
             registry_config_t::default(),
             Box::new(system_io_t),
-            Box::new(fixed_clock_t)
+            fixed_clock()
         ),
         Err(registry_start_error_t::store(_))
     ));
@@ -2647,52 +2658,46 @@ fn delegated_grants_are_refused_until_their_admission_rules_exist() {
     );
 }
 
-struct settable_clock_t {
-    now: Arc<std::sync::atomic::AtomicI64>,
-}
-
-impl registry_clock_t for settable_clock_t {
-    fn utc_seconds(&self) -> i64 {
-        self.now.load(Ordering::SeqCst)
-    }
-}
-
 #[test]
 fn admission_requires_the_signing_keys_window_at_registry_time() {
     // T0 = 2026-10-13T08:00:00Z (every certificate's not_before); T2 =
-    // 2026-10-14T08:00:00Z (the temporary certificate's not_after).
-    const T0Utc: i64 = 1_791_878_400;
-    const T2Utc: i64 = 1_791_964_800;
+    // 2026-10-14T08:00:00Z (the temporary certificate's not_after). Each commit's
+    // timestamp is within 300 s of trusted now (the commit-timestamp rule, checked
+    // before the window), so the window at trusted now is what decides.
+    const T0Utc: u64 = 1_791_878_400;
+    const T2Utc: u64 = 1_791_964_800;
     let root = temp_root("key_window");
     let alice = test_user(1001);
-    let now = Arc::new(std::sync::atomic::AtomicI64::new(T0Utc + 3600));
-    let open_at = |now: &Arc<std::sync::atomic::AtomicI64>| {
+    let time = test_time_t::at(T0Utc - 1);
+    let open_at = |time: &test_time_t| {
         Arc::new(
             registry_t::open(
                 &root,
                 owner_of(&root),
                 registry_config_t::default(),
                 Box::new(system_io_t),
-                Box::new(settable_clock_t {
-                    now: Arc::clone(now),
-                }),
+                Box::new(time.clone()),
             )
             .expect("registry"),
         )
     };
-    let registry = open_at(&now);
+    let registry = open_at(&time);
     enroll(&registry, &alice);
     let editor = app("editor");
-    let genesis = draft(&alice, &editor, commit_type_t::genesis, "window genesis")
-        .add(vec![file_grant(
-            "w",
-            alice.uid,
-            "home:W",
-            &["read"],
-            persistent_lifetime(),
-        )])
-        .sign(&alice);
-    let branch = |label: &str| {
+    let genesis_at = |timestamp: &str| {
+        draft(&alice, &editor, commit_type_t::genesis, "window genesis")
+            .add(vec![file_grant(
+                "w",
+                alice.uid,
+                "home:W",
+                &["read"],
+                persistent_lifetime(),
+            )])
+            .timestamp(timestamp)
+            .sign(&alice)
+    };
+    let genesis = genesis_at(T1);
+    let branch = |label: &str, timestamp: &str| {
         draft(&alice, &editor, commit_type_t::temporary_grant, label)
             .on(&genesis)
             .add(vec![file_grant(
@@ -2702,30 +2707,35 @@ fn admission_requires_the_signing_keys_window_at_registry_time() {
                 &["read"],
                 timed_lifetime("2026-10-20T00:00:00Z"),
             )])
+            .timestamp(timestamp)
             .temporary_authority()
             .sign(&alice)
     };
-    // Before every certificate's not_before: refused, even for the persistent key.
-    now.store(T0Utc - 1, Ordering::SeqCst);
+    // Before every certificate's not_before: refused, even for the persistent key
+    // (the commit's own timestamp, T0, is inside the window).
     assert_eq!(
-        code(admit(&registry, &alice, &genesis)),
+        code(admit(
+            &registry,
+            &alice,
+            &genesis_at("2026-10-13T08:00:00Z")
+        )),
         "key_authority/certificate_window"
     );
-    now.store(T0Utc + 3600, Ordering::SeqCst);
+    time.pass_until(T0Utc + 3600);
     assert_eq!(admit(&registry, &alice, &genesis), Ok(placement_t::trunk));
-    let early = branch("window early");
+    let early = branch("window early", T1);
     assert_eq!(admit(&registry, &alice, &early), Ok(placement_t::temporary));
-    // An envelope signed inside the temporary window, submitted after it closed
-    // (the commit's own timestamp is still inside it).
-    let late = branch("window late");
-    now.store(T2Utc, Ordering::SeqCst);
-    let at_end = branch("window at end");
+    // Signed at the temporary window's inclusive end: admitted at T2, refused one
+    // second after the window closed although its own timestamp is inside it.
+    let at_end = branch("window at end", "2026-10-14T08:00:00Z");
+    let late = branch("window late", "2026-10-14T08:00:00Z");
+    time.pass_until(T2Utc);
     assert_eq!(
         admit(&registry, &alice, &at_end),
         Ok(placement_t::temporary),
         "inclusive end"
     );
-    now.store(T2Utc + 1, Ordering::SeqCst);
+    time.pass_until(T2Utc + 1);
     assert_eq!(
         code(admit(&registry, &alice, &late)),
         "key_authority/certificate_window"
@@ -2740,12 +2750,13 @@ fn admission_requires_the_signing_keys_window_at_registry_time() {
             &["read"],
             persistent_lifetime(),
         )])
+        .timestamp("2026-10-14T08:00:01Z")
         .sign(&alice);
     assert_eq!(admit(&registry, &alice, &revision), Ok(placement_t::trunk));
     // Replay is not an admission: the earlier temporary commits replay after the
     // window closed.
     drop(registry);
-    let registry = open_at(&now);
+    let registry = open_at(&time);
     assert_eq!(registry.unusable_users().expect("users"), Vec::new());
     assert_eq!(
         registry.standing(alice.uid, &synthetic_id("grant window early")),

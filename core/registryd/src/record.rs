@@ -17,8 +17,14 @@
 //! narrowing lifecycle records `expired`, `session_ended` and `restriction` (M2-005),
 //! and the registry-written user-state records of ADR 0006 §§3, 4, 7 and 10 —
 //! `containment`, `quarantine`, `admin_recover`, `recovery_opened`, `recovery_closed`,
-//! `deletion_pending` (M2-006; the oracle's `RecordKinds`). Every one of them only
-//! narrows authority. Any other kind fails replay (fail closed).
+//! `deletion_pending` (M2-006; the oracle's `RecordKinds`), and the registry events
+//! of M2-006 stage B1: `clock_anomaly` (ADR 0007 §5 rule 2, erratum E6) and
+//! `branch_terminated` (§5 rule 6: a new boot ends every live temporary branch).
+//! Every one of them only narrows authority. Any other kind fails replay (fail
+//! closed).
+//!
+//! `commit_admitted` carries the observed time at admission (§8 option B); its
+//! `time` is the trusted time at admission.
 
 use cham3_contract_format::dcbor::{MaxContainerBytes, decode_container, encode, value_t};
 use cham3_contract_format::hash::{digest_t, domain_hash};
@@ -82,6 +88,25 @@ pub enum lifecycle_record_t {
     restriction { grant_ids: Vec<random_id_t> },
 }
 
+/// A registry event (M2-006 stage B1): evidence the registry writes itself, never
+/// through `restrict`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum registry_event_t {
+    /// A wall-clock sample more than 300 s behind trusted time, first seen for this
+    /// user in this episode (ADR 0007 §5 rule 2, erratum E6). No effect on authority.
+    clock_anomaly {
+        boot_id: String,
+        trusted: u64,
+        behind_seconds: u64,
+    },
+    /// A new boot (`boot_id`) ended every live temporary branch of the user (§5 rule
+    /// 6): replay ends them at this point.
+    branch_terminated { boot_id: String },
+}
+
+/// Longest boot identifier a record names (the anchor's limit).
+pub const MaxRecordBootIdBytes: usize = 64;
+
 /// The content of one record.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum record_body_t {
@@ -96,8 +121,11 @@ pub enum record_body_t {
         lineage_id: digest_t,
         placement: placement_t,
         envelope: Vec<u8>,
+        /// The observed-time counter at admission (ADR 0007 §8 option B).
+        observed: u64,
     },
     lifecycle(lifecycle_record_t),
+    event(registry_event_t),
     /// A registry-written user-state record (identityd's `user_record_t`: the same
     /// value both indexes apply).
     user(user_record_t),
@@ -174,12 +202,28 @@ impl registry_record_t {
                 lineage_id,
                 placement,
                 envelope,
+                observed,
             } => {
                 pairs.push(("kind", value_t::text_of("commit_admitted")));
                 pairs.push(("commit_id", value_t::bytes_of(commit_id)));
                 pairs.push(("lineage_id", value_t::bytes_of(lineage_id)));
                 pairs.push(("branch", value_t::text_of(placement.as_str())));
                 pairs.push(("envelope", value_t::bytes_of(envelope)));
+                pairs.push(("observed", uint(*observed)));
+            }
+            record_body_t::event(registry_event_t::clock_anomaly {
+                boot_id,
+                trusted,
+                behind_seconds,
+            }) => {
+                pairs.push(("kind", value_t::text_of("clock_anomaly")));
+                pairs.push(("boot_id", value_t::text_of(boot_id)));
+                pairs.push(("trusted", uint(*trusted)));
+                pairs.push(("behind_seconds", uint(*behind_seconds)));
+            }
+            record_body_t::event(registry_event_t::branch_terminated { boot_id }) => {
+                pairs.push(("kind", value_t::text_of("branch_terminated")));
+                pairs.push(("boot_id", value_t::text_of(boot_id)));
             }
             record_body_t::lifecycle(lifecycle_record_t::expired { grant_id }) => {
                 pairs.push(("kind", value_t::text_of("expired")));
@@ -270,8 +314,23 @@ impl registry_record_t {
                     placement: placement_t::parse(&text(field("branch")?)?)
                         .ok_or(record_error_t::malformed)?,
                     envelope: bytes_field(field("envelope")?)?,
+                    observed: unsigned(field("observed")?)?,
                 },
-                &["branch", "commit_id", "envelope", "lineage_id"],
+                &["branch", "commit_id", "envelope", "lineage_id", "observed"],
+            ),
+            "clock_anomaly" => (
+                record_body_t::event(registry_event_t::clock_anomaly {
+                    boot_id: boot_id(field("boot_id")?)?,
+                    trusted: unsigned(field("trusted")?)?,
+                    behind_seconds: unsigned(field("behind_seconds")?)?,
+                }),
+                &["behind_seconds", "boot_id", "trusted"],
+            ),
+            "branch_terminated" => (
+                record_body_t::event(registry_event_t::branch_terminated {
+                    boot_id: boot_id(field("boot_id")?)?,
+                }),
+                &["boot_id"],
             ),
             "expired" => (
                 record_body_t::lifecycle(lifecycle_record_t::expired {
@@ -355,6 +414,21 @@ fn text(value: &value_t) -> Result<String, record_error_t> {
         value_t::text(text) => Ok(text.clone()),
         _ => Err(record_error_t::malformed),
     }
+}
+
+fn unsigned(value: &value_t) -> Result<u64, record_error_t> {
+    match value {
+        value_t::unsigned(value) => Ok(*value),
+        _ => Err(record_error_t::malformed),
+    }
+}
+
+fn boot_id(value: &value_t) -> Result<String, record_error_t> {
+    let text = text(value)?;
+    if text.is_empty() || text.len() > MaxRecordBootIdBytes {
+        return Err(record_error_t::malformed);
+    }
+    Ok(text)
 }
 
 fn bytes_field(value: &value_t) -> Result<Vec<u8>, record_error_t> {
@@ -571,7 +645,16 @@ mod tests {
                 lineage_id: [4; 32],
                 placement: placement_t::temporary,
                 envelope: vec![9; 10],
+                observed: 4_000,
             },
+            record_body_t::event(registry_event_t::clock_anomaly {
+                boot_id: "boot".to_owned(),
+                trusted: 1_791_882_000,
+                behind_seconds: 3_600,
+            }),
+            record_body_t::event(registry_event_t::branch_terminated {
+                boot_id: "boot".to_owned(),
+            }),
             record_body_t::lifecycle(lifecycle_record_t::expired { grant_id: [5; 16] }),
             record_body_t::lifecycle(lifecycle_record_t::session_ended {
                 session_id: [6; 16],
@@ -639,6 +722,16 @@ mod tests {
             registry_record_t::decode(&empty.encode()),
             Err(record_error_t::malformed)
         );
+        // A registry event names a boot id of 1..=64 bytes.
+        for boot_id in [String::new(), "b".repeat(MaxRecordBootIdBytes + 1)] {
+            let event = sample(record_body_t::event(registry_event_t::branch_terminated {
+                boot_id,
+            }));
+            assert_eq!(
+                registry_record_t::decode(&event.encode()),
+                Err(record_error_t::malformed)
+            );
+        }
     }
 
     #[test]

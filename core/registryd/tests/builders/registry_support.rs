@@ -1,19 +1,18 @@
-//! Shared registryd test support: a fixed clock, roles, a disposable store root and
+//! Shared registryd test support: a settable clock, roles, a disposable store root and
 //! the in-process services over it. Used by every registryd integration test.
 
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::outcome::service_error_t;
 use cham3_identityd::service::identity_service_t;
+use cham3_registryd::clock::{time_sample_t, time_source_t};
 use cham3_registryd::journal::{journal_io_t, system_io_t};
 use cham3_registryd::record::{parse_journal, placement_t};
-use cham3_registryd::registry::{
-    registry_clock_t, registry_config_t, registry_identity_store_t, registry_t,
-};
+use cham3_registryd::registry::{registry_config_t, registry_identity_store_t, registry_t};
 
 use super::{commit_t, test_user_t};
 
@@ -31,13 +30,73 @@ pub fn code(result: Result<impl std::fmt::Debug, service_error_t>) -> String {
     }
 }
 
-/// 2026-10-13T09:00:00Z.
-pub struct fixed_clock_t;
+/// 2026-10-13T09:00:00Z (`T1`).
+pub const T1Seconds: u64 = 1_791_882_000;
+/// CLOCK_BOOTTIME when a test clock starts.
+pub const StartBoottime: u64 = 1_000;
 
-impl registry_clock_t for fixed_clock_t {
-    fn utc_seconds(&self) -> i64 {
-        1_791_882_000
+/// A settable pair of clocks shared by every service of a test (ADR 0007 §5). Time
+/// passing moves both clocks; a wall-clock step moves only CLOCK_REALTIME; `None`
+/// makes every sample fail.
+#[derive(Clone, Debug)]
+pub struct test_time_t {
+    pub sample: Arc<Mutex<Option<time_sample_t>>>,
+}
+
+impl test_time_t {
+    /// Both clocks at `realtime` and [`StartBoottime`].
+    pub fn at(realtime: u64) -> test_time_t {
+        test_time_t {
+            sample: Arc::new(Mutex::new(Some(time_sample_t {
+                realtime,
+                boottime: StartBoottime,
+            }))),
+        }
     }
+
+    pub fn current(&self) -> Option<time_sample_t> {
+        *self.sample.lock().expect("test clock")
+    }
+
+    /// `seconds` pass: both clocks advance.
+    pub fn advance(&self, seconds: u64) {
+        let mut sample = self.sample.lock().expect("test clock");
+        if let Some(sample) = sample.as_mut() {
+            sample.realtime += seconds;
+            sample.boottime += seconds;
+        }
+    }
+
+    /// Time passes until CLOCK_REALTIME reads `realtime` (never backward).
+    pub fn pass_until(&self, realtime: u64) {
+        let current = self.current().expect("test clock").realtime;
+        self.advance(realtime.saturating_sub(current));
+    }
+
+    /// The wall clock is set to `realtime`; CLOCK_BOOTTIME does not move.
+    pub fn step_wall_clock(&self, realtime: u64) {
+        let mut sample = self.sample.lock().expect("test clock");
+        if let Some(sample) = sample.as_mut() {
+            sample.realtime = realtime;
+        }
+    }
+
+    /// Samples fail (`None`) or are restored.
+    pub fn set_available(&self, available: bool, realtime: u64, boottime: u64) {
+        *self.sample.lock().expect("test clock") =
+            available.then_some(time_sample_t { realtime, boottime });
+    }
+}
+
+impl time_source_t for test_time_t {
+    fn sample(&self) -> Option<time_sample_t> {
+        self.current()
+    }
+}
+
+/// Both clocks fixed at `T1`.
+pub fn fixed_clock() -> Box<test_time_t> {
+    Box::new(test_time_t::at(T1Seconds))
 }
 
 /// A fresh `0700` directory under the temporary directory, named after the test.
@@ -59,8 +118,7 @@ pub fn open_with(
     io: Box<dyn journal_io_t>,
 ) -> Arc<registry_t> {
     Arc::new(
-        registry_t::open(root, owner_of(root), config, io, Box::new(fixed_clock_t))
-            .expect("registry start"),
+        registry_t::open(root, owner_of(root), config, io, fixed_clock()).expect("registry start"),
     )
 }
 

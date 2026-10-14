@@ -45,9 +45,21 @@
 //! across every slot's anchor update, so that no older copy of the policy state can
 //! overwrite a newer publication; `ledger` is released before `anchor` is taken.
 //!
-//! Limits (stage A): in-process composition; the socket transport and process
-//! boundary are M2-007. Registry time is the system clock; ADR 0007's trusted-time
-//! clock, the lifecycle writers, one-shot consumption and `history` are stage B; the
+//! **Trusted time (ADR 0007 §5, §8 option B, erratum E6; stage B1).** Registry time
+//! is trusted time ([`crate::clock`]). Every IPC operation samples the clock right
+//! after its role check: an offset increase is ledgered before the clock adopts it,
+//! a sample more than 300 s behind is recorded once per episode as a
+//! `clock_anomaly` in the journal of the user the operation concerns, and the
+//! anchor's floor is refreshed at least every 60 s. Every anchor write publishes the
+//! floor. Admission checks the commit-timestamp rule against trusted now and records
+//! the observed time; `time_sample` takes policyd's offset increases. A new boot ends
+//! every live temporary branch (`branch_terminated`). Lock order with the clock:
+//! `users` → user → `policy` → `clock` → `ledger` → `anchor`; the clock lock is never
+//! held while another lock is taken, except the ledger's for a raise.
+//!
+//! Limits (stage B1): in-process composition; the socket transport and process
+//! boundary are M2-007. The lifecycle writers, one-shot consumption, confirmation and
+//! `history` are stage B2; the
 //! recovery ceremony, `recover_user`, `replace_identity` and deletion cleanup are
 //! stage C (a `pending` tombstone keeps its user denied; a `deleted` tombstone's files
 //! are quarantined and never loaded, not yet removed).
@@ -65,7 +77,8 @@ use cham3_contract_format::{key_resolver_t, object_kind_t, payload_t, verify_obj
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::directory::{identity_directory_t, identity_effect_t, journal_record_t};
 use cham3_identityd::index::{
-    check_commit_authority, check_signing_window, user_record_t, user_state_t, utc_text,
+    check_commit_authority, check_signing_window, user_record_t, user_state_t, utc_seconds,
+    utc_text,
 };
 use cham3_identityd::journal::{
     MaxPageRecords, append_receipt_t, identity_journal_t, journal_entry_t, journal_page_t,
@@ -78,15 +91,19 @@ use crate::anchor::{
     anchor_map_t, anchor_mode_t, anchor_start_t, anchor_t, anchored_state_t, anchored_user_t,
     policy_state_t, run_marker_t, run_state_t, tombstone_state_t,
 };
+use crate::clock::{
+    FloorIntervalSeconds, anomaly_state_t, merge_floor, time_floor_t, time_source_t, time_view_t,
+    trusted_clock_t,
+};
 use crate::journal::{journal_file_t, journal_io_t, journal_store_t, store_error_t};
 use crate::ledger::{
     boot_id_source_t, entry_kind_t, kernel_boot_id_t, ledger_entry_t, ledger_t,
-    parse_policy_payload, policy_payload, previous_ledger_t,
+    parse_policy_payload, parse_time_payload, policy_payload, previous_ledger_t, time_payload,
 };
-use crate::lineage::{admission_t, end_reason_t, lineage_index_t, standing_t};
+use crate::lineage::{admission_t, admitted_at_t, end_reason_t, lineage_index_t, standing_t};
 use crate::record::{
     journal_defect_t, lifecycle_record_t, parse_journal_prefix, placement_t, record_body_t,
-    registry_record_t,
+    registry_event_t, registry_record_t,
 };
 
 /// Default per-user journal quota (ADR 0006 §1): 64 MiB, configurable 16 MiB–1 GiB.
@@ -149,25 +166,8 @@ pub enum registry_start_error_t {
     store(store_error_t),
     /// No boot identifier is available.
     boot_id_unavailable,
-}
-
-/// Registry time (seconds since 1970-01-01T00:00:00Z).
-pub trait registry_clock_t: Send + Sync {
-    fn utc_seconds(&self) -> i64;
-}
-
-/// The system clock (ADR 0007's offset rule is stage B).
-#[derive(Clone, Copy, Debug, Default)]
-pub struct system_registry_clock_t;
-
-impl registry_clock_t for system_registry_clock_t {
-    fn utc_seconds(&self) -> i64 {
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .ok()
-            .and_then(|elapsed| i64::try_from(elapsed.as_secs()).ok())
-            .unwrap_or(0)
-    }
+    /// The clocks cannot be sampled: trusted time cannot be established.
+    clock_unavailable,
 }
 
 /// Why a user is quarantined (ADR 0006 §4): the row of the decision table.
@@ -261,6 +261,10 @@ pub struct user_slot_t {
     /// Every lifecycle record the journal holds (replayed or written durably), so
     /// that a ledger entry the journal already holds is never re-journaled.
     lifecycle_records: Vec<lifecycle_record_t>,
+    /// Every registry event the journal holds (the same purpose).
+    events: Vec<registry_event_t>,
+    /// The clock-anomaly episode this run last recorded for the user (0: none).
+    anomaly_episode: u64,
     /// Restrictive records denied in memory whose durable write is still owed.
     pending: Vec<pending_write_t>,
     /// The journal's last record is durable but its anchor update failed: the user is
@@ -302,6 +306,8 @@ pub struct grant_origin_t {
     pub key_invalidated: Option<invalidation_reason_t>,
     /// The key is unknown to this snapshot (never for an admitted commit).
     pub key_unknown: bool,
+    /// Trusted and observed time when the commit was admitted (ADR 0007 §8 option B).
+    pub admitted: admitted_at_t,
 }
 
 /// `lineage_head`: one lineage from one consistent snapshot of the user's journal.
@@ -331,6 +337,19 @@ pub struct lineage_view_t {
     pub min_valid_policy_epoch: u64,
     /// The emergency restriction of everyone (ADR 0007 §1 rule 1, persisted).
     pub emergency_restriction: bool,
+    /// The shared trusted-time offset of this boot and the observed counter's offset
+    /// (ADR 0007 §5 rule 4, §8 option B).
+    pub time: time_view_t,
+}
+
+/// The clock in `rollback_status` (ADR 0007 §5; erratum E6).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct clock_status_t {
+    pub boot_id: String,
+    pub trusted_now: u64,
+    pub observed_now: u64,
+    /// The current or last clock-anomaly episode.
+    pub anomaly: anomaly_state_t,
 }
 
 /// `rollback_status` (service IPC §3).
@@ -363,6 +382,7 @@ pub struct rollback_status_t {
     /// write.
     pub policy_pending: bool,
     pub policy: policy_state_t,
+    pub clock: clock_status_t,
 }
 
 /// registryd.
@@ -370,7 +390,9 @@ pub struct registry_t {
     store: journal_store_t,
     config: registry_config_t,
     io: Box<dyn journal_io_t>,
-    clock: Box<dyn registry_clock_t>,
+    time_source: Box<dyn time_source_t>,
+    /// Trusted time of this boot (ADR 0007 §5).
+    clock: Mutex<trusted_clock_t>,
     users: Mutex<BTreeMap<u32, user_entry_t>>,
     anchor: Mutex<anchor_t>,
     ledger: Mutex<ledger_t>,
@@ -386,6 +408,23 @@ pub struct registry_t {
 
 fn storage_unavailable() -> service_error_t {
     ipc(ipc_code_t::storage_unavailable)
+}
+
+/// Publishes the trusted-time floor in an anchor image (erratum E6): never below the
+/// one the anchor already holds.
+fn publish_floor(map: &mut anchor_map_t, floor: Option<time_floor_t>) {
+    if let Some(floor) = floor {
+        map.time_floor = Some(merge_floor(map.time_floor.take(), floor));
+    }
+}
+
+/// What an operation's clock sample found (ADR 0007 §5).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct time_observation_t {
+    /// The sample was taken: trusted now is current, not only the last known value.
+    fresh: bool,
+    /// The sample is more than 300 s behind trusted time: its anomaly episode.
+    episode: Option<u64>,
 }
 
 fn not_durable() -> service_error_t {
@@ -423,12 +462,14 @@ impl key_resolver_t for snapshot_resolver_t<'_> {
     }
 }
 
-/// Layers 1–7 of a commit envelope against one user's snapshot.
+/// Layers 1–7 of a commit envelope against one user's snapshot; `trusted_now` at
+/// admission (the commit-timestamp rule), `None` at replay.
 fn check_commit_envelope(
     uid: u32,
     directory: &identity_directory_t,
     lineages: &lineage_index_t,
     envelope: &[u8],
+    trusted_now: Option<i64>,
 ) -> service_result_t<(admission_t, Box<commit_payload_t>)> {
     let verified = verify_object(
         envelope,
@@ -443,7 +484,7 @@ fn check_commit_envelope(
         .filter(|resolution| resolution.owner_uid == uid)
         .ok_or(authority(authority_code_t::key_not_certified))?;
     check_commit_authority(&resolution, &payload)?;
-    let admission = lineages.check_commit(&verified.object_id, &payload)?;
+    let admission = lineages.check_commit(&verified.object_id, &payload, trusted_now)?;
     Ok((admission, payload))
 }
 
@@ -522,17 +563,35 @@ impl user_slot_t {
                 lineage_id,
                 placement,
                 envelope,
+                observed,
             } => {
-                let (admission, payload) =
-                    check_commit_envelope(self.uid, &self.directory, &self.lineages, &envelope)?;
+                let (admission, payload) = check_commit_envelope(
+                    self.uid,
+                    &self.directory,
+                    &self.lineages,
+                    &envelope,
+                    None,
+                )?;
                 if admission.commit_id != commit_id
                     || admission.lineage_id != lineage_id
                     || admission.placement != placement
                 {
                     return Err(storage_unavailable());
                 }
-                self.lineages
-                    .apply_commit(&admission, payload, envelope, record.sequence);
+                let trusted = utc_seconds(&record.time).ok_or(storage_unavailable())?;
+                self.lineages.apply_commit(
+                    &admission,
+                    payload,
+                    envelope,
+                    record.sequence,
+                    admitted_at_t { trusted, observed },
+                );
+            }
+            record_body_t::event(event) => {
+                if let registry_event_t::branch_terminated { .. } = &event {
+                    self.lineages.end_branches();
+                }
+                self.events.push(event);
             }
             record_body_t::lifecycle(lifecycle) => {
                 self.lineages.check_record(&lifecycle, &record.time)?;
@@ -568,6 +627,7 @@ impl user_slot_t {
     fn holds(&self, body: &record_body_t) -> bool {
         match body {
             record_body_t::lifecycle(lifecycle) => self.lifecycle_records.contains(lifecycle),
+            record_body_t::event(event) => self.events.contains(event),
             record_body_t::commit_admitted { .. } => false,
             record_body_t::identity { .. } | record_body_t::user(_) => self
                 .identity_entries
@@ -608,6 +668,8 @@ fn replay_user(
         state: slot_state_t::normal,
         identity_count: 0,
         lifecycle_records: Vec::new(),
+        events: Vec::new(),
+        anomaly_episode: 0,
         pending: Vec::new(),
         anchor_failed: false,
     };
@@ -691,12 +753,15 @@ impl registry_t {
     /// effective UID): opens the anchor and the previous ledger, decides the run
     /// (ADR 0006 §3), replays and recovers every journal (§4), contains or re-journals
     /// as decided, starts this run's ledger and writes the run marker `running`.
+    /// Trusted time starts from a sample of `time_source` and the persisted floors:
+    /// the anchor's, and on a same-boot ledger replay the ledger's time entries (ADR
+    /// 0007 §5 rules 3 and 6). After a reboot every live temporary branch ends.
     pub fn open(
         root: &Path,
         owner: u32,
         config: registry_config_t,
         io: Box<dyn journal_io_t>,
-        clock: Box<dyn registry_clock_t>,
+        time_source: Box<dyn time_source_t>,
     ) -> Result<registry_t, registry_start_error_t> {
         let valid = (MinQuotaBytes..=MaxQuotaBytes).contains(&config.quota_bytes)
             && (1..=MaxLineages).contains(&config.max_lineages)
@@ -768,6 +833,28 @@ impl registry_t {
                 _ => (run_decision_t::contained, Vec::new()),
             },
         };
+
+        // Trusted time (ADR 0007 §5): the anchor's floor and, when the previous run's
+        // ledger is trusted, its time entries; the maximum of this boot wins.
+        let mut floors: Vec<time_floor_t> = anchor.map().time_floor.iter().cloned().collect();
+        floors.extend(
+            replay_entries
+                .iter()
+                .filter(|entry| entry.kind == entry_kind_t::time)
+                .filter_map(|entry| parse_time_payload(&entry.payload)),
+        );
+        let sample = time_source
+            .sample()
+            .ok_or(registry_start_error_t::clock_unavailable)?;
+        let clock = trusted_clock_t::start(&boot_id, sample, &floors)
+            .ok_or(registry_start_error_t::clock_unavailable)?;
+        // A reboot since the anchor's last run (§5 rule 6). An unverifiable run's
+        // containment ends the branches anyway.
+        let new_boot = anchor
+            .map()
+            .run_marker
+            .as_ref()
+            .is_some_and(|marker| marker.boot_id != boot_id);
 
         // The policy state: the anchor's, raised by the configuration (never lowered)
         // and by any policy entry the ledger holds.
@@ -849,7 +936,8 @@ impl registry_t {
             store,
             config,
             io,
-            clock,
+            time_source,
+            clock: Mutex::new(clock),
             users: Mutex::new(users),
             anchor: Mutex::new(anchor),
             ledger: Mutex::new(ledger),
@@ -873,9 +961,12 @@ impl registry_t {
                 registry.rejournal(entry);
             }
         }
-        // Containment of every user after an unverifiable run (§3).
+        // Containment of every user after an unverifiable run (§3); otherwise, after
+        // a reboot, the end of every live temporary branch (ADR 0007 §5 rule 6).
         if decision == run_decision_t::contained {
             registry.contain_everyone();
+        } else if new_boot {
+            registry.terminate_branches();
         }
         // The policy state and the run marker, durable before anything is served. A
         // ledger that failed during the start (a re-journaled intent that could not
@@ -889,12 +980,14 @@ impl registry_t {
         };
         let policy_now = *lock(&registry.policy)
             .map_err(|_| registry_start_error_t::store(store_error_t::io))?;
+        let floor = registry.floor();
         let mut anchor =
             lock(&registry.anchor).map_err(|_| registry_start_error_t::store(store_error_t::io))?;
         anchor
             .update(registry.io.as_ref(), |map| {
                 map.policy = policy_now;
                 map.run_marker = Some(marker);
+                publish_floor(map, floor);
             })
             .map_err(registry_start_error_t::store)?;
         drop(anchor);
@@ -1041,6 +1134,10 @@ impl registry_t {
                     return;
                 }
             }
+            record_body_t::event(registry_event_t::branch_terminated { .. }) => {
+                slot.lineages.end_branches();
+            }
+            record_body_t::event(registry_event_t::clock_anomaly { .. }) => {}
             record_body_t::commit_admitted { .. } => return,
         }
         let _ = self.restrictive_write(&mut slot, record.time.clone(), record.body.clone());
@@ -1076,6 +1173,46 @@ impl registry_t {
         }
     }
 
+    /// A new boot (ADR 0007 §5 rule 6): every live temporary branch of every usable,
+    /// normal user ends, in memory at once, then durably through the restrictive path
+    /// (`branch_terminated`). A failure leaves the record pending, retried by every
+    /// later operation of the user, and in the ledger for a same-boot restart.
+    fn terminate_branches(&self) {
+        let slots: Vec<Arc<Mutex<user_slot_t>>> = match lock(&self.users) {
+            Ok(users) => users
+                .values()
+                .filter_map(|entry| match entry {
+                    user_entry_t::usable(slot) => Some(Arc::clone(slot)),
+                    user_entry_t::unusable(_) => None,
+                })
+                .collect(),
+            Err(_) => return,
+        };
+        let boot_id = match lock(&self.clock) {
+            Ok(clock) => clock.boot_id().to_owned(),
+            Err(_) => return,
+        };
+        for slot in slots {
+            let Ok(mut slot) = lock(&slot) else {
+                continue;
+            };
+            if slot.state != slot_state_t::normal || !slot.lineages.has_live_branches() {
+                continue;
+            }
+            let Ok(time) = self.now_text() else {
+                continue;
+            };
+            slot.lineages.end_branches();
+            let _ = self.restrictive_write(
+                &mut slot,
+                time,
+                record_body_t::event(registry_event_t::branch_terminated {
+                    boot_id: boot_id.clone(),
+                }),
+            );
+        }
+    }
+
     pub fn config(&self) -> registry_config_t {
         self.config.clone()
     }
@@ -1088,6 +1225,7 @@ impl registry_t {
     /// The policy state in force.
     pub fn policy_state(&self) -> service_result_t<policy_state_t> {
         self.retry_unverifiable();
+        self.observe_time();
         Ok(*lock(&self.policy)?)
     }
 
@@ -1096,6 +1234,7 @@ impl registry_t {
     /// readable journal are in `rollback_status`.
     pub fn unusable_users(&self) -> service_result_t<Vec<(u32, unusable_reason_t)>> {
         self.retry_unverifiable();
+        self.observe_time();
         Ok(lock(&self.users)?
             .iter()
             .filter_map(|(uid, entry)| match entry {
@@ -1144,8 +1283,138 @@ impl registry_t {
         Ok(())
     }
 
+    /// Trusted now as record time: the value at the latest observation.
     fn now_text(&self) -> service_result_t<String> {
-        utc_text(self.clock.utc_seconds()).ok_or(storage_unavailable())
+        utc_text(self.trusted_now()?).ok_or(storage_unavailable())
+    }
+
+    fn trusted_now(&self) -> service_result_t<i64> {
+        let now = lock(&self.clock)?.now().ok_or(storage_unavailable())?;
+        i64::try_from(now).map_err(|_| storage_unavailable())
+    }
+
+    /// Trusted now for a decision that depends on the present (admission, an expiry
+    /// record): only when this operation's own sample was taken.
+    fn fresh_now(&self, observed: &time_observation_t) -> service_result_t<i64> {
+        if !observed.fresh {
+            return Err(storage_unavailable());
+        }
+        self.trusted_now()
+    }
+
+    /// The floor this clock persists now (erratum E6).
+    fn floor(&self) -> Option<time_floor_t> {
+        lock(&self.clock).ok()?.floor()
+    }
+
+    /// Samples the clock (ADR 0007 §5 rules 2 and 3). An offset increase is appended
+    /// to the ledger before the clock adopts it (a raise that cannot be ledgered is
+    /// not relied on, and a failed ledger append makes the run unverifiable); the
+    /// anomaly episode opens or ends; the anchor's floor is refreshed when it is 60 s
+    /// old or older. Every IPC operation calls this right after its role check.
+    fn observe_time(&self) -> time_observation_t {
+        let unavailable = time_observation_t {
+            fresh: false,
+            episode: None,
+        };
+        let Some(sample) = self.time_source.sample() else {
+            return unavailable;
+        };
+        let mut ledger_failed = false;
+        let (episode, boottime) = {
+            let Ok(mut clock) = lock(&self.clock) else {
+                return unavailable;
+            };
+            let Some(assessment) = clock.assess(sample) else {
+                return unavailable;
+            };
+            let mut raised = false;
+            if let Some(offset) = assessment.raise {
+                let payload = clock.floor_with(offset).as_ref().and_then(time_payload);
+                if let (Some(payload), Ok(mut ledger)) = (payload, lock(&self.ledger)) {
+                    match ledger.append(self.io.as_ref(), entry_kind_t::time, 0, &payload) {
+                        Ok(()) => raised = true,
+                        Err(store_error_t::io) => ledger_failed = true,
+                        Err(_) => {}
+                    }
+                }
+            }
+            (clock.observe(sample, raised), clock.boottime())
+        };
+        if ledger_failed {
+            self.mark_run_unverifiable();
+        }
+        self.refresh_floor(boottime);
+        time_observation_t {
+            fresh: true,
+            episode,
+        }
+    }
+
+    /// Writes the floor when the anchor's is 60 s old or older, or of another boot
+    /// (§5 rule 3). A failure is ignored: the ledger holds every offset increase.
+    fn refresh_floor(&self, boottime: u64) {
+        let Some(boot_id) = lock(&self.clock)
+            .ok()
+            .map(|clock| clock.boot_id().to_owned())
+        else {
+            return;
+        };
+        let stale = match lock(&self.anchor) {
+            Ok(anchor) => anchor.map().time_floor.as_ref().is_none_or(|floor| {
+                floor.boot_id != boot_id
+                    || boottime.saturating_sub(floor.boottime) >= FloorIntervalSeconds
+            }),
+            Err(_) => false,
+        };
+        if !stale {
+            return;
+        }
+        let Ok(policy) = lock(&self.policy) else {
+            return;
+        };
+        let policy_now = *policy;
+        let floor = self.floor();
+        let Ok(mut anchor) = lock(&self.anchor) else {
+            return;
+        };
+        let _ = anchor.update(self.io.as_ref(), |map| {
+            map.policy = policy_now;
+            publish_floor(map, floor);
+        });
+    }
+
+    /// Records a clock anomaly for the user the operation concerns, once per episode
+    /// (erratum E6): a narrowing `clock_anomaly` record through the restrictive path.
+    /// A quarantined user's journal is left as found.
+    fn record_anomaly(&self, slot: &mut user_slot_t, observed: &time_observation_t) {
+        let Some(episode) = observed.episode else {
+            return;
+        };
+        if slot.anomaly_episode == episode {
+            return;
+        }
+        if let slot_state_t::quarantined(_) = slot.state {
+            return;
+        }
+        let event = {
+            let Ok(clock) = lock(&self.clock) else {
+                return;
+            };
+            let Some(trusted) = clock.now() else {
+                return;
+            };
+            registry_event_t::clock_anomaly {
+                boot_id: clock.boot_id().to_owned(),
+                trusted,
+                behind_seconds: clock.anomaly().behind,
+            }
+        };
+        let Ok(time) = self.now_text() else {
+            return;
+        };
+        slot.anomaly_episode = episode;
+        let _ = self.restrictive_write(slot, time, record_body_t::event(event));
     }
 
     /// Whether a record of `record_length` bytes fits the user's quota. Restrictive
@@ -1193,6 +1462,7 @@ impl registry_t {
         let uid = slot.uid;
         let policy = lock(&self.policy)?;
         let policy_now = *policy;
+        let floor = self.floor();
         let mut anchor = lock(&self.anchor)?;
         entry.min_valid_policy_epoch = anchor
             .map()
@@ -1202,6 +1472,7 @@ impl registry_t {
         match anchor.update(self.io.as_ref(), |map| {
             map.policy = policy_now;
             map.users.insert(uid, entry);
+            publish_floor(map, floor);
         }) {
             Ok(()) => {
                 slot.anchor_failed = false;
@@ -1304,11 +1575,16 @@ impl registry_t {
         if !*owed {
             return;
         }
+        let floor = self.floor();
         let Ok(mut anchor) = lock(&self.anchor) else {
             return;
         };
         anchor.hold_unverifiable();
-        if anchor.publishes_unverifiable() || anchor.update(self.io.as_ref(), |_| {}).is_ok() {
+        if anchor.publishes_unverifiable()
+            || anchor
+                .update(self.io.as_ref(), |map| publish_floor(map, floor))
+                .is_ok()
+        {
             *owed = false;
         }
     }
@@ -1375,6 +1651,7 @@ impl registry_t {
                     });
                 }
                 record_body_t::lifecycle(lifecycle) => slot.lifecycle_records.push(lifecycle),
+                record_body_t::event(event) => slot.events.push(event),
                 record_body_t::commit_admitted { .. } => {}
             }
             slot.pending.remove(0);
@@ -1408,11 +1685,13 @@ impl registry_t {
     ) -> service_result_t<append_receipt_t> {
         require(caller, &[Identityd])?;
         self.retry_unverifiable();
+        let observed = self.observe_time();
         if kind == object_kind_t::commit {
             return Err(ipc(ipc_code_t::malformed_request));
         }
         if let Some(slot) = self.slot_any(owner_uid)? {
             let mut slot = lock(&slot)?;
+            self.record_anomaly(&mut slot, &observed);
             return self.append_identity_to(&mut slot, kind, object);
         }
         self.create_user(owner_uid, kind, object)
@@ -1553,6 +1832,8 @@ impl registry_t {
             state: slot_state_t::normal,
             identity_count: 1,
             lifecycle_records: Vec::new(),
+            events: Vec::new(),
+            anomaly_episode: 0,
             pending: Vec::new(),
             anchor_failed: false,
         };
@@ -1577,6 +1858,7 @@ impl registry_t {
     ) -> service_result_t<journal_page_t> {
         require(caller, &[Identityd])?;
         self.retry_unverifiable();
+        let observed = self.observe_time();
         let Some(slot) = self.slot_any(owner_uid)? else {
             return Ok(journal_page_t {
                 entries: Vec::new(),
@@ -1589,6 +1871,7 @@ impl registry_t {
             // learns the quarantine instead of the records.
             return Err(authority(authority_code_t::quarantined));
         }
+        self.record_anomaly(&mut slot, &observed);
         if slot.journal.failed() {
             return Err(storage_unavailable());
         }
@@ -1610,6 +1893,7 @@ impl registry_t {
     pub fn journal_users(&self, caller: caller_role_t) -> service_result_t<Vec<u32>> {
         require(caller, &[Identityd])?;
         self.retry_unverifiable();
+        self.observe_time();
         Ok(lock(&self.users)?.keys().copied().collect())
     }
 
@@ -1629,10 +1913,12 @@ impl registry_t {
     ) -> service_result_t<admission_receipt_t> {
         require(caller, &[Contractd])?;
         self.retry_unverifiable();
+        let observed = self.observe_time();
         let slot = self
             .slot_any(owner_uid)?
             .ok_or(authority(authority_code_t::key_not_certified))?;
         let mut slot = lock(&slot)?;
+        self.record_anomaly(&mut slot, &observed);
         match slot.state {
             slot_state_t::quarantined(_) => return Err(authority(authority_code_t::quarantined)),
             slot_state_t::contained => return Err(authority(authority_code_t::contained)),
@@ -1642,18 +1928,25 @@ impl registry_t {
         if !slot.pending.is_empty() {
             return Err(not_durable());
         }
-        let (admission, payload) =
-            check_commit_envelope(owner_uid, &slot.directory, &slot.lineages, envelope)?;
+        // Trusted now from this operation's own sample (ADR 0007 §5): the
+        // commit-timestamp rule (`timestamp_rule`, erratum E4) and the signing window.
+        let now = self.fresh_now(&observed)?;
+        let (admission, payload) = check_commit_envelope(
+            owner_uid,
+            &slot.directory,
+            &slot.lineages,
+            envelope,
+            Some(now),
+        )?;
         // (beyond the model) The signing key's certificate window must also contain
-        // registry time now, not only the commit's own timestamp: an envelope signed
-        // in a temporary key's window cannot be admitted after that window closed.
-        // Admission-time only: replay reproduces historical admissions. The ±300 s
-        // commit-timestamp check of ADR 0007 §5 (`timestamp_rule`) is stage B.
+        // trusted now, not only the commit's own timestamp: an envelope signed in a
+        // temporary key's window cannot be admitted after that window closed.
+        // Admission-time only: replay reproduces historical admissions.
         let resolution = slot
             .directory
             .resolve(&payload.key_id)
             .ok_or(authority(authority_code_t::key_not_certified))?;
-        check_signing_window(&resolution, self.clock.utc_seconds())?;
+        check_signing_window(&resolution, now)?;
         let policy = *lock(&self.policy)?;
         if payload.policy.epoch != policy.epoch {
             return Err(ipc(ipc_code_t::stale_epoch));
@@ -1662,21 +1955,35 @@ impl registry_t {
             return Err(ipc(ipc_code_t::quota_exhausted));
         }
         let sequence = slot.journal.next_sequence().ok_or(storage_unavailable())?;
+        // The record's time is trusted now; with the observed counter it is when the
+        // commit was admitted (ADR 0007 §8 option B).
+        let observed_now = lock(&self.clock)?
+            .observed_now()
+            .ok_or(storage_unavailable())?;
         let record = registry_record_t {
             sequence,
-            time: self.now_text()?,
+            time: utc_text(now).ok_or(storage_unavailable())?,
             body: record_body_t::commit_admitted {
                 commit_id: admission.commit_id,
                 lineage_id: admission.lineage_id,
                 placement: admission.placement,
                 envelope: envelope.to_vec(),
+                observed: observed_now,
             },
         }
         .encode();
         // Not restrictive: the full reserve must exist before the append (R03).
         self.ordinary_append(&mut slot, &record)?;
-        slot.lineages
-            .apply_commit(&admission, payload, envelope.to_vec(), sequence);
+        slot.lineages.apply_commit(
+            &admission,
+            payload,
+            envelope.to_vec(),
+            sequence,
+            admitted_at_t {
+                trusted: now,
+                observed: observed_now,
+            },
+        );
         self.anchor_slot(&mut slot)?;
         Ok(admission_receipt_t {
             commit_id: admission.commit_id,
@@ -1700,6 +2007,7 @@ impl registry_t {
     ) -> service_result_t<u64> {
         require(caller, &[Contractd, Policyd, Identityd, Admin])?;
         self.retry_unverifiable();
+        let observed = self.observe_time();
         let slot = self
             .slot_any(owner_uid)?
             .ok_or(authority(authority_code_t::key_not_certified))?;
@@ -1707,6 +2015,11 @@ impl registry_t {
         if let slot_state_t::quarantined(_) = slot.state {
             return Err(authority(authority_code_t::quarantined));
         }
+        self.record_anomaly(&mut slot, &observed);
+        // The record's time is the last trusted value, also when this operation's own
+        // sample failed: trusted time never decreases, so an expiration it already
+        // shows is proven (a premature `expired` record stays `lifecycle_rule`), and a
+        // clock failure never blocks a restriction.
         let time = self.now_text()?;
         slot.lineages.check_record(record, &time)?;
         // Denial first, whatever the writes do; the write joins the queue behind
@@ -1726,6 +2039,7 @@ impl registry_t {
     ) -> service_result_t<policy_state_t> {
         require(caller, &[Admin])?;
         self.retry_unverifiable();
+        self.observe_time();
         if min_valid_epoch > epoch {
             return Err(ipc(ipc_code_t::malformed_request));
         }
@@ -1747,6 +2061,7 @@ impl registry_t {
     ) -> service_result_t<policy_state_t> {
         require(caller, &[Admin])?;
         self.retry_unverifiable();
+        self.observe_time();
         if restricted {
             self.change_policy(|policy| policy.emergency_restriction = true)
         } else {
@@ -1765,6 +2080,7 @@ impl registry_t {
         let mut policy = lock(&self.policy)?;
         change(&mut policy);
         let next = *policy;
+        let floor = self.floor();
         let appended = {
             let mut ledger = lock(&self.ledger)?;
             ledger.append(
@@ -1779,7 +2095,10 @@ impl registry_t {
         }
         let mut anchor = lock(&self.anchor)?;
         anchor
-            .update(self.io.as_ref(), |map| map.policy = next)
+            .update(self.io.as_ref(), |map| {
+                map.policy = next;
+                publish_floor(map, floor);
+            })
             .map_err(|_| not_durable())?;
         Ok(next)
     }
@@ -1793,9 +2112,13 @@ impl registry_t {
         let mut policy = lock(&self.policy)?;
         let mut next = *policy;
         change(&mut next);
+        let floor = self.floor();
         let mut anchor = lock(&self.anchor)?;
         anchor
-            .update(self.io.as_ref(), |map| map.policy = next)
+            .update(self.io.as_ref(), |map| {
+                map.policy = next;
+                publish_floor(map, floor);
+            })
             .map_err(|_| not_durable())?;
         *policy = next;
         Ok(next)
@@ -1808,6 +2131,7 @@ impl registry_t {
             _ => return Err(ipc(ipc_code_t::role_denied)),
         }
         self.retry_unverifiable();
+        self.observe_time();
         let mut quarantined = Vec::new();
         let mut unusable = Vec::new();
         let mut contained = Vec::new();
@@ -1853,6 +2177,15 @@ impl registry_t {
             let anchor = lock(&self.anchor)?;
             (anchor.mode(), anchor.map().policy)
         };
+        let clock = {
+            let clock = lock(&self.clock)?;
+            clock_status_t {
+                boot_id: clock.boot_id().to_owned(),
+                trusted_now: clock.now().ok_or(storage_unavailable())?,
+                observed_now: clock.observed_now().ok_or(storage_unavailable())?,
+                anomaly: clock.anomaly(),
+            }
+        };
         let ledger_failed = lock(&self.ledger)?.failed();
         let unverifiable_owed = self.unverifiable_owed()?;
         Ok(rollback_status_t {
@@ -1868,6 +2201,7 @@ impl registry_t {
             depleted_reserves: depleted,
             policy_pending: policy != anchored_policy,
             policy,
+            clock,
         })
     }
 
@@ -1878,6 +2212,7 @@ impl registry_t {
     /// the marker stays as it is and `restriction_not_durable` is reported.
     pub fn shutdown(&self) -> service_result_t<()> {
         self.retry_unverifiable();
+        self.observe_time();
         let slots: Vec<Arc<Mutex<user_slot_t>>> = lock(&self.users)?
             .values()
             .filter_map(|entry| match entry {
@@ -1898,6 +2233,7 @@ impl registry_t {
         }
         let policy = lock(&self.policy)?;
         let policy_now = *policy;
+        let floor = self.floor();
         let mut anchor = lock(&self.anchor)?;
         anchor
             .update(self.io.as_ref(), |map| {
@@ -1905,6 +2241,7 @@ impl registry_t {
                 if let Some(marker) = &mut map.run_marker {
                     marker.state = run_state_t::clean;
                 }
+                publish_floor(map, floor);
             })
             .map_err(|_| not_durable())
     }
@@ -1921,6 +2258,7 @@ impl registry_t {
     ) -> service_result_t<Option<lineage_view_t>> {
         require(caller, &[Contractd, Policyd])?;
         self.retry_unverifiable();
+        let observed = self.observe_time();
         if lock(&self.ledger)?.failed() {
             return Err(storage_unavailable());
         }
@@ -1931,8 +2269,59 @@ impl registry_t {
         if slot.journal.failed() {
             return Err(storage_unavailable());
         }
+        self.record_anomaly(&mut slot, &observed);
         self.anchored_for_reading(&mut slot)?;
         Ok(Some(self.view(&slot, lineage_id)?))
+    }
+
+    /// `time_sample` (`service:policyd`): an offset increase policyd observed (ADR 0007
+    /// §5 rule 4; `boot_id`, `boottime`, `trusted`). registryd takes the maximum and
+    /// appends it to the ledger before it adopts it and replies; policyd relies on the
+    /// increase only after an `ok` reply. Another boot's sample, or a CLOCK_BOOTTIME
+    /// ahead of registryd's own, is `malformed_request`. Returns the shared offsets.
+    pub fn time_sample(
+        &self,
+        caller: caller_role_t,
+        boot_id: &str,
+        boottime: u64,
+        trusted: u64,
+    ) -> service_result_t<time_view_t> {
+        require(caller, &[Policyd])?;
+        self.retry_unverifiable();
+        self.observe_time();
+        let malformed = || ipc(ipc_code_t::malformed_request);
+        let offset = i64::try_from(trusted)
+            .ok()
+            .zip(i64::try_from(boottime).ok())
+            .and_then(|(trusted, boottime)| trusted.checked_sub(boottime))
+            .ok_or_else(malformed)?;
+        let mut ledger_failed = false;
+        let view = {
+            let mut clock = lock(&self.clock)?;
+            if boot_id != clock.boot_id() || boottime > clock.boottime().saturating_add(1) {
+                return Err(malformed());
+            }
+            if offset > clock.offset() {
+                let payload = clock
+                    .floor_with(offset)
+                    .as_ref()
+                    .and_then(time_payload)
+                    .ok_or_else(malformed)?;
+                let appended =
+                    lock(&self.ledger)?.append(self.io.as_ref(), entry_kind_t::time, 0, &payload);
+                match appended {
+                    Ok(()) => clock.adopt(offset),
+                    Err(store_error_t::io) => ledger_failed = true,
+                    Err(_) => return Err(storage_unavailable()),
+                }
+            }
+            clock.view()
+        };
+        if ledger_failed {
+            self.mark_run_unverifiable();
+            return Err(storage_unavailable());
+        }
+        Ok(view)
     }
 
     fn view(&self, slot: &user_slot_t, lineage_id: &digest_t) -> service_result_t<lineage_view_t> {
@@ -1981,6 +2370,7 @@ impl registry_t {
                         .as_ref()
                         .and_then(|resolution| resolution.invalidated),
                     key_unknown: resolution.is_none(),
+                    admitted: commit.admitted,
                 },
             );
         }
@@ -1993,6 +2383,7 @@ impl registry_t {
             .into_iter()
             .collect();
         let policy = *lock(&self.policy)?;
+        let time = lock(&self.clock)?.view();
         let user_floor = lock(&self.anchor)?
             .map()
             .users
@@ -2015,6 +2406,7 @@ impl registry_t {
             policy_epoch: policy.epoch,
             min_valid_policy_epoch: policy.min_valid_epoch.max(user_floor),
             emergency_restriction: policy.emergency_restriction,
+            time,
         })
     }
 

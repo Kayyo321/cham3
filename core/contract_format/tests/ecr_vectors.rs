@@ -408,7 +408,8 @@ fn journal_scenario_objects_match_their_local_layers() {
             checked += 1;
         }
     }
-    assert_eq!(checked, 134, "every signed journal object was checked");
+    // 134 before M2-006 stage B1, which adds 13 commit-timestamp steps.
+    assert_eq!(checked, 147, "every signed journal object was checked");
 }
 
 #[test]

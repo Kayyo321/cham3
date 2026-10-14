@@ -32,19 +32,9 @@ use cham3_identityd::outcome::{ipc, ipc_code_t, service_result_t};
 use cham3_identityd::service::identity_service_t;
 use cham3_registryd::journal::system_io_t;
 use cham3_registryd::record::placement_t;
-use cham3_registryd::registry::{
-    registry_clock_t, registry_config_t, registry_identity_store_t, registry_t,
-};
+use cham3_registryd::registry::{registry_config_t, registry_identity_store_t, registry_t};
 
 const Vaultd: caller_role_t = caller_role_t::service(service_name_t::vaultd);
-
-struct fixed_time_t;
-
-impl registry_clock_t for fixed_time_t {
-    fn utc_seconds(&self) -> i64 {
-        1_791_882_000
-    }
-}
 
 type identity_t = Rc<RefCell<identity_service_t<registry_identity_store_t>>>;
 
@@ -60,7 +50,7 @@ fn start(label: &str) -> (Arc<registry_t>, identity_t) {
             owner,
             registry_config_t::default(),
             Box::new(system_io_t),
-            Box::new(fixed_time_t),
+            fixed_clock(),
         )
         .expect("registry"),
     );

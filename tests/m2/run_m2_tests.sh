@@ -108,6 +108,14 @@ run_ecr_oracle() {
         "$CHAM3_REPO_ROOT/tests/m2/vectors/ecr_v1/vectors.json" > "$run_dir/ecr_vector_oracle.log" 2>&1
 }
 
+# The trusted-time vectors must be exactly what the reference model produces (ADR 0007
+# section 5; the cargo test trusted_time_model replays them through registryd's clock).
+# shellcheck disable=SC2317
+run_trusted_time_vectors() {
+    python3 -I "$CHAM3_REPO_ROOT/tests/m2/oracle/trusted_time_vectors.py" --check \
+        "$CHAM3_REPO_ROOT/tests/m2/vectors/trusted_time_v1/vectors.json" > "$run_dir/trusted_time_vectors.log" 2>&1
+}
+
 # shellcheck disable=SC2317
 run_vault_object_oracle() {
     python3 -I "$CHAM3_REPO_ROOT/tests/m2/oracle/vault_object_oracle.py" \
@@ -129,6 +137,7 @@ case "$suite" in
         step provider_oracle python3 -I "$harness" provider-oracle \
             --probe "$run_dir/target_debug/debug/cham3_provider_probe" --run-dir "$run_dir"
         step ecr_vector_oracle run_ecr_oracle
+        step trusted_time_vectors run_trusted_time_vectors
         step build_format_probe env CARGO_TARGET_DIR="$run_dir/target_debug" \
             cargo build --frozen -p cham3_contract_format --bin cham3_format_probe --manifest-path "$CHAM3_REPO_ROOT/Cargo.toml"
         step format_differential python3 -I "$harness" format-differential \

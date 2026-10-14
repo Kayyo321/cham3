@@ -23,8 +23,9 @@ mod support;
 use std::collections::BTreeMap;
 
 use cham3_contract_format::{object_kind_t, payload_t, verify_object};
+use cham3_identityd::index::utc_seconds;
 use cham3_identityd::outcome::service_error_t;
-use cham3_registryd::lineage::{lineage_index_t, standing_t};
+use cham3_registryd::lineage::{admitted_at_t, lineage_index_t, standing_t};
 use cham3_registryd::record::lifecycle_record_t;
 
 use support::{fixed, hex_decode, json_t, resolver_t, synthetic_keys, vectors};
@@ -46,8 +47,15 @@ fn outcome_of(error: &service_error_t) -> outcome_t {
     Some((error.layer().to_owned(), error.code().to_owned()))
 }
 
-/// Layers 1–5, then layer 7; applies the commit when admitted.
-fn admit(index: &mut lineage_index_t, resolver: &resolver_t, data: &[u8]) -> outcome_t {
+/// Layers 1–5, then layer 7 at the step's trusted now (`now`, when the scenario
+/// states one: the commit-timestamp rule of ADR 0007 §5, erratum E4); applies the
+/// commit when admitted.
+fn admit(
+    index: &mut lineage_index_t,
+    resolver: &resolver_t,
+    data: &[u8],
+    now: Option<i64>,
+) -> outcome_t {
     let verified = match verify_object(data, object_kind_t::commit, resolver) {
         Ok(verified) => verified,
         Err(error) => return outcome_of(&service_error_t::format(error)),
@@ -55,9 +63,15 @@ fn admit(index: &mut lineage_index_t, resolver: &resolver_t, data: &[u8]) -> out
     let payload_t::commit(payload) = verified.payload else {
         panic!("commit payload expected");
     };
-    match index.check_commit(&verified.object_id, &payload) {
+    match index.check_commit(&verified.object_id, &payload, now) {
         Ok(admission) => {
-            index.apply_commit(&admission, payload, data.to_vec(), 0);
+            index.apply_commit(
+                &admission,
+                payload,
+                data.to_vec(),
+                0,
+                admitted_at_t::default(),
+            );
             None
         }
         Err(error) => outcome_of(&error),
@@ -127,8 +141,12 @@ fn run_scenarios() -> totals_t {
         for (position, step) in scenario.items_of("steps").iter().enumerate() {
             totals.steps += 1;
             let expected = expected_of(step);
+            let now = step
+                .get("now")
+                .and_then(json_t::as_text)
+                .map(|now| utc_seconds(now).expect("step now"));
             let actual = if let Some(commit) = step.get("commit").and_then(json_t::as_text) {
-                admit(&mut index, &resolver, &hex_decode(commit))
+                admit(&mut index, &resolver, &hex_decode(commit), now)
             } else if let Some(record) = step.get("record") {
                 let (record, time) = lifecycle_record(record);
                 match index.check_record(&record, &time) {
@@ -183,11 +201,12 @@ fn admission_scenarios_match_the_oracle() {
     );
     // Positive controls: the published counts (a driver that skipped steps or
     // scenarios would not reach them).
+    // Stage B1 adds the four commit-timestamp scenarios (13 steps).
     assert_eq!(
-        totals.scenarios, 11,
+        totals.scenarios, 15,
         "admission scenarios in the published vectors"
     );
-    assert_eq!(totals.steps, 59, "steps of the admission scenarios");
+    assert_eq!(totals.steps, 72, "steps of the admission scenarios");
     assert!(totals.comparisons > totals.steps);
 }
 
@@ -211,12 +230,14 @@ fn every_admission_code_of_the_scenarios_is_reproduced() {
         }
     }
     let expected = [
+        "admission/base_state_mismatch",
         "admission/branch_rule",
         "admission/duplicate_identifier",
         "admission/lifecycle_rule",
         "admission/network_grant_conflict",
         "admission/restore_rule",
         "admission/stale_head",
+        "admission/timestamp_rule",
         "intrinsic/network_grant_rule",
     ];
     assert_eq!(
@@ -259,14 +280,14 @@ fn the_published_lineage_is_admitted() {
     let mut index = lineage_index_t::new();
     for (position, envelope) in envelopes.iter().enumerate() {
         assert_eq!(
-            admit(&mut index, &resolver, envelope),
+            admit(&mut index, &resolver, envelope, None),
             None,
             "commit {position}"
         );
     }
     // Replaying any admitted commit again is refused (old-byte replay).
     for envelope in &envelopes {
-        assert!(admit(&mut index, &resolver, envelope).is_some());
+        assert!(admit(&mut index, &resolver, envelope, None).is_some());
     }
 }
 
@@ -289,12 +310,17 @@ fn admission_invalid_vectors_match_the_oracle() {
         let mut index = lineage_index_t::new();
         for envelope in &envelopes[..prefix] {
             assert_eq!(
-                admit(&mut index, &resolver, envelope),
+                admit(&mut index, &resolver, envelope, None),
                 None,
                 "{name} prefix"
             );
         }
-        let actual = admit(&mut index, &resolver, &hex_decode(vector.field("envelope")));
+        let actual = admit(
+            &mut index,
+            &resolver,
+            &hex_decode(vector.field("envelope")),
+            None,
+        );
         assert_eq!(
             actual,
             Some((
