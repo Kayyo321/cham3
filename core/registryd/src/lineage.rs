@@ -30,15 +30,21 @@ use cham3_identityd::index::{user_record_t, utc_seconds};
 
 use crate::clock::timestamp_acceptable;
 
-use crate::record::{lifecycle_record_t, placement_t};
+use crate::record::{
+    lifecycle_record_t, placement_t, registry_event_t, session_change_t, use_outcome_t,
+};
 
-/// Why a grant id ended: the lifecycle records of M2-005, and the user-state records
-/// of ADR 0006 §§3, 4 and 7 (the oracle's reasons; consumption is M2-006 stage B).
+/// Why a grant id ended: the lifecycle records of M2-005, the user-state records of
+/// ADR 0006 §§3, 4 and 7 (the oracle's reasons), and the one-shot reservation of ADR
+/// 0007 §4 (M2-006 stage B2, beyond the model).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum end_reason_t {
     expired,
     session_ended,
     restriction,
+    /// A one-shot reservation (`use_reserved`, §4 option A: the reservation consumes,
+    /// whatever the outcome).
+    consumed,
     /// Containment: admitted before an unverifiable run's restart point, permanently.
     suspended,
     /// Quarantine of the user.
@@ -53,6 +59,7 @@ impl end_reason_t {
             end_reason_t::expired => "expired",
             end_reason_t::session_ended => "session_ended",
             end_reason_t::restriction => "restriction",
+            end_reason_t::consumed => "consumed",
             end_reason_t::suspended => "suspended",
             end_reason_t::quarantined => "quarantined",
             end_reason_t::deleted => "deleted",
@@ -78,6 +85,24 @@ pub enum standing_t {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum commit_status_t {
     pending,
+}
+
+/// Where a one-shot reservation stands (ADR 0007 §4, §7).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum reservation_state_t {
+    /// Reserved, no outcome reported yet.
+    open,
+    completed(use_outcome_t),
+    /// A start found it open (`consumed_uncertain`).
+    uncertain,
+}
+
+/// A one-shot reservation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct reservation_t {
+    pub grant_id: random_id_t,
+    pub operation_id: random_id_t,
+    pub state: reservation_state_t,
 }
 
 /// When a commit was admitted: the trusted time (its record's `time`) and the
@@ -144,8 +169,13 @@ pub struct lineage_index_t {
     requests: BTreeSet<random_id_t>,
     grants: BTreeMap<random_id_t, grant_entry_t>,
     ended: BTreeMap<random_id_t, end_reason_t>,
-    /// Sessions a durable `session_ended` record ended (ADR 0007 §6).
+    /// Sessions a durable `session_ended` record or `session_event` end ended (ADR
+    /// 0007 §6).
     ended_sessions: BTreeSet<random_id_t>,
+    /// Sessions a `session_event` started (stage B2).
+    started_sessions: BTreeSet<random_id_t>,
+    /// One-shot reservations by reservation id (stage B2).
+    reservations: BTreeMap<random_id_t, reservation_t>,
 }
 
 fn reject<ok_t>(code: rule_code_t) -> service_result_t<ok_t> {
@@ -215,9 +245,42 @@ impl lineage_index_t {
         self.requests.contains(request_id)
     }
 
-    /// Whether a durable `session_ended` record ended this session (ADR 0007 §6).
+    /// Whether a durable `session_ended` record or `session_event` end ended this
+    /// session (ADR 0007 §6).
     pub fn session_ended(&self, session_id: &random_id_t) -> bool {
         self.ended_sessions.contains(session_id)
+    }
+
+    /// Whether a `session_event` started this session.
+    pub fn session_started(&self, session_id: &random_id_t) -> bool {
+        self.started_sessions.contains(session_id)
+    }
+
+    /// Whether any admitted grant of the journal is bound to the session.
+    pub fn session_bound(&self, session_id: &random_id_t) -> bool {
+        !self.session_grants(session_id).is_empty()
+    }
+
+    /// Whether the commit is a lineage's trunk head or one of its live temporary
+    /// heads.
+    pub fn is_live_head(&self, commit_id: &digest_t) -> bool {
+        self.lineages.values().any(|lineage| {
+            lineage.trunk_head.as_ref() == Some(commit_id)
+                || lineage.branches.contains_key(commit_id)
+        })
+    }
+
+    pub fn reservation(&self, reservation_id: &random_id_t) -> Option<&reservation_t> {
+        self.reservations.get(reservation_id)
+    }
+
+    /// Reservations without a reported outcome, ascending (§7).
+    pub fn open_reservations(&self) -> Vec<random_id_t> {
+        self.reservations
+            .iter()
+            .filter(|(_, reservation)| reservation.state == reservation_state_t::open)
+            .map(|(reservation_id, _)| *reservation_id)
+            .collect()
     }
 
     /// States of the trunk head and every live temporary head of a lineage.
@@ -648,8 +711,146 @@ impl lineage_index_t {
                     return Err(lifecycle_rule);
                 }
             }
+            // (beyond the model) Only a lineage with an authoritative subject can be
+            // mismatched, and only by another package identity or executable hash.
+            lifecycle_record_t::identity_mismatch {
+                lineage_id,
+                package_identity,
+                executable_sha256,
+            } => {
+                let subject = self
+                    .lineages
+                    .get(lineage_id)
+                    .and_then(|lineage| lineage.authoritative_subject.as_ref())
+                    .ok_or(lifecycle_rule)?;
+                if subject.package_identity == *package_identity
+                    && subject.executable_sha256 == *executable_sha256
+                {
+                    return Err(lifecycle_rule);
+                }
+            }
         }
         Ok(())
+    }
+
+    /// (beyond the model) Checks a registry event against the index before it is
+    /// applied (the writer's own rules, so that replay refuses any event the writer
+    /// would not have written): a reservation names a current one-shot grant that
+    /// is not ended or reserved, under a fresh reservation id; an outcome or
+    /// `consumed_uncertain` names an open reservation; a session start names a
+    /// session that has not started or ended; a `session_event` end names a session
+    /// that has not ended and that no grant is bound to (otherwise the end is
+    /// `session_ended`); an enforcement outcome names an admitted commit.
+    pub fn check_event(&self, event: &registry_event_t) -> service_result_t<()> {
+        let lifecycle_rule = rule(rule_code_t::lifecycle_rule);
+        let open = |reservation_id: &random_id_t| {
+            self.reservations
+                .get(reservation_id)
+                .is_some_and(|reservation| reservation.state == reservation_state_t::open)
+        };
+        match event {
+            registry_event_t::use_reserved {
+                grant_id,
+                reservation_id,
+                ..
+            } => {
+                let one_shot = self
+                    .grants
+                    .get(grant_id)
+                    .is_some_and(|entry| entry.grant.lifetime.kind == lifetime_kind_t::one_shot);
+                let reserved = self
+                    .reservations
+                    .values()
+                    .any(|reservation| reservation.grant_id == *grant_id);
+                if !one_shot
+                    || reserved
+                    || self.reservations.contains_key(reservation_id)
+                    || self.standing(grant_id) != standing_t::current
+                {
+                    return Err(lifecycle_rule);
+                }
+            }
+            registry_event_t::use_completed { reservation_id, .. }
+            | registry_event_t::consumed_uncertain { reservation_id } => {
+                if !open(reservation_id) {
+                    return Err(lifecycle_rule);
+                }
+            }
+            registry_event_t::session_event { session_id, change } => {
+                let refused = match change {
+                    session_change_t::started => {
+                        self.started_sessions.contains(session_id)
+                            || self.ended_sessions.contains(session_id)
+                    }
+                    session_change_t::ended => {
+                        self.ended_sessions.contains(session_id) || self.session_bound(session_id)
+                    }
+                };
+                if refused {
+                    return Err(lifecycle_rule);
+                }
+            }
+            registry_event_t::enforcement_outcome { commit_id, .. } => {
+                if !self.commits.contains_key(commit_id) {
+                    return Err(lifecycle_rule);
+                }
+            }
+            registry_event_t::clock_anomaly { .. }
+            | registry_event_t::branch_terminated { .. }
+            | registry_event_t::audit_gap { .. } => {}
+        }
+        Ok(())
+    }
+
+    /// Applies a registry event: a new boot ends every live branch; a reservation
+    /// consumes its grant (§4 option A); an outcome or `consumed_uncertain` closes its
+    /// reservation; a session event starts or ends its session. The other events
+    /// change no authority.
+    pub fn apply_event(&mut self, event: &registry_event_t) {
+        match event {
+            registry_event_t::branch_terminated { .. } => self.end_branches(),
+            registry_event_t::use_reserved {
+                grant_id,
+                reservation_id,
+                operation_id,
+            } => {
+                self.ended
+                    .entry(*grant_id)
+                    .or_insert(end_reason_t::consumed);
+                self.reservations.insert(
+                    *reservation_id,
+                    reservation_t {
+                        grant_id: *grant_id,
+                        operation_id: *operation_id,
+                        state: reservation_state_t::open,
+                    },
+                );
+            }
+            registry_event_t::use_completed {
+                reservation_id,
+                outcome,
+            } => {
+                if let Some(reservation) = self.reservations.get_mut(reservation_id) {
+                    reservation.state = reservation_state_t::completed(*outcome);
+                }
+            }
+            registry_event_t::consumed_uncertain { reservation_id } => {
+                if let Some(reservation) = self.reservations.get_mut(reservation_id) {
+                    reservation.state = reservation_state_t::uncertain;
+                }
+            }
+            registry_event_t::session_event { session_id, change } => match change {
+                session_change_t::started => {
+                    self.started_sessions.insert(*session_id);
+                }
+                session_change_t::ended => {
+                    self.ended_sessions.insert(*session_id);
+                }
+            },
+            registry_event_t::clock_anomaly { .. }
+            | registry_event_t::enforcement_outcome { .. }
+            | registry_event_t::audit_gap { .. } => {}
+        }
     }
 
     fn session_grants(&self, session_id: &random_id_t) -> Vec<random_id_t> {
@@ -711,6 +912,7 @@ impl lineage_index_t {
             lifecycle_record_t::restriction { grant_ids } => {
                 (grant_ids.clone(), end_reason_t::restriction)
             }
+            lifecycle_record_t::identity_mismatch { .. } => return,
         };
         for grant_id in ended {
             self.ended.entry(grant_id).or_insert(reason);

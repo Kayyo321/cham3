@@ -20,8 +20,11 @@
 //! `deletion_pending` (M2-006; the oracle's `RecordKinds`), and the registry events
 //! of M2-006 stage B1: `clock_anomaly` (ADR 0007 §5 rule 2, erratum E6) and
 //! `branch_terminated` (§5 rule 6: a new boot ends every live temporary branch).
-//! Every one of them only narrows authority. Any other kind fails replay (fail
-//! closed).
+//! Stage B2 (ADR 0007 §§3, 4, 6, 7; erratum E7) adds the lifecycle record
+//! `identity_mismatch` and the registry events `use_reserved`, `use_completed`,
+//! `consumed_uncertain`, `session_event`, `enforcement_outcome` and `audit_gap`.
+//! Every one of them only narrows authority or records evidence. Any other kind
+//! fails replay (fail closed).
 //!
 //! `commit_admitted` carries the observed time at admission (§8 option B); its
 //! `time` is the trusted time at admission.
@@ -30,8 +33,8 @@ use cham3_contract_format::dcbor::{MaxContainerBytes, decode_container, encode, 
 use cham3_contract_format::hash::{digest_t, domain_hash};
 use cham3_contract_format::layer_t;
 use cham3_contract_format::object_kind_t;
-use cham3_contract_format::schema::random_id_t;
-use cham3_contract_format::text::is_valid_time;
+use cham3_contract_format::schema::{random_id_t, resource_category_t};
+use cham3_contract_format::text::{is_package_identity_text, is_valid_time};
 use cham3_identityd::index::{ceremony_mode_t, record_role_t, user_record_t};
 
 /// Magic of a journal frame.
@@ -86,6 +89,142 @@ pub enum lifecycle_record_t {
     session_ended { session_id: random_id_t },
     /// The restrictive path of an explicit revocation (ascending, unique, 1..=64).
     restriction { grant_ids: Vec<random_id_t> },
+    /// A runtime identity whose package identity or executable hash is not the
+    /// lineage's authoritative subject (ADR 0007 §3, erratum E7.4): evidence only,
+    /// written once per lineage, package identity and executable hash. It ends no
+    /// grant; evaluation denies `unknown_identity` regardless.
+    identity_mismatch {
+        lineage_id: digest_t,
+        package_identity: String,
+        executable_sha256: digest_t,
+    },
+}
+
+/// The outcome a consumer reports for a reserved use (ADR 0007 §4).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum use_outcome_t {
+    success,
+    failure,
+}
+
+impl use_outcome_t {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            use_outcome_t::success => "success",
+            use_outcome_t::failure => "failure",
+        }
+    }
+
+    fn parse(text: &str) -> Option<use_outcome_t> {
+        match text {
+            "success" => Some(use_outcome_t::success),
+            "failure" => Some(use_outcome_t::failure),
+            _ => None,
+        }
+    }
+}
+
+/// A session change reported by the session source (ADR 0007 §6).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum session_change_t {
+    started,
+    ended,
+}
+
+impl session_change_t {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            session_change_t::started => "started",
+            session_change_t::ended => "ended",
+        }
+    }
+
+    fn parse(text: &str) -> Option<session_change_t> {
+        match text {
+            "started" => Some(session_change_t::started),
+            "ended" => Some(session_change_t::ended),
+            _ => None,
+        }
+    }
+}
+
+/// An enforcement domain (ADR 0001; ADR 0006 §1): launcherd's sandbox, or the
+/// broker (netd for `network`) of one resource category.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum enforcement_domain_t {
+    launcher,
+    resource(resource_category_t),
+}
+
+impl enforcement_domain_t {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            enforcement_domain_t::launcher => "launcher",
+            enforcement_domain_t::resource(category) => category.as_str(),
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<enforcement_domain_t> {
+        match text {
+            "launcher" => Some(enforcement_domain_t::launcher),
+            _ => resource_category_t::parse(text).map(enforcement_domain_t::resource),
+        }
+    }
+}
+
+/// What an enforcement domain reports for a commit (ADR 0006 §1).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum enforcement_result_t {
+    confirmed,
+    failed,
+}
+
+impl enforcement_result_t {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            enforcement_result_t::confirmed => "confirmed",
+            enforcement_result_t::failed => "failed",
+        }
+    }
+
+    fn parse(text: &str) -> Option<enforcement_result_t> {
+        match text {
+            "confirmed" => Some(enforcement_result_t::confirmed),
+            "failed" => Some(enforcement_result_t::failed),
+            _ => None,
+        }
+    }
+}
+
+/// What an audit gap lost (ADR 0007 §3, erratum E7.3): the kind of an evidence
+/// record whose write failed, or any record of an unverifiable run.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum lost_evidence_t {
+    session_event,
+    use_completed,
+    enforcement_outcome,
+    unverifiable_run,
+}
+
+impl lost_evidence_t {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            lost_evidence_t::session_event => "session_event",
+            lost_evidence_t::use_completed => "use_completed",
+            lost_evidence_t::enforcement_outcome => "enforcement_outcome",
+            lost_evidence_t::unverifiable_run => "unverifiable_run",
+        }
+    }
+
+    fn parse(text: &str) -> Option<lost_evidence_t> {
+        match text {
+            "session_event" => Some(lost_evidence_t::session_event),
+            "use_completed" => Some(lost_evidence_t::use_completed),
+            "enforcement_outcome" => Some(lost_evidence_t::enforcement_outcome),
+            "unverifiable_run" => Some(lost_evidence_t::unverifiable_run),
+            _ => None,
+        }
+    }
 }
 
 /// A registry event (M2-006 stage B1): evidence the registry writes itself, never
@@ -105,10 +244,49 @@ pub enum registry_event_t {
     /// A new boot (`boot_id`) ended every live temporary branch of the user (§5 rule
     /// 6): replay ends them at this point.
     branch_terminated { boot_id: String },
+    /// A one-shot reservation (ADR 0007 §4 option A, erratum E7.1): the grant is
+    /// consumed from this point, whatever the outcome.
+    use_reserved {
+        grant_id: random_id_t,
+        reservation_id: random_id_t,
+        operation_id: random_id_t,
+    },
+    /// The consumer's report for a reservation (at most one per reservation).
+    use_completed {
+        reservation_id: random_id_t,
+        outcome: use_outcome_t,
+    },
+    /// A reservation that a start found without a completion (§7).
+    consumed_uncertain { reservation_id: random_id_t },
+    /// A session start, or the end of a session that no grant of the journal is
+    /// bound to (ADR 0007 §6; an end with bound grants is the lifecycle record
+    /// `session_ended`). An ended session never becomes live again.
+    session_event {
+        session_id: random_id_t,
+        change: session_change_t,
+    },
+    /// An enforcement domain's report for a commit (ADR 0006 §1; erratum E7.2). It
+    /// counts for the commit's status only in the run `run_id` that wrote it.
+    enforcement_outcome {
+        commit_id: digest_t,
+        runtime_id: random_id_t,
+        domain: enforcement_domain_t,
+        policy_epoch: u64,
+        result: enforcement_result_t,
+        run_id: random_id_t,
+    },
+    /// Evidence that could not be kept (ADR 0007 §3, erratum E7.3).
+    audit_gap {
+        boot_id: String,
+        lost: lost_evidence_t,
+    },
 }
 
 /// Longest boot identifier a record names (the anchor's limit).
 pub const MaxRecordBootIdBytes: usize = 64;
+/// Longest package identity an `identity_mismatch` names (the subject's limit,
+/// wire format §6).
+pub const MaxPackageIdentityBytes: usize = 255;
 
 /// The content of one record.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -230,6 +408,64 @@ impl registry_record_t {
                 pairs.push(("kind", value_t::text_of("branch_terminated")));
                 pairs.push(("boot_id", value_t::text_of(boot_id)));
             }
+            record_body_t::event(registry_event_t::use_reserved {
+                grant_id,
+                reservation_id,
+                operation_id,
+            }) => {
+                pairs.push(("kind", value_t::text_of("use_reserved")));
+                pairs.push(("grant_id", value_t::bytes_of(grant_id)));
+                pairs.push(("reservation_id", value_t::bytes_of(reservation_id)));
+                pairs.push(("operation_id", value_t::bytes_of(operation_id)));
+            }
+            record_body_t::event(registry_event_t::use_completed {
+                reservation_id,
+                outcome,
+            }) => {
+                pairs.push(("kind", value_t::text_of("use_completed")));
+                pairs.push(("reservation_id", value_t::bytes_of(reservation_id)));
+                pairs.push(("outcome", value_t::text_of(outcome.as_str())));
+            }
+            record_body_t::event(registry_event_t::consumed_uncertain { reservation_id }) => {
+                pairs.push(("kind", value_t::text_of("consumed_uncertain")));
+                pairs.push(("reservation_id", value_t::bytes_of(reservation_id)));
+            }
+            record_body_t::event(registry_event_t::session_event { session_id, change }) => {
+                pairs.push(("kind", value_t::text_of("session_event")));
+                pairs.push(("session_id", value_t::bytes_of(session_id)));
+                pairs.push(("change", value_t::text_of(change.as_str())));
+            }
+            record_body_t::event(registry_event_t::enforcement_outcome {
+                commit_id,
+                runtime_id,
+                domain,
+                policy_epoch,
+                result,
+                run_id,
+            }) => {
+                pairs.push(("kind", value_t::text_of("enforcement_outcome")));
+                pairs.push(("commit_id", value_t::bytes_of(commit_id)));
+                pairs.push(("runtime_id", value_t::bytes_of(runtime_id)));
+                pairs.push(("domain", value_t::text_of(domain.as_str())));
+                pairs.push(("policy_epoch", uint(*policy_epoch)));
+                pairs.push(("result", value_t::text_of(result.as_str())));
+                pairs.push(("run_id", value_t::bytes_of(run_id)));
+            }
+            record_body_t::event(registry_event_t::audit_gap { boot_id, lost }) => {
+                pairs.push(("kind", value_t::text_of("audit_gap")));
+                pairs.push(("boot_id", value_t::text_of(boot_id)));
+                pairs.push(("lost", value_t::text_of(lost.as_str())));
+            }
+            record_body_t::lifecycle(lifecycle_record_t::identity_mismatch {
+                lineage_id,
+                package_identity,
+                executable_sha256,
+            }) => {
+                pairs.push(("kind", value_t::text_of("identity_mismatch")));
+                pairs.push(("lineage_id", value_t::bytes_of(lineage_id)));
+                pairs.push(("package_identity", value_t::text_of(package_identity)));
+                pairs.push(("executable_sha256", value_t::bytes_of(executable_sha256)));
+            }
             record_body_t::lifecycle(lifecycle_record_t::expired { grant_id }) => {
                 pairs.push(("kind", value_t::text_of("expired")));
                 pairs.push(("grant_id", value_t::bytes_of(grant_id)));
@@ -341,6 +577,81 @@ impl registry_record_t {
                 }),
                 &["boot_id"],
             ),
+            "use_reserved" => (
+                record_body_t::event(registry_event_t::use_reserved {
+                    grant_id: fixed(field("grant_id")?)?,
+                    reservation_id: fixed(field("reservation_id")?)?,
+                    operation_id: fixed(field("operation_id")?)?,
+                }),
+                &["grant_id", "operation_id", "reservation_id"],
+            ),
+            "use_completed" => (
+                record_body_t::event(registry_event_t::use_completed {
+                    reservation_id: fixed(field("reservation_id")?)?,
+                    outcome: use_outcome_t::parse(&text(field("outcome")?)?)
+                        .ok_or(record_error_t::malformed)?,
+                }),
+                &["outcome", "reservation_id"],
+            ),
+            "consumed_uncertain" => (
+                record_body_t::event(registry_event_t::consumed_uncertain {
+                    reservation_id: fixed(field("reservation_id")?)?,
+                }),
+                &["reservation_id"],
+            ),
+            "session_event" => (
+                record_body_t::event(registry_event_t::session_event {
+                    session_id: fixed(field("session_id")?)?,
+                    change: session_change_t::parse(&text(field("change")?)?)
+                        .ok_or(record_error_t::malformed)?,
+                }),
+                &["change", "session_id"],
+            ),
+            "enforcement_outcome" => (
+                record_body_t::event(registry_event_t::enforcement_outcome {
+                    commit_id: fixed(field("commit_id")?)?,
+                    runtime_id: fixed(field("runtime_id")?)?,
+                    domain: enforcement_domain_t::parse(&text(field("domain")?)?)
+                        .ok_or(record_error_t::malformed)?,
+                    policy_epoch: unsigned(field("policy_epoch")?)?,
+                    result: enforcement_result_t::parse(&text(field("result")?)?)
+                        .ok_or(record_error_t::malformed)?,
+                    run_id: fixed(field("run_id")?)?,
+                }),
+                &[
+                    "commit_id",
+                    "domain",
+                    "policy_epoch",
+                    "result",
+                    "run_id",
+                    "runtime_id",
+                ],
+            ),
+            "audit_gap" => (
+                record_body_t::event(registry_event_t::audit_gap {
+                    boot_id: boot_id(field("boot_id")?)?,
+                    lost: lost_evidence_t::parse(&text(field("lost")?)?)
+                        .ok_or(record_error_t::malformed)?,
+                }),
+                &["boot_id", "lost"],
+            ),
+            "identity_mismatch" => {
+                let package_identity = text(field("package_identity")?)?;
+                if package_identity.is_empty()
+                    || package_identity.len() > MaxPackageIdentityBytes
+                    || !is_package_identity_text(&package_identity)
+                {
+                    return Err(record_error_t::malformed);
+                }
+                (
+                    record_body_t::lifecycle(lifecycle_record_t::identity_mismatch {
+                        lineage_id: fixed(field("lineage_id")?)?,
+                        package_identity,
+                        executable_sha256: fixed(field("executable_sha256")?)?,
+                    }),
+                    &["executable_sha256", "lineage_id", "package_identity"],
+                )
+            }
             "expired" => (
                 record_body_t::lifecycle(lifecycle_record_t::expired {
                     grant_id: fixed(field("grant_id")?)?,
@@ -665,6 +976,39 @@ mod tests {
             record_body_t::event(registry_event_t::branch_terminated {
                 boot_id: "boot".to_owned(),
             }),
+            record_body_t::event(registry_event_t::use_reserved {
+                grant_id: [5; 16],
+                reservation_id: [8; 16],
+                operation_id: [9; 16],
+            }),
+            record_body_t::event(registry_event_t::use_completed {
+                reservation_id: [8; 16],
+                outcome: use_outcome_t::failure,
+            }),
+            record_body_t::event(registry_event_t::consumed_uncertain {
+                reservation_id: [8; 16],
+            }),
+            record_body_t::event(registry_event_t::session_event {
+                session_id: [6; 16],
+                change: session_change_t::started,
+            }),
+            record_body_t::event(registry_event_t::enforcement_outcome {
+                commit_id: [3; 32],
+                runtime_id: [10; 16],
+                domain: enforcement_domain_t::resource(resource_category_t::network),
+                policy_epoch: 2,
+                result: enforcement_result_t::confirmed,
+                run_id: [11; 16],
+            }),
+            record_body_t::event(registry_event_t::audit_gap {
+                boot_id: "boot".to_owned(),
+                lost: lost_evidence_t::unverifiable_run,
+            }),
+            record_body_t::lifecycle(lifecycle_record_t::identity_mismatch {
+                lineage_id: [4; 32],
+                package_identity: "org.example.app".to_owned(),
+                executable_sha256: [12; 32],
+            }),
             record_body_t::lifecycle(lifecycle_record_t::expired { grant_id: [5; 16] }),
             record_body_t::lifecycle(lifecycle_record_t::session_ended {
                 session_id: [6; 16],
@@ -732,6 +1076,79 @@ mod tests {
             registry_record_t::decode(&empty.encode()),
             Err(record_error_t::malformed)
         );
+        // Closed enumerations: an unknown outcome, change, domain, result or lost kind
+        // is refused, as is a package identity outside the subject's limits.
+        let reserved = sample(record_body_t::event(registry_event_t::use_reserved {
+            grant_id: [5; 16],
+            reservation_id: [8; 16],
+            operation_id: [9; 16],
+        }))
+        .encode();
+        for (name, bad) in [
+            ("outcome", "use_completed"),
+            ("change", "session_event"),
+            ("domain", "enforcement_outcome"),
+            ("result", "enforcement_outcome"),
+            ("lost", "audit_gap"),
+        ] {
+            let body = match bad {
+                "use_completed" => registry_event_t::use_completed {
+                    reservation_id: [8; 16],
+                    outcome: use_outcome_t::success,
+                },
+                "session_event" => registry_event_t::session_event {
+                    session_id: [6; 16],
+                    change: session_change_t::ended,
+                },
+                "audit_gap" => registry_event_t::audit_gap {
+                    boot_id: "boot".to_owned(),
+                    lost: lost_evidence_t::use_completed,
+                },
+                _ => registry_event_t::enforcement_outcome {
+                    commit_id: [3; 32],
+                    runtime_id: [10; 16],
+                    domain: enforcement_domain_t::launcher,
+                    policy_epoch: 2,
+                    result: enforcement_result_t::failed,
+                    run_id: [11; 16],
+                },
+            };
+            let bytes = sample(record_body_t::event(body)).encode();
+            let value_t::map(pairs) =
+                decode_container(&bytes, layer_t::payload_decode).expect("record")
+            else {
+                panic!("record is a map")
+            };
+            let replaced: Vec<(value_t, value_t)> = pairs
+                .into_iter()
+                .map(|(key, value)| {
+                    if key == value_t::text_of(name) {
+                        (key, value_t::text_of("other"))
+                    } else {
+                        (key, value)
+                    }
+                })
+                .collect();
+            assert_eq!(
+                registry_record_t::decode(&encode(&value_t::map(replaced))),
+                Err(record_error_t::malformed),
+                "{name}"
+            );
+        }
+        assert!(registry_record_t::decode(&reserved).is_ok());
+        for package_identity in [String::new(), "p".repeat(MaxPackageIdentityBytes + 1)] {
+            let mismatch = sample(record_body_t::lifecycle(
+                lifecycle_record_t::identity_mismatch {
+                    lineage_id: [4; 32],
+                    package_identity,
+                    executable_sha256: [12; 32],
+                },
+            ));
+            assert_eq!(
+                registry_record_t::decode(&mismatch.encode()),
+                Err(record_error_t::malformed)
+            );
+        }
         // A registry event names a boot id of 1..=64 bytes.
         for boot_id in [String::new(), "b".repeat(MaxRecordBootIdBytes + 1)] {
             let event = sample(record_body_t::event(registry_event_t::branch_terminated {

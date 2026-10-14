@@ -7,9 +7,13 @@
 //! Signature validity and admission are not current authorization, and an `eligible`
 //! outcome is never a claim that anything is enforced.
 //!
-//! Limits (M2-005): the mandatory policy is a configuration model supplied at start;
-//! `set_policy_epoch`, `set_emergency_restriction`, `check_proposal`, the trusted-time
-//! offset rule and one-shot reservations are M2-006; transport is M2-007.
+//! M2-006 adds the persisted policy state and `set_policy_epoch` /
+//! `set_emergency_restriction` (stage A), the trusted-time offset rule (stage B1),
+//! and the expiry latch, `identity_mismatch` reports and one-shot `reserve_use`
+//! (stage B2).
+//!
+//! Limits: the mandatory policy is a configuration model supplied at start;
+//! `check_proposal` is M2-006 stage D; transport is M2-007.
 #![forbid(unsafe_code)]
 #![cfg_attr(
     test,

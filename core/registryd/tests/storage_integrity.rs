@@ -38,7 +38,10 @@ use cham3_registryd::ledger::{
     EntriesFileName, ValidityFileName, entry_kind_t, previous_ledger_t, read_previous,
 };
 use cham3_registryd::lineage::{end_reason_t, standing_t};
-use cham3_registryd::record::{lifecycle_record_t, placement_t, record_body_t, registry_record_t};
+use cham3_registryd::record::{
+    lifecycle_record_t, lost_evidence_t, placement_t, record_body_t, registry_event_t,
+    registry_record_t,
+};
 use cham3_registryd::registry::{
     quarantine_reason_t, registry_config_t, registry_t, run_decision_t, unusable_reason_t,
 };
@@ -650,14 +653,26 @@ fn an_unclean_run_across_boots_contains_every_user() {
             code(admit(&registry, user, &lineage.revision)),
             "key_authority/contained"
         );
+        // The containment record, then the audit gap of the unverifiable run of
+        // boot-1 (ADR 0007 erratum E7.3).
+        let records = records_of(&root, user.uid);
+        assert_eq!(records.len(), records_before + 2);
         assert_eq!(
-            last_record(&root, user.uid).body,
+            registry_record_t::decode(&records[records_before])
+                .expect("decodes")
+                .body,
             record_body_t::user(user_record_t::containment)
         );
-        assert_eq!(records_of(&root, user.uid).len(), records_before + 1);
+        assert_eq!(
+            last_record(&root, user.uid).body,
+            record_body_t::event(registry_event_t::audit_gap {
+                boot_id: "boot-1".to_owned(),
+                lost: lost_evidence_t::unverifiable_run,
+            })
+        );
         let anchored = registry.anchored_user(user.uid).unwrap().expect("anchored");
         assert_eq!(anchored.state, anchored_state_t::contained);
-        assert_eq!(anchored.seq, (records_before + 1) as u64);
+        assert_eq!(anchored.seq, (records_before + 2) as u64);
         // identityd denies every key of a contained user (ADR 0006 §5): the resolution
         // carries the state and a denying scope; the ceremony authority is stage C.
         let mut identity = identity_over(&registry);

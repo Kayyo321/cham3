@@ -1,7 +1,9 @@
 //! registryd: the per-user journals, the global anchor, the restriction ledger, their
-//! derived indexes and the operations of service IPC §3 that M2-005 and M2-006 stage A
-//! implement (`append_identity`, `identity_state`, `admit`, `lineage_head`,
-//! `restrict`, `rollback_status`, `set_policy_epoch`, `set_emergency_restriction`).
+//! derived indexes and the operations of service IPC §3 that M2-005 and M2-006 stages
+//! A–B2 implement (`append_identity`, `identity_state`, `admit`, `lineage_head`,
+//! `restrict`, `rollback_status`, `set_policy_epoch`, `set_emergency_restriction`,
+//! `time_sample`, `reserve_use`, `complete_use`, `session_event`,
+//! `confirm_enforcement`, `history`).
 //!
 //! **One snapshot.** A user's identity records and commits live in one journal (ADR
 //! 0006 §1). The slot of a user holds that journal, the key-authority index rebuilt
@@ -57,12 +59,25 @@
 //! `users` → user → `policy` → `clock` → `ledger` → `anchor`; the clock lock is never
 //! held while another lock is taken, except the ledger's for a raise.
 //!
-//! Limits (stage B1): in-process composition; the socket transport and process
-//! boundary are M2-007. The lifecycle writers, one-shot consumption, confirmation and
-//! `history` are stage B2; the
-//! recovery ceremony, `recover_user`, `replace_identity` and deletion cleanup are
-//! stage C (a `pending` tombstone keeps its user denied; a `deleted` tombstone's files
-//! are quarantined and never loaded, not yet removed).
+//! **Lifecycle and consumption (ADR 0007 §§3, 4, 6, 7; ADR 0008 §2; erratum E7;
+//! stage B2).** `reserve_use` (policyd only, after its full evaluation) re-checks the
+//! rules this snapshot decides under the user lock, consumes the one-shot grant in
+//! memory and writes `use_reserved` through the restrictive path; `complete_use`
+//! records the outcome once. Every start reports a reservation without an outcome as
+//! `consumed_uncertain`. `session_event` records a start and ends a session for good
+//! (`session_ended`, or a `session_event` end when no grant is bound to it).
+//! `confirm_enforcement` records an outcome per domain; a commit's status counts only
+//! this run's outcomes. An evidence record (session start, use outcome, enforcement
+//! outcome) whose write fails leaves an `audit_gap` through the restrictive path, and
+//! a contained start writes one per contained user. `restrict` takes policyd's
+//! `identity_mismatch` once per lineage and executable identity. `history` pages the
+//! durable records for the owner's trusted client and admin.
+//!
+//! Limits (stage B2): in-process composition; the socket transport and process
+//! boundary are M2-007. The recovery ceremony, `recover_user`, `replace_identity` and
+//! deletion cleanup are stage C (a `pending` tombstone keeps its user denied; a
+//! `deleted` tombstone's files are quarantined and never loaded, not yet removed).
+//! Each lost evidence record takes one `audit_gap` from the restrictive reserve.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::os::unix::fs::MetadataExt;
@@ -71,7 +86,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use cham3_contract_format::hash::digest_t;
 use cham3_contract_format::schema::{
-    commit_payload_t, contract_state_t, invalidation_reason_t, random_id_t, subject_t,
+    commit_payload_t, contract_state_t, grant_t, invalidation_reason_t, random_id_t, subject_t,
 };
 use cham3_contract_format::{key_resolver_t, object_kind_t, payload_t, verify_object};
 use cham3_identityd::caller::{caller_role_t, service_name_t};
@@ -84,7 +99,8 @@ use cham3_identityd::journal::{
     MaxPageRecords, append_receipt_t, identity_journal_t, journal_entry_t, journal_page_t,
 };
 use cham3_identityd::outcome::{
-    authority, authority_code_t, ipc, ipc_code_t, service_error_t, service_result_t,
+    authority, authority_code_t, ipc, ipc_code_t, rule, rule_code_t, service_error_t,
+    service_result_t,
 };
 
 use crate::anchor::{
@@ -102,8 +118,9 @@ use crate::ledger::{
 };
 use crate::lineage::{admission_t, admitted_at_t, end_reason_t, lineage_index_t, standing_t};
 use crate::record::{
-    journal_defect_t, lifecycle_record_t, parse_journal_prefix, placement_t, record_body_t,
-    registry_event_t, registry_record_t,
+    enforcement_domain_t, enforcement_result_t, journal_defect_t, lifecycle_record_t,
+    lost_evidence_t, parse_journal_prefix, placement_t, record_body_t, registry_event_t,
+    registry_record_t, session_change_t, use_outcome_t,
 };
 
 /// Default per-user journal quota (ADR 0006 §1): 64 MiB, configurable 16 MiB–1 GiB.
@@ -265,12 +282,35 @@ pub struct user_slot_t {
     events: Vec<registry_event_t>,
     /// The clock-anomaly episode this run last recorded for the user (0: none).
     anomaly_episode: u64,
+    /// Every durable record except identity objects, in journal order (`history`).
+    history: Vec<history_item_t>,
+    /// The latest enforcement outcome per commit and domain written in this run
+    /// (ADR 0007 erratum E7.2): a commit's status counts only this run's reports.
+    enforcement: BTreeMap<(digest_t, enforcement_domain_t), enforcement_result_t>,
     /// Restrictive records denied in memory whose durable write is still owed.
     pending: Vec<pending_write_t>,
     /// The journal's last record is durable but its anchor update failed: the user is
     /// denied, reads included, and nothing is appended, until a retry anchors it (or
     /// the next start rolls the anchor forward).
     anchor_failed: bool,
+}
+
+/// One durable record as `history` serves it: a commit by its id (the index holds
+/// its envelope), anything else as it was written.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum history_body_t {
+    commit {
+        commit_id: digest_t,
+        lineage_id: digest_t,
+    },
+    record(record_body_t),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct history_item_t {
+    sequence: u64,
+    time: String,
+    body: history_body_t,
 }
 
 enum user_entry_t {
@@ -342,6 +382,38 @@ pub struct lineage_view_t {
     pub time: time_view_t,
 }
 
+/// Receipt of a one-shot reservation (ADR 0007 §4).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct reservation_receipt_t {
+    pub reservation_id: random_id_t,
+    pub journal_seq: u64,
+}
+
+/// One record of a `history` page (ADR 0008 §2).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct history_record_t {
+    pub sequence: u64,
+    /// Registry time of the append (a claim, never ordering or freshness).
+    pub time: String,
+    pub body: record_body_t,
+    /// For a commit: this run's enforcement outcome per domain (ADR 0007 erratum
+    /// E7.2); a domain without one is pending.
+    pub enforcement: Vec<(enforcement_domain_t, enforcement_result_t)>,
+}
+
+/// `history`: one page (service IPC §2: at most 16 records or one signed object).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct history_page_t {
+    pub records: Vec<history_record_t>,
+    /// Cursor of the next page (a journal sequence), if any.
+    pub next: Option<u64>,
+    /// Restrictive records in force but not yet durable: not in the history yet.
+    pub pending_restrictions: u64,
+    /// The policy state in force: commits below its minimum valid epoch are invalid
+    /// (ADR 0007 erratum E7.4: `policy_invalidated` is not a separate record).
+    pub policy: policy_state_t,
+}
+
 /// The clock in `rollback_status` (ADR 0007 §5; erratum E6).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct clock_status_t {
@@ -399,6 +471,9 @@ pub struct registry_t {
     /// The policy state in force (restrictive changes apply here first).
     policy: Mutex<policy_state_t>,
     run_decision: run_decision_t,
+    /// This run's id (the ledger's and the run marker's): enforcement outcomes count
+    /// only in the run that wrote them (ADR 0007 erratum E7.2).
+    run_id: random_id_t,
     owner: u32,
     /// The ledger failed but the run marker could not be written `unverifiable`:
     /// the marker write is still owed and retried by every later operation
@@ -443,6 +518,7 @@ const Identityd: caller_role_t = caller_role_t::service(service_name_t::identity
 const Contractd: caller_role_t = caller_role_t::service(service_name_t::contractd);
 const Policyd: caller_role_t = caller_role_t::service(service_name_t::policyd);
 const Admin: caller_role_t = caller_role_t::admin;
+const FixtureConsumer: caller_role_t = caller_role_t::fixture_consumer;
 
 fn lock<item_t>(mutex: &Mutex<item_t>) -> service_result_t<MutexGuard<'_, item_t>> {
     // A panic while holding the lock poisons it: fail closed.
@@ -586,16 +662,33 @@ impl user_slot_t {
                     record.sequence,
                     admitted_at_t { trusted, observed },
                 );
+                self.history.push(history_item_t {
+                    sequence: record.sequence,
+                    time: record.time,
+                    body: history_body_t::commit {
+                        commit_id,
+                        lineage_id,
+                    },
+                });
             }
             record_body_t::event(event) => {
-                if let registry_event_t::branch_terminated { .. } = &event {
-                    self.lineages.end_branches();
-                }
+                self.lineages.check_event(&event)?;
+                self.lineages.apply_event(&event);
+                self.note_durable(
+                    record.sequence,
+                    record.time,
+                    record_body_t::event(event.clone()),
+                );
                 self.events.push(event);
             }
             record_body_t::lifecycle(lifecycle) => {
                 self.lineages.check_record(&lifecycle, &record.time)?;
                 self.lineages.apply_record(&lifecycle);
+                self.note_durable(
+                    record.sequence,
+                    record.time,
+                    record_body_t::lifecycle(lifecycle.clone()),
+                );
                 self.lifecycle_records.push(lifecycle);
             }
             record_body_t::user(user_record) => {
@@ -609,6 +702,11 @@ impl user_slot_t {
                     record: entry,
                 });
                 self.lineages.apply_user_record(&user_record);
+                self.note_durable(
+                    record.sequence,
+                    record.time,
+                    record_body_t::user(user_record.clone()),
+                );
                 match user_record {
                     user_record_t::containment => self.state = slot_state_t::contained,
                     user_record_t::quarantine => {
@@ -620,6 +718,24 @@ impl user_slot_t {
             }
         }
         Ok(())
+    }
+
+    /// Keeps a durable record for `history` (identity objects and commits are kept
+    /// elsewhere).
+    fn note_durable(&mut self, sequence: u64, time: String, body: record_body_t) {
+        self.history.push(history_item_t {
+            sequence,
+            time,
+            body: history_body_t::record(body),
+        });
+    }
+
+    /// The sequence of a durable record equal to `body`, if the journal holds one.
+    fn durable_sequence(&self, body: &record_body_t) -> Option<u64> {
+        self.history
+            .iter()
+            .find(|item| item.body == history_body_t::record(body.clone()))
+            .map(|item| item.sequence)
     }
 
     /// Whether the journal already holds the record of a ledger entry (journaled
@@ -670,6 +786,8 @@ fn replay_user(
         lifecycle_records: Vec::new(),
         events: Vec::new(),
         anomaly_episode: 0,
+        history: Vec::new(),
+        enforcement: BTreeMap::new(),
         pending: Vec::new(),
         anchor_failed: false,
     };
@@ -739,6 +857,49 @@ fn recovery_decision(
     }
     // `true`: one durable but unanchored record rolls the anchor forward.
     Ok(records == anchored_seq.saturating_add(1))
+}
+
+/// Rule 5 of ADR 0007 §1 as registryd's snapshot decides it for a reservation
+/// (erratum E7.1): started — a start later than the admission is reached only once
+/// as much observed time has passed (§8 option B) — not expired, and a bound
+/// session not ended. Session liveness is policyd's.
+fn lifetime_open(
+    lineages: &lineage_index_t,
+    grant: &grant_t,
+    admitted: admitted_at_t,
+    now: i64,
+    observed_now: u64,
+) -> bool {
+    let lifetime = &grant.lifetime;
+    let Some(start) = utc_seconds(&lifetime.effective_start) else {
+        return false;
+    };
+    if now < start {
+        return false;
+    }
+    if let Some(needed) = start
+        .checked_sub(admitted.trusted)
+        .filter(|needed| *needed > 0)
+    {
+        let elapsed = observed_now
+            .checked_sub(admitted.observed)
+            .and_then(|elapsed| i64::try_from(elapsed).ok());
+        if elapsed.is_none_or(|elapsed| elapsed < needed) {
+            return false;
+        }
+    }
+    if let Some(expiration) = &lifetime.expiration {
+        match utc_seconds(expiration) {
+            Some(end) if now < end => {}
+            _ => return false,
+        }
+    }
+    if let Some(session_id) = &lifetime.session_id {
+        if lineages.session_ended(session_id) {
+            return false;
+        }
+    }
+    true
 }
 
 fn random_run_id() -> Result<[u8; 16], registry_start_error_t> {
@@ -848,6 +1009,12 @@ impl registry_t {
             .ok_or(registry_start_error_t::clock_unavailable)?;
         let clock = trusted_clock_t::start(&boot_id, sample, &floors)
             .ok_or(registry_start_error_t::clock_unavailable)?;
+        // The boot of the anchor's last run: an unverifiable run's audit gap names it.
+        let previous_boot = anchor
+            .map()
+            .run_marker
+            .as_ref()
+            .map(|marker| marker.boot_id.clone());
         // A reboot since the anchor's last run (§5 rule 6). An unverifiable run's
         // containment ends the branches anyway.
         let new_boot = anchor
@@ -943,6 +1110,7 @@ impl registry_t {
             ledger: Mutex::new(ledger),
             policy: Mutex::new(policy),
             run_decision: decision,
+            run_id,
             owner,
             unverifiable_owed: Mutex::new(false),
         };
@@ -964,10 +1132,12 @@ impl registry_t {
         // Containment of every user after an unverifiable run (§3); otherwise, after
         // a reboot, the end of every live temporary branch (ADR 0007 §5 rule 6).
         if decision == run_decision_t::contained {
-            registry.contain_everyone();
+            registry.contain_everyone(previous_boot.as_deref());
         } else if new_boot {
             registry.terminate_branches();
         }
+        // Reservations without a reported outcome are uncertain (ADR 0007 §7).
+        registry.reconcile_reservations();
         // The policy state and the run marker, durable before anything is served. A
         // ledger that failed during the start (a re-journaled intent that could not
         // enter this run's ledger) has already made the anchor hold this run
@@ -1134,17 +1304,21 @@ impl registry_t {
                     return;
                 }
             }
-            record_body_t::event(registry_event_t::branch_terminated { .. }) => {
-                slot.lineages.end_branches();
+            record_body_t::event(event) => {
+                if slot.lineages.check_event(event).is_err() {
+                    return;
+                }
+                slot.lineages.apply_event(event);
             }
-            record_body_t::event(registry_event_t::clock_anomaly { .. }) => {}
             record_body_t::commit_admitted { .. } => return,
         }
         let _ = self.restrictive_write(&mut slot, record.time.clone(), record.body.clone());
     }
 
-    /// Contains every usable, not yet contained or quarantined user (§3).
-    fn contain_everyone(&self) {
+    /// Contains every usable, not yet contained or quarantined user (§3), and records
+    /// for each one that records of the unverifiable run of boot `previous_boot` may
+    /// be missing (`audit_gap`, ADR 0007 erratum E7.3).
+    fn contain_everyone(&self, previous_boot: Option<&str>) {
         let slots: Vec<Arc<Mutex<user_slot_t>>> = match lock(&self.users) {
             Ok(users) => users
                 .values()
@@ -1167,9 +1341,52 @@ impl registry_t {
             };
             let _ = self.restrictive_write(
                 &mut slot,
-                time,
+                time.clone(),
                 record_body_t::user(user_record_t::containment),
             );
+            if let Some(boot_id) = previous_boot {
+                let _ = self.restrictive_write(
+                    &mut slot,
+                    time,
+                    record_body_t::event(registry_event_t::audit_gap {
+                        boot_id: boot_id.to_owned(),
+                        lost: lost_evidence_t::unverifiable_run,
+                    }),
+                );
+            }
+        }
+    }
+
+    /// Startup reconciliation (ADR 0007 §7): every reservation of a usable,
+    /// unquarantined user without a reported outcome gets `consumed_uncertain`
+    /// through the restrictive path. Its grant stays consumed (§4 option A); a
+    /// completion reported after this is refused.
+    fn reconcile_reservations(&self) {
+        let slots: Vec<Arc<Mutex<user_slot_t>>> = match lock(&self.users) {
+            Ok(users) => users
+                .values()
+                .filter_map(|entry| match entry {
+                    user_entry_t::usable(slot) => Some(Arc::clone(slot)),
+                    user_entry_t::unusable(_) => None,
+                })
+                .collect(),
+            Err(_) => return,
+        };
+        for slot in slots {
+            let Ok(mut slot) = lock(&slot) else {
+                continue;
+            };
+            if let slot_state_t::quarantined(_) = slot.state {
+                continue;
+            }
+            for reservation_id in slot.lineages.open_reservations() {
+                let Ok(time) = self.now_text() else {
+                    continue;
+                };
+                let event = registry_event_t::consumed_uncertain { reservation_id };
+                slot.lineages.apply_event(&event);
+                let _ = self.restrictive_write(&mut slot, time, record_body_t::event(event));
+            }
         }
     }
 
@@ -1684,6 +1901,12 @@ impl registry_t {
                 record_body_t::event(event) => slot.events.push(event),
                 record_body_t::commit_admitted { .. } => {}
             }
+            if !matches!(
+                pending.body,
+                record_body_t::identity { .. } | record_body_t::commit_admitted { .. }
+            ) {
+                slot.note_durable(sequence, pending.time.clone(), pending.body.clone());
+            }
             slot.pending.remove(0);
             last_sequence = sequence;
             // Each durable record is anchored before the next one is appended, so
@@ -1864,6 +2087,8 @@ impl registry_t {
             lifecycle_records: Vec::new(),
             events: Vec::new(),
             anomaly_episode: 0,
+            history: Vec::new(),
+            enforcement: BTreeMap::new(),
             pending: Vec::new(),
             anchor_failed: false,
         };
@@ -2014,6 +2239,14 @@ impl registry_t {
                 observed: observed_now,
             },
         );
+        slot.history.push(history_item_t {
+            sequence,
+            time: utc_text(now).ok_or(storage_unavailable())?,
+            body: history_body_t::commit {
+                commit_id: admission.commit_id,
+                lineage_id: admission.lineage_id,
+            },
+        });
         self.anchor_slot(&mut slot)?;
         Ok(admission_receipt_t {
             commit_id: admission.commit_id,
@@ -2036,6 +2269,11 @@ impl registry_t {
         record: &lifecycle_record_t,
     ) -> service_result_t<u64> {
         require(caller, &[Contractd, Policyd, Identityd, Admin])?;
+        // Evaluation reports identity mismatches (ADR 0007 erratum E7.4).
+        let mismatch = matches!(record, lifecycle_record_t::identity_mismatch { .. });
+        if mismatch && caller != Policyd {
+            return Err(ipc(ipc_code_t::role_denied));
+        }
         self.retry_unverifiable();
         let observed = self.observe_time();
         let slot = self
@@ -2046,6 +2284,17 @@ impl registry_t {
             return Err(authority(authority_code_t::quarantined));
         }
         self.record_anomaly(&mut slot, &observed);
+        // Once per lineage, package identity and executable hash: a mismatch the
+        // journal holds, or still owes, is not written again.
+        if mismatch {
+            let body = record_body_t::lifecycle(record.clone());
+            if slot.pending.iter().any(|pending| pending.body == body) {
+                self.flush_pending(&mut slot)?;
+            }
+            if let Some(sequence) = slot.durable_sequence(&body) {
+                return Ok(sequence);
+            }
+        }
         // The record's time is the last trusted value, also when this operation's own
         // sample failed: trusted time never decreases, so an expiration it already
         // shows is proven (a premature `expired` record stays `lifecycle_rule`), and a
@@ -2056,6 +2305,449 @@ impl registry_t {
         // whatever the slot owes, an unanchored record included (M2-006-A-R02).
         slot.lineages.apply_record(record);
         self.restrictive_write(&mut slot, time, record_body_t::lifecycle(record.clone()))
+    }
+
+    // ------------------------------------------------- lifecycle and consumption
+
+    /// `reserve_use` (`service:policyd`; ADR 0007 §4 option A, erratum E7.1). policyd
+    /// has evaluated the request completely and found the one-shot grant `grant_id`
+    /// eligible for the runtime `subject`. Under the user lock registryd re-checks
+    /// every rule its own snapshot decides: the user state and the persisted
+    /// emergency restriction; the grant current, one-shot, not ended and not
+    /// reserved; the lineage's authoritative subject; the signing key and the policy
+    /// epoch; the lifetime at this operation's own trusted now (§8 option B) and a
+    /// bound session not ended. It then consumes the grant in memory and writes
+    /// `use_reserved` through the restrictive path before it replies. A failed write
+    /// leaves the grant consumed and reports `restriction_not_durable`: the use is
+    /// denied.
+    pub fn reserve_use(
+        &self,
+        caller: caller_role_t,
+        owner_uid: u32,
+        grant_id: &random_id_t,
+        subject: &subject_t,
+        operation_id: &random_id_t,
+    ) -> service_result_t<reservation_receipt_t> {
+        require(caller, &[Policyd])?;
+        self.retry_unverifiable();
+        let observed = self.observe_time();
+        let slot = self
+            .slot_any(owner_uid)?
+            .ok_or(authority(authority_code_t::key_not_certified))?;
+        let mut slot = lock(&slot)?;
+        self.record_anomaly(&mut slot, &observed);
+        match slot.user_state() {
+            user_state_t::normal => {}
+            user_state_t::contained => return Err(authority(authority_code_t::contained)),
+            user_state_t::quarantined => return Err(authority(authority_code_t::quarantined)),
+            user_state_t::deleted => return Err(authority(authority_code_t::user_deleted)),
+        }
+        self.ready(&mut slot)?;
+        if !slot.pending.is_empty() {
+            return Err(not_durable());
+        }
+        let now = self.fresh_now(&observed)?;
+        let observed_now = lock(&self.clock)?
+            .observed_now()
+            .ok_or(storage_unavailable())?;
+        let policy = *lock(&self.policy)?;
+        let user_floor = lock(&self.anchor)?
+            .map()
+            .users
+            .get(&owner_uid)
+            .map_or(0, |entry| entry.min_valid_policy_epoch);
+        let refused = || rule(rule_code_t::lifecycle_rule);
+        if policy.emergency_restriction {
+            return Err(refused());
+        }
+        {
+            let lineages = &slot.lineages;
+            let entry = lineages.grant(grant_id).ok_or_else(refused)?;
+            let subject_matches = lineages
+                .lineage(&entry.lineage_id)
+                .and_then(|lineage| lineage.authoritative_subject.as_ref())
+                .is_some_and(|authoritative| authoritative == subject)
+                && subject.owner_uid == owner_uid
+                && subject.owner_user_id == slot.user_id;
+            if !subject_matches {
+                return Err(rule(rule_code_t::subject_binding_mismatch));
+            }
+            let commit = lineages.commit(&entry.commit_id).ok_or_else(refused)?;
+            let key = slot
+                .directory
+                .resolve(&commit.payload.key_id)
+                .ok_or(authority(authority_code_t::key_not_certified))?;
+            if key.invalidated == Some(invalidation_reason_t::compromised) {
+                return Err(authority(authority_code_t::key_invalidated));
+            }
+            if commit.payload.policy.epoch < policy.min_valid_epoch.max(user_floor) {
+                return Err(ipc(ipc_code_t::stale_epoch));
+            }
+            if !lifetime_open(lineages, &entry.grant, commit.admitted, now, observed_now) {
+                return Err(refused());
+            }
+        }
+        let mut reservation_id = [0u8; 16];
+        cham3_os_adapter::fill_random(&mut reservation_id).map_err(|_| storage_unavailable())?;
+        let event = registry_event_t::use_reserved {
+            grant_id: *grant_id,
+            reservation_id,
+            operation_id: *operation_id,
+        };
+        // One-shot, current, not ended and not reserved, under a fresh id.
+        slot.lineages.check_event(&event)?;
+        // Consumed in memory first, whatever the writes do (option A).
+        slot.lineages.apply_event(&event);
+        let time = utc_text(now).ok_or(storage_unavailable())?;
+        let sequence = self.restrictive_write(&mut slot, time, record_body_t::event(event))?;
+        Ok(reservation_receipt_t {
+            reservation_id,
+            journal_seq: sequence,
+        })
+    }
+
+    /// `complete_use` (`fixture_consumer`): the outcome of a reserved use, at most
+    /// once per reservation and never after `consumed_uncertain` (ADR 0007 §§4, 7).
+    /// The grant stays consumed whatever the outcome. Evidence: a record that cannot
+    /// be written leaves an `audit_gap` (erratum E7.3).
+    pub fn complete_use(
+        &self,
+        caller: caller_role_t,
+        owner_uid: u32,
+        reservation_id: &random_id_t,
+        outcome: use_outcome_t,
+    ) -> service_result_t<u64> {
+        require(caller, &[FixtureConsumer])?;
+        self.retry_unverifiable();
+        let observed = self.observe_time();
+        let slot = self
+            .slot_any(owner_uid)?
+            .ok_or(authority(authority_code_t::key_not_certified))?;
+        let mut slot = lock(&slot)?;
+        if let slot_state_t::quarantined(_) = slot.state {
+            return Err(authority(authority_code_t::quarantined));
+        }
+        self.record_anomaly(&mut slot, &observed);
+        let event = registry_event_t::use_completed {
+            reservation_id: *reservation_id,
+            outcome,
+        };
+        slot.lineages.check_event(&event)?;
+        self.write_evidence(&mut slot, event, lost_evidence_t::use_completed)
+    }
+
+    /// `session_event` (`fixture_consumer`, later sessiond; ADR 0007 §6). A start is
+    /// evidence: refused for an ended session (session ids are single-use), and a
+    /// repeated start returns the first one's sequence. An end takes the restrictive
+    /// path: `session_ended` when grants of the journal are bound to the session,
+    /// otherwise a `session_event` end; either way the session never becomes live
+    /// again, and admission refuses grants bound to it. A repeated end returns the
+    /// first one's sequence.
+    pub fn session_event(
+        &self,
+        caller: caller_role_t,
+        owner_uid: u32,
+        session_id: &random_id_t,
+        change: session_change_t,
+    ) -> service_result_t<u64> {
+        require(caller, &[FixtureConsumer])?;
+        self.retry_unverifiable();
+        let observed = self.observe_time();
+        let slot = self
+            .slot_any(owner_uid)?
+            .ok_or(authority(authority_code_t::key_not_certified))?;
+        let mut slot = lock(&slot)?;
+        if let slot_state_t::quarantined(_) = slot.state {
+            return Err(authority(authority_code_t::quarantined));
+        }
+        self.record_anomaly(&mut slot, &observed);
+        match change {
+            session_change_t::started => {
+                let event = registry_event_t::session_event {
+                    session_id: *session_id,
+                    change,
+                };
+                // An ended session never starts again, even when its start is durable.
+                if slot.lineages.session_ended(session_id) {
+                    return Err(rule(rule_code_t::lifecycle_rule));
+                }
+                if let Some(sequence) = slot.durable_sequence(&record_body_t::event(event.clone()))
+                {
+                    return Ok(sequence);
+                }
+                slot.lineages.check_event(&event)?;
+                self.write_evidence(&mut slot, event, lost_evidence_t::session_event)
+            }
+            session_change_t::ended => {
+                let ends = [
+                    record_body_t::lifecycle(lifecycle_record_t::session_ended {
+                        session_id: *session_id,
+                    }),
+                    record_body_t::event(registry_event_t::session_event {
+                        session_id: *session_id,
+                        change,
+                    }),
+                ];
+                if slot.lineages.session_ended(session_id) {
+                    if slot
+                        .pending
+                        .iter()
+                        .any(|pending| ends.contains(&pending.body))
+                    {
+                        self.flush_pending(&mut slot)?;
+                    }
+                    return ends
+                        .iter()
+                        .find_map(|body| slot.durable_sequence(body))
+                        .ok_or_else(not_durable);
+                }
+                let time = self.now_text()?;
+                let body = if slot.lineages.session_bound(session_id) {
+                    let record = lifecycle_record_t::session_ended {
+                        session_id: *session_id,
+                    };
+                    slot.lineages.check_record(&record, &time)?;
+                    slot.lineages.apply_record(&record);
+                    record_body_t::lifecycle(record)
+                } else {
+                    let event = registry_event_t::session_event {
+                        session_id: *session_id,
+                        change,
+                    };
+                    slot.lineages.check_event(&event)?;
+                    slot.lineages.apply_event(&event);
+                    record_body_t::event(event)
+                };
+                self.restrictive_write(&mut slot, time, body)
+            }
+        }
+    }
+
+    /// `confirm_enforcement` (`fixture_consumer`, later launcherd, netd and brokers;
+    /// ADR 0006 §1, ADR 0007 erratum E7.2): one domain's outcome for a commit that is
+    /// a live head of the user's journal (`stale_head` otherwise), at the policy
+    /// epoch in force (`stale_epoch` otherwise), bound to the runtime id. It counts
+    /// for the commit's status only in this run, the latest per domain winning; the
+    /// status is never an eligibility input. Evidence: a record that cannot be
+    /// written leaves an `audit_gap`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn confirm_enforcement(
+        &self,
+        caller: caller_role_t,
+        owner_uid: u32,
+        commit_id: &digest_t,
+        runtime_id: &random_id_t,
+        domain: enforcement_domain_t,
+        policy_epoch: u64,
+        result: enforcement_result_t,
+    ) -> service_result_t<u64> {
+        require(caller, &[FixtureConsumer])?;
+        self.retry_unverifiable();
+        let observed = self.observe_time();
+        let slot = self
+            .slot_any(owner_uid)?
+            .ok_or(authority(authority_code_t::key_not_certified))?;
+        let mut slot = lock(&slot)?;
+        self.record_anomaly(&mut slot, &observed);
+        match slot.state {
+            slot_state_t::quarantined(_) => return Err(authority(authority_code_t::quarantined)),
+            slot_state_t::contained => return Err(authority(authority_code_t::contained)),
+            slot_state_t::normal => {}
+        }
+        if !slot.lineages.is_live_head(commit_id) {
+            return Err(ipc(ipc_code_t::stale_head));
+        }
+        if policy_epoch != lock(&self.policy)?.epoch {
+            return Err(ipc(ipc_code_t::stale_epoch));
+        }
+        let event = registry_event_t::enforcement_outcome {
+            commit_id: *commit_id,
+            runtime_id: *runtime_id,
+            domain,
+            policy_epoch,
+            result,
+            run_id: self.run_id,
+        };
+        slot.lineages.check_event(&event)?;
+        self.write_evidence(&mut slot, event, lost_evidence_t::enforcement_outcome)
+    }
+
+    /// Writes an evidence record with an ordinary append (quota; anchored before the
+    /// reply) and applies it once durable. When it cannot be written — a write still
+    /// owed, a failed ledger or journal, an exhausted quota or a failed append — the
+    /// evidence is lost: an `audit_gap` naming its kind takes the restrictive path
+    /// (ledger at once, journal once storage recovers; ADR 0007 erratum E7.3) and
+    /// the caller gets the error. A durable record whose anchor update failed is not
+    /// lost: the next retry or the next start's roll-forward anchors it.
+    fn write_evidence(
+        &self,
+        slot: &mut user_slot_t,
+        event: registry_event_t,
+        lost: lost_evidence_t,
+    ) -> service_result_t<u64> {
+        let time = self.now_text()?;
+        let body = record_body_t::event(event.clone());
+        let written = self.ready(slot).and_then(|()| {
+            if !slot.pending.is_empty() {
+                return Err(not_durable());
+            }
+            let sequence = slot.journal.next_sequence().ok_or(storage_unavailable())?;
+            let record = registry_record_t {
+                sequence,
+                time: time.clone(),
+                body: body.clone(),
+            }
+            .encode();
+            self.ordinary_append(slot, &record)
+        });
+        let sequence = match written {
+            Ok(sequence) => sequence,
+            Err(error) => {
+                let boot_id = lock(&self.clock)?.boot_id().to_owned();
+                let gap = registry_event_t::audit_gap { boot_id, lost };
+                let _ = self.restrictive_write(slot, time, record_body_t::event(gap));
+                return Err(error);
+            }
+        };
+        slot.lineages.apply_event(&event);
+        if let registry_event_t::enforcement_outcome {
+            commit_id,
+            domain,
+            result,
+            run_id,
+            ..
+        } = &event
+        {
+            if *run_id == self.run_id {
+                slot.enforcement.insert((*commit_id, *domain), *result);
+            }
+        }
+        slot.note_durable(sequence, time, body);
+        slot.events.push(event);
+        self.anchor_slot(slot)?;
+        Ok(sequence)
+    }
+
+    /// `history` (`trusted_client` for its own UID, `admin`; ADR 0008 §2): one page of
+    /// the user's journal after the sequence `after`, identity objects left out
+    /// (identityd pages them). A page holds at most 16 records, or one record that
+    /// embeds a signed object (a commit, service IPC §2); `next` is the cursor of
+    /// the following page. Each commit carries this run's enforcement status per
+    /// domain (erratum E7.2). The page also reports the restrictive records not yet
+    /// durable and the policy state in force: the history is never complete (ADR
+    /// 0007 §3). Refused for a quarantined user and while the user's last record is
+    /// unanchored.
+    pub fn history(
+        &self,
+        caller: caller_role_t,
+        owner_uid: u32,
+        after: u64,
+    ) -> service_result_t<history_page_t> {
+        match caller {
+            caller_role_t::trusted_client { uid } if uid == owner_uid => {}
+            caller_role_t::trusted_client { .. } => return Err(ipc(ipc_code_t::owner_mismatch)),
+            caller_role_t::admin => {}
+            _ => return Err(ipc(ipc_code_t::role_denied)),
+        }
+        self.retry_unverifiable();
+        let observed = self.observe_time();
+        let policy = *lock(&self.policy)?;
+        let Some(slot) = self.slot_any(owner_uid)? else {
+            return Ok(history_page_t {
+                records: Vec::new(),
+                next: None,
+                pending_restrictions: 0,
+                policy,
+            });
+        };
+        let mut slot = lock(&slot)?;
+        if let slot_state_t::quarantined(_) = slot.state {
+            return Err(authority(authority_code_t::quarantined));
+        }
+        self.record_anomaly(&mut slot, &observed);
+        if slot.journal.failed() {
+            return Err(storage_unavailable());
+        }
+        self.anchored_for_reading(&mut slot)?;
+        let mut records: Vec<history_record_t> = Vec::new();
+        let mut remaining = slot
+            .history
+            .iter()
+            .filter(|item| item.sequence > after)
+            .peekable();
+        while let Some(item) = remaining.peek() {
+            let signed = matches!(item.body, history_body_t::commit { .. });
+            if records.len() >= MaxPageRecords || (signed && !records.is_empty()) {
+                break;
+            }
+            let (body, enforcement) = match &item.body {
+                history_body_t::commit {
+                    commit_id,
+                    lineage_id,
+                } => {
+                    let entry = slot
+                        .lineages
+                        .commit(commit_id)
+                        .ok_or(storage_unavailable())?;
+                    let status = slot
+                        .enforcement
+                        .iter()
+                        .filter(|((commit, _), _)| commit == commit_id)
+                        .map(|((_, domain), result)| (*domain, *result))
+                        .collect();
+                    (
+                        record_body_t::commit_admitted {
+                            commit_id: *commit_id,
+                            lineage_id: *lineage_id,
+                            placement: entry.placement,
+                            envelope: entry.envelope.clone(),
+                            observed: entry.admitted.observed,
+                        },
+                        status,
+                    )
+                }
+                history_body_t::record(body) => (body.clone(), Vec::new()),
+            };
+            records.push(history_record_t {
+                sequence: item.sequence,
+                time: item.time.clone(),
+                body,
+                enforcement,
+            });
+            remaining.next();
+            if signed {
+                break;
+            }
+        }
+        let next = match remaining.peek() {
+            Some(_) => records.last().map(|record| record.sequence),
+            None => None,
+        };
+        Ok(history_page_t {
+            records,
+            next,
+            pending_restrictions: u64::try_from(slot.pending.len()).unwrap_or(u64::MAX),
+            policy,
+        })
+    }
+
+    /// A commit's enforcement status in this run, per domain (diagnostics and tests;
+    /// `history` reports it to clients).
+    pub fn enforcement_status(
+        &self,
+        owner_uid: u32,
+        commit_id: &digest_t,
+    ) -> service_result_t<Vec<(enforcement_domain_t, enforcement_result_t)>> {
+        let Some(slot) = self.slot_any(owner_uid)? else {
+            return Ok(Vec::new());
+        };
+        let slot = lock(&slot)?;
+        Ok(slot
+            .enforcement
+            .iter()
+            .filter(|((commit, _), _)| commit == commit_id)
+            .map(|((_, domain), result)| (*domain, *result))
+            .collect())
     }
 
     /// `set_policy_epoch` (`admin`): raises the policy epoch and the minimum valid

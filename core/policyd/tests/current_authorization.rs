@@ -43,7 +43,9 @@ use cham3_policyd::evaluate::{
     unknown_reason_t,
 };
 use cham3_policyd::mandatory::{mandatory_policy_t, network_mode_t, prohibition_t};
-use cham3_policyd::service::{policy_clock_t, policy_service_t, rollback_protection_t};
+use cham3_policyd::service::{
+    policy_clock_t, policy_service_t, reserve_outcome_t, rollback_protection_t,
+};
 use cham3_registryd::journal::{journal_io_t, system_io_t};
 use cham3_registryd::ledger::{boot_id_source_t, kernel_boot_id_t};
 use cham3_registryd::record::{
@@ -1981,4 +1983,419 @@ fn a_forward_sample_registryd_takes_expires_the_grant_at_once() {
             .trusted_now,
         T1Seconds + 200
     );
+}
+
+fn journal_bodies(root: &Path, uid: u32) -> Vec<record_body_t> {
+    let bytes =
+        fs::read(root.join("users").join(uid.to_string()).join("journal.c3j")).expect("journal");
+    parse_journal(&bytes, uid)
+        .expect("chained journal")
+        .records
+        .iter()
+        .map(|record| registry_record_t::decode(record).expect("decodes").body)
+        .collect()
+}
+
+#[test]
+fn evaluation_latches_every_observed_expiry_once() {
+    // ADR 0007 §5 rule 5 (M2-006 stage B2): an evaluation or network-mode query whose
+    // trusted now shows a current grant expired records `expired` for it through
+    // registryd's restrictive path, once; the decision does not depend on the write.
+    let mut world = world("latch");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let browser = app("browser");
+    let identity = runtime(&alice, &browser);
+    let genesis = draft(&alice, &browser, commit_type_t::genesis, "latch genesis")
+        .add(vec![file_grant(
+            "latch cache",
+            alice.uid,
+            "home:Cache",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let timed = file_grant(
+        "latched",
+        alice.uid,
+        "home:Timed",
+        &["read"],
+        timed_lifetime("2026-10-13T09:10:00Z"),
+    );
+    let tor = network_grant(
+        "tor latched",
+        alice.uid,
+        "tor",
+        timed_lifetime("2026-10-13T09:10:00Z"),
+    );
+    let branch = draft(&alice, &browser, commit_type_t::temporary_grant, "latch")
+        .on(&genesis)
+        .add(vec![timed.clone(), tor.clone()])
+        .temporary_authority()
+        .sign(&alice);
+    assert_eq!(world.submit(&alice, &branch), placement_t::temporary);
+    let request = files(alice.uid, "home:Timed", "read");
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    let before = journal_bodies(&world.root, alice.uid);
+    // Ten minutes pass: both grants are expired.
+    world.time.advance(600);
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::expired)
+    );
+    let latched: Vec<record_body_t> = journal_bodies(&world.root, alice.uid)
+        .into_iter()
+        .skip(before.len())
+        .collect();
+    let mut expected = vec![
+        record_body_t::lifecycle(lifecycle_record_t::expired {
+            grant_id: timed.grant_id,
+        }),
+        record_body_t::lifecycle(lifecycle_record_t::expired {
+            grant_id: tor.grant_id,
+        }),
+    ];
+    expected.sort_by_key(|body| format!("{body:?}"));
+    let mut sorted = latched.clone();
+    sorted.sort_by_key(|body| format!("{body:?}"));
+    assert_eq!(sorted, expected, "every expired current grant, once");
+    // Latched: the next evaluation and the network mode see ended grants and write
+    // nothing more.
+    assert_eq!(
+        world.evaluate(&identity, &request),
+        denied(deny_reason_t::grant_ended(
+            cham3_registryd::lineage::end_reason_t::expired
+        ))
+    );
+    assert_eq!(
+        world
+            .policy
+            .network_mode(Launcher, &identity)
+            .expect("network mode"),
+        network_decision_t::offline(None)
+    );
+    assert_eq!(
+        journal_bodies(&world.root, alice.uid).len(),
+        before.len() + 2
+    );
+    for grant in [&timed, &tor] {
+        assert_eq!(
+            world.registry.standing(alice.uid, &grant.grant_id),
+            Ok(cham3_registryd::lineage::standing_t::ended(
+                cham3_registryd::lineage::end_reason_t::expired
+            ))
+        );
+    }
+}
+
+#[test]
+fn network_mode_latches_an_expired_network_grant() {
+    let mut world = world("latch_network");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let browser = app("browser");
+    let identity = runtime(&alice, &browser);
+    let genesis = draft(&alice, &browser, commit_type_t::genesis, "network latch")
+        .add(vec![file_grant(
+            "network latch cache",
+            alice.uid,
+            "home:Cache",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let tor = network_grant(
+        "tor only",
+        alice.uid,
+        "tor",
+        timed_lifetime("2026-10-13T09:10:00Z"),
+    );
+    let branch = draft(&alice, &browser, commit_type_t::temporary_grant, "tor only")
+        .on(&genesis)
+        .add(vec![tor.clone()])
+        .temporary_authority()
+        .sign(&alice);
+    world.submit(&alice, &branch);
+    assert!(matches!(
+        world
+            .policy
+            .network_mode(Launcher, &identity)
+            .expect("mode"),
+        network_decision_t::mode { .. }
+    ));
+    world.time.advance(600);
+    assert_eq!(
+        world
+            .policy
+            .network_mode(Launcher, &identity)
+            .expect("mode"),
+        network_decision_t::offline(None)
+    );
+    assert_eq!(
+        journal_bodies(&world.root, alice.uid).last(),
+        Some(&record_body_t::lifecycle(lifecycle_record_t::expired {
+            grant_id: tor.grant_id
+        }))
+    );
+}
+
+#[test]
+fn an_identity_mismatch_is_reported_once_per_executable_identity() {
+    // ADR 0007 erratum E7.4 (ADR 0008 §7): an updated package or executable is denied
+    // `unknown_identity` and reported once per lineage, package identity and
+    // executable hash; another runtime scope is denied without a record.
+    let mut world = world("mismatch");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let editor = app("editor");
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "mismatch genesis")
+        .add(vec![file_grant(
+            "mismatch docs",
+            alice.uid,
+            "home:Docs",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let request = files(alice.uid, "home:Docs", "read");
+    let identity = runtime(&alice, &editor);
+    let before = journal_bodies(&world.root, alice.uid).len();
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    let mut scoped = identity.clone();
+    scoped.runtime_scope = Some("sandbox".to_owned());
+    assert_eq!(
+        world.evaluate(&scoped, &request),
+        denied(deny_reason_t::unknown_identity)
+    );
+    assert_eq!(journal_bodies(&world.root, alice.uid).len(), before);
+    let mut updated = identity.clone();
+    updated.executable_sha256 = [9; 32];
+    for _ in 0..3 {
+        assert_eq!(
+            world.evaluate(&updated, &request),
+            denied(deny_reason_t::unknown_identity)
+        );
+        let _ = world.policy.network_mode(Launcher, &updated);
+    }
+    let bodies = journal_bodies(&world.root, alice.uid);
+    assert_eq!(bodies.len(), before + 1, "once");
+    assert_eq!(
+        bodies.last(),
+        Some(&record_body_t::lifecycle(
+            lifecycle_record_t::identity_mismatch {
+                lineage_id: genesis.payload.lineage_id,
+                package_identity: editor.package_identity.clone(),
+                executable_sha256: [9; 32],
+            }
+        ))
+    );
+    let mut repackaged = identity.clone();
+    repackaged.package_identity = "deb:editor-fork:amd64".to_owned();
+    world.evaluate(&repackaged, &request);
+    assert_eq!(journal_bodies(&world.root, alice.uid).len(), before + 2);
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+}
+
+#[test]
+fn reserve_use_evaluates_completely_before_registryd_reserves() {
+    // ADR 0007 §4 option A, erratum E7.1: policyd evaluates the request against the
+    // named one-shot grant (mandatory policy, subject, session liveness, every rule)
+    // and only then has registryd reserve it. Nothing is consumed by a refusal.
+    let root = temp_root("reserve");
+    let alice = test_user(1001);
+    let scanner = app("scanner");
+    let identity = runtime(&alice, &scanner);
+    let genesis = draft(&alice, &scanner, commit_type_t::genesis, "reserve genesis")
+        .add(vec![file_grant(
+            "reserve cache",
+            alice.uid,
+            "home:Cache",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    let scan = file_grant(
+        "scan",
+        alice.uid,
+        "home:Scan",
+        &["read"],
+        one_shot_lifetime(),
+    );
+    let mut in_call = one_shot_lifetime();
+    in_call.session_id = Some(synthetic_id("session call"));
+    let call = file_grant("call", alice.uid, "home:Call", &["read"], in_call);
+    let branch = draft(&alice, &scanner, commit_type_t::temporary_grant, "reserve")
+        .on(&genesis)
+        .add(vec![scan.clone(), call.clone()])
+        .temporary_authority()
+        .sign(&alice);
+    let operation = synthetic_id("scan operation");
+    let standing = |world: &world_t, grant: &random_id_t| {
+        world.registry.standing(alice.uid, grant).expect("standing")
+    };
+    let unconsumed = cham3_registryd::lineage::standing_t::current;
+    {
+        // Mandatory policy forbids the scan: refused, nothing reserved.
+        let prohibited = mandatory_policy_t {
+            prohibitions: vec![prohibition_t {
+                category: resource_category_t::filesystem,
+                resource_id: Some("home:Scan".to_owned()),
+                operation: None,
+                owner_uid: None,
+            }],
+            ..mandatory_policy_t::default()
+        };
+        let mut world = world_at(&root, registry_config_t::default(), prohibited);
+        world.enroll(&alice);
+        world.submit(&alice, &genesis);
+        world.submit(&alice, &branch);
+        assert_eq!(
+            world.policy.reserve_use(
+                Launcher,
+                &identity,
+                &files(alice.uid, "home:Scan", "read"),
+                &scan.grant_id,
+                &operation,
+            ),
+            Ok(reserve_outcome_t::refused(denied(
+                deny_reason_t::mandatory_policy
+            )))
+        );
+        assert_eq!(standing(&world, &scan.grant_id), unconsumed);
+        world.registry.shutdown().expect("shutdown");
+    }
+    let mut world = world_at(
+        &root,
+        registry_config_t::default(),
+        mandatory_policy_t::default(),
+    );
+    let scan_request = files(alice.uid, "home:Scan", "read");
+    // Only the consumer role; a request outside the grant; another grant id; a
+    // grant that is not one-shot; an updated executable.
+    assert_eq!(
+        code(world.policy.reserve_use(
+            Contractd,
+            &identity,
+            &scan_request,
+            &scan.grant_id,
+            &operation
+        )),
+        "ipc/role_denied"
+    );
+    let mut refusals = vec![
+        (
+            files(alice.uid, "home:Scan", "write"),
+            scan.grant_id,
+            identity.clone(),
+            denied(deny_reason_t::no_matching_grant),
+        ),
+        (
+            scan_request.clone(),
+            call.grant_id,
+            identity.clone(),
+            denied(deny_reason_t::no_matching_grant),
+        ),
+        (
+            files(alice.uid, "home:Cache", "read"),
+            synthetic_id("grant reserve cache"),
+            identity.clone(),
+            denied(deny_reason_t::not_one_shot),
+        ),
+    ];
+    let mut updated = identity.clone();
+    updated.executable_sha256 = [9; 32];
+    refusals.push((
+        scan_request.clone(),
+        scan.grant_id,
+        updated,
+        denied(deny_reason_t::unknown_identity),
+    ));
+    // A session-bound one-shot without a live attestation.
+    let mut in_session = identity.clone();
+    in_session.session_id = Some(synthetic_id("session call"));
+    refusals.push((
+        files(alice.uid, "home:Call", "read"),
+        call.grant_id,
+        in_session.clone(),
+        denied(deny_reason_t::session_not_live),
+    ));
+    for (request, grant_id, runtime_identity, decision) in refusals {
+        assert_eq!(
+            world
+                .policy
+                .reserve_use(Launcher, &runtime_identity, &request, &grant_id, &operation),
+            Ok(reserve_outcome_t::refused(decision)),
+            "{request:?}"
+        );
+    }
+    assert_eq!(standing(&world, &scan.grant_id), unconsumed);
+    assert_eq!(standing(&world, &call.grant_id), unconsumed);
+    // Eligible: reserved and consumed; the next evaluation and reservation are
+    // denied.
+    let reserved = world
+        .policy
+        .reserve_use(
+            Launcher,
+            &identity,
+            &scan_request,
+            &scan.grant_id,
+            &operation,
+        )
+        .expect("reserve");
+    let reserve_outcome_t::reserved {
+        grant_id,
+        commit_id,
+        reservation_id,
+        ..
+    } = reserved
+    else {
+        panic!("not reserved: {reserved:?}")
+    };
+    assert_eq!((grant_id, commit_id), (scan.grant_id, branch.commit_id));
+    let consumed = denied(deny_reason_t::grant_ended(
+        cham3_registryd::lineage::end_reason_t::consumed,
+    ));
+    assert_eq!(world.evaluate(&identity, &scan_request), consumed);
+    assert_eq!(
+        world.policy.reserve_use(
+            Launcher,
+            &identity,
+            &scan_request,
+            &scan.grant_id,
+            &operation
+        ),
+        Ok(reserve_outcome_t::refused(consumed))
+    );
+    // A live attestation makes the session-bound one-shot reservable.
+    world.sessions.attested.borrow_mut().insert(
+        synthetic_id("session call"),
+        session_attestation_t {
+            live: true,
+            observed_at: T1Utc + 60,
+        },
+    );
+    assert!(matches!(
+        world.policy.reserve_use(
+            Launcher,
+            &in_session,
+            &files(alice.uid, "home:Call", "read"),
+            &call.grant_id,
+            &operation
+        ),
+        Ok(reserve_outcome_t::reserved { .. })
+    ));
+    // The consumer reports the outcome to registryd; the grant stays consumed.
+    world
+        .registry
+        .complete_use(
+            Launcher,
+            alice.uid,
+            &reservation_id,
+            cham3_registryd::record::use_outcome_t::failure,
+        )
+        .expect("completed");
+    assert_eq!(world.evaluate(&identity, &scan_request), consumed);
 }

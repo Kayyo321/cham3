@@ -15,8 +15,19 @@
 //! snapshot of another boot, or a sample that cannot be taken, makes the outcome
 //! `unknown` (`clock_unavailable`).
 //!
-//! Limits: in-process composition; the transport is M2-007. One-shot reservations
-//! are stage B2, so the reserved set is empty. The session source is a test
+//! **Lifecycle evidence (ADR 0007 §§3–5; erratum E7; stage B2).** Every evaluation
+//! and network-mode query that read a snapshot reports what it observed through
+//! registryd's `restrict`: the expiry latch for each current grant that trusted now
+//! shows expired and no record ends yet (§5 rule 5), and an `identity_mismatch` for
+//! a runtime identity whose package identity or executable hash is not the
+//! lineage's subject (E7.4). A failed report changes no decision; the next
+//! evaluation retries it. `reserve_use` (E7.1) evaluates the request against the
+//! one-shot grant completely and only then asks registryd to reserve it, which
+//! re-checks its own rules under the user lock.
+//!
+//! Limits: in-process composition; the transport is M2-007. Reservations reach
+//! evaluation as grants that a `use_reserved` record ended (`consumed`), so the
+//! snapshot's separate reserved set stays empty. The session source is a test
 //! stand-in until sessiond exists.
 
 use std::cell::RefCell;
@@ -25,6 +36,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use cham3_contract_format::hash::{digest_t, lineage_id};
+use cham3_contract_format::schema::{random_id_t, subject_t};
 use cham3_identityd::caller::{caller_role_t, service_name_t};
 use cham3_identityd::index::key_resolution_t;
 use cham3_identityd::journal::identity_journal_t;
@@ -32,11 +44,13 @@ use cham3_identityd::outcome::{ipc, ipc_code_t, service_error_t, service_result_
 use cham3_identityd::service::{identity_service_t, user_identity_t};
 use cham3_registryd::anchor::anchor_mode_t;
 use cham3_registryd::clock::{time_source_t, time_view_t};
+use cham3_registryd::record::lifecycle_record_t;
 use cham3_registryd::registry::{lineage_view_t, registry_t};
 
 use crate::evaluate::{
-    decision_t, evaluate, key_state_t, network_decision_t, network_mode, resource_request_t,
-    runtime_identity_t, session_source_t, snapshot_t, unknown_reason_t,
+    decision_t, evaluate, evaluate_grant, identity_mismatch, key_state_t, network_decision_t,
+    network_mode, resource_request_t, runtime_identity_t, session_source_t, snapshot_t,
+    unknown_reason_t, unlatched_expirations,
 };
 use crate::mandatory::mandatory_policy_t;
 
@@ -100,6 +114,20 @@ impl<journal_impl_t: identity_journal_t> policy_identity_link_t
             .map_err(|_| ipc(ipc_code_t::storage_unavailable))?
             .user_identity(Policyd, uid)
     }
+}
+
+/// The outcome of `reserve_use` (ADR 0007 §4, erratum E7.1).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum reserve_outcome_t {
+    /// registryd reserved the grant: it is consumed, whatever the outcome.
+    reserved {
+        grant_id: random_id_t,
+        commit_id: digest_t,
+        reservation_id: random_id_t,
+        journal_seq: u64,
+    },
+    /// The evaluation did not find the grant eligible; nothing is reserved.
+    refused(decision_t),
 }
 
 /// `policy_status`.
@@ -303,7 +331,108 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
             sessions: self.sessions.as_ref(),
             reserved: &reserved,
         };
-        Ok(evaluate(&snapshot, identity, request))
+        let decision = evaluate(&snapshot, identity, request);
+        self.report(&snapshot, identity);
+        Ok(decision)
+    }
+
+    /// The evidence one evaluation owes (ADR 0007 §5 rule 5; erratum E7.4), through
+    /// registryd's `restrict`: the expiry latch for every current grant that trusted
+    /// now shows expired and no record ends yet, and an identity mismatch. A failed
+    /// report changes no decision (the grant is denied as expired either way); the
+    /// next evaluation retries it.
+    fn report(&self, snapshot: &snapshot_t<'_>, identity: &runtime_identity_t) {
+        for grant_id in unlatched_expirations(snapshot) {
+            let _ = self.registry.restrict(
+                Policyd,
+                identity.owner_uid,
+                &lifecycle_record_t::expired { grant_id },
+            );
+        }
+        if let Some(record) = identity_mismatch(snapshot, identity) {
+            let _ = self.registry.restrict(Policyd, identity.owner_uid, &record);
+        }
+    }
+
+    /// `reserve_use` (`fixture_consumer`, later brokers; ADR 0007 §4 option A,
+    /// erratum E7.1): evaluates the request completely against the one-shot grant
+    /// `grant_id` (mandatory policy, subject, session liveness and every other rule
+    /// of §1); only an eligible grant is reserved, by registryd, which re-checks the
+    /// rules its own snapshot decides under the user lock and writes `use_reserved`
+    /// before it replies. registryd's refusal is the error: `restriction_not_durable`
+    /// means the grant is consumed and the use denied.
+    pub fn reserve_use(
+        &mut self,
+        caller: caller_role_t,
+        identity: &runtime_identity_t,
+        request: &resource_request_t,
+        grant_id: &random_id_t,
+        operation_id: &random_id_t,
+    ) -> service_result_t<reserve_outcome_t> {
+        if caller != caller_role_t::fixture_consumer {
+            return Err(ipc(ipc_code_t::role_denied));
+        }
+        let refused = |decision| Ok(reserve_outcome_t::refused(decision));
+        if self.policy.forbids(
+            identity.owner_uid,
+            request.category,
+            &request.resource_id,
+            &request.operation,
+        ) {
+            return refused(decision_t::denied(
+                crate::evaluate::deny_reason_t::mandatory_policy,
+            ));
+        }
+        if self.policy.emergency(identity.owner_uid) {
+            return refused(decision_t::denied(
+                crate::evaluate::deny_reason_t::emergency_restriction,
+            ));
+        }
+        let inputs = match self.inputs(identity) {
+            Ok(inputs) => inputs,
+            Err(reason) => return refused(decision_t::unknown(reason)),
+        };
+        let reserved = BTreeSet::new();
+        let snapshot = snapshot_t {
+            view: &inputs.view,
+            key_states: &inputs.key_states,
+            policy: &self.policy,
+            now: inputs.now,
+            observed_now: inputs.observed_now,
+            sessions: self.sessions.as_ref(),
+            reserved: &reserved,
+        };
+        let decision = evaluate_grant(&snapshot, identity, request, grant_id);
+        self.report(&snapshot, identity);
+        let decision_t::eligible {
+            grant_id: eligible,
+            commit_id,
+        } = decision
+        else {
+            return refused(decision);
+        };
+        let subject = subject_t {
+            owner_uid: identity.owner_uid,
+            owner_user_id: inputs.view.owner_user_id,
+            app_id: identity.app_id.clone(),
+            installation_id: identity.installation_id,
+            package_identity: identity.package_identity.clone(),
+            executable_sha256: identity.executable_sha256,
+            runtime_scope: identity.runtime_scope.clone(),
+        };
+        let receipt = self.registry.reserve_use(
+            Policyd,
+            identity.owner_uid,
+            &eligible,
+            &subject,
+            operation_id,
+        )?;
+        Ok(reserve_outcome_t::reserved {
+            grant_id: eligible,
+            commit_id,
+            reservation_id: receipt.reservation_id,
+            journal_seq: receipt.journal_seq,
+        })
     }
 
     /// `network_mode` (`service:*`, `fixture_consumer`).
@@ -332,7 +461,9 @@ impl<identity_link_impl_t: policy_identity_link_t> policy_service_t<identity_lin
             sessions: self.sessions.as_ref(),
             reserved: &reserved,
         };
-        Ok(network_mode(&snapshot, identity))
+        let decision = network_mode(&snapshot, identity);
+        self.report(&snapshot, identity);
+        Ok(decision)
     }
 
     /// `policy_status` (`service:*`, `trusted_client` for its own UID).

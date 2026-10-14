@@ -18,6 +18,7 @@ use cham3_contract_format::schema::{
 };
 use cham3_identityd::index::{user_state_t, utc_seconds};
 use cham3_registryd::lineage::end_reason_t;
+use cham3_registryd::record::lifecycle_record_t;
 use cham3_registryd::registry::{grant_origin_t, lineage_view_t};
 
 use crate::mandatory::{mandatory_policy_t, network_mode_t};
@@ -76,6 +77,8 @@ pub enum deny_reason_t {
     epoch_invalid,
     /// Delegated grants are not admitted in M2-005; evaluation refuses them too.
     delegation_unsupported,
+    /// A reservation was requested for a grant that is not one-shot (ADR 0007 §4).
+    not_one_shot,
 }
 
 impl deny_reason_t {
@@ -95,6 +98,7 @@ impl deny_reason_t {
             deny_reason_t::key_invalidated => "key_invalidated",
             deny_reason_t::epoch_invalid => "epoch_invalid",
             deny_reason_t::delegation_unsupported => "delegation_unsupported",
+            deny_reason_t::not_one_shot => "not_one_shot",
         }
     }
 }
@@ -353,6 +357,76 @@ pub fn evaluate(
     identity: &runtime_identity_t,
     request: &resource_request_t,
 ) -> decision_t {
+    evaluate_matching(snapshot, identity, request, None)
+}
+
+/// `evaluate` restricted to the grant `grant_id`, for a one-shot reservation (ADR
+/// 0007 §4, erratum E7.1): every rule of §1 for that grant alone, and the grant must
+/// be one-shot (`not_one_shot` otherwise).
+pub fn evaluate_grant(
+    snapshot: &snapshot_t<'_>,
+    identity: &runtime_identity_t,
+    request: &resource_request_t,
+    grant_id: &random_id_t,
+) -> decision_t {
+    let one_shot = current_grants(snapshot.view)
+        .into_iter()
+        .find(|grant| grant.grant_id == *grant_id)
+        .map(|grant| grant.lifetime.kind == lifetime_kind_t::one_shot);
+    match evaluate_matching(snapshot, identity, request, Some(grant_id)) {
+        decision_t::eligible { .. } if one_shot != Some(true) => {
+            decision_t::denied(deny_reason_t::not_one_shot)
+        }
+        decision => decision,
+    }
+}
+
+/// Current grants of the view that trusted now shows expired and that no record
+/// ends yet: the expiry latch (ADR 0007 §5 rule 5) records each of them.
+pub fn unlatched_expirations(snapshot: &snapshot_t<'_>) -> Vec<random_id_t> {
+    current_grants(snapshot.view)
+        .into_iter()
+        .filter(|grant| !snapshot.view.ended.contains_key(&grant.grant_id))
+        .filter(|grant| {
+            grant
+                .lifetime
+                .expiration
+                .as_ref()
+                .and_then(|expiration| utc_seconds(expiration))
+                .is_some_and(|end| snapshot.now >= end)
+        })
+        .map(|grant| grant.grant_id)
+        .collect()
+}
+
+/// A runtime identity bound to the lineage (same owner, application and
+/// installation) whose package identity or executable hash is not the authoritative
+/// subject's (ADR 0007 §3, erratum E7.4; ADR 0008 §7): the `identity_mismatch`
+/// evidence to report. `None` when the identity matches or is not this lineage's.
+pub fn identity_mismatch(
+    snapshot: &snapshot_t<'_>,
+    identity: &runtime_identity_t,
+) -> Option<lifecycle_record_t> {
+    let subject = snapshot.view.authoritative_subject.as_ref()?;
+    let bound = subject.owner_uid == identity.owner_uid
+        && subject.owner_user_id == snapshot.view.owner_user_id
+        && subject.app_id == identity.app_id
+        && subject.installation_id == identity.installation_id;
+    let changed = subject.package_identity != identity.package_identity
+        || subject.executable_sha256 != identity.executable_sha256;
+    (bound && changed).then(|| lifecycle_record_t::identity_mismatch {
+        lineage_id: snapshot.view.lineage_id,
+        package_identity: identity.package_identity.clone(),
+        executable_sha256: identity.executable_sha256,
+    })
+}
+
+fn evaluate_matching(
+    snapshot: &snapshot_t<'_>,
+    identity: &runtime_identity_t,
+    request: &resource_request_t,
+    only: Option<&random_id_t>,
+) -> decision_t {
     if snapshot.policy.forbids(
         identity.owner_uid,
         request.category,
@@ -369,6 +443,7 @@ pub fn evaluate(
     }
     let matching: Vec<&grant_t> = current_grants(snapshot.view)
         .into_iter()
+        .filter(|grant| only.is_none_or(|grant_id| grant.grant_id == *grant_id))
         .filter(|grant| {
             grant.resource.category == request.category
                 && grant.resource.resource_id == request.resource_id
