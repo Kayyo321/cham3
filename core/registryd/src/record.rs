@@ -22,7 +22,8 @@
 //! `branch_terminated` (§5 rule 6: a new boot ends every live temporary branch).
 //! Stage B2 (ADR 0007 §§3, 4, 6, 7; erratum E7) adds the lifecycle record
 //! `identity_mismatch` and the registry events `use_reserved`, `use_completed`,
-//! `consumed_uncertain`, `session_event`, `enforcement_outcome` and `audit_gap`.
+//! `consumed_uncertain`, `session_event`, `sessions_ended` (§6: a new boot ends
+//! every session the journal knows), `enforcement_outcome` and `audit_gap`.
 //! Every one of them only narrows authority or records evidence. Any other kind
 //! fails replay (fail closed).
 //!
@@ -265,6 +266,11 @@ pub enum registry_event_t {
         session_id: random_id_t,
         change: session_change_t,
     },
+    /// A new boot (`boot_id`) ended every session of the user that the journal knew
+    /// and had not ended, started or bound to a grant (ADR 0007 §6; M2-006-B2-03):
+    /// replay ends them at this point. No grant effect of its own: the boot's
+    /// `branch_terminated` (or containment) ends the temporary grants.
+    sessions_ended { boot_id: String },
     /// An enforcement domain's report for a commit (ADR 0006 §1; erratum E7.2). It
     /// counts for the commit's status only in the run `run_id` that wrote it.
     enforcement_outcome {
@@ -287,6 +293,13 @@ pub const MaxRecordBootIdBytes: usize = 64;
 /// Longest package identity an `identity_mismatch` names (the subject's limit,
 /// wire format §6).
 pub const MaxPackageIdentityBytes: usize = 255;
+
+/// The package identity an `identity_mismatch` may name: 1..=255 bytes of printable
+/// ASCII without spaces (wire format §6). The decoder and every writer use this one
+/// rule (M2-006-B2-02).
+pub fn valid_package_identity(text: &str) -> bool {
+    !text.is_empty() && text.len() <= MaxPackageIdentityBytes && is_package_identity_text(text)
+}
 
 /// The content of one record.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -365,6 +378,20 @@ fn uint(value: u64) -> value_t {
     value_t::unsigned(value)
 }
 
+impl record_body_t {
+    /// Whether the strict decoder accepts this body back unchanged. Every writer
+    /// checks it before any effect, so that registryd never persists a record its own
+    /// replay would refuse (M2-006-B2-02).
+    pub fn well_formed(&self) -> bool {
+        let record = registry_record_t {
+            sequence: 1,
+            time: "2026-01-01T00:00:00Z".to_owned(),
+            body: self.clone(),
+        };
+        registry_record_t::decode(&record.encode()).as_ref() == Ok(&record)
+    }
+}
+
 impl registry_record_t {
     /// The record's canonical encoding.
     pub fn encode(&self) -> Vec<u8> {
@@ -406,6 +433,10 @@ impl registry_record_t {
             }
             record_body_t::event(registry_event_t::branch_terminated { boot_id }) => {
                 pairs.push(("kind", value_t::text_of("branch_terminated")));
+                pairs.push(("boot_id", value_t::text_of(boot_id)));
+            }
+            record_body_t::event(registry_event_t::sessions_ended { boot_id }) => {
+                pairs.push(("kind", value_t::text_of("sessions_ended")));
                 pairs.push(("boot_id", value_t::text_of(boot_id)));
             }
             record_body_t::event(registry_event_t::use_reserved {
@@ -577,6 +608,12 @@ impl registry_record_t {
                 }),
                 &["boot_id"],
             ),
+            "sessions_ended" => (
+                record_body_t::event(registry_event_t::sessions_ended {
+                    boot_id: boot_id(field("boot_id")?)?,
+                }),
+                &["boot_id"],
+            ),
             "use_reserved" => (
                 record_body_t::event(registry_event_t::use_reserved {
                     grant_id: fixed(field("grant_id")?)?,
@@ -637,10 +674,7 @@ impl registry_record_t {
             ),
             "identity_mismatch" => {
                 let package_identity = text(field("package_identity")?)?;
-                if package_identity.is_empty()
-                    || package_identity.len() > MaxPackageIdentityBytes
-                    || !is_package_identity_text(&package_identity)
-                {
+                if !valid_package_identity(&package_identity) {
                     return Err(record_error_t::malformed);
                 }
                 (
@@ -976,6 +1010,9 @@ mod tests {
             record_body_t::event(registry_event_t::branch_terminated {
                 boot_id: "boot".to_owned(),
             }),
+            record_body_t::event(registry_event_t::sessions_ended {
+                boot_id: "boot".to_owned(),
+            }),
             record_body_t::event(registry_event_t::use_reserved {
                 grant_id: [5; 16],
                 reservation_id: [8; 16],
@@ -1033,6 +1070,7 @@ mod tests {
             record_body_t::user(user_record_t::deletion_pending),
         ];
         for body in bodies {
+            assert!(body.well_formed());
             let record = sample(body);
             let bytes = record.encode();
             assert_eq!(registry_record_t::decode(&bytes), Ok(record.clone()));
@@ -1136,28 +1174,53 @@ mod tests {
             );
         }
         assert!(registry_record_t::decode(&reserved).is_ok());
-        for package_identity in [String::new(), "p".repeat(MaxPackageIdentityBytes + 1)] {
-            let mismatch = sample(record_body_t::lifecycle(
-                lifecycle_record_t::identity_mismatch {
-                    lineage_id: [4; 32],
-                    package_identity,
-                    executable_sha256: [12; 32],
-                },
-            ));
+        // A package identity the decoder refuses is refused by `well_formed` too, so
+        // that no writer persists it (M2-006-B2-02); a valid one is accepted.
+        for package_identity in [
+            String::new(),
+            "p".repeat(MaxPackageIdentityBytes + 1),
+            "pkg\n".to_owned(),
+            "org.example app".to_owned(),
+        ] {
+            assert!(!valid_package_identity(&package_identity));
+            let body = record_body_t::lifecycle(lifecycle_record_t::identity_mismatch {
+                lineage_id: [4; 32],
+                package_identity,
+                executable_sha256: [12; 32],
+            });
+            assert!(!body.well_formed());
             assert_eq!(
-                registry_record_t::decode(&mismatch.encode()),
+                registry_record_t::decode(&sample(body).encode()),
                 Err(record_error_t::malformed)
             );
         }
+        let longest = "p".repeat(MaxPackageIdentityBytes);
+        assert!(valid_package_identity(&longest));
+        assert!(
+            record_body_t::lifecycle(lifecycle_record_t::identity_mismatch {
+                lineage_id: [4; 32],
+                package_identity: longest,
+                executable_sha256: [12; 32],
+            })
+            .well_formed()
+        );
         // A registry event names a boot id of 1..=64 bytes.
         for boot_id in [String::new(), "b".repeat(MaxRecordBootIdBytes + 1)] {
-            let event = sample(record_body_t::event(registry_event_t::branch_terminated {
-                boot_id,
-            }));
-            assert_eq!(
-                registry_record_t::decode(&event.encode()),
-                Err(record_error_t::malformed)
-            );
+            for body in [
+                registry_event_t::branch_terminated {
+                    boot_id: boot_id.clone(),
+                },
+                registry_event_t::sessions_ended {
+                    boot_id: boot_id.clone(),
+                },
+            ] {
+                let body = record_body_t::event(body);
+                assert!(!body.well_formed());
+                assert_eq!(
+                    registry_record_t::decode(&sample(body).encode()),
+                    Err(record_error_t::malformed)
+                );
+            }
         }
     }
 

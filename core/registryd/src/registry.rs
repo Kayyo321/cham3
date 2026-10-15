@@ -57,7 +57,9 @@
 //! the observed time; `time_sample` takes policyd's offset increases. A new boot ends
 //! every live temporary branch (`branch_terminated`). Lock order with the clock:
 //! `users` → user → `policy` → `clock` → `ledger` → `anchor`; the clock lock is never
-//! held while another lock is taken, except the ledger's for a raise.
+//! held while another lock is taken, except the ledger's for a raise. A decision that
+//! depends on the present (admission, a reservation) takes trusted now from a second
+//! sample under the user lock, after the flush of what the slot owed (M2-006-B2-01).
 //!
 //! **Lifecycle and consumption (ADR 0007 §§3, 4, 6, 7; ADR 0008 §2; erratum E7;
 //! stage B2).** `reserve_use` (policyd only, after its full evaluation) re-checks the
@@ -65,13 +67,16 @@
 //! memory and writes `use_reserved` through the restrictive path; `complete_use`
 //! records the outcome once. Every start reports a reservation without an outcome as
 //! `consumed_uncertain`. `session_event` records a start and ends a session for good
-//! (`session_ended`, or a `session_event` end when no grant is bound to it).
+//! (`session_ended`, or a `session_event` end when no grant is bound to it); a new
+//! boot ends every session a journal knows (`sessions_ended`, M2-006-B2-03).
 //! `confirm_enforcement` records an outcome per domain; a commit's status counts only
 //! this run's outcomes. An evidence record (session start, use outcome, enforcement
 //! outcome) whose write fails leaves an `audit_gap` through the restrictive path, and
 //! a contained start writes one per contained user. `restrict` takes policyd's
-//! `identity_mismatch` once per lineage and executable identity. `history` pages the
-//! durable records for the owner's trusted client and admin.
+//! `identity_mismatch` once per lineage and executable identity. No writer persists
+//! a record the strict decoder would not accept back (`malformed_request`,
+//! M2-006-B2-02). `history` pages the durable records for the owner's trusted client
+//! and admin.
 //!
 //! Limits (stage B2): in-process composition; the socket transport and process
 //! boundary are M2-007. The recovery ceremony, `recover_user`, `replace_identity` and
@@ -1136,6 +1141,10 @@ impl registry_t {
         } else if new_boot {
             registry.terminate_branches();
         }
+        // After a reboot every session ends, contained or not (ADR 0007 §6).
+        if new_boot {
+            registry.end_sessions();
+        }
         // Reservations without a reported outcome are uncertain (ADR 0007 §7).
         registry.reconcile_reservations();
         // The policy state and the run marker, durable before anything is served. A
@@ -1430,6 +1439,48 @@ impl registry_t {
         }
     }
 
+    /// A new boot (ADR 0007 §6; M2-006-B2-03): every session that the journal of a
+    /// usable, unquarantined user knows — started by a `session_event` or bound to an
+    /// admitted grant, live branch or not — ends, in memory at once, then durably
+    /// through the restrictive path (`sessions_ended`, one record per user). A
+    /// failure leaves the record pending, retried by every later operation of the
+    /// user, and in the ledger for a same-boot restart. A contained user's sessions
+    /// end too; a quarantined user's journal is left as found.
+    fn end_sessions(&self) {
+        let slots: Vec<Arc<Mutex<user_slot_t>>> = match lock(&self.users) {
+            Ok(users) => users
+                .values()
+                .filter_map(|entry| match entry {
+                    user_entry_t::usable(slot) => Some(Arc::clone(slot)),
+                    user_entry_t::unusable(_) => None,
+                })
+                .collect(),
+            Err(_) => return,
+        };
+        let boot_id = match lock(&self.clock) {
+            Ok(clock) => clock.boot_id().to_owned(),
+            Err(_) => return,
+        };
+        for slot in slots {
+            let Ok(mut slot) = lock(&slot) else {
+                continue;
+            };
+            if matches!(slot.state, slot_state_t::quarantined(_))
+                || !slot.lineages.has_live_sessions()
+            {
+                continue;
+            }
+            let Ok(time) = self.now_text() else {
+                continue;
+            };
+            let event = registry_event_t::sessions_ended {
+                boot_id: boot_id.clone(),
+            };
+            slot.lineages.apply_event(&event);
+            let _ = self.restrictive_write(&mut slot, time, record_body_t::event(event));
+        }
+    }
+
     pub fn config(&self) -> registry_config_t {
         self.config.clone()
     }
@@ -1517,6 +1568,22 @@ impl registry_t {
             return Err(storage_unavailable());
         }
         self.trusted_now()
+    }
+
+    /// Trusted now for a decision under the user lock, from a sample taken after
+    /// the lock was acquired and after everything that may block before the
+    /// decision (`ready` flushing what the slot owes), immediately before it
+    /// (M2-006-B2-01): the operation's first sample may be older by the time spent
+    /// waiting for the lock or for those writes. This sample is observed like any
+    /// other (offset increase ledgered, anomaly recorded); when it fails, or leaves
+    /// an anomaly record owed, the decision is refused and nothing is consumed.
+    fn decision_now(&self, slot: &mut user_slot_t) -> service_result_t<i64> {
+        let observed = self.observe_time();
+        self.record_anomaly(slot, &observed);
+        if !slot.pending.is_empty() {
+            return Err(not_durable());
+        }
+        self.fresh_now(&observed)
     }
 
     /// The floor this clock persists now (erratum E6).
@@ -1756,6 +1823,11 @@ impl registry_t {
         time: String,
         body: record_body_t,
     ) -> service_result_t<u64> {
+        // Never a record that replay would refuse (M2-006-B2-02): nothing is
+        // ledgered or queued.
+        if !body.well_formed() {
+            return Err(ipc(ipc_code_t::malformed_request));
+        }
         // The in-memory denial for records the caller did not apply (containment).
         if let record_body_t::user(user_record) = &body {
             if *user_record == user_record_t::containment && slot.state == slot_state_t::normal {
@@ -2183,9 +2255,10 @@ impl registry_t {
         if !slot.pending.is_empty() {
             return Err(not_durable());
         }
-        // Trusted now from this operation's own sample (ADR 0007 §5): the
-        // commit-timestamp rule (`timestamp_rule`, erratum E4) and the signing window.
-        let now = self.fresh_now(&observed)?;
+        // Trusted now from this operation's own sample, taken after `ready` (ADR 0007
+        // §5; M2-006-B2-01): the commit-timestamp rule (`timestamp_rule`, erratum E4)
+        // and the signing window.
+        let now = self.decision_now(&mut slot)?;
         let (admission, payload) = check_commit_envelope(
             owner_uid,
             &slot.directory,
@@ -2274,6 +2347,13 @@ impl registry_t {
         if mismatch && caller != Policyd {
             return Err(ipc(ipc_code_t::role_denied));
         }
+        // A record the strict decoder refuses (an identity mismatch naming an empty,
+        // overlong or non-printable package identity) has no effect at all: nothing
+        // is denied, ledgered or journaled, and the journal stays replayable
+        // (M2-006-B2-02).
+        if !record_body_t::lifecycle(record.clone()).well_formed() {
+            return Err(ipc(ipc_code_t::malformed_request));
+        }
         self.retry_unverifiable();
         let observed = self.observe_time();
         let slot = self
@@ -2316,7 +2396,9 @@ impl registry_t {
     /// emergency restriction; the grant current, one-shot, not ended and not
     /// reserved; the lineage's authoritative subject; the signing key and the policy
     /// epoch; the lifetime at this operation's own trusted now (§8 option B) and a
-    /// bound session not ended. It then consumes the grant in memory and writes
+    /// bound session not ended — the lifetime at a sample taken after the lock and
+    /// any flush it waited for (M2-006-B2-01). It then consumes the grant in memory
+    /// and writes
     /// `use_reserved` through the restrictive path before it replies. A failed write
     /// leaves the grant consumed and reports `restriction_not_durable`: the use is
     /// denied.
@@ -2346,7 +2428,9 @@ impl registry_t {
         if !slot.pending.is_empty() {
             return Err(not_durable());
         }
-        let now = self.fresh_now(&observed)?;
+        // A sample after the lock and the flush, immediately before the lifetime
+        // check and the consumption (M2-006-B2-01).
+        let now = self.decision_now(&mut slot)?;
         let observed_now = lock(&self.clock)?
             .observed_now()
             .ok_or(storage_unavailable())?;
@@ -2442,7 +2526,8 @@ impl registry_t {
     /// path: `session_ended` when grants of the journal are bound to the session,
     /// otherwise a `session_event` end; either way the session never becomes live
     /// again, and admission refuses grants bound to it. A repeated end returns the
-    /// first one's sequence.
+    /// first one's sequence, and the end of a session that a new boot ended returns
+    /// that boot's `sessions_ended` (M2-006-B2-03).
     pub fn session_event(
         &self,
         caller: caller_role_t,
@@ -2479,7 +2564,7 @@ impl registry_t {
                 self.write_evidence(&mut slot, event, lost_evidence_t::session_event)
             }
             session_change_t::ended => {
-                let ends = [
+                let mut ends = vec![
                     record_body_t::lifecycle(lifecycle_record_t::session_ended {
                         session_id: *session_id,
                     }),
@@ -2488,6 +2573,12 @@ impl registry_t {
                         change,
                     }),
                 ];
+                // A session a new boot ended: its end is that boot's record.
+                if let Some(boot_id) = slot.lineages.session_ended_by_boot(session_id) {
+                    ends.push(record_body_t::event(registry_event_t::sessions_ended {
+                        boot_id: boot_id.to_owned(),
+                    }));
+                }
                 if slot.lineages.session_ended(session_id) {
                     if slot
                         .pending

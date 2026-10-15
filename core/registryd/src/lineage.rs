@@ -169,11 +169,13 @@ pub struct lineage_index_t {
     requests: BTreeSet<random_id_t>,
     grants: BTreeMap<random_id_t, grant_entry_t>,
     ended: BTreeMap<random_id_t, end_reason_t>,
-    /// Sessions a durable `session_ended` record or `session_event` end ended (ADR
-    /// 0007 §6).
+    /// Sessions a durable `session_ended` record, `session_event` end or
+    /// `sessions_ended` (a new boot) ended (ADR 0007 §6).
     ended_sessions: BTreeSet<random_id_t>,
     /// Sessions a `session_event` started (stage B2).
     started_sessions: BTreeSet<random_id_t>,
+    /// Sessions a new boot's `sessions_ended` ended, with that boot (M2-006-B2-03).
+    boot_ended_sessions: BTreeMap<random_id_t, String>,
     /// One-shot reservations by reservation id (stage B2).
     reservations: BTreeMap<random_id_t, reservation_t>,
 }
@@ -259,6 +261,43 @@ impl lineage_index_t {
     /// Whether any admitted grant of the journal is bound to the session.
     pub fn session_bound(&self, session_id: &random_id_t) -> bool {
         !self.session_grants(session_id).is_empty()
+    }
+
+    /// Sessions the journal knows — started by a `session_event` or bound to an
+    /// admitted grant — that have not ended, ascending.
+    fn live_sessions(&self) -> BTreeSet<random_id_t> {
+        self.started_sessions
+            .iter()
+            .chain(
+                self.grants
+                    .values()
+                    .filter_map(|entry| entry.grant.lifetime.session_id.as_ref()),
+            )
+            .filter(|session_id| !self.ended_sessions.contains(*session_id))
+            .copied()
+            .collect()
+    }
+
+    /// The boot whose `sessions_ended` ended this session, if a new boot ended it.
+    pub fn session_ended_by_boot(&self, session_id: &random_id_t) -> Option<&str> {
+        self.boot_ended_sessions.get(session_id).map(String::as_str)
+    }
+
+    /// Whether a session the journal knows has not ended: a new boot then owes
+    /// `sessions_ended` (ADR 0007 §6; M2-006-B2-03).
+    pub fn has_live_sessions(&self) -> bool {
+        !self.live_sessions().is_empty()
+    }
+
+    /// A new boot (ADR 0007 §6, `sessions_ended`): every session the journal knows
+    /// ends, so that none starts again or binds a new grant. Grants are unchanged
+    /// here: the boot's `branch_terminated` or containment ends the temporary ones.
+    pub fn end_sessions(&mut self, boot_id: &str) {
+        for session_id in self.live_sessions() {
+            self.ended_sessions.insert(session_id);
+            self.boot_ended_sessions
+                .insert(session_id, boot_id.to_owned());
+        }
     }
 
     /// Whether the commit is a lineage's trunk head or one of its live temporary
@@ -740,7 +779,8 @@ impl lineage_index_t {
     /// `consumed_uncertain` names an open reservation; a session start names a
     /// session that has not started or ended; a `session_event` end names a session
     /// that has not ended and that no grant is bound to (otherwise the end is
-    /// `session_ended`); an enforcement outcome names an admitted commit.
+    /// `session_ended`); `sessions_ended` finds a session that has not ended; an
+    /// enforcement outcome names an admitted commit.
     pub fn check_event(&self, event: &registry_event_t) -> service_result_t<()> {
         let lifecycle_rule = rule(rule_code_t::lifecycle_rule);
         let open = |reservation_id: &random_id_t| {
@@ -795,6 +835,11 @@ impl lineage_index_t {
                     return Err(lifecycle_rule);
                 }
             }
+            registry_event_t::sessions_ended { .. } => {
+                if !self.has_live_sessions() {
+                    return Err(lifecycle_rule);
+                }
+            }
             registry_event_t::clock_anomaly { .. }
             | registry_event_t::branch_terminated { .. }
             | registry_event_t::audit_gap { .. } => {}
@@ -802,13 +847,15 @@ impl lineage_index_t {
         Ok(())
     }
 
-    /// Applies a registry event: a new boot ends every live branch; a reservation
+    /// Applies a registry event: a new boot ends every live branch
+    /// (`branch_terminated`) and every known session (`sessions_ended`); a reservation
     /// consumes its grant (§4 option A); an outcome or `consumed_uncertain` closes its
     /// reservation; a session event starts or ends its session. The other events
     /// change no authority.
     pub fn apply_event(&mut self, event: &registry_event_t) {
         match event {
             registry_event_t::branch_terminated { .. } => self.end_branches(),
+            registry_event_t::sessions_ended { boot_id } => self.end_sessions(boot_id),
             registry_event_t::use_reserved {
                 grant_id,
                 reservation_id,

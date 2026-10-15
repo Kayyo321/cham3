@@ -18,8 +18,9 @@ mod builders;
 use std::fs;
 use std::io;
 use std::path::Path;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::Duration;
 
 use builders::*;
 use cham3_contract_format::hash::digest_t;
@@ -27,6 +28,7 @@ use cham3_contract_format::schema::{
     commit_type_t, grant_t, lifetime_t, random_id_t, resource_category_t, subject_t,
 };
 use cham3_identityd::caller::caller_role_t;
+use cham3_registryd::clock::{time_sample_t, time_source_t};
 use cham3_registryd::journal::{journal_io_t, system_io_t};
 use cham3_registryd::ledger::{previous_ledger_t, read_previous};
 use cham3_registryd::lineage::{end_reason_t, standing_t};
@@ -1268,4 +1270,788 @@ impl into_body_t for registry_event_t {
     fn into_body(self) -> record_body_t {
         record_body_t::event(self)
     }
+}
+
+/// The error code of a result, `None` on success: unlike `code`, a success fails the
+/// caller's own assertion, at its line.
+fn refusal<value_t>(
+    result: Result<value_t, cham3_identityd::outcome::service_error_t>,
+) -> Option<String> {
+    result.err().map(|error| error.to_string())
+}
+
+/// Journal writes that take time (M2-006-B2-01). The next journal write after `delay`
+/// is armed advances both clocks by that many seconds; after `clock_fails` is armed
+/// it leaves every later sample failing; with a gate it announces itself and waits
+/// to be released. Journal writes fail while `failing` is set.
+#[derive(Clone)]
+struct paced_io_t {
+    time: test_time_t,
+    failing: Arc<AtomicBool>,
+    delay: Arc<AtomicU64>,
+    clock_fails: Arc<AtomicBool>,
+    gate: Arc<Mutex<Option<gate_t>>>,
+}
+
+/// A gated write announces itself on the first channel and waits on the second.
+type gate_t = (mpsc::Sender<()>, mpsc::Receiver<()>);
+
+impl paced_io_t {
+    fn new(time: &test_time_t) -> paced_io_t {
+        paced_io_t {
+            time: time.clone(),
+            failing: Arc::default(),
+            delay: Arc::default(),
+            clock_fails: Arc::default(),
+            gate: Arc::default(),
+        }
+    }
+}
+
+impl journal_io_t for paced_io_t {
+    fn write_all(&self, file: &mut fs::File, bytes: &[u8]) -> io::Result<()> {
+        if self.failing.load(Ordering::SeqCst) {
+            return Err(io::Error::other("injected journal write failure"));
+        }
+        let delay = self.delay.swap(0, Ordering::SeqCst);
+        if delay > 0 {
+            self.time.advance(delay);
+        }
+        if self.clock_fails.swap(false, Ordering::SeqCst) {
+            let now = self.time.current().expect("clock");
+            self.time.set_available(false, now.realtime, now.boottime);
+        }
+        let gate = self.gate.lock().expect("gate").take();
+        if let Some((entered, release)) = gate {
+            entered.send(()).expect("entered");
+            release.recv().expect("released");
+        }
+        system_io_t.write_all(file, bytes)
+    }
+
+    fn sync_data(&self, file: &fs::File) -> io::Result<()> {
+        system_io_t.sync_data(file)
+    }
+
+    fn sync_directory(&self, path: &Path) -> io::Result<()> {
+        system_io_t.sync_directory(path)
+    }
+}
+
+/// The test clocks, counting the samples taken (after taking each).
+#[derive(Clone)]
+struct counted_time_t {
+    time: test_time_t,
+    samples: Arc<AtomicU64>,
+}
+
+impl time_source_t for counted_time_t {
+    fn sample(&self) -> Option<time_sample_t> {
+        let sample = self.time.sample();
+        self.samples.fetch_add(1, Ordering::SeqCst);
+        sample
+    }
+}
+
+fn paced_start(root: &Path, time: &counted_time_t, io: &paced_io_t) -> Arc<registry_t> {
+    let config = registry_config_t {
+        boot_id: Some("boot-1".to_owned()),
+        ..registry_config_t::default()
+    };
+    Arc::new(
+        registry_t::open(
+            root,
+            owner_of(root),
+            config,
+            Box::new(io.clone()),
+            Box::new(time.clone()),
+        )
+        .expect("registry start"),
+    )
+}
+
+fn expiring_one_shot(label: &str, uid: u32, expiration: &str) -> grant_t {
+    let mut lifetime = one_shot_lifetime();
+    lifetime.expiration = Some(expiration.to_owned());
+    file_grant(label, uid, &format!("home:{label}"), &["read"], lifetime)
+}
+
+fn reservations(root: &Path, uid: u32) -> usize {
+    decoded(root, uid)
+        .iter()
+        .filter(|record| {
+            matches!(
+                record.body,
+                record_body_t::event(registry_event_t::use_reserved { .. })
+            )
+        })
+        .count()
+}
+
+#[test]
+fn a_reservation_decides_at_a_sample_taken_after_it_waited() {
+    // M2-006-B2-01 (erratum E7.1): the lifetime is checked, and the grant consumed,
+    // at a sample taken under the user lock after the flush of what the slot owed —
+    // not at the operation's first sample, which may be older by the time it waited
+    // for those writes or for the lock. Every refusal consumes nothing.
+    let root = temp_root("reserve_waited");
+    let time = clock();
+    let io = paced_io_t::new(&time);
+    let samples = Arc::new(AtomicU64::new(0));
+    let counted = counted_time_t {
+        time: time.clone(),
+        samples: Arc::clone(&samples),
+    };
+    let registry = paced_start(&root, &counted, &io);
+    let flushed = expiring_one_shot("Flushed", 1001, "2026-10-13T09:05:00Z");
+    let contended = expiring_one_shot("Contended", 1001, "2026-10-13T09:15:00Z");
+    let unsampled = one_shot("unsampled", 1001);
+    let fixture = with_branch(
+        &registry,
+        1001,
+        "waited",
+        vec![flushed.clone(), contended.clone(), unsampled.clone()],
+    );
+    let uid = fixture.user.uid;
+    let owe_a_write = |label: &str| {
+        io.failing.store(true, Ordering::SeqCst);
+        assert_eq!(
+            refusal(registry.session_event(
+                Consumer,
+                uid,
+                &synthetic_id(label),
+                session_change_t::ended
+            )),
+            Some("ipc/restriction_not_durable".to_owned())
+        );
+        io.failing.store(false, Ordering::SeqCst);
+    };
+    // The flush of an owed session end takes 600 s and crosses 09:05.
+    owe_a_write("owed end");
+    io.delay.store(600, Ordering::SeqCst);
+    assert_eq!(
+        refusal(reserve(&registry, &fixture, &flushed.grant_id)),
+        Some("admission/lifecycle_rule".to_owned()),
+        "expired while the owed write was flushed"
+    );
+    assert_eq!(
+        registry.standing(uid, &flushed.grant_id),
+        Ok(standing_t::current)
+    );
+    assert_eq!(reservations(&root, uid), 0);
+    // Another operation holds the user lock in its write while the reservation
+    // waits; 600 s pass and cross 09:15 after the reservation's first sample.
+    let (entered_sender, entered) = mpsc::channel();
+    let (release, released) = mpsc::channel();
+    *io.gate.lock().expect("gate") = Some((entered_sender, released));
+    std::thread::scope(|scope| {
+        let holder = scope.spawn(|| {
+            registry.session_event(
+                Consumer,
+                uid,
+                &synthetic_id("holder end"),
+                session_change_t::ended,
+            )
+        });
+        entered
+            .recv()
+            .expect("the holder writes under the user lock");
+        let before = samples.load(Ordering::SeqCst);
+        let waiter = scope.spawn(|| reserve(&registry, &fixture, &contended.grant_id));
+        while samples.load(Ordering::SeqCst) == before {
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        time.advance(600);
+        release.send(()).expect("release");
+        holder.join().expect("holder").expect("ended");
+        assert_eq!(
+            refusal(waiter.join().expect("waiter")),
+            Some("admission/lifecycle_rule".to_owned()),
+            "expired while it waited for the user lock"
+        );
+    });
+    assert_eq!(
+        registry.standing(uid, &contended.grant_id),
+        Ok(standing_t::current)
+    );
+    assert_eq!(reservations(&root, uid), 0);
+    // The clock cannot be sampled after the flush: no decision, nothing consumed.
+    owe_a_write("second owed end");
+    let now = time.current().expect("clock");
+    io.clock_fails.store(true, Ordering::SeqCst);
+    assert_eq!(
+        refusal(reserve(&registry, &fixture, &unsampled.grant_id)),
+        Some("ipc/storage_unavailable".to_owned()),
+        "no sample after the flush"
+    );
+    assert_eq!(
+        registry.standing(uid, &unsampled.grant_id),
+        Ok(standing_t::current)
+    );
+    assert_eq!(reservations(&root, uid), 0);
+    // The positive control: the clock samples again and the grant is reserved.
+    time.set_available(true, now.realtime, now.boottime);
+    reserve(&registry, &fixture, &unsampled.grant_id).expect("reserved");
+    assert_eq!(
+        registry.standing(uid, &unsampled.grant_id),
+        Ok(standing_t::ended(end_reason_t::consumed))
+    );
+    assert_eq!(reservations(&root, uid), 1);
+}
+
+#[test]
+fn an_admission_decides_at_a_sample_taken_after_it_waited() {
+    // M2-006-B2-01, the same rule at admission (ADR 0007 §5, erratum E4): the commit
+    // timestamp rule is checked at a sample taken after the flush of what the slot
+    // owed. A commit stamped T1 is within 300 s of the first sample (T1 + 60 s) but
+    // not of trusted now after a 600 s flush.
+    let root = temp_root("admit_waited");
+    let time = clock();
+    let io = paced_io_t::new(&time);
+    let counted = counted_time_t {
+        time: time.clone(),
+        samples: Arc::default(),
+    };
+    let registry = paced_start(&root, &counted, &io);
+    let fixture = with_branch(&registry, 1001, "admit_waited", Vec::new());
+    let uid = fixture.user.uid;
+    let revision = |label: &str| {
+        draft(&fixture.user, &fixture.app, commit_type_t::revision, label)
+            .on(&fixture.genesis)
+            .add(vec![file_grant(
+                label,
+                uid,
+                "home:Pictures",
+                &["read"],
+                persistent_lifetime(),
+            )])
+            .sign(&fixture.user)
+    };
+    io.failing.store(true, Ordering::SeqCst);
+    assert!(
+        registry
+            .session_event(
+                Consumer,
+                uid,
+                &synthetic_id("owed end"),
+                session_change_t::ended
+            )
+            .is_err()
+    );
+    io.failing.store(false, Ordering::SeqCst);
+    io.delay.store(600, Ordering::SeqCst);
+    let late = revision("late");
+    assert_eq!(
+        refusal(admit(&registry, &fixture.user, &late)),
+        Some("admission/timestamp_rule".to_owned()),
+        "stamped more than 300 s before trusted now after the flush"
+    );
+    assert!(!decoded(&root, uid).iter().any(|record| matches!(
+        &record.body,
+        record_body_t::commit_admitted { commit_id, .. } if *commit_id == late.commit_id
+    )));
+    // The positive control: a commit stamped at trusted now is admitted.
+    let current = draft(
+        &fixture.user,
+        &fixture.app,
+        commit_type_t::revision,
+        "current",
+    )
+    .on(&fixture.genesis)
+    .timestamp("2026-10-13T09:11:00Z")
+    .add(vec![file_grant(
+        "current",
+        uid,
+        "home:Pictures",
+        &["read"],
+        persistent_lifetime(),
+    )])
+    .sign(&fixture.user);
+    admit(&registry, &fixture.user, &current).expect("admitted");
+}
+
+#[test]
+fn restrict_refuses_a_record_that_replay_would_refuse() {
+    // M2-006-B2-02: `restrict` persists only a record that the strict decoder accepts
+    // back unchanged. Otherwise it refuses `malformed_request` before any effect:
+    // nothing is denied, ledgered or journaled, and the journal stays replayable.
+    // Identity mismatches naming an empty, overlong or non-printable package
+    // identity, and (the same rule) restrictions whose grant ids are not strictly
+    // ascending or more than 64.
+    let root = temp_root("restrict_malformed");
+    let time = clock();
+    let io = fault_io_t::default();
+    let registry = start(&root, "boot-1", &time, &io);
+    let grants: Vec<grant_t> = (0..64)
+        .map(|index| one_shot(&format!("restricted {index}"), 1001))
+        .collect();
+    let fixture = with_branch(&registry, 1001, "malformed", grants.clone());
+    let uid = fixture.user.uid;
+    let mut ids: Vec<random_id_t> = grants.iter().map(|grant| grant.grant_id).collect();
+    ids.push(synthetic_id("grant malformed cache"));
+    ids.sort();
+    let mismatch = |package_identity: String| lifecycle_record_t::identity_mismatch {
+        lineage_id: fixture.lineage_id(),
+        package_identity,
+        executable_sha256: fixture.app.executable_sha256,
+    };
+    let records = decoded(&root, uid);
+    let ledger = ledger_bodies(&root);
+    let malformed = [
+        mismatch(String::new()),
+        mismatch("p".repeat(256)),
+        mismatch("pkg\n".to_owned()),
+        mismatch("deb:editor fork:amd64".to_owned()),
+        lifecycle_record_t::restriction {
+            grant_ids: vec![ids[1], ids[0]],
+        },
+        lifecycle_record_t::restriction {
+            grant_ids: vec![ids[0], ids[0]],
+        },
+        lifecycle_record_t::restriction {
+            grant_ids: ids.clone(),
+        },
+    ];
+    for record in &malformed {
+        assert_eq!(
+            refusal(registry.restrict(Policyd, uid, record)),
+            Some("ipc/malformed_request".to_owned()),
+            "{record:?}"
+        );
+    }
+    assert_eq!(decoded(&root, uid), records, "nothing journaled");
+    assert_eq!(ledger_bodies(&root), ledger, "nothing ledgered");
+    assert!(
+        registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .pending_restrictions
+            .is_empty()
+    );
+    for id in &ids {
+        assert_eq!(
+            registry.standing(uid, id),
+            Ok(standing_t::current),
+            "nothing denied"
+        );
+    }
+    // The positive controls: the longest package identity and 64 ascending ids.
+    let longest = mismatch("p".repeat(255));
+    registry.restrict(Policyd, uid, &longest).expect("mismatch");
+    registry
+        .restrict(
+            Policyd,
+            uid,
+            &lifecycle_record_t::restriction {
+                grant_ids: ids[..64].to_vec(),
+            },
+        )
+        .expect("restriction");
+    assert_eq!(
+        registry.standing(uid, &ids[0]),
+        Ok(standing_t::ended(end_reason_t::restriction))
+    );
+    // The journal replays: a restart quarantines nobody and keeps both records.
+    let count = decoded(&root, uid).len();
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    let registry = start(&root, "boot-1", &time, &io);
+    assert!(registry.unusable_users().expect("users").is_empty());
+    assert_eq!(decoded(&root, uid).len(), count);
+    assert_eq!(
+        registry.standing(uid, &ids[63]),
+        Ok(standing_t::ended(end_reason_t::restriction))
+    );
+    assert_eq!(registry.standing(uid, &ids[64]), Ok(standing_t::current));
+}
+
+#[test]
+fn a_new_boot_ends_every_session_the_journal_knows() {
+    // M2-006-B2-03 (ADR 0007 §6): at a new boot every session ends — started by a
+    // `session_event` or only bound to a grant, live branch or not, contained or
+    // not — with one `sessions_ended` per user; none starts again or binds a new
+    // grant. A restart in the same boot ends nothing.
+    let root = temp_root("boot_sessions");
+    let time = clock();
+    let io = fault_io_t::default();
+    let registry = start(&root, "boot-1", &time, &io);
+    // Alice has no temporary branch and one started, unbound session.
+    let alice = test_user(1001);
+    enroll(&registry, &alice);
+    let notes = app("notes");
+    let genesis = draft(&alice, &notes, commit_type_t::genesis, "notes genesis")
+        .add(vec![file_grant(
+            "notes docs",
+            alice.uid,
+            "home:Docs",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    admit(&registry, &alice, &genesis).expect("genesis");
+    let unbound = synthetic_id("session unbound");
+    let started = registry
+        .session_event(Consumer, 1001, &unbound, session_change_t::started)
+        .expect("started");
+    // A session that ended in boot 1 is not ended again.
+    let closed = synthetic_id("session closed");
+    registry
+        .session_event(Consumer, 1001, &closed, session_change_t::started)
+        .expect("started");
+    registry
+        .session_event(Consumer, 1001, &closed, session_change_t::ended)
+        .expect("ended");
+    // Bob has a live branch with a grant bound to a session never reported, and a
+    // started session.
+    let bound_grant = file_grant(
+        "bound",
+        1002,
+        "home:Bound",
+        &["read"],
+        session_lifetime("bound"),
+    );
+    let bob = with_branch(&registry, 1002, "bob", vec![bound_grant]);
+    let bound = synthetic_id("session bound");
+    let reported = synthetic_id("session reported");
+    registry
+        .session_event(Consumer, 1002, &reported, session_change_t::started)
+        .expect("started");
+    // A restart in the same boot ends nothing.
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    let registry = start(&root, "boot-1", &time, &io);
+    assert_eq!(
+        registry.session_event(Consumer, 1001, &unbound, session_change_t::started),
+        Ok(started)
+    );
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    // A new boot.
+    let registry = start(&root, "boot-2", &time, &io);
+    let ended = |boot_id: &str| {
+        record_body_t::event(registry_event_t::sessions_ended {
+            boot_id: boot_id.to_owned(),
+        })
+    };
+    assert_eq!(
+        last_body(&root, 1001),
+        ended("boot-2"),
+        "a user without a live branch"
+    );
+    let bob_bodies: Vec<record_body_t> = decoded(&root, 1002)
+        .into_iter()
+        .map(|record| record.body)
+        .collect();
+    assert_eq!(
+        bob_bodies[bob_bodies.len() - 2..],
+        [
+            record_body_t::event(registry_event_t::branch_terminated {
+                boot_id: "boot-2".to_owned(),
+            }),
+            ended("boot-2"),
+        ]
+    );
+    for (uid, session) in [(1001, unbound), (1002, reported), (1002, bound)] {
+        assert_eq!(
+            refusal(registry.session_event(Consumer, uid, &session, session_change_t::started)),
+            Some("admission/lifecycle_rule".to_owned()),
+            "{uid}: session ids are single-use across boots"
+        );
+    }
+    // A new grant bound to an old session is never admitted, branch or not.
+    for (user, app_label, genesis_commit, label) in [
+        (&alice, "notes", &genesis, "unbound"),
+        (&bob.user, "bob", &bob.genesis, "bound"),
+    ] {
+        let late = draft(
+            user,
+            &app(app_label),
+            commit_type_t::temporary_grant,
+            &format!("late {label}"),
+        )
+        .on(genesis_commit)
+        .add(vec![file_grant(
+            &format!("late {label}"),
+            user.uid,
+            "home:Late",
+            &["read"],
+            session_lifetime(label),
+        )])
+        .temporary_authority()
+        .sign(user);
+        assert_eq!(
+            refusal(admit(&registry, user, &late)),
+            Some("admission/duplicate_identifier".to_owned()),
+            "{label}"
+        );
+    }
+    // Ending an old session returns the boot's record; one ended before keeps its own.
+    let boot_record = u64::try_from(decoded(&root, 1001).len()).expect("count");
+    assert_eq!(
+        registry.session_event(Consumer, 1001, &unbound, session_change_t::ended),
+        Ok(boot_record)
+    );
+    assert!(
+        registry
+            .session_event(Consumer, 1001, &closed, session_change_t::ended)
+            .expect("ended")
+            < boot_record
+    );
+    // A session of this boot is live; restarts in this boot write nothing more.
+    let fresh = synthetic_id("session fresh");
+    let fresh_start = registry
+        .session_event(Consumer, 1001, &fresh, session_change_t::started)
+        .expect("started");
+    let count = decoded(&root, 1001).len();
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    let registry = start(&root, "boot-2", &time, &io);
+    assert_eq!(decoded(&root, 1001).len(), count);
+    assert_eq!(
+        registry.session_event(Consumer, 1001, &fresh, session_change_t::started),
+        Ok(fresh_start)
+    );
+    assert_eq!(
+        refusal(registry.session_event(Consumer, 1001, &unbound, session_change_t::started)),
+        Some("admission/lifecycle_rule".to_owned()),
+        "replay keeps the boot's end"
+    );
+    // An unclean run across boots: containment, its gap, then the end of every
+    // session of the contained users.
+    drop(registry);
+    let registry = start(&root, "boot-3", &time, &io);
+    assert_eq!(registry.run_decision(), run_decision_t::contained);
+    let alice_bodies: Vec<record_body_t> = decoded(&root, 1001)
+        .into_iter()
+        .map(|record| record.body)
+        .collect();
+    assert_eq!(
+        alice_bodies[alice_bodies.len() - 3..],
+        [
+            record_body_t::user(cham3_identityd::index::user_record_t::containment),
+            record_body_t::event(registry_event_t::audit_gap {
+                boot_id: "boot-2".to_owned(),
+                lost: lost_evidence_t::unverifiable_run,
+            }),
+            ended("boot-3"),
+        ]
+    );
+    assert_eq!(
+        refusal(registry.session_event(Consumer, 1001, &fresh, session_change_t::started)),
+        Some("admission/lifecycle_rule".to_owned()),
+        "a contained user's session ends too"
+    );
+    // A `sessions_ended` that finds no live session is not one the writer writes:
+    // replay refuses it.
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    let mut records = records_of(&root, 1001);
+    records.push(
+        registry_record_t {
+            sequence: records.len() as u64 + 1,
+            time: "2026-10-13T09:01:00Z".to_owned(),
+            body: ended("boot-forged"),
+        }
+        .encode(),
+    );
+    write_chained(&root, 1001, &alice.identity.key_id, &records);
+    let registry = start(&root, "boot-3", &time, &io);
+    assert_eq!(
+        registry.unusable_users().expect("users"),
+        vec![(
+            1001,
+            unusable_reason_t::quarantine(quarantine_reason_t::replay_defect)
+        )]
+    );
+}
+
+#[test]
+fn a_new_boot_that_cannot_journal_still_ends_every_session() {
+    // M2-006-B2-03: the sessions end in memory at once; `sessions_ended` is ledgered,
+    // retried by the user's next operation and re-journaled by a restart in the same
+    // boot, once.
+    let time = clock();
+    let io = fault_io_t::default();
+    let boot_ends = |root: &Path| {
+        decoded(root, 1001)
+            .iter()
+            .filter(|record| {
+                record.body
+                    == record_body_t::event(registry_event_t::sessions_ended {
+                        boot_id: "boot-2".to_owned(),
+                    })
+            })
+            .count()
+    };
+    for retried_by in ["operation", "restart"] {
+        let root = temp_root(&format!("boot_sessions_{retried_by}"));
+        let registry = start(&root, "boot-1", &time, &io);
+        let fixture = with_branch(&registry, 1001, "pending_sessions", Vec::new());
+        let session = synthetic_id("session pending");
+        registry
+            .session_event(Consumer, 1001, &session, session_change_t::started)
+            .expect("started");
+        registry.shutdown().expect("shutdown");
+        drop(registry);
+        io.journal_fails(true);
+        let registry = start(&root, "boot-2", &time, &io);
+        assert_eq!(boot_ends(&root), 0);
+        assert!(ledger_bodies(&root).contains(&record_body_t::event(
+            registry_event_t::sessions_ended {
+                boot_id: "boot-2".to_owned(),
+            }
+        )));
+        assert_eq!(
+            refusal(registry.session_event(Consumer, 1001, &session, session_change_t::started)),
+            Some("admission/lifecycle_rule".to_owned()),
+            "ended in memory at once"
+        );
+        assert_eq!(
+            refusal(registry.session_event(Consumer, 1001, &session, session_change_t::ended)),
+            Some("ipc/restriction_not_durable".to_owned())
+        );
+        io.journal_fails(false);
+        let registry = if retried_by == "operation" {
+            registry
+                .session_event(Consumer, 1001, &session, session_change_t::ended)
+                .expect("the boot's end, now durable");
+            registry
+        } else {
+            drop(registry);
+            let registry = start(&root, "boot-2", &time, &io);
+            assert_eq!(registry.run_decision(), run_decision_t::ledger_replayed);
+            registry
+        };
+        assert_eq!(boot_ends(&root), 1, "{retried_by}");
+        assert_eq!(
+            refusal(registry.session_event(Consumer, 1001, &session, session_change_t::started)),
+            Some("admission/lifecycle_rule".to_owned()),
+            "{retried_by}"
+        );
+        registry.shutdown().expect("shutdown");
+        drop(registry);
+        let registry = start(&root, "boot-2", &time, &io);
+        assert_eq!(boot_ends(&root), 1, "{retried_by}: once");
+        assert!(
+            !registry
+                .history(Admin, fixture.user.uid, 0)
+                .expect("replayable")
+                .records
+                .is_empty()
+        );
+    }
+}
+
+#[test]
+fn a_superseded_trunk_commit_takes_no_confirmation() {
+    // Erratum E7.2 (M2-006-B2-04): a commit that a later trunk commit superseded is
+    // no live head; its confirmation is refused `stale_head` and writes nothing.
+    let root = temp_root("enforcement_superseded");
+    let time = clock();
+    let io = fault_io_t::default();
+    let registry = start(&root, "boot-1", &time, &io);
+    let fixture = with_branch(&registry, 1001, "superseded", Vec::new());
+    let uid = fixture.user.uid;
+    let confirm = |commit: &digest_t| {
+        registry.confirm_enforcement(
+            Consumer,
+            uid,
+            commit,
+            &[3; 16],
+            enforcement_domain_t::launcher,
+            1,
+            enforcement_result_t::confirmed,
+        )
+    };
+    let revision = draft(&fixture.user, &fixture.app, commit_type_t::revision, "next")
+        .on(&fixture.genesis)
+        .add(vec![file_grant(
+            "next pictures",
+            uid,
+            "home:Pictures",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&fixture.user);
+    admit(&registry, &fixture.user, &revision).expect("revision");
+    let count = decoded(&root, uid).len();
+    assert_eq!(
+        refusal(confirm(&fixture.genesis.commit_id)),
+        Some("ipc/stale_head".to_owned()),
+        "a superseded trunk commit takes no confirmation"
+    );
+    assert_eq!(decoded(&root, uid).len(), count);
+    assert!(
+        registry
+            .enforcement_status(uid, &fixture.genesis.commit_id)
+            .expect("status")
+            .is_empty()
+    );
+    // The positive control: the trunk head is confirmed.
+    confirm(&revision.commit_id).expect("the live trunk head");
+}
+
+#[test]
+fn an_ended_branch_takes_no_confirmation() {
+    // Erratum E7.2 (M2-006-B2-04): the head of a temporary branch that a trunk commit
+    // or a new boot ended is no live head; its confirmation is refused `stale_head`
+    // and writes nothing. An unknown commit is refused `stale_head` too.
+    let root = temp_root("enforcement_ended");
+    let time = clock();
+    let io = fault_io_t::default();
+    let registry = start(&root, "boot-1", &time, &io);
+    let ended_by_trunk = with_branch(&registry, 1001, "ended_by_trunk", Vec::new());
+    let ended_by_boot = with_branch(&registry, 1002, "ended_by_boot", Vec::new());
+    let confirm = |registry: &registry_t, uid: u32, commit: &digest_t| {
+        registry.confirm_enforcement(
+            Consumer,
+            uid,
+            commit,
+            &[3; 16],
+            enforcement_domain_t::launcher,
+            1,
+            enforcement_result_t::confirmed,
+        )
+    };
+    // The positive control: a live temporary head is confirmed.
+    confirm(&registry, 1001, &ended_by_trunk.branch.commit_id).expect("a live branch head");
+    let revision = draft(
+        &ended_by_trunk.user,
+        &ended_by_trunk.app,
+        commit_type_t::revision,
+        "ends the branch",
+    )
+    .on(&ended_by_trunk.genesis)
+    .add(vec![file_grant(
+        "trunk pictures",
+        1001,
+        "home:Pictures",
+        &["read"],
+        persistent_lifetime(),
+    )])
+    .sign(&ended_by_trunk.user);
+    admit(&registry, &ended_by_trunk.user, &revision).expect("revision");
+    let count = decoded(&root, 1001).len();
+    assert_eq!(
+        refusal(confirm(&registry, 1001, &ended_by_trunk.branch.commit_id)),
+        Some("ipc/stale_head".to_owned()),
+        "the trunk commit ended the branch"
+    );
+    assert_eq!(decoded(&root, 1001).len(), count);
+    registry.shutdown().expect("shutdown");
+    drop(registry);
+    let registry = start(&root, "boot-2", &time, &io);
+    let count = decoded(&root, 1002).len();
+    assert_eq!(
+        refusal(confirm(&registry, 1002, &ended_by_boot.branch.commit_id)),
+        Some("ipc/stale_head".to_owned()),
+        "the new boot ended the branch"
+    );
+    assert_eq!(decoded(&root, 1002).len(), count);
+    confirm(&registry, 1002, &ended_by_boot.genesis.commit_id).expect("the trunk head");
+    // The error contract for a commit the journal does not hold.
+    assert_eq!(
+        refusal(confirm(&registry, 1002, &[1; 32])),
+        Some("ipc/stale_head".to_owned())
+    );
 }

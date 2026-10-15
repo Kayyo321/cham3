@@ -2200,6 +2200,91 @@ fn an_identity_mismatch_is_reported_once_per_executable_identity() {
 }
 
 #[test]
+fn a_package_identity_no_record_can_name_leaves_the_journal_replayable() {
+    // M2-006-B2-02: a runtime package identity that is empty, longer than 255 bytes
+    // or not printable ASCII is denied `unknown_identity`; registryd refuses the
+    // mismatch report (`malformed_request`), so nothing is journaled and a restart
+    // quarantines nobody. The longest valid package identity is reported once (the
+    // positive control).
+    let mut world = world("mismatch_malformed");
+    let alice = test_user(1001);
+    world.enroll(&alice);
+    let editor = app("editor");
+    let genesis = draft(&alice, &editor, commit_type_t::genesis, "malformed genesis")
+        .add(vec![file_grant(
+            "malformed docs",
+            alice.uid,
+            "home:Docs",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&alice);
+    world.submit(&alice, &genesis);
+    let request = files(alice.uid, "home:Docs", "read");
+    let identity = runtime(&alice, &editor);
+    let before = journal_bodies(&world.root, alice.uid);
+    for package_identity in [
+        String::new(),
+        "p".repeat(256),
+        "pkg\n".to_owned(),
+        "deb:editor fork:amd64".to_owned(),
+    ] {
+        let mut malformed = identity.clone();
+        malformed.package_identity = package_identity.clone();
+        assert_eq!(
+            world.evaluate(&malformed, &request),
+            denied(deny_reason_t::unknown_identity),
+            "{package_identity:?}"
+        );
+        let _ = world.policy.network_mode(Launcher, &malformed);
+        assert_eq!(
+            journal_bodies(&world.root, alice.uid),
+            before,
+            "{package_identity:?}: nothing journaled"
+        );
+    }
+    let mut longest = identity.clone();
+    longest.package_identity = "p".repeat(255);
+    assert_eq!(
+        world.evaluate(&longest, &request),
+        denied(deny_reason_t::unknown_identity)
+    );
+    let bodies = journal_bodies(&world.root, alice.uid);
+    assert_eq!(bodies.len(), before.len() + 1);
+    assert_eq!(
+        bodies.last(),
+        Some(&record_body_t::lifecycle(
+            lifecycle_record_t::identity_mismatch {
+                lineage_id: genesis.payload.lineage_id,
+                package_identity: "p".repeat(255),
+                executable_sha256: editor.executable_sha256,
+            }
+        ))
+    );
+    assert!(is_eligible(world.evaluate(&identity, &request)));
+    let root = world.root.clone();
+    let time = world.time.clone();
+    world.registry.shutdown().expect("shutdown");
+    drop(world);
+    let registry = registry_t::open(
+        &root,
+        fs::metadata(&root).expect("root").uid(),
+        registry_config_t::default(),
+        Box::new(system_io_t),
+        Box::new(time),
+    )
+    .expect("restart");
+    assert!(registry.unusable_users().expect("users").is_empty());
+    assert!(
+        registry
+            .rollback_status(Contractd)
+            .expect("status")
+            .quarantined
+            .is_empty()
+    );
+}
+
+#[test]
 fn reserve_use_evaluates_completely_before_registryd_reserves() {
     // ADR 0007 §4 option A, erratum E7.1: policyd evaluates the request against the
     // named one-shot grant (mandatory policy, subject, session liveness, every rule)

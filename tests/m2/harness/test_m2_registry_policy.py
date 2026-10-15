@@ -10,7 +10,8 @@ offset rule, floors, the observed counter, anomalies, time_sample, the commit-ti
 rule, the end of temporary branches at a new boot, and the B1 review findings R01-R02 and R2-01),
 one lifecycle or consumption rule of M2-006 stage B2 (ADR 0007 sections 3, 4, 6, 7, ADR 0008
 section 2, erratum E7: reservations, startup reconciliation, sessions, enforcement outcomes,
-audit gaps, identity mismatches, history and the expiry latch), one current-authorization rule (ADR 0007 section 1) or one submission check, and the
+audit gaps, identity mismatches, history and the expiry latch, and the B2 review findings
+B2-01 to B2-04), one current-authorization rule (ADR 0007 section 1) or one submission check, and the
 named Rust test must then fail (not merely fail to build); the unmodified copy passes the
 same tests.
 """
@@ -27,6 +28,7 @@ Registry = "core/registryd/src/registry.rs"
 Evaluate = "core/policyd/src/evaluate.rs"
 Clock = "core/registryd/src/clock.rs"
 Service = "core/policyd/src/service.rs"
+Record = "core/registryd/src/record.rs"
 
 # (name, [(file, original, replacement)], package, test target, test filter)
 SeededDefects = [
@@ -524,8 +526,8 @@ SeededDefects = [
       "        self.anchored_for_reading(&mut slot)?;\n")],
      "cham3_registryd", "trusted_time", "a_clock_anomaly_is_recorded_once_per_user_per_episode"),
     ("admission_on_a_stale_clock", [(Registry,
-      "        // commit-timestamp rule (`timestamp_rule`, erratum E4) and the signing window.\n        let now = self.fresh_now(&observed)?;\n",
-      "        // commit-timestamp rule (`timestamp_rule`, erratum E4) and the signing window.\n        let now = self.trusted_now()?;\n")],
+      "        // and the signing window.\n        let now = self.decision_now(&mut slot)?;\n",
+      "        // and the signing window.\n        let now = self.trusted_now()?;\n")],
      "cham3_registryd", "trusted_time", "a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction"),
     ("admission_observed_time_not_recorded", [(Registry,
       "                envelope: envelope.to_vec(),\n                observed: observed_now,\n            },\n        }\n",
@@ -599,7 +601,7 @@ SeededDefects = [
       "        if false && policy.emergency_restriction {\n            return Err(refused());\n")],
      "cham3_registryd", "lifecycle_consumption", "registryd_rechecks_its_own_rules_before_it_reserves"),
     ("reservation_on_a_stale_clock", [(Registry,
-      "        let now = self.fresh_now(&observed)?;\n        let observed_now = lock(&self.clock)?\n",
+      "        let now = self.decision_now(&mut slot)?;\n        let observed_now = lock(&self.clock)?\n",
       "        let now = self.trusted_now()?;\n        let observed_now = lock(&self.clock)?\n")],
      "cham3_registryd", "lifecycle_consumption", "registryd_rechecks_its_own_rules_before_it_reserves"),
     ("reservation_consumed_only_once_durable", [(Registry,
@@ -636,7 +638,11 @@ SeededDefects = [
      "cham3_registryd", "lifecycle_consumption", "enforcement_status_counts_only_this_runs_outcomes"),
     ("enforcement_of_a_superseded_commit", [(Registry,
       "        if !slot.lineages.is_live_head(commit_id) {\n", "        if false && !slot.lineages.is_live_head(commit_id) {\n")],
-     "cham3_registryd", "lifecycle_consumption", "enforcement_status_counts_only_this_runs_outcomes"),
+     "cham3_registryd", "lifecycle_consumption", "a_superseded_trunk_commit_takes_no_confirmation"),
+    # M2-006-B2-04: the same defect, on its own, for a branch a trunk commit or a new boot ended.
+    ("enforcement_of_an_ended_branch", [(Registry,
+      "        if !slot.lineages.is_live_head(commit_id) {\n", "        if false && !slot.lineages.is_live_head(commit_id) {\n")],
+     "cham3_registryd", "lifecycle_consumption", "an_ended_branch_takes_no_confirmation"),
     ("enforcement_epoch_not_bound", [(Registry,
       "        if policy_epoch != lock(&self.policy)?.epoch {\n", "        if false && policy_epoch != lock(&self.policy)?.epoch {\n")],
      "cham3_registryd", "lifecycle_consumption", "enforcement_status_counts_only_this_runs_outcomes"),
@@ -704,6 +710,54 @@ SeededDefects = [
     ("policyd_reserves_for_any_caller", [(Service,
       "        if caller != caller_role_t::fixture_consumer {\n", "        if false && caller != caller_role_t::fixture_consumer {\n")],
      "cham3_policyd", "current_authorization", "reserve_use_evaluates_completely_before_registryd_reserves"),
+    # M2-006-B2-01: decisions at a sample taken under the user lock after the flush.
+    ("reservation_decides_on_its_first_sample", [(Registry,
+      "        // check and the consumption (M2-006-B2-01).\n        let now = self.decision_now(&mut slot)?;\n",
+      "        // check and the consumption (M2-006-B2-01).\n        let now = self.fresh_now(&observed)?;\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_reservation_decides_at_a_sample_taken_after_it_waited"),
+    ("admission_decides_on_its_first_sample", [(Registry,
+      "        // and the signing window.\n        let now = self.decision_now(&mut slot)?;\n",
+      "        // and the signing window.\n        let now = self.fresh_now(&observed)?;\n")],
+     "cham3_registryd", "lifecycle_consumption", "an_admission_decides_at_a_sample_taken_after_it_waited"),
+    ("decision_sample_failure_ignored", [(Registry,
+      "        self.fresh_now(&observed)\n    }\n", "        self.trusted_now()\n    }\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_reservation_decides_at_a_sample_taken_after_it_waited"),
+    # M2-006-B2-02: no record that replay would refuse is ever written.
+    ("records_written_unchecked", [(Record,
+      "        registry_record_t::decode(&record.encode()).as_ref() == Ok(&record)\n",
+      "        true || registry_record_t::decode(&record.encode()).as_ref() == Ok(&record)\n")],
+     "cham3_registryd", "lifecycle_consumption", "restrict_refuses_a_record_that_replay_would_refuse"),
+    ("unnameable_package_identity_journaled", [(Record,
+      "        registry_record_t::decode(&record.encode()).as_ref() == Ok(&record)\n",
+      "        true || registry_record_t::decode(&record.encode()).as_ref() == Ok(&record)\n")],
+     "cham3_policyd", "current_authorization", "a_package_identity_no_record_can_name_leaves_the_journal_replayable"),
+    ("malformed_restriction_denied_before_the_check", [(Registry,
+      "        if !record_body_t::lifecycle(record.clone()).well_formed() {\n",
+      "        if false && !record_body_t::lifecycle(record.clone()).well_formed() {\n")],
+     "cham3_registryd", "lifecycle_consumption", "restrict_refuses_a_record_that_replay_would_refuse"),
+    # M2-006-B2-03: a new boot ends every session the journal knows.
+    ("sessions_survive_a_new_boot", [(Registry,
+      "        if new_boot {\n            registry.end_sessions();\n        }\n", "")],
+     "cham3_registryd", "lifecycle_consumption", "a_new_boot_ends_every_session_the_journal_knows"),
+    ("grant_bound_sessions_survive_a_new_boot", [(Lineage,
+      "                    .filter_map(|entry| entry.grant.lifetime.session_id.as_ref()),\n",
+      "                    .filter_map(|entry| entry.grant.lifetime.session_id.as_ref().filter(|_| false)),\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_new_boot_ends_every_session_the_journal_knows"),
+    ("contained_users_keep_their_sessions", [(Registry,
+      "            if matches!(slot.state, slot_state_t::quarantined(_))\n                || !slot.lineages.has_live_sessions()\n",
+      "            if slot.state != slot_state_t::normal\n                || !slot.lineages.has_live_sessions()\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_new_boot_ends_every_session_the_journal_knows"),
+    ("forged_sessions_ended_replayed", [(Lineage,
+      "                if !self.has_live_sessions() {\n", "                if false && !self.has_live_sessions() {\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_new_boot_ends_every_session_the_journal_knows"),
+    ("boot_ended_session_end_not_durable", [(Registry,
+      "                if let Some(boot_id) = slot.lineages.session_ended_by_boot(session_id) {\n",
+      "                if let Some(boot_id) = slot.lineages.session_ended_by_boot(session_id).filter(|_| false) {\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_new_boot_ends_every_session_the_journal_knows"),
+    ("sessions_end_only_once_durable", [(Registry,
+      "            slot.lineages.apply_event(&event);\n            let _ = self.restrictive_write(&mut slot, time, record_body_t::event(event));\n",
+      "            let _ = self.restrictive_write(&mut slot, time, record_body_t::event(event));\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_new_boot_that_cannot_journal_still_ends_every_session"),
 ]
 
 
