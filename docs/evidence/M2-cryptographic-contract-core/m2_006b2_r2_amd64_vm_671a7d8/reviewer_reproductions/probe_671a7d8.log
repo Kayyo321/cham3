@@ -1,0 +1,13 @@
+clone /home/dev/cham3-m2006b2r2/repro_671a7d8 HEAD 671a7d86262a6f77a391dd8fcbc99f9888be671a profile: debug
+d0a900d4a8eb625268ba06037746bf17c0eb9635f6a8ccb2e62f10fe8caa58b7  /home/dev/cham3-m2006b2r2/repro_671a7d8/core/registryd/tests/author_restriction_probe.rs
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running tests/author_restriction_probe.rs (out/reviewer_target/debug/deps/author_restriction_probe-1cd10c29456b59d6)
+
+running 1 test
+descending: restrict=Err(ipc(malformed_request)) undecodable=0 unusable_after_restart=[]
+duplicate: restrict=Err(ipc(malformed_request)) undecodable=0 unusable_after_restart=[]
+test author_unsorted_restriction_poisons_replay ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+exit: 0

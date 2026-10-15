@@ -1,0 +1,80 @@
+# git diff --stat ac28d24 671a7d8
+ core/policyd/tests/current_authorization.rs   |  85 +++
+ core/registryd/src/lineage.rs                 |  55 +-
+ core/registryd/src/record.rs                  | 105 +++-
+ core/registryd/src/registry.rs                | 113 +++-
+ core/registryd/tests/lifecycle_consumption.rs | 790 +++++++++++++++++++++++++-
+ docs/specs/m2_registry_storage_v1.md          |  15 +-
+ docs/specs/m2_service_ipc_v1.md               |   8 +-
+ tests/m2/harness/test_m2_registry_policy.py   |  64 ++-
+ tests/m2/test_inventory.txt                   |   8 +
+ 9 files changed, 1189 insertions(+), 54 deletions(-)
+
+# git diff --exit-code ac28d24 671a7d8 -- <path>: exit status per path
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 .github
+0 docs/decisions
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 core/contract_format
+0 core/contractd
+0 core/vaultd
+0 core/native
+0 core/identityd
+0 core/probes
+0 core/registryd/Cargo.toml
+0 core/registryd/src/anchor.rs
+0 core/registryd/src/ledger.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/src/clock.rs
+0 core/registryd/src/bin
+0 core/registryd/tests/builders
+0 core/registryd/tests/storage_integrity.rs
+0 core/registryd/tests/trusted_time.rs
+0 core/policyd/Cargo.toml
+0 core/policyd/src
+
+# git diff --name-only 248ca6e ac28d24 (docs only)
+docs/STATUS.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_ci_248ca6e/README.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/README.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/admission_scenarios_nocapture.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/crate_sources.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/dependency_inventory.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/downloaded_debs_diff.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/harness/defect_reasons_b2.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/harness/environment.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/harness/identity.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/harness/python_harness.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/harness/summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/identity.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/installed_packages_diff.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/profile_settings.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/qualification_console.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/rust_naming.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/storage/reserve_full_disk_debug.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/storage/reserve_full_disk_release.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/storage/wrapper_preservation_on_tmpfs.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/toolchain.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/trusted_time_model_nocapture.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unchanged_inputs.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/cargo_test_debug.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/cargo_test_release.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/ecr_vector_oracle.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/environment.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/format_differential.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/identity.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/provider_oracle.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/trusted_time_vectors.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/unit/vault_object_oracle.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/valgrind_memcheck_probe_summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b2_amd64_vm_248ca6e/valgrind_memcheck_secure_memory_summary.txt
+docs/handoffs/M2-006-stage-b2.md
+docs/tasks/M2-cryptographic-contract-core.md

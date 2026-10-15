@@ -1,0 +1,48 @@
+=== admission_on_a_stale_clock -> a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction (exit 101)
+    ["thread 'a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got trunk | stack backtrace: | 0: rust_begin_unwind
+    callers: ['at ./tests/trusted_time.rs:590:9', 'at ./tests/trusted_time.rs:526:76']
+=== reservation_on_a_stale_clock -> registryd_rechecks_its_own_rules_before_it_reserves (exit 101)
+    ["thread 'registryd_rechecks_its_own_rules_before_it_reserves' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got [42, 234, 250, 160, 137, 232, 107, 102, 158, 196, 234, 41, 79, 239, 153, 99] | stack backtrace: | 0: rust_begin_unwind
+    callers: ['at ./tests/lifecycle_consumption.rs:433:9', 'at ./tests/lifecycle_consumption.rs:334:57']
+=== enforcement_of_a_superseded_commit -> a_superseded_trunk_commit_takes_no_confirmation (exit 101)
+    ["thread 'a_superseded_trunk_commit_takes_no_confirmation' panicked at core/registryd/tests/lifecycle_consumption.rs:1978:5:"] assertion `left == right` failed: a superseded trunk commit takes no confirmation | left: None | right: Some("ipc/stale_head")
+    callers: ['at ./tests/lifecycle_consumption.rs:1978:5', 'at ./tests/lifecycle_consumption.rs:1946:53']
+=== enforcement_of_an_ended_branch -> an_ended_branch_takes_no_confirmation (exit 101)
+    ["thread 'an_ended_branch_takes_no_confirmation' panicked at core/registryd/tests/lifecycle_consumption.rs:2035:5:"] assertion `left == right` failed: the trunk commit ended the branch | left: None | right: Some("ipc/stale_head")
+    callers: ['at ./tests/lifecycle_consumption.rs:2035:5', 'at ./tests/lifecycle_consumption.rs:1995:43']
+=== reservation_decides_on_its_first_sample -> a_reservation_decides_at_a_sample_taken_after_it_waited (exit 101)
+    ["thread 'a_reservation_decides_at_a_sample_taken_after_it_waited' panicked at core/registryd/tests/lifecycle_consumption.rs:1432:5:"] assertion `left == right` failed: expired while the owed write was flushed | left: None | right: Some("admission/lifecycle_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:1432:5', 'at ./tests/lifecycle_consumption.rs:1392:61']
+=== admission_decides_on_its_first_sample -> an_admission_decides_at_a_sample_taken_after_it_waited (exit 101)
+    ["thread 'an_admission_decides_at_a_sample_taken_after_it_waited' panicked at core/registryd/tests/lifecycle_consumption.rs:1544:5:"] assertion `left == right` failed: stamped more than 300 s before trusted now after the flush | left: None | right: Some("admission/timestamp_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:1544:5', 'at ./tests/lifecycle_consumption.rs:1503:60']
+=== decision_sample_failure_ignored -> a_reservation_decides_at_a_sample_taken_after_it_waited (exit 101)
+    ["thread 'a_reservation_decides_at_a_sample_taken_after_it_waited' panicked at core/registryd/tests/lifecycle_consumption.rs:1482:5:"] assertion `left == right` failed: no sample after the flush | left: None | right: Some("ipc/storage_unavailable")
+    callers: ['at ./tests/lifecycle_consumption.rs:1482:5', 'at ./tests/lifecycle_consumption.rs:1392:61']
+=== records_written_unchecked -> restrict_refuses_a_record_that_replay_would_refuse (exit 101)
+    ["thread 'restrict_refuses_a_record_that_replay_would_refuse' panicked at core/registryd/tests/lifecycle_consumption.rs:1616:9:"] assertion `left == right` failed: identity_mismatch { lineage_id: [98, 180, 238, 160, 55, 178, 24, 200, 199, 62, 241, 139, 81, 161, 168, 115, 185, 184, 233, 253, 126, 95, 122, 22, 4, 169, 116, 67, 164, 217, 215, 218], package_identity: "", executable_sha256: [96, 236, 155, 183, 41, 157, 133, 224, 205, 211, 93, 64, 88, 250, 189, 124, 182, 189, 201, 183, 136, 198, 239, 222, 68, 66, 126, 155, 185, 35, 78, 19] } | left: None | right: Some("ipc/malformed_request")
+    callers: ['at ./tests/lifecycle_consumption.rs:1616:9', 'at ./tests/lifecycle_consumption.rs:1574:56']
+=== unnameable_package_identity_journaled -> a_package_identity_no_record_can_name_leaves_the_journal_replayable (exit 101)
+    ["thread 'a_package_identity_no_record_can_name_leaves_the_journal_replayable' panicked at core/policyd/tests/current_authorization.rs:1995:57:"] decodes: malformed | stack backtrace: | 0: rust_begin_unwind
+    callers: ['at ./tests/current_authorization.rs:1995:23', 'at ./tests/current_authorization.rs:1991:5', 'at ./tests/current_authorization.rs:2241:13', 'at ./tests/current_authorization.rs:2203:73']
+=== malformed_restriction_denied_before_the_check -> restrict_refuses_a_record_that_replay_would_refuse (exit 101)
+    ["thread 'restrict_refuses_a_record_that_replay_would_refuse' panicked at core/registryd/tests/lifecycle_consumption.rs:1632:9:"] assertion `left == right` failed: nothing denied | left: Ok(ended(restriction)) | right: Ok(current)
+    callers: ['at ./tests/lifecycle_consumption.rs:1632:9', 'at ./tests/lifecycle_consumption.rs:1574:56']
+=== sessions_survive_a_new_boot -> a_new_boot_ends_every_session_the_journal_knows (exit 101)
+    ["thread 'a_new_boot_ends_every_session_the_journal_knows' panicked at core/registryd/tests/lifecycle_consumption.rs:1736:5:"] assertion `left == right` failed: a user without a live branch | left: event(session_event { session_id: [20, 137, 190, 50, 187, 29, 254, 80, 250, 64, 145, 106, 233, 58, 237, 133], change: ended }) | right: event(sessions_ended { boot_id: "boot-2" })
+    callers: ['at ./tests/lifecycle_consumption.rs:1736:5', 'at ./tests/lifecycle_consumption.rs:1669:53']
+=== grant_bound_sessions_survive_a_new_boot -> a_new_boot_ends_every_session_the_journal_knows (exit 101)
+    ["thread 'a_new_boot_ends_every_session_the_journal_knows' panicked at core/registryd/tests/lifecycle_consumption.rs:1755:9:"] assertion `left == right` failed: 1002: session ids are single-use across boots | left: None | right: Some("admission/lifecycle_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:1755:9', 'at ./tests/lifecycle_consumption.rs:1669:53']
+=== contained_users_keep_their_sessions -> a_new_boot_ends_every_session_the_journal_knows (exit 101)
+    ["thread 'a_new_boot_ends_every_session_the_journal_knows' panicked at core/registryd/tests/lifecycle_consumption.rs:1828:5:"] assertion `left == right` failed | left: [event(session_event { session_id: [215, 242, 251, 252, 82, 238, 65, 79, 153, 0, 153, 250, 186, 185, 39, 162], change: started }), user(containment), event(audit_gap { boot_id: "boot-2", lost: unverifiable_run })] | right: [user(containment), event(audit_gap { boot_id: "boot-2", lost: unverifiable_run }), event(sessions_ended { boot_id: "boot-3" })]
+    callers: ['at ./tests/lifecycle_consumption.rs:1828:5', 'at ./tests/lifecycle_consumption.rs:1669:53']
+=== forged_sessions_ended_replayed -> a_new_boot_ends_every_session_the_journal_knows (exit 101)
+    ["thread 'a_new_boot_ends_every_session_the_journal_knows' panicked at core/registryd/tests/lifecycle_consumption.rs:1859:5:"] assertion `left == right` failed | left: [] | right: [(1001, quarantine(replay_defect))]
+    callers: ['at ./tests/lifecycle_consumption.rs:1859:5', 'at ./tests/lifecycle_consumption.rs:1669:53']
+=== boot_ended_session_end_not_durable -> a_new_boot_ends_every_session_the_journal_knows (exit 101)
+    ["thread 'a_new_boot_ends_every_session_the_journal_knows' panicked at core/registryd/tests/lifecycle_consumption.rs:1790:5:"] assertion `left == right` failed | left: Err(ipc(restriction_not_durable)) | right: Ok(8)
+    callers: ['at ./tests/lifecycle_consumption.rs:1790:5', 'at ./tests/lifecycle_consumption.rs:1669:53']
+=== sessions_end_only_once_durable -> a_new_boot_that_cannot_journal_still_ends_every_session (exit 101)
+    ["thread 'a_new_boot_that_cannot_journal_still_ends_every_session' panicked at core/registryd/tests/lifecycle_consumption.rs:1904:9:"] assertion `left == right` failed: ended in memory at once | left: None | right: Some("admission/lifecycle_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:1904:9', 'at ./tests/lifecycle_consumption.rs:1869:61']

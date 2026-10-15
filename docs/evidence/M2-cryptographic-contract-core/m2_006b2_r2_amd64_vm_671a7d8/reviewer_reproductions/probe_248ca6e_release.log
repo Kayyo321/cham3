@@ -1,0 +1,22 @@
+clone /home/dev/cham3-m2006b/repro_248ca6e HEAD 248ca6ef90d22e270db0e9a3f5bf789502d18720 profile: --release
+d0a900d4a8eb625268ba06037746bf17c0eb9635f6a8ccb2e62f10fe8caa58b7  /home/dev/cham3-m2006b/repro_248ca6e/core/registryd/tests/author_restriction_probe.rs
+    Finished `release` profile [optimized] target(s) in 0.04s
+     Running tests/author_restriction_probe.rs (out/reviewer_target/release/deps/author_restriction_probe-91cb07f29bacc78c)
+
+running 1 test
+descending: restrict=Ok(5) undecodable=1 unusable_after_restart=[(1001, quarantine(replay_defect))]
+
+thread 'author_unsorted_restriction_poisons_replay' panicked at core/registryd/tests/author_restriction_probe.rs:39:9:
+descending
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test author_unsorted_restriction_poisons_replay ... FAILED
+
+failures:
+
+failures:
+    author_unsorted_restriction_poisons_replay
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p cham3_registryd --test author_restriction_probe`
+exit: 101
