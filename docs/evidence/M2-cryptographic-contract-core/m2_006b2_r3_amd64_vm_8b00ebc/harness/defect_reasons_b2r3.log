@@ -1,0 +1,27 @@
+=== failed_ledger_keeps_serving -> a_failed_ledger_refuses_writes_that_take_no_decision_sample (exit 101)
+    ["thread 'a_failed_ledger_refuses_writes_that_take_no_decision_sample' panicked at core/registryd/tests/lifecycle_consumption.rs:2364:5:"] assertion `left == right` failed: a session start after the ledger failed | left: None | right: Some("ipc/storage_unavailable")
+    callers: ['at ./tests/lifecycle_consumption.rs:2364:5', 'at ./tests/lifecycle_consumption.rs:2335:65']
+=== admission_on_a_stale_clock -> a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction (exit 101)
+    ["thread 'a_clock_that_cannot_be_sampled_fails_admission_but_never_a_restriction' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got trunk | 0: rust_begin_unwind
+    callers: ['at ./tests/trusted_time.rs:590:9', 'at ./tests/trusted_time.rs:526:76']
+=== reservation_on_a_stale_clock -> registryd_rechecks_its_own_rules_before_it_reserves (exit 101)
+    ["thread 'registryd_rechecks_its_own_rules_before_it_reserves' panicked at core/registryd/tests/builders/registry_support.rs:28:22:"] expected a refusal, got [154, 3, 178, 34, 217, 126, 203, 191, 26, 171, 37, 31, 113, 249, 84, 126] | 0: rust_begin_unwind
+    callers: ['at ./tests/lifecycle_consumption.rs:433:9', 'at ./tests/lifecycle_consumption.rs:334:57']
+=== reservation_decides_on_its_first_sample -> a_reservation_decides_at_a_sample_taken_after_it_waited (exit 101)
+    ["thread 'a_reservation_decides_at_a_sample_taken_after_it_waited' panicked at core/registryd/tests/lifecycle_consumption.rs:1464:5:"] assertion `left == right` failed: expired while the owed write was flushed | left: None | right: Some("admission/lifecycle_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:1464:5', 'at ./tests/lifecycle_consumption.rs:1424:61']
+=== admission_decides_on_its_first_sample -> an_admission_decides_at_a_sample_taken_after_it_waited (exit 101)
+    ["thread 'an_admission_decides_at_a_sample_taken_after_it_waited' panicked at core/registryd/tests/lifecycle_consumption.rs:1576:5:"] assertion `left == right` failed: stamped more than 300 s before trusted now after the flush | left: None | right: Some("admission/timestamp_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:1576:5', 'at ./tests/lifecycle_consumption.rs:1535:60']
+=== decision_sample_failure_ignored -> a_reservation_decides_at_a_sample_taken_after_it_waited (exit 101)
+    ["thread 'a_reservation_decides_at_a_sample_taken_after_it_waited' panicked at core/registryd/tests/lifecycle_consumption.rs:1514:5:"] assertion `left == right` failed: no sample after the flush | left: None | right: Some("ipc/storage_unavailable")
+    callers: ['at ./tests/lifecycle_consumption.rs:1514:5', 'at ./tests/lifecycle_consumption.rs:1424:61']
+=== decision_sample_not_settled -> a_reservation_waits_for_the_writes_of_its_own_decision_sample (exit 101)
+    ["thread 'a_reservation_waits_for_the_writes_of_its_own_decision_sample' panicked at core/registryd/tests/lifecycle_consumption.rs:2240:9:"] assertion `left == right` failed: anomaly record | left: None | right: Some("admission/lifecycle_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:2240:9', 'at ./tests/lifecycle_consumption.rs:2222:67']
+=== admission_decision_sample_not_settled -> an_admission_waits_for_the_writes_of_its_own_decision_sample (exit 101)
+    ["thread 'an_admission_waits_for_the_writes_of_its_own_decision_sample' panicked at core/registryd/tests/lifecycle_consumption.rs:2296:9:"] assertion `left == right` failed: anomaly record | left: None | right: Some("admission/timestamp_rule")
+    callers: ['at ./tests/lifecycle_consumption.rs:2296:9', 'at ./tests/lifecycle_consumption.rs:2265:66']
+=== decision_ignores_a_failed_ledger -> a_reservation_waits_for_the_writes_of_its_own_decision_sample (exit 101)
+    ["thread 'a_reservation_waits_for_the_writes_of_its_own_decision_sample' panicked at core/registryd/tests/lifecycle_consumption.rs:2240:9:"] assertion `left == right` failed: failed offset ledger entry | left: None | right: Some("ipc/storage_unavailable")
+    callers: ['at ./tests/lifecycle_consumption.rs:2240:9', 'at ./tests/lifecycle_consumption.rs:2222:67']

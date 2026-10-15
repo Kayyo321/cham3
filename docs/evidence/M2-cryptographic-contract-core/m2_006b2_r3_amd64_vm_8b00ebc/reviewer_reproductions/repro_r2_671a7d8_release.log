@@ -1,0 +1,47 @@
+clone /home/dev/cham3-m2006b2r2/repro_671a7d8 HEAD 671a7d86262a6f77a391dd8fcbc99f9888be671a profile: --release
+d83688ac714c8932a0492338b0b4698574fa0f077bed3691307a30de74594724  /home/dev/cham3-m2006b2r2/repro_671a7d8/core/registryd/tests/reviewer_r2.rs
+   Compiling cham3_registryd v0.1.0 (/work/core/registryd)
+    Finished `release` profile [optimized] target(s) in 3.69s
+     Running tests/reviewer_r2.rs (out/reviewer_target/release/deps/reviewer_r2-5d905924eb595f3d)
+
+running 6 tests
+second sample ledger fails: admission=Ok(trunk)
+
+thread 'reviewer_r2_second_sample_ledger_failure_refuses_admission' panicked at core/registryd/tests/reviewer_r2.rs:2172:5:
+ledger failed in the decision sample; must refuse admission
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+second sample ledger fails: reservation=Ok([65, 49, 70, 242, 248, 233, 245, 203, 119, 57, 186, 75, 28, 132, 118, 49]), records=1
+
+thread 'reviewer_r2_second_sample_ledger_failure_refuses_before_consumption' panicked at core/registryd/tests/reviewer_r2.rs:2151:5:
+ledger failed in the decision sample; must refuse
+test reviewer_r2_second_sample_ledger_failure_refuses_admission ... FAILED
+test reviewer_r2_second_sample_ledger_failure_refuses_before_consumption ... FAILED
+after anomaly write boottime=Some(time_sample_t { realtime: 1791882060, boottime: 1600 }); reservation=Ok([0, 183, 135, 195, 125, 222, 35, 170, 33, 37, 128, 156, 139, 164, 232, 195])
+
+thread 'reviewer_r2_anomaly_write_delay_must_not_stale_reservation' panicked at core/registryd/tests/reviewer_r2.rs:2092:5:
+assertion `left == right` failed: expired during second-sample anomaly persistence; must not reserve
+  left: None
+ right: Some("admission/lifecycle_rule")
+test reviewer_r2_owed_second_anomaly_does_not_consume ... ok
+test reviewer_r2_anomaly_write_delay_must_not_stale_reservation ... FAILED
+after anomaly write admission=Ok(trunk)
+
+thread 'reviewer_r2_anomaly_delay_must_not_stale_admission' panicked at core/registryd/tests/reviewer_r2.rs:2193:5:
+assertion `left == right` failed: timestamp stale after anomaly write
+  left: None
+ right: Some("admission/timestamp_rule")
+test reviewer_r2_anomaly_delay_must_not_stale_admission ... FAILED
+test reviewer_r2_new_boot_leaves_quarantined_journal_as_found ... ok
+
+failures:
+
+failures:
+    reviewer_r2_anomaly_delay_must_not_stale_admission
+    reviewer_r2_anomaly_write_delay_must_not_stale_reservation
+    reviewer_r2_second_sample_ledger_failure_refuses_admission
+    reviewer_r2_second_sample_ledger_failure_refuses_before_consumption
+
+test result: FAILED. 2 passed; 4 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p cham3_registryd --test reviewer_r2`
+exit: 101

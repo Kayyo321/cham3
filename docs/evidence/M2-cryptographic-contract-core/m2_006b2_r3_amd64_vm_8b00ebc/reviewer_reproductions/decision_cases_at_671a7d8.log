@@ -1,0 +1,12 @@
+# 8b00ebc's lifecycle_consumption.rs (its two decision-sample tests printing each case's refusal instead of asserting) against registry.rs of 671a7d8
+CASE anomaly record: got None expected admission/lifecycle_rule
+CASE anomaly record: got None expected admission/timestamp_rule
+CASE offset ledger entry: got None expected admission/lifecycle_rule
+CASE offset ledger entry: got None expected admission/timestamp_rule
+CASE floor refresh: got None expected admission/lifecycle_rule
+CASE floor refresh: got None expected admission/timestamp_rule
+CASE failed offset ledger entry: got None expected ipc/storage_unavailable
+CASE failed offset ledger entry: got None expected ipc/storage_unavailable
+CASE clocks that never settle: got None expected ipc/storage_unavailable
+CASE clocks that never settle: got None expected ipc/storage_unavailable
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.15s

@@ -195,3 +195,10 @@ Do not update this status based on plans, generated code claims, or chat summari
   - **Qualification** in a clean clone: `m2 qualification: PASS`, unit 264 + 264, harness 149 (172 seeded defects), static PASS, 82 OK, wrapper PASS ([VM evidence](evidence/M2-cryptographic-contract-core/m2_006b2_r2_amd64_vm_671a7d8/)).
   - **CI:** m2_checks 38665833821, m1_checks 38665833839, m0_checks 38665833783 success ([CI evidence](evidence/M2-cryptographic-contract-core/m2_006b2_r2_amd64_ci_671a7d8/)).
   - Details: [finding resolutions](reviews/M2-006-b2-finding-resolutions.md), [revision-2 handoff](handoffs/M2-006-b2-rereview-r2.md).
+- **Stage B2 re-review (dffab2a; Codex Security 0.1.32: two Low findings): CHANGES_REQUESTED.** B2-02, B2-03 and B2-04 PASS. Two findings remain in the decision sample: B2-R2-01, its own writes could age it; B2-R2-02, a ledger failure during it was not re-checked. **Revision 3 in re-review:** candidate 8b00ebcff89276d2c0a70a238459fd246e7353b7.
+  - **Fix:** the decision sample is relied on only once settled: no ledger failure, nothing owed, and a further sample equal to it; at most three rounds, then a refusal.
+  - **Reviewer's tests:** fail at 671a7d8 (2/6) and pass at 8b00ebc (6/6, 12/12, 1/1).
+  - **Re-pointed defect:** the stage-A `failed_ledger_keeps_serving`, which the new gate masked.
+  - **Qualification:** `m2 qualification: PASS` in a clean clone, unit 267 + 267, harness 149 (175 seeded defects), static PASS, 82 OK, wrapper PASS ([VM evidence](evidence/M2-cryptographic-contract-core/m2_006b2_r3_amd64_vm_8b00ebc/)).
+  - **CI:** m2_checks 38755817749, m1_checks 38755817592, m0_checks 38755817888 success ([CI evidence](evidence/M2-cryptographic-contract-core/m2_006b2_r3_amd64_ci_8b00ebc/)).
+  - Details: [finding resolutions r3](reviews/M2-006-b2-finding-resolutions-r3.md), [revision-3 handoff](handoffs/M2-006-b2-rereview-r3.md).

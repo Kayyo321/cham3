@@ -1,0 +1,41 @@
+# git diff --stat 14c3e4c 8b00ebcff89276d2c0a70a238459fd246e7353b7
+ core/registryd/src/registry.rs                |  50 +++-
+ core/registryd/tests/lifecycle_consumption.rs | 340 +++++++++++++++++++++++++-
+ docs/specs/m2_registry_storage_v1.md          |   6 +-
+ docs/specs/m2_service_ipc_v1.md               |   4 +-
+ tests/m2/harness/test_m2_registry_policy.py   |  21 +-
+ tests/m2/test_inventory.txt                   |   3 +
+ 6 files changed, 402 insertions(+), 22 deletions(-)
+
+# git diff --exit-code 14c3e4c 8b00ebcff89276d2c0a70a238459fd246e7353b7 -- <path>: exit status per path
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 .github
+0 docs/decisions
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 core/contract_format
+0 core/contractd
+0 core/vaultd
+0 core/native
+0 core/identityd
+0 core/probes
+0 core/policyd
+0 core/registryd/Cargo.toml
+0 core/registryd/src/anchor.rs
+0 core/registryd/src/ledger.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/src/clock.rs
+0 core/registryd/src/record.rs
+0 core/registryd/src/lineage.rs
+0 core/registryd/src/bin
+0 core/registryd/tests/builders
+0 core/registryd/tests/storage_integrity.rs
+0 core/registryd/tests/trusted_time.rs
+
+# git diff --name-only 671a7d8 14c3e4c | grep -v '^docs/' | wc -l (docs only)
+0
