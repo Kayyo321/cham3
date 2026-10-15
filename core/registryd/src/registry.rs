@@ -59,7 +59,9 @@
 //! `users` → user → `policy` → `clock` → `ledger` → `anchor`; the clock lock is never
 //! held while another lock is taken, except the ledger's for a raise. A decision that
 //! depends on the present (admission, a reservation) takes trusted now from a second
-//! sample under the user lock, after the flush of what the slot owed (M2-006-B2-01).
+//! sample under the user lock, after the flush of what the slot owed (M2-006-B2-01),
+//! relied on only once its own writes succeeded and a further sample equals it
+//! (M2-006-B2-R2-01, R2-02).
 //!
 //! **Lifecycle and consumption (ADR 0007 §§3, 4, 6, 7; ADR 0008 §2; erratum E7;
 //! stage B2).** `reserve_use` (policyd only, after its full evaluation) re-checks the
@@ -113,8 +115,8 @@ use crate::anchor::{
     policy_state_t, run_marker_t, run_state_t, tombstone_state_t,
 };
 use crate::clock::{
-    FloorIntervalSeconds, anomaly_state_t, merge_floor, time_floor_t, time_source_t, time_view_t,
-    trusted_clock_t,
+    FloorIntervalSeconds, anomaly_state_t, merge_floor, time_floor_t, time_sample_t, time_source_t,
+    time_view_t, trusted_clock_t,
 };
 use crate::journal::{journal_file_t, journal_io_t, journal_store_t, store_error_t};
 use crate::ledger::{
@@ -505,7 +507,13 @@ struct time_observation_t {
     fresh: bool,
     /// The sample is more than 300 s behind trusted time: its anomaly episode.
     episode: Option<u64>,
+    /// The sample this observation took and applied.
+    sample: Option<time_sample_t>,
 }
+
+/// Rounds of `decision_now` before it refuses: each takes and persists a sample,
+/// then checks that no time passed meanwhile (M2-006-B2-R2-01).
+const DecisionSampleRounds: usize = 3;
 
 fn not_durable() -> service_error_t {
     ipc(ipc_code_t::restriction_not_durable)
@@ -1575,15 +1583,35 @@ impl registry_t {
     /// decision (`ready` flushing what the slot owes), immediately before it
     /// (M2-006-B2-01): the operation's first sample may be older by the time spent
     /// waiting for the lock or for those writes. This sample is observed like any
-    /// other (offset increase ledgered, anomaly recorded); when it fails, or leaves
-    /// an anomaly record owed, the decision is refused and nothing is consumed.
+    /// other (offset increase ledgered, floor refreshed, anomaly recorded), and that
+    /// persistence may itself fail or take time (M2-006-B2-R2-01, R2-02):
+    /// - a ledger that failed refuses (`storage_unavailable`, as `ready` does), an
+    ///   anomaly record left owed refuses (`restriction_not_durable`; a failed
+    ///   journal leaves it owed), a failed sample refuses (`storage_unavailable`);
+    /// - trusted now is used only when a further sample, which persists nothing,
+    ///   equals the observed one: no time passed and nothing more is owed. Otherwise
+    ///   the round repeats with that time, at most `DecisionSampleRounds` times,
+    ///   then refuses (`storage_unavailable`).
+    ///
+    /// Every refusal comes before anything is admitted or consumed.
     fn decision_now(&self, slot: &mut user_slot_t) -> service_result_t<i64> {
-        let observed = self.observe_time();
-        self.record_anomaly(slot, &observed);
-        if !slot.pending.is_empty() {
-            return Err(not_durable());
+        for _ in 0..DecisionSampleRounds {
+            let observed = self.observe_time();
+            self.record_anomaly(slot, &observed);
+            if lock(&self.ledger)?.failed() {
+                return Err(storage_unavailable());
+            }
+            if !slot.pending.is_empty() {
+                return Err(not_durable());
+            }
+            // A failed sample refuses here, so the comparison below is between two
+            // samples that were taken.
+            let now = self.fresh_now(&observed)?;
+            if self.time_source.sample() == observed.sample {
+                return Ok(now);
+            }
         }
-        self.fresh_now(&observed)
+        Err(storage_unavailable())
     }
 
     /// The floor this clock persists now (erratum E6).
@@ -1600,6 +1628,7 @@ impl registry_t {
         let unavailable = time_observation_t {
             fresh: false,
             episode: None,
+            sample: None,
         };
         let Some(sample) = self.time_source.sample() else {
             return unavailable;
@@ -1647,6 +1676,7 @@ impl registry_t {
         time_observation_t {
             fresh: true,
             episode,
+            sample: Some(sample),
         }
     }
 

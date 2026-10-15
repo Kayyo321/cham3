@@ -11,7 +11,7 @@ rule, the end of temporary branches at a new boot, and the B1 review findings R0
 one lifecycle or consumption rule of M2-006 stage B2 (ADR 0007 sections 3, 4, 6, 7, ADR 0008
 section 2, erratum E7: reservations, startup reconciliation, sessions, enforcement outcomes,
 audit gaps, identity mismatches, history and the expiry latch, and the B2 review findings
-B2-01 to B2-04), one current-authorization rule (ADR 0007 section 1) or one submission check, and the
+B2-01 to B2-04 and the re-review findings B2-R2-01 and B2-R2-02), one current-authorization rule (ADR 0007 section 1) or one submission check, and the
 named Rust test must then fail (not merely fail to build); the unmodified copy passes the
 same tests.
 """
@@ -260,7 +260,9 @@ SeededDefects = [
     ("failed_ledger_keeps_serving", [(Registry,
       "        self.retry_unverifiable();\n        if lock(&self.ledger)?.failed() {\n            return Err(storage_unavailable());\n        }\n        if slot.journal.failed() {\n",
       "        self.retry_unverifiable();\n        if slot.journal.failed() {\n")],
-     "cham3_registryd", "storage_integrity", "a_failed_ledger_stops_eligible_decisions_and_the_next_start_contains"),
+     # Re-pointed in M2-006 stage B2 revision 3: admission now also meets the decision sample's own
+     # ledger gate (B2-R2-02), so `ready`'s gate is shown through writes that take no decision sample.
+     "cham3_registryd", "lifecycle_consumption", "a_failed_ledger_refuses_writes_that_take_no_decision_sample"),
     ("failed_ledger_keeps_its_validity", [("core/registryd/src/ledger.rs",
       "                self.invalidation_owed = true;\n                self.retry_invalidation(io);\n",
       "                let _ = io;\n")],
@@ -720,7 +722,7 @@ SeededDefects = [
       "        // and the signing window.\n        let now = self.fresh_now(&observed)?;\n")],
      "cham3_registryd", "lifecycle_consumption", "an_admission_decides_at_a_sample_taken_after_it_waited"),
     ("decision_sample_failure_ignored", [(Registry,
-      "        self.fresh_now(&observed)\n    }\n", "        self.trusted_now()\n    }\n")],
+      "            let now = self.fresh_now(&observed)?;\n", "            let now = self.trusted_now()?;\n")],
      "cham3_registryd", "lifecycle_consumption", "a_reservation_decides_at_a_sample_taken_after_it_waited"),
     # M2-006-B2-02: no record that replay would refuse is ever written.
     ("records_written_unchecked", [(Record,
@@ -758,6 +760,19 @@ SeededDefects = [
       "            slot.lineages.apply_event(&event);\n            let _ = self.restrictive_write(&mut slot, time, record_body_t::event(event));\n",
       "            let _ = self.restrictive_write(&mut slot, time, record_body_t::event(event));\n")],
      "cham3_registryd", "lifecycle_consumption", "a_new_boot_that_cannot_journal_still_ends_every_session"),
+    # M2-006-B2-R2-01, R2-02: the decision sample's own writes may take time or fail.
+    ("decision_sample_not_settled", [(Registry,
+      "            if self.time_source.sample() == observed.sample {\n",
+      "            if observed.sample.is_some() {\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_reservation_waits_for_the_writes_of_its_own_decision_sample"),
+    ("admission_decision_sample_not_settled", [(Registry,
+      "            if self.time_source.sample() == observed.sample {\n",
+      "            if observed.sample.is_some() {\n")],
+     "cham3_registryd", "lifecycle_consumption", "an_admission_waits_for_the_writes_of_its_own_decision_sample"),
+    ("decision_ignores_a_failed_ledger", [(Registry,
+      "            if lock(&self.ledger)?.failed() {\n                return Err(storage_unavailable());\n            }\n            if !slot.pending.is_empty() {\n",
+      "            if !slot.pending.is_empty() {\n")],
+     "cham3_registryd", "lifecycle_consumption", "a_reservation_waits_for_the_writes_of_its_own_decision_sample"),
 ]
 
 

@@ -1280,10 +1280,12 @@ fn refusal<value_t>(
     result.err().map(|error| error.to_string())
 }
 
-/// Journal writes that take time (M2-006-B2-01). The next journal write after `delay`
-/// is armed advances both clocks by that many seconds; after `clock_fails` is armed
-/// it leaves every later sample failing; with a gate it announces itself and waits
-/// to be released. Journal writes fail while `failing` is set.
+/// Writes that take time (M2-006-B2-01, B2-R2-01). The next journal write after
+/// `delay` is armed advances both clocks by that many seconds; after `clock_fails` is
+/// armed it leaves every later sample failing; with a gate it announces itself and
+/// waits to be released. Journal writes fail while `failing` is set. The next ledger
+/// append after `ledger_delay`, and the next anchor slot write after `anchor_delay`,
+/// advance both clocks likewise; ledger appends fail while `ledger_fails` is set.
 #[derive(Clone)]
 struct paced_io_t {
     time: test_time_t,
@@ -1291,6 +1293,9 @@ struct paced_io_t {
     delay: Arc<AtomicU64>,
     clock_fails: Arc<AtomicBool>,
     gate: Arc<Mutex<Option<gate_t>>>,
+    ledger_delay: Arc<AtomicU64>,
+    anchor_delay: Arc<AtomicU64>,
+    ledger_fails: Arc<AtomicBool>,
 }
 
 /// A gated write announces itself on the first channel and waits on the second.
@@ -1304,6 +1309,9 @@ impl paced_io_t {
             delay: Arc::default(),
             clock_fails: Arc::default(),
             gate: Arc::default(),
+            ledger_delay: Arc::default(),
+            anchor_delay: Arc::default(),
+            ledger_fails: Arc::default(),
         }
     }
 }
@@ -1335,6 +1343,30 @@ impl journal_io_t for paced_io_t {
 
     fn sync_directory(&self, path: &Path) -> io::Result<()> {
         system_io_t.sync_directory(path)
+    }
+
+    fn append_file(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
+        if self.ledger_fails.load(Ordering::SeqCst) {
+            return Err(io::Error::other("injected ledger append failure"));
+        }
+        let delay = self.ledger_delay.swap(0, Ordering::SeqCst);
+        if delay > 0 {
+            self.time.advance(delay);
+        }
+        system_io_t.append_file(path, bytes)
+    }
+
+    fn replace_file(&self, path: &Path, bytes: &[u8]) -> io::Result<()> {
+        let slot = path
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().starts_with("slot"));
+        if slot {
+            let delay = self.anchor_delay.swap(0, Ordering::SeqCst);
+            if delay > 0 {
+                self.time.advance(delay);
+            }
+        }
+        system_io_t.replace_file(path, bytes)
     }
 }
 
@@ -2054,4 +2086,304 @@ fn an_ended_branch_takes_no_confirmation() {
         refusal(confirm(&registry, 1002, &[1; 32])),
         Some("ipc/stale_head".to_owned())
     );
+}
+
+/// What the armed sample does to the clocks before it is taken (M2-006-B2-R2-01,
+/// R2-02).
+#[derive(Clone, Copy, Debug)]
+enum sample_change_t {
+    /// The wall clock steps back 600 s: an anomaly episode opens.
+    wall_clock_back,
+    /// The wall clock steps 1 s forward: the offset rises and is ledgered.
+    wall_clock_forward,
+    /// The wall clock steps 1 s forward and ledger appends fail from now on.
+    wall_clock_forward_ledger_fails,
+    /// Both clocks advance 60 s: the anchor's floor is due again.
+    elapsed_60,
+    /// From the armed sample on, every sample advances both clocks 1 s.
+    every_sample_elapses,
+}
+
+/// The test clocks; the `countdown`-th sample after arming applies `change` first.
+#[derive(Clone)]
+struct scripted_time_t {
+    time: test_time_t,
+    io: paced_io_t,
+    countdown: Arc<AtomicU64>,
+    change: Arc<Mutex<Option<sample_change_t>>>,
+    drifting: Arc<AtomicBool>,
+}
+
+impl scripted_time_t {
+    fn arm(&self, countdown: u64, change: sample_change_t) {
+        *self.change.lock().expect("change") = Some(change);
+        self.countdown.store(countdown, Ordering::SeqCst);
+    }
+}
+
+impl time_source_t for scripted_time_t {
+    fn sample(&self) -> Option<time_sample_t> {
+        if self.drifting.load(Ordering::SeqCst) {
+            self.time.advance(1);
+        }
+        let armed = self.countdown.load(Ordering::SeqCst);
+        if armed > 0 && self.countdown.fetch_sub(1, Ordering::SeqCst) == 1 {
+            let change = self.change.lock().expect("change").take();
+            let now = self.time.current().expect("clock");
+            match change {
+                Some(sample_change_t::wall_clock_back) => {
+                    self.time.step_wall_clock(now.realtime - 600);
+                }
+                Some(sample_change_t::wall_clock_forward) => {
+                    self.time.step_wall_clock(now.realtime + 1);
+                }
+                Some(sample_change_t::wall_clock_forward_ledger_fails) => {
+                    self.time.step_wall_clock(now.realtime + 1);
+                    self.io.ledger_fails.store(true, Ordering::SeqCst);
+                }
+                Some(sample_change_t::elapsed_60) => self.time.advance(60),
+                Some(sample_change_t::every_sample_elapses) => {
+                    self.drifting.store(true, Ordering::SeqCst);
+                    self.time.advance(1);
+                }
+                None => {}
+            }
+        }
+        self.time.sample()
+    }
+}
+
+/// A registry whose clocks follow `scripted_time_t` and whose writes `paced_io_t`.
+fn scripted_start(root: &Path) -> (Arc<registry_t>, scripted_time_t) {
+    let time = clock();
+    let io = paced_io_t::new(&time);
+    let source = scripted_time_t {
+        time,
+        io: io.clone(),
+        countdown: Arc::default(),
+        change: Arc::default(),
+        drifting: Arc::default(),
+    };
+    let config = registry_config_t {
+        boot_id: Some("boot-1".to_owned()),
+        ..registry_config_t::default()
+    };
+    let registry = registry_t::open(
+        root,
+        owner_of(root),
+        config,
+        Box::new(io),
+        Box::new(source.clone()),
+    )
+    .expect("registry start");
+    (Arc::new(registry), source)
+}
+
+/// The cases of the decision sample's own persistence (M2-006-B2-R2-01, R2-02): the
+/// change its sample (the operation's second) brings, the write that then takes
+/// 600 s, and the refusal expected.
+fn decision_cases() -> Vec<(&'static str, sample_change_t, &'static str)> {
+    vec![
+        (
+            "anomaly record",
+            sample_change_t::wall_clock_back,
+            "journal",
+        ),
+        (
+            "offset ledger entry",
+            sample_change_t::wall_clock_forward,
+            "ledger",
+        ),
+        ("floor refresh", sample_change_t::elapsed_60, "anchor"),
+        (
+            "failed offset ledger entry",
+            sample_change_t::wall_clock_forward_ledger_fails,
+            "none",
+        ),
+        (
+            "clocks that never settle",
+            sample_change_t::every_sample_elapses,
+            "none",
+        ),
+    ]
+}
+
+fn delay_write(source: &scripted_time_t, write: &str) {
+    let delay = match write {
+        "journal" => &source.io.delay,
+        "ledger" => &source.io.ledger_delay,
+        "anchor" => &source.io.anchor_delay,
+        _ => return,
+    };
+    delay.store(600, Ordering::SeqCst);
+}
+
+#[test]
+fn a_reservation_waits_for_the_writes_of_its_own_decision_sample() {
+    // M2-006-B2-R2-01, R2-02: the decision sample's own persistence — an anomaly
+    // record, an offset ledger entry, a floor refresh — may take time or fail. A
+    // grant expiring at 09:05, reserved from 09:01, expires while that write takes
+    // 600 s: refused. A failed ledger entry, or clocks that never settle, refuse
+    // `storage_unavailable`. Nothing is consumed by any refusal.
+    for (label, change, write) in decision_cases() {
+        let root = temp_root(&format!("decision_reserve_{write}_{}", label.len()));
+        let (registry, source) = scripted_start(&root);
+        let grant = expiring_one_shot("Decided", 1001, "2026-10-13T09:05:00Z");
+        let fixture = with_branch(&registry, 1001, "decided", vec![grant.clone()]);
+        source.arm(2, change);
+        delay_write(&source, write);
+        let expected = match change {
+            sample_change_t::wall_clock_forward_ledger_fails
+            | sample_change_t::every_sample_elapses => "ipc/storage_unavailable",
+            _ => "admission/lifecycle_rule",
+        };
+        assert_eq!(
+            refusal(reserve(&registry, &fixture, &grant.grant_id)),
+            Some(expected.to_owned()),
+            "{label}"
+        );
+        assert_eq!(
+            registry.standing(1001, &grant.grant_id),
+            Ok(standing_t::current),
+            "{label}"
+        );
+        assert_eq!(reservations(&root, 1001), 0, "{label}");
+    }
+    // The positive control: the same writes, quick, reserve the grant.
+    for (label, change, _) in decision_cases().into_iter().take(3) {
+        let root = temp_root(&format!("decision_reserve_quick_{}", label.len()));
+        let (registry, source) = scripted_start(&root);
+        let grant = expiring_one_shot("Decided", 1001, "2026-10-13T09:05:00Z");
+        let fixture = with_branch(&registry, 1001, "decided", vec![grant.clone()]);
+        source.arm(2, change);
+        reserve(&registry, &fixture, &grant.grant_id).expect(label);
+        assert_eq!(reservations(&root, 1001), 1, "{label}");
+    }
+}
+
+#[test]
+fn an_admission_waits_for_the_writes_of_its_own_decision_sample() {
+    // M2-006-B2-R2-01, R2-02 at admission: a commit stamped 09:00, admitted from
+    // 09:01, is more than 300 s behind trusted now once the decision sample's own
+    // write took 600 s (`timestamp_rule`). A failed ledger entry, or clocks that never
+    // settle, refuse `storage_unavailable`. Nothing is admitted by any refusal.
+    for (label, change, write) in decision_cases() {
+        let root = temp_root(&format!("decision_admit_{write}_{}", label.len()));
+        let (registry, source) = scripted_start(&root);
+        let fixture = with_branch(&registry, 1001, "admitted", Vec::new());
+        let revision = draft(
+            &fixture.user,
+            &fixture.app,
+            commit_type_t::revision,
+            "decided revision",
+        )
+        .on(&fixture.genesis)
+        .add(vec![file_grant(
+            "decided pictures",
+            1001,
+            "home:Pictures",
+            &["read"],
+            persistent_lifetime(),
+        )])
+        .sign(&fixture.user);
+        source.arm(2, change);
+        delay_write(&source, write);
+        let expected = match change {
+            sample_change_t::wall_clock_forward_ledger_fails
+            | sample_change_t::every_sample_elapses => "ipc/storage_unavailable",
+            _ => "admission/timestamp_rule",
+        };
+        assert_eq!(
+            refusal(admit(&registry, &fixture.user, &revision)),
+            Some(expected.to_owned()),
+            "{label}"
+        );
+        assert!(
+            !decoded(&root, 1001).iter().any(|record| matches!(
+                &record.body,
+                record_body_t::commit_admitted { commit_id, .. } if *commit_id == revision.commit_id
+            )),
+            "{label}"
+        );
+        // The positive control: the same writes, quick, admit the commit.
+        if write != "none" {
+            let root = temp_root(&format!("decision_admit_quick_{}", label.len()));
+            let (registry, source) = scripted_start(&root);
+            let fixture = with_branch(&registry, 1001, "admitted", Vec::new());
+            let revision = draft(
+                &fixture.user,
+                &fixture.app,
+                commit_type_t::revision,
+                "quick revision",
+            )
+            .on(&fixture.genesis)
+            .add(vec![file_grant(
+                "quick pictures",
+                1001,
+                "home:Pictures",
+                &["read"],
+                persistent_lifetime(),
+            )])
+            .sign(&fixture.user);
+            source.arm(2, change);
+            admit(&registry, &fixture.user, &revision).expect(label);
+        }
+    }
+}
+
+#[test]
+fn a_failed_ledger_refuses_writes_that_take_no_decision_sample() {
+    // ADR 0006 §3, `ready`'s gate (M2-006 stage A), shown apart from the decision
+    // sample's own gate (M2-006-B2-R2-02): once the ledger failed, an ordinary write
+    // that takes no decision sample — a session start, an enforcement outcome — is
+    // refused `storage_unavailable` and its record is not written.
+    let root = temp_root("ledger_gate");
+    let time = clock();
+    let io = fault_io_t::default();
+    let registry = start(&root, "boot-1", &time, &io);
+    let fixture = with_branch(&registry, 1001, "ledger_gate", Vec::new());
+    let uid = fixture.user.uid;
+    // A restrictive write whose ledger append fails: the ledger fails for the run.
+    io.ledger.store(true, Ordering::SeqCst);
+    registry
+        .session_event(
+            Consumer,
+            uid,
+            &synthetic_id("ledger end"),
+            session_change_t::ended,
+        )
+        .expect("durable in the journal");
+    io.ledger.store(false, Ordering::SeqCst);
+    assert!(
+        registry
+            .rollback_status(Policyd)
+            .expect("status")
+            .ledger_failed
+    );
+    let started = synthetic_id("after the ledger failed");
+    assert_eq!(
+        refusal(registry.session_event(Consumer, uid, &started, session_change_t::started)),
+        Some("ipc/storage_unavailable".to_owned()),
+        "a session start after the ledger failed"
+    );
+    assert_eq!(
+        refusal(registry.confirm_enforcement(
+            Consumer,
+            uid,
+            &fixture.genesis.commit_id,
+            &[3; 16],
+            enforcement_domain_t::launcher,
+            1,
+            enforcement_result_t::confirmed,
+        )),
+        Some("ipc/storage_unavailable".to_owned()),
+        "an enforcement outcome after the ledger failed"
+    );
+    assert!(!decoded(&root, uid).iter().any(|record| matches!(
+        &record.body,
+        record_body_t::event(registry_event_t::session_event { session_id, .. }) if *session_id == started
+    ) || matches!(
+        record.body,
+        record_body_t::event(registry_event_t::enforcement_outcome { .. })
+    )));
 }
