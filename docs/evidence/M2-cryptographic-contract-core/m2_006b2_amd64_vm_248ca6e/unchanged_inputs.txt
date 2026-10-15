@@ -1,0 +1,96 @@
+ core/policyd/src/evaluate.rs                  |   75 ++
+ core/policyd/src/lib.rs                       |   10 +-
+ core/policyd/src/service.rs                   |  143 ++-
+ core/policyd/tests/current_authorization.rs   |  419 +++++++-
+ core/registryd/src/lineage.rs                 |  212 ++++-
+ core/registryd/src/record.rs                  |  425 ++++++++-
+ core/registryd/src/registry.rs                |  738 +++++++++++++-
+ core/registryd/tests/lifecycle_consumption.rs | 1271 +++++++++++++++++++++++++
+ core/registryd/tests/storage_integrity.rs     |   23 +-
+ docs/specs/m2_registry_storage_v1.md          |   29 +-
+ docs/specs/m2_service_ipc_v1.md               |   16 +-
+ tests/m2/harness/test_m2_registry_policy.py   |  158 ++-
+ tests/m2/test_inventory.txt                   |   15 +
+ 13 files changed, 3469 insertions(+), 65 deletions(-)
+
+# git diff --exit-code f6f6883 248ca6e -- <path>: exit status per path
+0 Cargo.toml
+0 Cargo.lock
+0 .cargo
+0 build
+0 PROJECT.md
+0 .github
+0 docs/decisions
+0 tests/m2/oracle
+0 tests/m2/vectors
+0 tests/m2/lib
+0 core/contract_format
+0 core/contractd
+0 core/vaultd
+0 core/native
+0 core/identityd
+0 core/probes
+0 core/registryd/Cargo.toml
+0 core/registryd/src/anchor.rs
+0 core/registryd/src/ledger.rs
+0 core/registryd/src/journal.rs
+0 core/registryd/src/clock.rs
+0 core/registryd/src/bin
+0 core/policyd/Cargo.toml
+0 core/policyd/src/mandatory.rs
+
+# git diff --name-only 5ea2407 f6f6883 (docs only)
+docs/STATUS.md
+docs/decisions/0007_m2_lifecycle_time_consumption.md
+docs/decisions/README.md
+docs/evidence/M2-cryptographic-contract-core/README.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_ci_5ea2407/README.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/README.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/admission_scenarios_nocapture.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/crate_sources.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/dependency_inventory.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/downloaded_debs_diff.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/harness/defect_reasons_b1.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/harness/environment.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/harness/identity.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/harness/python_harness.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/harness/summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/identity.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/installed_packages_diff.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/profile_settings.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/qualification_console.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/README.md
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/b1_at_5ea2407.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/policy_reviewer_snippet.rs
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/r2_at_5ea2407.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/r2_at_77a3d0e.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/r2_policy_controls.rs
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/r2_registry_controls.rs
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/r2_startup_control.rs
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/registry_reviewer_snippet.rs
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/run_rereview_r2.sh
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/reviewer_reproductions/run_reviewer_b1.sh
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/rust_naming.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/storage/reserve_full_disk_debug.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/storage/reserve_full_disk_release.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/storage/wrapper_preservation_on_tmpfs.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/toolchain.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/trusted_time_model_nocapture.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unchanged_inputs.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/cargo_test_debug.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/cargo_test_release.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/ecr_vector_oracle.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/environment.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/format_differential.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/identity.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/provider_oracle.json
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/trusted_time_vectors.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/unit/vault_object_oracle.log
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/valgrind_memcheck_probe_summary.txt
+docs/evidence/M2-cryptographic-contract-core/m2_006b1_r3_amd64_vm_5ea2407/valgrind_memcheck_secure_memory_summary.txt
+docs/handoffs/M2-006-b1-completion.md
+docs/handoffs/M2-006-b1-rereview-r3.md
+docs/reviews/M2-006-b1-finding-resolutions-r3.md
+docs/tasks/M2-cryptographic-contract-core.md

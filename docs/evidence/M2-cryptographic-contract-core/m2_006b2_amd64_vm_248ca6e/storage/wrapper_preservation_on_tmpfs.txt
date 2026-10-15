@@ -1,0 +1,12 @@
+# clean clone /home/dev/cham3-m2006b2/qual at 248ca6ef90d22e270db0e9a3f5bf789502d18720, UID 1001, after the positive path of check_reserve_full_disk.sh in the same clone
+tmpfs /full-disk tmpfs rw,nosuid,nodev,noexec,relatime,size=2048k,mode=700,uid=1001,gid=1001,inode64 0 0
+test_a_disk_without_the_paths_is_left_as_found (test_m2_reserve_probe.full_disk_wrapper_t.test_a_disk_without_the_paths_is_left_as_found) ... ok
+test_existing_root_and_filler_are_refused_and_preserved (test_m2_reserve_probe.full_disk_wrapper_t.test_existing_root_and_filler_are_refused_and_preserved) ... ok
+test_symbolic_links_and_their_targets_are_refused_and_preserved (test_m2_reserve_probe.full_disk_wrapper_t.test_symbolic_links_and_their_targets_are_refused_and_preserved) ... ok
+test_restored_pre_deletion_is_detected (test_m2_reserve_probe.seeded_wrapper_defects_t.test_restored_pre_deletion_is_detected) ... ok
+test_unmodified_copy_preserves_existing_paths (test_m2_reserve_probe.seeded_wrapper_defects_t.test_unmodified_copy_preserves_existing_paths) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.164s
+
+OK

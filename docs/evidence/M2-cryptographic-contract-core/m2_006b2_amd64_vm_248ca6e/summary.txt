@@ -1,0 +1,25 @@
+PASS source_identity (commit 248ca6ef90d22e270db0e9a3f5bf789502d18720)
+PASS platform_debian_13
+INFO target_architecture (amd64: M2 qualification target)
+PASS toolchain_identity (rustc/cargo 1.85.1)
+PASS package_pins
+PASS installed_packages_lock (build/m2/debian_lock_amd64.txt)
+PASS downloaded_debs_lock (build/m2/debian_debs_amd64.sha256)
+PASS cargo_metadata_locked_offline
+PASS crate_sources
+PASS dependency_inventory
+PASS rustfmt
+PASS clippy
+PASS rust_naming
+PASS profile_settings
+PASS build_debug
+PASS build_release
+PASS soft_backends (chacha20/poly1305 force_soft, sha2 force-soft, curve25519 fiat)
+PASS curve25519_fiat_backend (2 build-script outputs)
+PASS valgrind_memcheck_probe
+PASS valgrind_memcheck_secure_memory (10 tests, 0 errors; child fault processes not instrumented)
+NOT_AVAILABLE miri (requires a nightly toolchain; not provided by Debian 13)
+NOT_AVAILABLE sanitizers (-Zsanitizer requires nightly; valgrind memcheck used instead)
+NOT_AVAILABLE coverage_guided_fuzzing (cargo-fuzz/libfuzzer-sys not packaged in Debian 13 and require nightly; bounded property/mutation tests are used instead)
+PASS suite_unit
+PASS suite_harness
